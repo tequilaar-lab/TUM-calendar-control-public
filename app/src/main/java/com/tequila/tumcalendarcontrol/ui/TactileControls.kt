@@ -14,6 +14,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -53,6 +54,40 @@ fun TactileIconButton(
         pressedColor = palette.primary.copy(alpha = 0.18f),
     ) {
         Icon(icon, contentDescription)
+    }
+}
+
+/** 顶栏个人资料入口：显示可恢复的首字与颜色，但不代表登录账户。 */
+@Composable
+fun TactileProfileButton(profile: UserProfile, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = LocalTumPalette.current
+    TactileSurface(
+        modifier = modifier.size(48.dp),
+        onClick = onClick,
+        shape = CircleShape,
+        restingColor = Color.Transparent,
+        pressedColor = palette.primary.copy(alpha = 0.18f),
+    ) {
+        ProfileAvatar(profile = profile, modifier = Modifier.size(34.dp))
+    }
+}
+
+/** 非图片头像的视觉表示；颜色来自本机偏好，文字只使用昵称第一个可见字符。 */
+@Composable
+fun ProfileAvatar(profile: UserProfile, modifier: Modifier = Modifier) {
+    val palette = LocalTumPalette.current
+    Box(
+        modifier = modifier
+            .defaultMinSize(minWidth = 34.dp, minHeight = 34.dp)
+            .clip(CircleShape)
+            .background(profile.avatarTone.color(palette)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = profile.displayName.trim().ifBlank { UserProfile().displayName }.take(1),
+            color = Color.White,
+            style = MiuixTheme.textStyles.body1,
+        )
     }
 }
 
@@ -117,4 +152,11 @@ private fun TactileSurface(
             ),
         contentAlignment = Alignment.Center,
     ) { content() }
+}
+
+private fun AvatarTone.color(palette: TumPalette): Color = when (this) {
+    AvatarTone.TUM_BLUE -> palette.primary
+    AvatarTone.SEA_GREEN -> Color(0xFF178B75)
+    AvatarTone.SUNSET -> Color(0xFFC9682B)
+    AvatarTone.LAVENDER -> Color(0xFF7861AD)
 }

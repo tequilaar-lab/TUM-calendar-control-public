@@ -2,7 +2,7 @@
  * 职责：实现课程总览、详情、搜索、收藏、更多操作和设置与同步的内容页面。
  * 输入／输出：输入 CalendarControlState；输出相应的 Compose-Miuix 页面并委托用户操作。
  * 外部副作用：无；同步按钮仅显示本地反馈，绝不访问真实账户或日历。
- * 不负责：出席状态编辑表单（由 AttendanceScreen 单独负责）或数据持久化。
+ * 不负责：出席状态编辑表单（由 AttendanceScreen 单独负责）或本机资料存储实现。
  */
 package com.tequila.tumcalendarcontrol.ui
 
@@ -16,9 +16,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
@@ -46,6 +51,7 @@ fun AppScreenContent(state: CalendarControlState, screen: AppScreen) {
         AppScreen.FAVORITES -> FavoritesScreen(state)
         AppScreen.MORE -> MoreScreen(state)
         AppScreen.SETTINGS -> SettingsScreen(state)
+        AppScreen.PROFILE -> ProfileScreen(state)
     }
 }
 
@@ -142,6 +148,54 @@ private fun SettingsScreen(state: CalendarControlState) {
         state.feedback?.let { feedback ->
             item { Text(feedback, color = palette.onSurfaceVariant) }
         }
+    }
+}
+
+/** 资料编辑只准备草稿；点击保存后才更新状态，再由界面根部写入应用私有偏好。 */
+@Composable
+private fun ProfileScreen(state: CalendarControlState) {
+    var draftName by remember(state.profile) { mutableStateOf(state.profile.displayName) }
+    var draftTone by remember(state.profile) { mutableStateOf(state.profile.avatarTone) }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        InformationCard("本机个人资料", "昵称和头像颜色只保存在这台设备的应用内，不是 Google 或 TUM 账户")
+        TextField(
+            value = draftName,
+            onValueChange = { draftName = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = "显示昵称",
+        )
+        Text("头像颜色", style = MiuixTheme.textStyles.title3)
+        AvatarTone.entries.forEach { tone ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { draftTone = tone },
+                insideMargin = androidx.compose.foundation.layout.PaddingValues(14.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ProfileAvatar(UserProfile(draftName, tone), modifier = Modifier.size(40.dp))
+                    Column(modifier = Modifier.padding(start = 12.dp)) {
+                        Text(tone.label, style = MiuixTheme.textStyles.body1)
+                        Text(
+                            if (tone == draftTone) "当前选择" else "点按选择",
+                            color = LocalTumPalette.current.onSurfaceVariant,
+                        )
+                    }
+                    RadioButton(
+                        selected = tone == draftTone,
+                        onClick = { draftTone = tone },
+                        modifier = Modifier.padding(start = 12.dp),
+                    )
+                }
+            }
+        }
+        Button(
+            onClick = {
+                state.updateProfile(UserProfile(draftName, draftTone))
+                state.handleBack()
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("保存个人资料") }
     }
 }
 

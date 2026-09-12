@@ -97,4 +97,18 @@ class CalendarControlStateTest {
 
         assertEquals(ThemeMode.DARK, state.themeMode)
     }
+
+    @Test
+    fun `个人资料保存后返回原来的主页面`() {
+        val state = CalendarControlState(initialProfile = UserProfile("初始", AvatarTone.SEA_GREEN))
+
+        state.open(AppScreen.FAVORITES)
+        state.openProfile()
+        state.updateProfile(UserProfile("新昵称", AvatarTone.LAVENDER))
+
+        assertTrue(state.handleBack())
+        assertEquals(AppScreen.FAVORITES, state.screen)
+        assertEquals("新昵称", state.profile.displayName)
+        assertEquals(AvatarTone.LAVENDER, state.profile.avatarTone)
+    }
 }

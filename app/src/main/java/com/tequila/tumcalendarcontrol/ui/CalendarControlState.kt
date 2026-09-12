@@ -1,8 +1,8 @@
 /*
- * 职责：保存离线原型的屏幕栈、主题、选课、搜索、收藏及待确认出席状态。
+ * 职责：保存离线原型的屏幕栈、主题、选课、搜索、收藏、出席状态及个人资料状态。
  * 输入／输出：接收用户的本地点击；输出 Compose 可观察状态和更新后的合成课程列表。
- * 外部副作用：无，进程结束后所有变更会消失。
- * 不负责：数据库、日期选择器、真实日历写入或网络同步。
+ * 外部副作用：无；个人资料的本机保存由 ProfilePreferences 在界面层单独负责。
+ * 不负责：数据库、日期选择器、真实日历写入、网络同步或账户身份。
  */
 package com.tequila.tumcalendarcontrol.ui
 
@@ -14,7 +14,7 @@ import com.tequila.tumcalendarcontrol.domain.Course
 import com.tequila.tumcalendarcontrol.domain.SampleCourses
 
 enum class AppScreen {
-    OVERVIEW, DETAIL, ATTENDANCE, SEARCH, FAVORITES, MORE, SETTINGS,
+    OVERVIEW, DETAIL, ATTENDANCE, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE,
 }
 
 enum class ThemeMode(val label: String) {
@@ -27,7 +27,10 @@ enum class NavigationDirection {
     FORWARD, BACKWARD,
 }
 
-class CalendarControlState(initialCourses: List<Course> = SampleCourses.all()) {
+class CalendarControlState(
+    initialCourses: List<Course> = SampleCourses.all(),
+    initialProfile: UserProfile = UserProfile(),
+) {
     var courses by mutableStateOf(initialCourses)
         private set
     var screen by mutableStateOf(AppScreen.OVERVIEW)
@@ -35,7 +38,8 @@ class CalendarControlState(initialCourses: List<Course> = SampleCourses.all()) {
     var selectedCourseId by mutableStateOf(initialCourses.first().id)
         private set
     var searchQuery by mutableStateOf("")
-    var isMenuOpen by mutableStateOf(false)
+    var profile by mutableStateOf(initialProfile)
+        private set
     var pendingAttendance by mutableStateOf(initialCourses.first().attendance)
     var feedback by mutableStateOf<String?>(null)
     var themeMode by mutableStateOf(ThemeMode.SYSTEM)
@@ -43,6 +47,7 @@ class CalendarControlState(initialCourses: List<Course> = SampleCourses.all()) {
         private set
     private var detailReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
     private var moreReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
+    private var profileReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
 
     /** 更多操作覆盖层打开时，仍保持下方主页面稳定，避免与主标签页共用过渡。 */
     val contentScreen: AppScreen
@@ -63,7 +68,6 @@ class CalendarControlState(initialCourses: List<Course> = SampleCourses.all()) {
     /** 主标签页按相对位置决定左右动效；详情等层级页面仍使用前进动效。 */
     fun open(screen: AppScreen) {
         val source = contentScreen
-        isMenuOpen = false
         navigationDirection = navigationDirectionBetween(source, screen)
         this.screen = screen
     }
@@ -82,8 +86,17 @@ class CalendarControlState(initialCourses: List<Course> = SampleCourses.all()) {
 
     fun openMore() {
         moreReturnScreen = contentScreen
-        isMenuOpen = false
         screen = AppScreen.MORE
+    }
+
+    fun openProfile() {
+        profileReturnScreen = contentScreen
+        screen = AppScreen.PROFILE
+    }
+
+    /** 已由界面层校验并提交的本机个人资料；不代表任何外部账户。 */
+    fun updateProfile(updatedProfile: UserProfile) {
+        profile = updatedProfile.copy(displayName = updatedProfile.displayName.trim().ifBlank { UserProfile().displayName })
     }
 
     fun confirmAttendance() {
@@ -106,14 +119,11 @@ class CalendarControlState(initialCourses: List<Course> = SampleCourses.all()) {
 
     /** 处理应用内层级返回；只有主页面才交还给系统执行退出。 */
     fun handleBack(): Boolean {
-        if (isMenuOpen) {
-            isMenuOpen = false
-            return true
-        }
         val destination = when (screen) {
             AppScreen.ATTENDANCE -> AppScreen.DETAIL
             AppScreen.DETAIL -> detailReturnScreen
             AppScreen.MORE -> moreReturnScreen
+            AppScreen.PROFILE -> profileReturnScreen
             else -> return false
         }
         navigationDirection = NavigationDirection.BACKWARD
@@ -121,10 +131,11 @@ class CalendarControlState(initialCourses: List<Course> = SampleCourses.all()) {
         return true
     }
 
-    fun canHandleBack(): Boolean = isMenuOpen || screen in setOf(
+    fun canHandleBack(): Boolean = screen in setOf(
         AppScreen.DETAIL,
         AppScreen.ATTENDANCE,
         AppScreen.MORE,
+        AppScreen.PROFILE,
     )
 
     private fun navigationDirectionBetween(source: AppScreen, destination: AppScreen): NavigationDirection {

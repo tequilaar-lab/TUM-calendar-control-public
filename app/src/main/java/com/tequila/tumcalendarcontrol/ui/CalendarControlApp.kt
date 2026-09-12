@@ -17,13 +17,10 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,8 +32,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,28 +44,25 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
-import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
-import top.yukonga.miuix.kmp.theme.LocalContentColor
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val FixedTopBarHeight = 136.dp
 private val FloatingNavigationShape = RoundedCornerShape(30.dp)
 
 @Composable
 fun CalendarControlApp() {
-    val state = remember { CalendarControlState() }
+    val context = LocalContext.current
+    val profilePreferences = remember(context) { ProfilePreferences(context) }
+    val state = remember { CalendarControlState(initialProfile = profilePreferences.load()) }
+    LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
     BackHandler(enabled = state.canHandleBack()) { state.handleBack() }
     TumCalendarTheme(mode = state.themeMode) {
         Box(Modifier.fillMaxSize()) {
             CalendarControlScaffold(state)
-            NavigationMenu(state)
             MoreOverlay(state)
         }
     }
@@ -89,10 +84,9 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                             onClick = state::handleBack,
                         )
                     } else {
-                        TactileIconButton(
-                            icon = Icons.Rounded.Menu,
-                            contentDescription = "打开导航菜单",
-                            onClick = { state.isMenuOpen = true },
+                        TactileProfileButton(
+                            profile = state.profile,
+                            onClick = state::openProfile,
                         )
                     }
                 },
@@ -257,66 +251,6 @@ private fun MoreOverlay(state: CalendarControlState) {
     }
 }
 
-@Composable
-private fun NavigationMenu(state: CalendarControlState) {
-    val palette = LocalTumPalette.current
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val drawerWidth = maxWidth / 3
-        if (state.isMenuOpen) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(palette.onSurface.copy(alpha = 0.32f))
-                    .clickable { state.isMenuOpen = false },
-            )
-        }
-        AnimatedVisibility(
-            visible = state.isMenuOpen,
-            modifier = Modifier.align(Alignment.CenterStart),
-            enter = slideInHorizontally { -it } + fadeIn(),
-            exit = slideOutHorizontally { -it } + fadeOut(),
-        ) {
-            CompositionLocalProvider(LocalContentColor provides palette.onSurface) {
-                Column(
-                    modifier = Modifier
-                        .width(drawerWidth)
-                        .fillMaxSize()
-                        .background(palette.surface)
-                        .statusBarsPadding()
-                        .navigationBarsPadding()
-                        .padding(horizontal = 12.dp, vertical = 16.dp),
-                ) {
-                    Text("导航", style = MiuixTheme.textStyles.title3)
-                    Text("Fixplatz", color = palette.onSurfaceVariant, style = MiuixTheme.textStyles.body2)
-                    NavigationMenuItem("首页", Icons.Rounded.Home) { state.open(AppScreen.OVERVIEW) }
-                    NavigationMenuItem("搜索", Icons.Rounded.Search) { state.open(AppScreen.SEARCH) }
-                    NavigationMenuItem("收藏", Icons.Rounded.Favorite) { state.open(AppScreen.FAVORITES) }
-                    NavigationMenuItem("设置", Icons.Rounded.Settings) { state.open(AppScreen.SETTINGS) }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun NavigationMenuItem(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 14.dp)
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(icon, label)
-        Text(label, modifier = Modifier.padding(start = 12.dp), style = MiuixTheme.textStyles.body2)
-    }
-}
-
 private fun AppScreen.usesBottomNavigation(): Boolean = this in setOf(
     AppScreen.OVERVIEW,
     AppScreen.SEARCH,
@@ -327,6 +261,7 @@ private fun AppScreen.usesBottomNavigation(): Boolean = this in setOf(
 private fun AppScreen.usesBackArrow(): Boolean = this in setOf(
     AppScreen.DETAIL,
     AppScreen.ATTENDANCE,
+    AppScreen.PROFILE,
 )
 
 private fun AppScreen.bottomNavigationIndex(): Int = when (this) {
@@ -345,6 +280,7 @@ private fun AppScreen.title(): String = when (this) {
     AppScreen.FAVORITES -> "收藏课程"
     AppScreen.MORE -> "更多操作"
     AppScreen.SETTINGS -> "设置与同步"
+    AppScreen.PROFILE -> "个人资料"
 }
 
 private fun AppScreen.subtitle(): String? = when (this) {
