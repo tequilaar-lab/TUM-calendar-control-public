@@ -28,8 +28,28 @@ data class CourseLocalOverride(
     val title: String? = null,
     val schedule: String? = null,
     val location: String? = null,
+    val meetingTime: CourseMeetingTime? = null,
 )
 
+/** 结构化时间避免用户输入冒号；未来日历写入必须消费该值而非展示文本。 */
+data class CourseMeetingTime(
+    val weekday: CourseWeekday,
+    val startHour: Int,
+    val startMinute: Int,
+    val endHour: Int,
+    val endMinute: Int,
+) {
+    init {
+        require(startHour in 0..23 && endHour in 0..23) { "小时必须在 0 至 23。" }
+        require(startMinute in 0..59 && endMinute in 0..59) { "分钟必须在 0 至 59。" }
+        require(endHour * 60 + endMinute > startHour * 60 + startMinute) { "结束时间必须晚于开始时间。" }
+    }
+    fun display(): String = "${weekday.label} ${startHour.twoDigits()}:${startMinute.twoDigits()}–${endHour.twoDigits()}:${endMinute.twoDigits()}"
+}
+
+enum class CourseWeekday(val label: String) { MONDAY("周一"), TUESDAY("周二"), WEDNESDAY("周三"), THURSDAY("周四"), FRIDAY("周五"), SATURDAY("周六"), SUNDAY("周日") }
+private fun Int.twoDigits(): String = toString().padStart(2, '0')
+
 val Course.displayTitle: String get() = localOverride.title ?: title
-val Course.displaySchedule: String get() = localOverride.schedule ?: schedule
+val Course.displaySchedule: String get() = localOverride.meetingTime?.display() ?: localOverride.schedule ?: schedule
 val Course.displayLocation: String get() = localOverride.location ?: location

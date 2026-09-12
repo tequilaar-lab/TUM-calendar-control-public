@@ -34,6 +34,8 @@ import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Refresh
 import com.tequila.tumcalendarcontrol.domain.Course
 import com.tequila.tumcalendarcontrol.domain.CourseLocalOverride
+import com.tequila.tumcalendarcontrol.domain.CourseMeetingTime
+import com.tequila.tumcalendarcontrol.domain.CourseWeekday
 import com.tequila.tumcalendarcontrol.domain.TumEventStatus
 import com.tequila.tumcalendarcontrol.domain.displayLocation
 import com.tequila.tumcalendarcontrol.domain.displaySchedule
@@ -80,7 +82,7 @@ private fun DetailScreen(state: CalendarControlState) {
     val palette = LocalTumPalette.current
     val course = state.selectedCourse
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        InformationCard("${course.displayTitle}（合成示例）", "${course.displaySchedule} · ${course.displayLocation} · ${course.sourceStatus.label}")
+        InformationCard(course.displayTitle, "${course.displaySchedule} · ${course.displayLocation} · ${course.sourceStatus.label}")
         InformationCard("本机字段覆盖", if (course.localOverride == CourseLocalOverride()) "尚未覆盖；当前显示来源字段" else "已覆盖；来源原始字段未被改写")
         Button(onClick = state::openCourseEdit, modifier = Modifier.fillMaxWidth()) { Text("编辑名称、时间与地点") }
         InformationCard(
@@ -108,14 +110,33 @@ private fun DetailScreen(state: CalendarControlState) {
 private fun CourseEditScreen(state: CalendarControlState) {
     val course = state.selectedCourse
     var title by remember(course.localOverride) { mutableStateOf(course.localOverride.title.orEmpty()) }
-    var schedule by remember(course.localOverride) { mutableStateOf(course.localOverride.schedule.orEmpty()) }
     var location by remember(course.localOverride) { mutableStateOf(course.localOverride.location.orEmpty()) }
+    var weekday by remember(course.localOverride) { mutableStateOf(course.localOverride.meetingTime?.weekday ?: CourseWeekday.MONDAY) }
+    var startHour by remember(course.localOverride) { mutableStateOf(course.localOverride.meetingTime?.startHour?.toString() ?: "10") }
+    var startMinute by remember(course.localOverride) { mutableStateOf(course.localOverride.meetingTime?.startMinute?.toString() ?: "0") }
+    var endHour by remember(course.localOverride) { mutableStateOf(course.localOverride.meetingTime?.endHour?.toString() ?: "12") }
+    var endMinute by remember(course.localOverride) { mutableStateOf(course.localOverride.meetingTime?.endMinute?.toString() ?: "0") }
+    var validation by remember { mutableStateOf<String?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        InformationCard("编辑本机覆盖", "留空会显示来源字段；不会回写 TUMonline。")
+        InformationCard("编辑本机课程资料", "名称、地点留空会显示来源字段；时间用星期与小时／分钟填写，不需要输入冒号。")
         TextField(title, { title = it }, Modifier.fillMaxWidth(), label = "名称（当前来源：${course.title}）")
-        TextField(schedule, { schedule = it }, Modifier.fillMaxWidth(), label = "时间（当前来源：${course.schedule}）")
         TextField(location, { location = it }, Modifier.fillMaxWidth(), label = "地点（当前来源：${course.location}）")
-        Button(onClick = { state.updateSelectedCourseOverride(CourseLocalOverride(title.ifBlank { null }, schedule.ifBlank { null }, location.ifBlank { null })); state.handleBack() }, modifier = Modifier.fillMaxWidth()) { Text("仅保存本机覆盖") }
+        Text("上课日", style = MiuixTheme.textStyles.title3)
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            CourseWeekday.entries.forEach { day -> Text(day.label, modifier = Modifier.clickable { weekday = day }.padding(6.dp), color = if (weekday == day) LocalTumPalette.current.primary else LocalTumPalette.current.onSurfaceVariant) }
+        }
+        Text("时间", style = MiuixTheme.textStyles.title3)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextField(startHour, { startHour = it }, Modifier.weight(1f), label = "开始时")
+            TextField(startMinute, { startMinute = it }, Modifier.weight(1f), label = "开始分")
+            TextField(endHour, { endHour = it }, Modifier.weight(1f), label = "结束时")
+            TextField(endMinute, { endMinute = it }, Modifier.weight(1f), label = "结束分")
+        }
+        validation?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
+        Button(onClick = {
+            val time = runCatching { CourseMeetingTime(weekday, startHour.toInt(), startMinute.toInt(), endHour.toInt(), endMinute.toInt()) }.getOrElse { validation = "请填写合法时间：小时 0–23、分钟 0–59，结束须晚于开始。"; return@Button }
+            state.updateSelectedCourseOverride(CourseLocalOverride(title.ifBlank { null }, location = location.ifBlank { null }, meetingTime = time)); state.handleBack()
+        }, modifier = Modifier.fillMaxWidth()) { Text("仅保存本机课程资料") }
     }
 }
 
