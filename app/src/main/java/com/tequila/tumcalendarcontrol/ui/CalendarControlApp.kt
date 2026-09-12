@@ -35,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfigurationStore
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,14 +59,19 @@ fun CalendarControlApp() {
     val context = LocalContext.current
     val profilePreferences = remember(context) { ProfilePreferences(context) }
     val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
+    val privateSyncConfigurationStore = remember(context) { PrivateSyncConfigurationStore(context) }
     val state = remember {
         CalendarControlState(
             initialProfile = profilePreferences.load(),
             initialSyncDestinations = syncDestinationPreferences.load(),
+            initialPrivateSyncConfiguration = privateSyncConfigurationStore.load(),
         )
     }
     LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
     LaunchedEffect(state.syncDestinations) { syncDestinationPreferences.save(state.syncDestinations) }
+    LaunchedEffect(state.privateSyncConfiguration) {
+        privateSyncConfigurationStore.save(state.privateSyncConfiguration)
+    }
     BackHandler(enabled = state.canHandleBack()) { state.handleBack() }
     TumCalendarTheme(mode = state.themeMode) {
         Box(Modifier.fillMaxSize()) {
@@ -269,6 +275,7 @@ private fun AppScreen.usesBackArrow(): Boolean = this in setOf(
     AppScreen.DETAIL,
     AppScreen.ATTENDANCE,
     AppScreen.PROFILE,
+    AppScreen.SYNC_CONFIGURATION,
 )
 
 private fun AppScreen.bottomNavigationIndex(): Int = when (this) {
@@ -288,10 +295,12 @@ private fun AppScreen.title(): String = when (this) {
     AppScreen.MORE -> "更多操作"
     AppScreen.SETTINGS -> "设置与同步"
     AppScreen.PROFILE -> "个人资料"
+    AppScreen.SYNC_CONFIGURATION -> "来源与 Google 连接"
 }
 
 private fun AppScreen.subtitle(): String? = when (this) {
     AppScreen.OVERVIEW -> "离线原型 · 仅合成数据"
     AppScreen.SETTINGS -> "本轮不连接任何真实日历"
+    AppScreen.SYNC_CONFIGURATION -> "仅保存本机配置，不会联网"
     else -> null
 }

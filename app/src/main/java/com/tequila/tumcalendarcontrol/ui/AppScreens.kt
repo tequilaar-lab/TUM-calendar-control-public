@@ -33,6 +33,7 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Refresh
 import com.tequila.tumcalendarcontrol.domain.Course
+import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfiguration
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
@@ -53,6 +54,7 @@ fun AppScreenContent(state: CalendarControlState, screen: AppScreen) {
         AppScreen.MORE -> MoreScreen(state)
         AppScreen.SETTINGS -> SettingsScreen(state)
         AppScreen.PROFILE -> ProfileScreen(state)
+        AppScreen.SYNC_CONFIGURATION -> SyncConfigurationScreen(state)
     }
 }
 
@@ -133,7 +135,17 @@ fun MoreScreen(state: CalendarControlState) {
 private fun SettingsScreen(state: CalendarControlState) {
     val palette = LocalTumPalette.current
     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { InformationCard("日历来源", "TUM 私有 iCal 订阅地址 · 尚未配置") }
+        item {
+            InformationCard(
+                "日历来源",
+                "TUM 私有 iCal · ${state.privateSyncConfiguration.maskedTumSubscription()}",
+            )
+        }
+        item {
+            Button(onClick = state::openSyncConfiguration, modifier = Modifier.fillMaxWidth()) {
+                Text("配置来源与 Google 连接")
+            }
+        }
         item { InformationCard("规则与范围", "只处理已获 Fixplatz 的日程；绿／蓝／灰规则由本应用统一决定") }
         item { SyncDestinationSelector(state) }
         item { InformationCard("写入边界", "仅管理本应用创建的目标日历；不改动用户、订阅或其他应用的日程") }
@@ -149,6 +161,59 @@ private fun SettingsScreen(state: CalendarControlState) {
         state.feedback?.let { feedback ->
             item { Text(feedback, color = palette.onSurfaceVariant) }
         }
+    }
+}
+
+/** 编辑私有配置的草稿；已保存的订阅地址绝不作为初始值回显。 */
+@Composable
+private fun SyncConfigurationScreen(state: CalendarControlState) {
+    val current = state.privateSyncConfiguration
+    var replacementSubscriptionUrl by remember { mutableStateOf("") }
+    var googleClientId by remember(current.googleOAuthClientId) { mutableStateOf(current.googleOAuthClientId) }
+    var calendarName by remember(current.googleCalendarName) { mutableStateOf(current.googleCalendarName) }
+    var validationMessage by remember { mutableStateOf<String?>(null) }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        InformationCard(
+            "私有订阅地址",
+            "当前：${current.maskedTumSubscription()}。旧地址不会回显；只有输入新地址才会替换。",
+        )
+        TextField(
+            value = replacementSubscriptionUrl,
+            onValueChange = { replacementSubscriptionUrl = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = "替换 TUM 私有 iCal 地址（可留空）",
+        )
+        InformationCard("Google 连接", "客户端标识只用于未来由你确认的 OAuth 授权；保存配置不会联网。")
+        TextField(
+            value = googleClientId,
+            onValueChange = { googleClientId = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = "Google OAuth 客户端标识（可留空）",
+        )
+        TextField(
+            value = calendarName,
+            onValueChange = { calendarName = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = "应用专用 Google 次级日历名称",
+        )
+        validationMessage?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
+        Button(
+            onClick = {
+                val updated = PrivateSyncConfiguration(
+                    tumSubscriptionUrl = replacementSubscriptionUrl.trim().ifBlank { current.tumSubscriptionUrl },
+                    googleOAuthClientId = googleClientId,
+                    googleCalendarName = calendarName,
+                )
+                val problems = updated.validate()
+                if (problems.isEmpty()) {
+                    state.updatePrivateSyncConfiguration(updated)
+                    state.handleBack()
+                } else {
+                    validationMessage = problems.joinToString("；") { it.message }
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("仅保存本机配置") }
     }
 }
 

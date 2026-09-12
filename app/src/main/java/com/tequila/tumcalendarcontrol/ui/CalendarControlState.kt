@@ -12,9 +12,10 @@ import androidx.compose.runtime.setValue
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import com.tequila.tumcalendarcontrol.domain.Course
 import com.tequila.tumcalendarcontrol.domain.SampleCourses
+import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfiguration
 
 enum class AppScreen {
-    OVERVIEW, DETAIL, ATTENDANCE, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE,
+    OVERVIEW, DETAIL, ATTENDANCE, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION,
 }
 
 enum class ThemeMode(val label: String) {
@@ -31,6 +32,7 @@ class CalendarControlState(
     initialCourses: List<Course> = SampleCourses.all(),
     initialProfile: UserProfile = UserProfile(),
     initialSyncDestinations: SyncDestinations = SyncDestinations(),
+    initialPrivateSyncConfiguration: PrivateSyncConfiguration = PrivateSyncConfiguration(),
 ) {
     var courses by mutableStateOf(initialCourses)
         private set
@@ -46,11 +48,14 @@ class CalendarControlState(
     var themeMode by mutableStateOf(ThemeMode.SYSTEM)
     var syncDestinations by mutableStateOf(initialSyncDestinations)
         private set
+    var privateSyncConfiguration by mutableStateOf(initialPrivateSyncConfiguration)
+        private set
     var navigationDirection by mutableStateOf(NavigationDirection.FORWARD)
         private set
     private var detailReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
     private var moreReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
     private var profileReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
+    private var syncConfigurationReturnScreen by mutableStateOf(AppScreen.SETTINGS)
 
     /** 更多操作覆盖层打开时，仍保持下方主页面稳定，避免与主标签页共用过渡。 */
     val contentScreen: AppScreen
@@ -107,6 +112,17 @@ class CalendarControlState(
         syncDestinations = syncDestinations.withEnabled(destination, enabled)
     }
 
+    /** 保存前由页面展示格式问题；状态机不发起任何连接或日历写入。 */
+    fun updatePrivateSyncConfiguration(configuration: PrivateSyncConfiguration) {
+        require(configuration.validate().isEmpty()) { "同步配置格式无效。" }
+        privateSyncConfiguration = configuration
+    }
+
+    fun openSyncConfiguration() {
+        syncConfigurationReturnScreen = contentScreen
+        screen = AppScreen.SYNC_CONFIGURATION
+    }
+
     fun confirmAttendance() {
         courses = courses.map { course ->
             if (course.id == selectedCourseId) course.copy(attendance = pendingAttendance) else course
@@ -132,6 +148,7 @@ class CalendarControlState(
             AppScreen.DETAIL -> detailReturnScreen
             AppScreen.MORE -> moreReturnScreen
             AppScreen.PROFILE -> profileReturnScreen
+            AppScreen.SYNC_CONFIGURATION -> syncConfigurationReturnScreen
             else -> return false
         }
         navigationDirection = NavigationDirection.BACKWARD
@@ -144,6 +161,7 @@ class CalendarControlState(
         AppScreen.ATTENDANCE,
         AppScreen.MORE,
         AppScreen.PROFILE,
+        AppScreen.SYNC_CONFIGURATION,
     )
 
     private fun navigationDirectionBetween(source: AppScreen, destination: AppScreen): NavigationDirection {

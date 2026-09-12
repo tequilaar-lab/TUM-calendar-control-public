@@ -7,6 +7,7 @@
 package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
+import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfiguration
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -128,5 +129,21 @@ class CalendarControlStateTest {
 
         assertTrue(state.syncDestinations.localCalendarEnabled)
         assertTrue(state.syncDestinations.googleCalendarEnabled)
+    }
+
+    @Test
+    fun `保存同步配置后返回设置且不隐式打开输出`() {
+        val state = CalendarControlState()
+
+        state.open(AppScreen.SETTINGS)
+        state.openSyncConfiguration()
+        state.updatePrivateSyncConfiguration(
+            PrivateSyncConfiguration(tumSubscriptionUrl = "https://calendar.example.test/subscription"),
+        )
+
+        assertTrue(state.handleBack())
+        assertEquals(AppScreen.SETTINGS, state.screen)
+        assertFalse(state.syncDestinations.localCalendarEnabled)
+        assertFalse(state.syncDestinations.googleCalendarEnabled)
     }
 }
