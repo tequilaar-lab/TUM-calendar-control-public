@@ -1,7 +1,7 @@
 /*
- * 职责：保存离线原型的屏幕栈、主题、选课、搜索、收藏、出席状态及个人资料状态。
+ * 职责：保存离线原型的屏幕栈、主题、选课、搜索、收藏、出席状态、个人资料及同步目标状态。
  * 输入／输出：接收用户的本地点击；输出 Compose 可观察状态和更新后的合成课程列表。
- * 外部副作用：无；个人资料的本机保存由 ProfilePreferences 在界面层单独负责。
+ * 外部副作用：无；个人资料和同步目标的本机保存均由界面层的偏好模块单独负责。
  * 不负责：数据库、日期选择器、真实日历写入、网络同步或账户身份。
  */
 package com.tequila.tumcalendarcontrol.ui
@@ -30,6 +30,7 @@ enum class NavigationDirection {
 class CalendarControlState(
     initialCourses: List<Course> = SampleCourses.all(),
     initialProfile: UserProfile = UserProfile(),
+    initialSyncDestinations: SyncDestinations = SyncDestinations(),
 ) {
     var courses by mutableStateOf(initialCourses)
         private set
@@ -43,6 +44,8 @@ class CalendarControlState(
     var pendingAttendance by mutableStateOf(initialCourses.first().attendance)
     var feedback by mutableStateOf<String?>(null)
     var themeMode by mutableStateOf(ThemeMode.SYSTEM)
+    var syncDestinations by mutableStateOf(initialSyncDestinations)
+        private set
     var navigationDirection by mutableStateOf(NavigationDirection.FORWARD)
         private set
     private var detailReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
@@ -99,6 +102,11 @@ class CalendarControlState(
         profile = updatedProfile.copy(displayName = updatedProfile.displayName.trim().ifBlank { UserProfile().displayName })
     }
 
+    /** 只更新未来输出许可；真正的日历连接和写入仍由后续经授权的同步模块负责。 */
+    fun setSyncDestinationEnabled(destination: SyncDestination, enabled: Boolean) {
+        syncDestinations = syncDestinations.withEnabled(destination, enabled)
+    }
+
     fun confirmAttendance() {
         courses = courses.map { course ->
             if (course.id == selectedCourseId) course.copy(attendance = pendingAttendance) else course
@@ -114,7 +122,7 @@ class CalendarControlState(
     }
 
     fun requestSync() {
-        feedback = "尚未连接 TUM 或 Google 日历；本轮不会写入任何真实日程。"
+        feedback = "同步引擎尚未配置；本轮不会读取或写入任何真实日历。"
     }
 
     /** 处理应用内层级返回；只有主页面才交还给系统执行退出。 */

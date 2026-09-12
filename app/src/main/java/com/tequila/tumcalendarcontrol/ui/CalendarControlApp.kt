@@ -1,8 +1,8 @@
 /*
- * 职责：组合主题、固定顶栏、浮动主导航、全屏更多覆盖层与侧边导航菜单。
+ * 职责：组合主题、固定顶栏、浮动主导航、全屏更多覆盖层及本机偏好装载。
  * 输入／输出：输入内存中的 CalendarControlState；输出整个离线 Compose-Miuix 应用界面。
- * 外部副作用：无；所有操作仅更新当前 Compose 进程内的状态。
- * 不负责：持久化、账户授权、私有 iCal、Android Calendar Provider 或真实日历写入。
+ * 外部副作用：只保存非敏感资料和同步目标开关到应用私有偏好。
+ * 不负责：账户授权、私有 iCal、Android Calendar Provider 或真实日历写入。
  */
 package com.tequila.tumcalendarcontrol.ui
 
@@ -57,8 +57,15 @@ private val FloatingNavigationShape = RoundedCornerShape(30.dp)
 fun CalendarControlApp() {
     val context = LocalContext.current
     val profilePreferences = remember(context) { ProfilePreferences(context) }
-    val state = remember { CalendarControlState(initialProfile = profilePreferences.load()) }
+    val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
+    val state = remember {
+        CalendarControlState(
+            initialProfile = profilePreferences.load(),
+            initialSyncDestinations = syncDestinationPreferences.load(),
+        )
+    }
     LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
+    LaunchedEffect(state.syncDestinations) { syncDestinationPreferences.save(state.syncDestinations) }
     BackHandler(enabled = state.canHandleBack()) { state.handleBack() }
     TumCalendarTheme(mode = state.themeMode) {
         Box(Modifier.fillMaxSize()) {

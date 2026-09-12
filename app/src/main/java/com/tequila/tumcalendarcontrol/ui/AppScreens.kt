@@ -37,6 +37,7 @@ import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.RadioButton
+import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -132,10 +133,10 @@ fun MoreScreen(state: CalendarControlState) {
 private fun SettingsScreen(state: CalendarControlState) {
     val palette = LocalTumPalette.current
     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { InformationCard("同步账户", "Google 日历 · 未连接") }
         item { InformationCard("日历来源", "TUM 私有 iCal 订阅地址 · 尚未配置") }
-        item { InformationCard("同步方向", "读取 TUM → 写入 Google 日历受控日程") }
-        item { InformationCard("写入范围", "仅管理本应用创建的日程；不改动其他日历") }
+        item { InformationCard("规则与范围", "只处理已获 Fixplatz 的日程；绿／蓝／灰规则由本应用统一决定") }
+        item { SyncDestinationSelector(state) }
+        item { InformationCard("写入边界", "仅管理本应用创建的目标日历；不改动用户、订阅或其他应用的日程") }
         item { InformationCard("应用版本", "${BuildConfig.VERSION_NAME} · 构建号 ${BuildConfig.VERSION_CODE}") }
         item { ThemeModeSelector(state) }
         item { Spacer(Modifier.height(4.dp)) }
@@ -148,6 +149,37 @@ private fun SettingsScreen(state: CalendarControlState) {
         state.feedback?.let { feedback ->
             item { Text(feedback, color = palette.onSurfaceVariant) }
         }
+    }
+}
+
+/** 两个输出目标可独立启用；开关仅保存未来许可，不能在未配置时触发同步。 */
+@Composable
+private fun SyncDestinationSelector(state: CalendarControlState) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("同步目标", style = MiuixTheme.textStyles.title3)
+        Text("两个目标共用同一份 TUM 输入和出席规则，可分别开关。", color = LocalTumPalette.current.onSurfaceVariant)
+        SyncDestination.entries.forEach { destination ->
+            val enabled = state.syncDestinations.isEnabled(destination)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                insideMargin = androidx.compose.foundation.layout.PaddingValues(14.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(destination.title, style = MiuixTheme.textStyles.body1)
+                        Text(
+                            if (enabled) destination.enabledSummary else destination.disabledSummary,
+                            color = LocalTumPalette.current.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = enabled,
+                        onCheckedChange = { state.setSyncDestinationEnabled(destination, it) },
+                    )
+                }
+            }
+        }
+        InformationCard("当前阶段", "开关只保存在本机；尚未连接账户、申请权限或发送任何日程数据")
     }
 }
 

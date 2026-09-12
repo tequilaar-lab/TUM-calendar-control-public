@@ -1,5 +1,5 @@
 /*
- * 职责：验证离线 UI 状态机的课程选择、主题、层级返回和收藏切换。
+ * 职责：验证离线 UI 状态机的课程选择、主题、层级返回、收藏及同步目标开关。
  * 输入／输出：输入合成课程与本地操作；输出内存状态变化断言。
  * 外部副作用：无。
  * 不负责：Compose 视觉渲染、持久化、网络或真实日历验证。
@@ -110,5 +110,23 @@ class CalendarControlStateTest {
         assertEquals(AppScreen.FAVORITES, state.screen)
         assertEquals("新昵称", state.profile.displayName)
         assertEquals(AvatarTone.LAVENDER, state.profile.avatarTone)
+    }
+
+    @Test
+    fun `同步目标开关彼此独立且默认关闭`() {
+        val state = CalendarControlState()
+
+        assertFalse(state.syncDestinations.localCalendarEnabled)
+        assertFalse(state.syncDestinations.googleCalendarEnabled)
+
+        state.setSyncDestinationEnabled(SyncDestination.LOCAL_CALENDAR, true)
+
+        assertTrue(state.syncDestinations.localCalendarEnabled)
+        assertFalse(state.syncDestinations.googleCalendarEnabled)
+
+        state.setSyncDestinationEnabled(SyncDestination.GOOGLE_CALENDAR, true)
+
+        assertTrue(state.syncDestinations.localCalendarEnabled)
+        assertTrue(state.syncDestinations.googleCalendarEnabled)
     }
 }
