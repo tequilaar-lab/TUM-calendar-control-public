@@ -50,6 +50,31 @@ class CalendarControlStateTest {
     }
 
     @Test
+    fun `主标签页按相对位置使用相反方向动效`() {
+        val state = CalendarControlState()
+
+        state.open(AppScreen.SETTINGS)
+        assertEquals(NavigationDirection.FORWARD, state.navigationDirection)
+        state.open(AppScreen.FAVORITES)
+
+        assertEquals(NavigationDirection.BACKWARD, state.navigationDirection)
+    }
+
+    @Test
+    fun `更多操作打开时保留原页面作为稳定背景`() {
+        val state = CalendarControlState()
+
+        state.open(AppScreen.SEARCH)
+        state.openMore()
+
+        assertTrue(state.isMoreOpen)
+        assertEquals(AppScreen.SEARCH, state.contentScreen)
+        assertTrue(state.handleBack())
+        assertFalse(state.isMoreOpen)
+        assertEquals(AppScreen.SEARCH, state.contentScreen)
+    }
+
+    @Test
     fun `状态页和详情页会按层级返回而非直接退出`() {
         val state = CalendarControlState()
 

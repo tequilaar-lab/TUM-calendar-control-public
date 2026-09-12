@@ -1,8 +1,8 @@
 /*
- * 职责：组合主题、顶栏、底部导航、页面内容和侧边导航菜单。
- * 输入／输出：输入内存中的 CalendarControlState；输出整个离线应用界面。
+ * 职责：组合主题、固定顶栏、浮动主导航、全屏更多覆盖层与侧边导航菜单。
+ * 输入／输出：输入内存中的 CalendarControlState；输出整个离线 Compose-Miuix 应用界面。
  * 外部副作用：无；所有操作仅更新当前 Compose 进程内的状态。
- * 不负责：持久化、账户授权、私有 iCal 或 Android Calendar Provider。
+ * 不负责：持久化、账户授权、私有 iCal、Android Calendar Provider 或真实日历写入。
  */
 package com.tequila.tumcalendarcontrol.ui
 
@@ -15,36 +15,48 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.NavigationBar
-import top.yukonga.miuix.kmp.basic.NavigationBarItem
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.theme.LocalContentColor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+private val FixedTopBarHeight = 96.dp
+private val FloatingNavigationShape = RoundedCornerShape(30.dp)
 
 @Composable
 fun CalendarControlApp() {
@@ -54,39 +66,45 @@ fun CalendarControlApp() {
         Box(Modifier.fillMaxSize()) {
             CalendarControlScaffold(state)
             NavigationMenu(state)
+            MoreOverlay(state)
         }
     }
 }
 
 @Composable
 private fun CalendarControlScaffold(state: CalendarControlState) {
+    val contentScreen = state.contentScreen
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = state.screen.title(),
-                subtitle = state.screen.subtitle() ?: "",
+            FixedAppTopBar(
+                title = contentScreen.title(),
+                subtitle = contentScreen.subtitle() ?: "\u00A0",
                 navigationIcon = {
-                    if (state.screen.usesBackArrow()) {
-                        IconButton(onClick = state::handleBack) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, "返回上一页")
-                        }
+                    if (contentScreen.usesBackArrow()) {
+                        TactileIconButton(
+                            icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "返回上一页",
+                            onClick = state::handleBack,
+                        )
                     } else {
-                        IconButton(onClick = { state.isMenuOpen = true }) {
-                            Icon(Icons.Rounded.Menu, "打开导航菜单")
-                        }
+                        TactileIconButton(
+                            icon = Icons.Rounded.Menu,
+                            contentDescription = "打开导航菜单",
+                            onClick = { state.isMenuOpen = true },
+                        )
                     }
                 },
                 actions = {
-                    if (state.screen != AppScreen.MORE) {
-                        IconButton(onClick = state::openMore) {
-                            Icon(Icons.Rounded.MoreVert, "更多操作")
-                        }
-                    }
+                    TactileIconButton(
+                        icon = Icons.Rounded.MoreVert,
+                        contentDescription = "更多操作",
+                        onClick = state::openMore,
+                    )
                 },
             )
         },
         bottomBar = {
-            if (state.screen.usesBottomNavigation()) AppBottomNavigation(state)
+            if (contentScreen.usesBottomNavigation()) AppBottomNavigation(state, contentScreen)
         },
     ) { innerPadding ->
         Box(
@@ -102,7 +120,7 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                 ),
         ) {
             AnimatedContent(
-                targetState = state.screen,
+                targetState = contentScreen,
                 transitionSpec = {
                     if (state.navigationDirection == NavigationDirection.FORWARD) {
                         (slideInHorizontally { it } + fadeIn()) togetherWith
@@ -112,7 +130,7 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                             (slideOutHorizontally { it } + fadeOut())
                     }
                 },
-                label = "页面切换",
+                label = "主页面切换",
             ) { screen ->
                 AppScreenContent(state, screen)
             }
@@ -120,33 +138,94 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
     }
 }
 
+/** 顶栏拥有固定总高度，空副标题保留空间，从而避免主页面横移时内容上下跳动。 */
 @Composable
-private fun AppBottomNavigation(state: CalendarControlState) {
-    NavigationBar(modifier = Modifier.fillMaxWidth()) {
-        NavigationBarItem(
-            selected = state.screen == AppScreen.OVERVIEW,
+private fun FixedAppTopBar(
+    title: String,
+    subtitle: String,
+    navigationIcon: @Composable () -> Unit,
+    actions: @Composable RowScope.() -> Unit,
+) {
+    Box(Modifier.fillMaxWidth().height(FixedTopBarHeight)) {
+        TopAppBar(
+            title = title,
+            subtitle = subtitle,
+            navigationIcon = navigationIcon,
+            actions = actions,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+@Composable
+private fun AppBottomNavigation(state: CalendarControlState, selectedScreen: AppScreen) {
+    val palette = LocalTumPalette.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .shadow(12.dp, FloatingNavigationShape)
+            .clip(FloatingNavigationShape)
+            .background(palette.surfaceContainer.copy(alpha = 0.88f))
+            .border(1.dp, palette.outline.copy(alpha = 0.35f), FloatingNavigationShape)
+            .padding(horizontal = 6.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TactileNavigationItem(
+            Icons.Rounded.Home, "首页", selectedScreen == AppScreen.OVERVIEW,
             onClick = { state.open(AppScreen.OVERVIEW) },
-            icon = Icons.Rounded.Home,
-            label = "首页",
         )
-        NavigationBarItem(
-            selected = state.screen == AppScreen.SEARCH,
+        TactileNavigationItem(
+            Icons.Rounded.Search, "搜索", selectedScreen == AppScreen.SEARCH,
             onClick = { state.open(AppScreen.SEARCH) },
-            icon = Icons.Rounded.Search,
-            label = "搜索",
         )
-        NavigationBarItem(
-            selected = state.screen == AppScreen.FAVORITES,
+        TactileNavigationItem(
+            Icons.Rounded.Favorite, "收藏", selectedScreen == AppScreen.FAVORITES,
             onClick = { state.open(AppScreen.FAVORITES) },
-            icon = Icons.Rounded.Favorite,
-            label = "收藏",
         )
-        NavigationBarItem(
-            selected = state.screen == AppScreen.SETTINGS,
+        TactileNavigationItem(
+            Icons.Rounded.Settings, "设置", selectedScreen == AppScreen.SETTINGS,
             onClick = { state.open(AppScreen.SETTINGS) },
-            icon = Icons.Rounded.Settings,
-            label = "设置",
         )
+    }
+}
+
+/** 更多操作以独立覆盖层覆盖完整内容区，避免底栏切换动画与它混在一起。 */
+@Composable
+private fun MoreOverlay(state: CalendarControlState) {
+    val palette = LocalTumPalette.current
+    AnimatedVisibility(
+        visible = state.isMoreOpen,
+        enter = slideInHorizontally { it } + fadeIn(),
+        exit = slideOutHorizontally { it } + fadeOut(),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(palette.surface),
+        ) {
+            FixedAppTopBar(
+                title = AppScreen.MORE.title(),
+                subtitle = "\u00A0",
+                navigationIcon = {
+                    TactileIconButton(
+                        icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "关闭更多操作",
+                        onClick = state::handleBack,
+                    )
+                },
+                actions = {},
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            ) {
+                MoreScreen(state)
+            }
+        }
     }
 }
 
@@ -154,13 +233,13 @@ private fun AppBottomNavigation(state: CalendarControlState) {
 private fun NavigationMenu(state: CalendarControlState) {
     val palette = LocalTumPalette.current
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val drawerWidth = if (maxWidth < 600.dp) maxWidth / 3 else maxWidth / 6
+        val drawerWidth = maxWidth / 3
         if (state.isMenuOpen) {
             Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(palette.onSurface.copy(alpha = 0.32f))
-                .clickable { state.isMenuOpen = false },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(palette.onSurface.copy(alpha = 0.32f))
+                    .clickable { state.isMenuOpen = false },
             )
         }
         AnimatedVisibility(
@@ -169,19 +248,23 @@ private fun NavigationMenu(state: CalendarControlState) {
             enter = slideInHorizontally { -it } + fadeIn(),
             exit = slideOutHorizontally { -it } + fadeOut(),
         ) {
-            Column(
-                modifier = Modifier
-                    .width(drawerWidth)
-                    .fillMaxSize()
-                    .background(palette.surface)
-                    .padding(horizontal = 12.dp, vertical = 28.dp),
-            ) {
-                Text("导航菜单", style = MiuixTheme.textStyles.title1)
-                Text("Fixplatz 课程", color = palette.onSurfaceVariant)
-                NavigationMenuItem("首页", Icons.Rounded.Home) { state.open(AppScreen.OVERVIEW) }
-                NavigationMenuItem("搜索", Icons.Rounded.Search) { state.open(AppScreen.SEARCH) }
-                NavigationMenuItem("收藏", Icons.Rounded.Favorite) { state.open(AppScreen.FAVORITES) }
-                NavigationMenuItem("设置与同步", Icons.Rounded.Settings) { state.open(AppScreen.SETTINGS) }
+            CompositionLocalProvider(LocalContentColor provides palette.onSurface) {
+                Column(
+                    modifier = Modifier
+                        .width(drawerWidth)
+                        .fillMaxSize()
+                        .background(palette.surface)
+                        .statusBarsPadding()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 12.dp, vertical = 16.dp),
+                ) {
+                    Text("导航", style = MiuixTheme.textStyles.title3)
+                    Text("Fixplatz", color = palette.onSurfaceVariant, style = MiuixTheme.textStyles.body2)
+                    NavigationMenuItem("首页", Icons.Rounded.Home) { state.open(AppScreen.OVERVIEW) }
+                    NavigationMenuItem("搜索", Icons.Rounded.Search) { state.open(AppScreen.SEARCH) }
+                    NavigationMenuItem("收藏", Icons.Rounded.Favorite) { state.open(AppScreen.FAVORITES) }
+                    NavigationMenuItem("设置", Icons.Rounded.Settings) { state.open(AppScreen.SETTINGS) }
+                }
             }
         }
     }
@@ -193,16 +276,16 @@ private fun NavigationMenuItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit,
 ) {
-    androidx.compose.foundation.layout.Row(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 18.dp)
+            .padding(top = 14.dp)
             .clickable(onClick = onClick)
-            .padding(vertical = 14.dp),
+            .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(icon, label)
-        Text(label, modifier = Modifier.padding(start = 16.dp), style = MiuixTheme.textStyles.body1)
+        Text(label, modifier = Modifier.padding(start = 12.dp), style = MiuixTheme.textStyles.body2)
     }
 }
 
@@ -216,7 +299,6 @@ private fun AppScreen.usesBottomNavigation(): Boolean = this in setOf(
 private fun AppScreen.usesBackArrow(): Boolean = this in setOf(
     AppScreen.DETAIL,
     AppScreen.ATTENDANCE,
-    AppScreen.MORE,
 )
 
 private fun AppScreen.title(): String = when (this) {

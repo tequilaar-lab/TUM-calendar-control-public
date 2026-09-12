@@ -6,6 +6,7 @@
  */
 package com.tequila.tumcalendarcontrol.ui
 
+import com.tequila.tumcalendarcontrol.BuildConfig
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -108,8 +109,9 @@ private fun FavoritesScreen(state: CalendarControlState) {
     }
 }
 
+/** 由完整覆盖层承载的更多操作内容；不直接创建覆盖层或处理返回动效。 */
 @Composable
-private fun MoreScreen(state: CalendarControlState) {
+fun MoreScreen(state: CalendarControlState) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         InformationCard("筛选显示", "仅显示已获 Fixplatz 的课程")
         InformationCard("同步状态", "尚未连接任何真实日历；没有待写入的更改")
@@ -128,6 +130,7 @@ private fun SettingsScreen(state: CalendarControlState) {
         InformationCard("日历来源", "TUM 私有 iCal 订阅地址 · 尚未配置")
         InformationCard("同步方向", "读取 TUM → 写入 Google 日历受控日程")
         InformationCard("写入范围", "仅管理本应用创建的日程；不改动其他日历")
+        InformationCard("应用版本", "${BuildConfig.VERSION_NAME} · 构建号 ${BuildConfig.VERSION_CODE}")
         ThemeModeSelector(state)
         Spacer(Modifier.height(4.dp))
         Button(onClick = state::requestSync, modifier = Modifier.fillMaxWidth()) {

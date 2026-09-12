@@ -19,8 +19,9 @@ android {
         applicationId = "com.tequila.tumcalendarcontrol"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        // 每次可验收发布均递增构建号；完整记录见仓库根目录 VERSIONING.md。
+        versionCode = 2
+        versionName = "0.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -42,6 +43,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

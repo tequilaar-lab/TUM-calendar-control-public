@@ -44,6 +44,13 @@ class CalendarControlState(initialCourses: List<Course> = SampleCourses.all()) {
     private var detailReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
     private var moreReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
 
+    /** 更多操作覆盖层打开时，仍保持下方主页面稳定，避免与主标签页共用过渡。 */
+    val contentScreen: AppScreen
+        get() = if (screen == AppScreen.MORE) moreReturnScreen else screen
+
+    val isMoreOpen: Boolean
+        get() = screen == AppScreen.MORE
+
     val selectedCourse: Course
         get() = courses.first { it.id == selectedCourseId }
 
@@ -53,15 +60,16 @@ class CalendarControlState(initialCourses: List<Course> = SampleCourses.all()) {
     val favoriteCourses: List<Course>
         get() = courses.filter { it.isFavorite && it.hasFixedPlus }
 
-    /** 主页面之间的切换会成为后续详情、更多操作的返回来源。 */
+    /** 主标签页按相对位置决定左右动效；详情等层级页面仍使用前进动效。 */
     fun open(screen: AppScreen) {
+        val source = contentScreen
         isMenuOpen = false
-        navigationDirection = NavigationDirection.FORWARD
+        navigationDirection = navigationDirectionBetween(source, screen)
         this.screen = screen
     }
 
     fun openCourse(courseId: String) {
-        detailReturnScreen = screen
+        detailReturnScreen = contentScreen
         selectedCourseId = courseId
         pendingAttendance = selectedCourse.attendance
         open(AppScreen.DETAIL)
@@ -73,8 +81,9 @@ class CalendarControlState(initialCourses: List<Course> = SampleCourses.all()) {
     }
 
     fun openMore() {
-        moreReturnScreen = screen
-        open(AppScreen.MORE)
+        moreReturnScreen = contentScreen
+        isMenuOpen = false
+        screen = AppScreen.MORE
     }
 
     fun confirmAttendance() {
@@ -117,4 +126,22 @@ class CalendarControlState(initialCourses: List<Course> = SampleCourses.all()) {
         AppScreen.ATTENDANCE,
         AppScreen.MORE,
     )
+
+    private fun navigationDirectionBetween(source: AppScreen, destination: AppScreen): NavigationDirection {
+        val sourceIndex = source.primaryIndex()
+        val destinationIndex = destination.primaryIndex()
+        return if (sourceIndex != null && destinationIndex != null && destinationIndex < sourceIndex) {
+            NavigationDirection.BACKWARD
+        } else {
+            NavigationDirection.FORWARD
+        }
+    }
+}
+
+private fun AppScreen.primaryIndex(): Int? = when (this) {
+    AppScreen.OVERVIEW -> 0
+    AppScreen.SEARCH -> 1
+    AppScreen.FAVORITES -> 2
+    AppScreen.SETTINGS -> 3
+    else -> null
 }
