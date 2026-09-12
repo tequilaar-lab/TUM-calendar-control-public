@@ -54,6 +54,8 @@ kotlin {
 
 dependencies {
     implementation("androidx.activity:activity-compose:1.13.0")
+    // 仅提供 Rounded 图标向量；界面组件仍全部来自 Compose-Miuix。
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.3")
 
     testImplementation("junit:junit:4.13.2")
