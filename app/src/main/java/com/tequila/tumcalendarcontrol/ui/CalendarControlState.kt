@@ -13,9 +13,12 @@ import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import com.tequila.tumcalendarcontrol.domain.Course
 import com.tequila.tumcalendarcontrol.domain.SampleCourses
 import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfiguration
+import com.tequila.tumcalendarcontrol.sync.OfflinePreviewSamples
+import com.tequila.tumcalendarcontrol.sync.RuleLedger
+import com.tequila.tumcalendarcontrol.sync.SyncPreview
 
 enum class AppScreen {
-    OVERVIEW, DETAIL, ATTENDANCE, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION,
+    OVERVIEW, DETAIL, ATTENDANCE, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW,
 }
 
 enum class ThemeMode(val label: String) {
@@ -33,6 +36,7 @@ class CalendarControlState(
     initialProfile: UserProfile = UserProfile(),
     initialSyncDestinations: SyncDestinations = SyncDestinations(),
     initialPrivateSyncConfiguration: PrivateSyncConfiguration = PrivateSyncConfiguration(),
+    initialRuleLedger: RuleLedger = RuleLedger(),
 ) {
     var courses by mutableStateOf(initialCourses)
         private set
@@ -50,12 +54,16 @@ class CalendarControlState(
         private set
     var privateSyncConfiguration by mutableStateOf(initialPrivateSyncConfiguration)
         private set
+    var ruleLedger by mutableStateOf(initialRuleLedger)
+        private set
+    val offlinePreview: SyncPreview = OfflinePreviewSamples.preview()
     var navigationDirection by mutableStateOf(NavigationDirection.FORWARD)
         private set
     private var detailReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
     private var moreReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
     private var profileReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
     private var syncConfigurationReturnScreen by mutableStateOf(AppScreen.SETTINGS)
+    private var syncPreviewReturnScreen by mutableStateOf(AppScreen.SETTINGS)
 
     /** 更多操作覆盖层打开时，仍保持下方主页面稳定，避免与主标签页共用过渡。 */
     val contentScreen: AppScreen
@@ -123,6 +131,9 @@ class CalendarControlState(
         screen = AppScreen.SYNC_CONFIGURATION
     }
 
+    /** 预览只展示合成差异，不能触发网络、权限申请或任何日历写入。 */
+    fun openSyncPreview() { syncPreviewReturnScreen = contentScreen; screen = AppScreen.SYNC_PREVIEW }
+
     fun confirmAttendance() {
         courses = courses.map { course ->
             if (course.id == selectedCourseId) course.copy(attendance = pendingAttendance) else course
@@ -149,6 +160,7 @@ class CalendarControlState(
             AppScreen.MORE -> moreReturnScreen
             AppScreen.PROFILE -> profileReturnScreen
             AppScreen.SYNC_CONFIGURATION -> syncConfigurationReturnScreen
+            AppScreen.SYNC_PREVIEW -> syncPreviewReturnScreen
             else -> return false
         }
         navigationDirection = NavigationDirection.BACKWARD
@@ -162,6 +174,7 @@ class CalendarControlState(
         AppScreen.MORE,
         AppScreen.PROFILE,
         AppScreen.SYNC_CONFIGURATION,
+        AppScreen.SYNC_PREVIEW,
     )
 
     private fun navigationDirectionBetween(source: AppScreen, destination: AppScreen): NavigationDirection {

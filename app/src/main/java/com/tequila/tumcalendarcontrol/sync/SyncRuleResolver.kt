@@ -15,6 +15,8 @@ data class SyncRule(
     val hasConfirmedFixplatz: Boolean,
     val defaultState: AttendanceState,
     val stopAttendingFrom: LocalDate? = null,
+    /** 日期生效的规则时间线支持绿／蓝／灰；晚于默认规则、早于单实例例外。 */
+    val futureStateOverrides: Map<LocalDate, AttendanceState> = emptyMap(),
     val instanceOverrides: Map<String, AttendanceState> = emptyMap(),
 )
 
@@ -25,6 +27,11 @@ object SyncRuleResolver {
         if (!rule.hasConfirmedFixplatz || occurrence.isCancelled) return null
         rule.instanceOverrides[occurrence.instanceKey]?.let { return it }
         val date = occurrence.startsAt.atZone(zoneId).toLocalDate()
+        rule.futureStateOverrides
+            .filterKeys { !it.isAfter(date) }
+            .maxByOrNull { it.key }
+            ?.value
+            ?.let { return it }
         return if (rule.stopAttendingFrom != null && !date.isBefore(rule.stopAttendingFrom)) {
             AttendanceState.STOP_ATTENDING
         } else {

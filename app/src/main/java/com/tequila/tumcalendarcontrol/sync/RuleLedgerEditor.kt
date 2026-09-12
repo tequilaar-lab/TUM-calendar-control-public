@@ -1,0 +1,52 @@
+/*
+ * 职责：以单次、整课或从指定日期起三种作用域批量编辑已确认课程的本地规则。
+ * 输入／输出：输入规则集合与明确编辑命令；输出更新后的规则集合，不改变输入对象。
+ * 外部副作用：无。
+ * 不负责：选择 UI、日期控件、来源解析、持久化或写入日历。
+ */
+package com.tequila.tumcalendarcontrol.sync
+
+import com.tequila.tumcalendarcontrol.domain.AttendanceState
+import java.time.LocalDate
+
+sealed interface RuleEditCommand {
+    val sourceUids: Set<String>
+    val state: AttendanceState
+
+    data class WholeCourse(
+        override val sourceUids: Set<String>,
+        override val state: AttendanceState,
+    ) : RuleEditCommand
+
+    data class FromDate(
+        override val sourceUids: Set<String>,
+        val effectiveFrom: LocalDate,
+        override val state: AttendanceState,
+    ) : RuleEditCommand
+
+    data class Instances(
+        override val sourceUids: Set<String>,
+        val instanceKeys: Set<String>,
+        override val state: AttendanceState,
+    ) : RuleEditCommand
+}
+
+object RuleLedgerEditor {
+    /** 只编辑命令指定 UID；未确认 Fixplatz 的规则保持不动。 */
+    fun apply(rules: List<SyncRule>, command: RuleEditCommand): List<SyncRule> = rules.map { rule ->
+        if (rule.sourceUid !in command.sourceUids || !rule.hasConfirmedFixplatz) rule else when (command) {
+            is RuleEditCommand.WholeCourse -> rule.copy(
+                defaultState = command.state,
+                stopAttendingFrom = null,
+                futureStateOverrides = emptyMap(),
+                instanceOverrides = emptyMap(),
+            )
+            is RuleEditCommand.FromDate -> rule.copy(
+                futureStateOverrides = rule.futureStateOverrides + (command.effectiveFrom to command.state),
+            )
+            is RuleEditCommand.Instances -> rule.copy(
+                instanceOverrides = rule.instanceOverrides + command.instanceKeys.associateWith { command.state },
+            )
+        }
+    }
+}

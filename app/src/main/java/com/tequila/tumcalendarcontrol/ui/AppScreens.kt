@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Refresh
 import com.tequila.tumcalendarcontrol.domain.Course
 import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfiguration
+import com.tequila.tumcalendarcontrol.sync.SyncChangeType
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
@@ -55,6 +56,7 @@ fun AppScreenContent(state: CalendarControlState, screen: AppScreen) {
         AppScreen.SETTINGS -> SettingsScreen(state)
         AppScreen.PROFILE -> ProfileScreen(state)
         AppScreen.SYNC_CONFIGURATION -> SyncConfigurationScreen(state)
+        AppScreen.SYNC_PREVIEW -> SyncPreviewScreen(state)
     }
 }
 
@@ -147,6 +149,7 @@ private fun SettingsScreen(state: CalendarControlState) {
             }
         }
         item { InformationCard("规则与范围", "只处理已获 Fixplatz 的日程；绿／蓝／灰规则由本应用统一决定") }
+        item { Button(onClick = state::openSyncPreview, modifier = Modifier.fillMaxWidth()) { Text("查看离线同步预览") } }
         item { SyncDestinationSelector(state) }
         item { InformationCard("写入边界", "仅管理本应用创建的目标日历；不改动用户、订阅或其他应用的日程") }
         item { InformationCard("应用版本", "${BuildConfig.VERSION_NAME} · 构建号 ${BuildConfig.VERSION_CODE}") }
@@ -161,6 +164,18 @@ private fun SettingsScreen(state: CalendarControlState) {
         state.feedback?.let { feedback ->
             item { Text(feedback, color = palette.onSurfaceVariant) }
         }
+    }
+}
+
+/** 仅使用固定合成差异；此页没有确认写入按钮，防止被误认为真实同步。 */
+@Composable
+private fun SyncPreviewScreen(state: CalendarControlState) {
+    val preview = state.offlinePreview
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item { InformationCard("离线合成预览", "不会读取来源、申请权限或写入本机／Google 日历") }
+        item { InformationCard("变更汇总", "新增 ${preview.createCount} · 更新 ${preview.updateCount} · 移除 ${preview.removeCount} · 保持 ${preview.keepCount} · 跳过 ${preview.skipCount}") }
+        items(preview.changes) { change -> InformationCard(change.type.label, "合成身份：${change.identity.sourceUid}／${change.identity.instanceKey}") }
+        items(preview.skipped) { skipped -> InformationCard("跳过", "${skipped.reason}（${skipped.sourceUid ?: "无 UID"}）") }
     }
 }
 

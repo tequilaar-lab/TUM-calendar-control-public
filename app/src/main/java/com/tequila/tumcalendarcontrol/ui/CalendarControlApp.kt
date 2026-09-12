@@ -36,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfigurationStore
+import com.tequila.tumcalendarcontrol.sync.RuleLedgerPreferences
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,11 +61,13 @@ fun CalendarControlApp() {
     val profilePreferences = remember(context) { ProfilePreferences(context) }
     val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
     val privateSyncConfigurationStore = remember(context) { PrivateSyncConfigurationStore(context) }
+    val ruleLedgerPreferences = remember(context) { RuleLedgerPreferences(context) }
     val state = remember {
         CalendarControlState(
             initialProfile = profilePreferences.load(),
             initialSyncDestinations = syncDestinationPreferences.load(),
             initialPrivateSyncConfiguration = privateSyncConfigurationStore.load(),
+            initialRuleLedger = ruleLedgerPreferences.load(),
         )
     }
     LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
@@ -72,6 +75,7 @@ fun CalendarControlApp() {
     LaunchedEffect(state.privateSyncConfiguration) {
         privateSyncConfigurationStore.save(state.privateSyncConfiguration)
     }
+    LaunchedEffect(state.ruleLedger) { ruleLedgerPreferences.save(state.ruleLedger) }
     BackHandler(enabled = state.canHandleBack()) { state.handleBack() }
     TumCalendarTheme(mode = state.themeMode) {
         Box(Modifier.fillMaxSize()) {
@@ -276,6 +280,7 @@ private fun AppScreen.usesBackArrow(): Boolean = this in setOf(
     AppScreen.ATTENDANCE,
     AppScreen.PROFILE,
     AppScreen.SYNC_CONFIGURATION,
+    AppScreen.SYNC_PREVIEW,
 )
 
 private fun AppScreen.bottomNavigationIndex(): Int = when (this) {
@@ -296,11 +301,13 @@ private fun AppScreen.title(): String = when (this) {
     AppScreen.SETTINGS -> "设置与同步"
     AppScreen.PROFILE -> "个人资料"
     AppScreen.SYNC_CONFIGURATION -> "来源与 Google 连接"
+    AppScreen.SYNC_PREVIEW -> "同步预览"
 }
 
 private fun AppScreen.subtitle(): String? = when (this) {
     AppScreen.OVERVIEW -> "离线原型 · 仅合成数据"
     AppScreen.SETTINGS -> "本轮不连接任何真实日历"
     AppScreen.SYNC_CONFIGURATION -> "仅保存本机配置，不会联网"
+    AppScreen.SYNC_PREVIEW -> "离线合成预览 · 不写入日历"
     else -> null
 }
