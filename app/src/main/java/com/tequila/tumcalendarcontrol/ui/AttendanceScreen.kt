@@ -56,6 +56,7 @@ fun AttendanceScreen(state: CalendarControlState) {
 
 @Composable
 private fun AttendanceOption(option: AttendanceState, state: CalendarControlState) {
+    val palette = LocalTumPalette.current
     val selected = option == state.pendingAttendance
     Card(
         modifier = Modifier
@@ -68,7 +69,7 @@ private fun AttendanceOption(option: AttendanceState, state: CalendarControlStat
             Spacer(Modifier.padding(4.dp))
             Column(modifier = Modifier.padding(start = 4.dp, end = 8.dp)) {
                 Text(option.label, style = MiuixTheme.textStyles.title3)
-                Text("${option.colorLabel}色 · ${option.description}", color = TumColors.onSurfaceVariant)
+                Text("${option.colorLabel}色 · ${option.description}", color = palette.onSurfaceVariant)
             }
             StatusDot(option)
         }

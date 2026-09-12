@@ -6,15 +6,24 @@
  */
 package com.tequila.tumcalendarcontrol.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -22,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
@@ -39,7 +49,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 fun CalendarControlApp() {
     val state = remember { CalendarControlState() }
-    TumCalendarTheme {
+    BackHandler(enabled = state.canHandleBack()) { state.handleBack() }
+    TumCalendarTheme(mode = state.themeMode) {
         Box(Modifier.fillMaxSize()) {
             CalendarControlScaffold(state)
             NavigationMenu(state)
@@ -55,13 +66,21 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                 title = state.screen.title(),
                 subtitle = state.screen.subtitle() ?: "",
                 navigationIcon = {
-                    IconButton(onClick = { state.isMenuOpen = true }) {
-                        Icon(Icons.Rounded.Menu, "打开导航菜单")
+                    if (state.screen.usesBackArrow()) {
+                        IconButton(onClick = state::handleBack) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, "返回上一页")
+                        }
+                    } else {
+                        IconButton(onClick = { state.isMenuOpen = true }) {
+                            Icon(Icons.Rounded.Menu, "打开导航菜单")
+                        }
                     }
                 },
                 actions = {
-                    IconButton(onClick = { state.open(AppScreen.MORE) }) {
-                        Icon(Icons.Rounded.MoreVert, "更多操作")
+                    if (state.screen != AppScreen.MORE) {
+                        IconButton(onClick = state::openMore) {
+                            Icon(Icons.Rounded.MoreVert, "更多操作")
+                        }
                     }
                 },
             )
@@ -82,7 +101,21 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                     ),
                 ),
         ) {
-            AppScreenContent(state)
+            AnimatedContent(
+                targetState = state.screen,
+                transitionSpec = {
+                    if (state.navigationDirection == NavigationDirection.FORWARD) {
+                        (slideInHorizontally { it } + fadeIn()) togetherWith
+                            (slideOutHorizontally { -it / 3 } + fadeOut())
+                    } else {
+                        (slideInHorizontally { -it / 3 } + fadeIn()) togetherWith
+                            (slideOutHorizontally { it } + fadeOut())
+                    }
+                },
+                label = "页面切换",
+            ) { screen ->
+                AppScreenContent(state, screen)
+            }
         }
     }
 }
@@ -119,26 +152,32 @@ private fun AppBottomNavigation(state: CalendarControlState) {
 
 @Composable
 private fun NavigationMenu(state: CalendarControlState) {
-    AnimatedVisibility(
-        visible = state.isMenuOpen,
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        Box(
+    val palette = LocalTumPalette.current
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val drawerWidth = if (maxWidth < 600.dp) maxWidth / 3 else maxWidth / 6
+        if (state.isMenuOpen) {
+            Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(TumColors.onSurface.copy(alpha = 0.32f))
+                .background(palette.onSurface.copy(alpha = 0.32f))
                 .clickable { state.isMenuOpen = false },
+            )
+        }
+        AnimatedVisibility(
+            visible = state.isMenuOpen,
+            modifier = Modifier.align(Alignment.CenterStart),
+            enter = slideInHorizontally { -it } + fadeIn(),
+            exit = slideOutHorizontally { -it } + fadeOut(),
         ) {
             Column(
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .fillMaxWidth(0.72f)
+                    .width(drawerWidth)
                     .fillMaxSize()
-                    .background(TumColors.surface)
-                    .padding(horizontal = 16.dp, vertical = 28.dp),
+                    .background(palette.surface)
+                    .padding(horizontal = 12.dp, vertical = 28.dp),
             ) {
                 Text("导航菜单", style = MiuixTheme.textStyles.title1)
-                Text("仅显示已获 Fixplatz 的课程", color = TumColors.onSurfaceVariant)
+                Text("Fixplatz 课程", color = palette.onSurfaceVariant)
                 NavigationMenuItem("首页", Icons.Rounded.Home) { state.open(AppScreen.OVERVIEW) }
                 NavigationMenuItem("搜索", Icons.Rounded.Search) { state.open(AppScreen.SEARCH) }
                 NavigationMenuItem("收藏", Icons.Rounded.Favorite) { state.open(AppScreen.FAVORITES) }
@@ -172,6 +211,12 @@ private fun AppScreen.usesBottomNavigation(): Boolean = this in setOf(
     AppScreen.SEARCH,
     AppScreen.FAVORITES,
     AppScreen.SETTINGS,
+)
+
+private fun AppScreen.usesBackArrow(): Boolean = this in setOf(
+    AppScreen.DETAIL,
+    AppScreen.ATTENDANCE,
+    AppScreen.MORE,
 )
 
 private fun AppScreen.title(): String = when (this) {

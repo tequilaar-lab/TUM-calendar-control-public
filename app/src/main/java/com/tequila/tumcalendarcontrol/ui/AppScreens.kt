@@ -6,8 +6,10 @@
  */
 package com.tequila.tumcalendarcontrol.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -25,14 +28,16 @@ import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Refresh
 import com.tequila.tumcalendarcontrol.domain.Course
 import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.RadioButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-fun AppScreenContent(state: CalendarControlState) {
-    when (state.screen) {
+fun AppScreenContent(state: CalendarControlState, screen: AppScreen) {
+    when (screen) {
         AppScreen.OVERVIEW -> OverviewScreen(state)
         AppScreen.DETAIL -> DetailScreen(state)
         AppScreen.ATTENDANCE -> AttendanceScreen(state)
@@ -54,6 +59,7 @@ private fun OverviewScreen(state: CalendarControlState) {
 
 @Composable
 private fun DetailScreen(state: CalendarControlState) {
+    val palette = LocalTumPalette.current
     val course = state.selectedCourse
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         InformationCard("${course.title}（合成示例）", "${course.schedule} · ${course.location}")
@@ -73,7 +79,7 @@ private fun DetailScreen(state: CalendarControlState) {
             Icon(if (course.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder, "切换收藏")
             Text(if (course.isFavorite) "取消收藏" else "收藏课程", modifier = Modifier.padding(start = 8.dp))
         }
-        state.feedback?.let { Text(it, color = TumColors.onSurfaceVariant) }
+        state.feedback?.let { Text(it, color = palette.onSurfaceVariant) }
     }
 }
 
@@ -116,17 +122,19 @@ private fun MoreScreen(state: CalendarControlState) {
 
 @Composable
 private fun SettingsScreen(state: CalendarControlState) {
+    val palette = LocalTumPalette.current
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         InformationCard("同步账户", "Google 日历 · 未连接")
         InformationCard("日历来源", "TUM 私有 iCal 订阅地址 · 尚未配置")
         InformationCard("同步方向", "读取 TUM → 写入 Google 日历受控日程")
         InformationCard("写入范围", "仅管理本应用创建的日程；不改动其他日历")
+        ThemeModeSelector(state)
         Spacer(Modifier.height(4.dp))
         Button(onClick = state::requestSync, modifier = Modifier.fillMaxWidth()) {
             Icon(Icons.Rounded.Refresh, "刷新同步")
             Text("刷新同步", modifier = Modifier.padding(start = 8.dp))
         }
-        state.feedback?.let { Text(it, color = TumColors.onSurfaceVariant) }
+        state.feedback?.let { Text(it, color = palette.onSurfaceVariant) }
     }
 }
 
@@ -142,6 +150,35 @@ private fun CourseList(courses: List<Course>, heading: String, onCourseClick: (S
         } else {
             items(courses, key = { it.id }) { course ->
                 CourseRow(course) { onCourseClick(course.id) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeModeSelector(state: CalendarControlState) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("外观", style = MiuixTheme.textStyles.title3)
+        ThemeMode.entries.forEach { mode ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { state.themeMode = mode },
+                insideMargin = androidx.compose.foundation.layout.PaddingValues(14.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = state.themeMode == mode,
+                        onClick = { state.themeMode = mode },
+                    )
+                    Column(modifier = Modifier.padding(start = 8.dp)) {
+                        Text(mode.label, style = MiuixTheme.textStyles.body1)
+                        Text(
+                            if (mode == ThemeMode.SYSTEM) "仅跟随系统明暗，不使用壁纸取色" else "本次运行内立即生效",
+                            color = LocalTumPalette.current.onSurfaceVariant,
+                        )
+                    }
+                }
             }
         }
     }

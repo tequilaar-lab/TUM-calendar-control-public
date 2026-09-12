@@ -35,6 +35,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun CourseRow(course: Course, onClick: () -> Unit) {
+    val palette = LocalTumPalette.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -45,7 +46,7 @@ fun CourseRow(course: Course, onClick: () -> Unit) {
             Box(
                 Modifier
                     .size(40.dp)
-                    .background(TumColors.primaryContainer, RoundedCornerShape(20.dp)),
+                    .background(palette.primaryContainer, RoundedCornerShape(20.dp)),
                 contentAlignment = Alignment.Center,
             ) { Icon(Icons.Rounded.Star, "课程") }
             Spacer(Modifier.size(12.dp))
@@ -54,7 +55,7 @@ fun CourseRow(course: Course, onClick: () -> Unit) {
                 Text(
                     "${course.attendance.colorLabel} · 已获 Fixplatz" +
                         if (course.attendance == AttendanceState.STOP_ATTENDING) "；历史不改" else "",
-                    color = TumColors.onSurfaceVariant,
+                    color = palette.onSurfaceVariant,
                 )
             }
             StatusDot(course.attendance)
@@ -66,25 +67,27 @@ fun CourseRow(course: Course, onClick: () -> Unit) {
 
 @Composable
 fun InformationCard(title: String, body: String, modifier: Modifier = Modifier) {
+    val palette = LocalTumPalette.current
     Card(modifier = modifier.fillMaxWidth(), insideMargin = androidx.compose.foundation.layout.PaddingValues(20.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(title, style = MiuixTheme.textStyles.title3)
-            Text(body, color = TumColors.onSurfaceVariant)
+            Text(body, color = palette.onSurfaceVariant)
         }
     }
 }
 
 @Composable
 fun StatusDot(state: AttendanceState) {
+    val palette = LocalTumPalette.current
     Box(
         Modifier
             .size(12.dp)
-            .background(attendanceColor(state), RoundedCornerShape(6.dp)),
+            .background(attendanceColor(state, palette), RoundedCornerShape(6.dp)),
     )
 }
 
-fun attendanceColor(state: AttendanceState): Color = when (state) {
-    AttendanceState.MUST_ATTEND -> TumColors.green
-    AttendanceState.CHOOSE_TO_ATTEND -> TumColors.blue
-    AttendanceState.STOP_ATTENDING -> TumColors.gray
+fun attendanceColor(state: AttendanceState, palette: TumPalette): Color = when (state) {
+    AttendanceState.MUST_ATTEND -> palette.green
+    AttendanceState.CHOOSE_TO_ATTEND -> palette.blue
+    AttendanceState.STOP_ATTENDING -> palette.gray
 }
