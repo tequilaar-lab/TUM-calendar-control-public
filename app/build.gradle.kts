@@ -20,8 +20,8 @@ android {
         minSdk = 26
         targetSdk = 37
         // 每次可验收发布均递增构建号；完整记录见仓库根目录 VERSIONING.md。
-        versionCode = 6
-        versionName = "0.1.5"
+        versionCode = 7
+        versionName = "0.1.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -45,6 +45,12 @@ android {
         compose = true
         buildConfig = true
     }
+
+    packaging {
+        resources.excludes += "META-INF/groovy/**"
+        resources.excludes += "META-INF/groovy-release-info.properties"
+        resources.excludes += "META-INF/INDEX.LIST"
+    }
 }
 
 kotlin {
@@ -59,6 +65,8 @@ dependencies {
     // 仅提供 Rounded 图标向量；界面组件仍全部来自 Compose-Miuix。
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.3")
+    // 成熟的 RFC 5545 解析器；最低 API 26 与现有 Java 17 构建设置满足其 Android 前提。
+    implementation("org.mnode.ical4j:ical4j:3.1.0")
 
     testImplementation("junit:junit:4.13.2")
 }

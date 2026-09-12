@@ -1,0 +1,93 @@
+/*
+ * 职责：以纯合成 RFC 5545 文本验证 iCal4j 解析、重复展开、EXDATE、RECURRENCE-ID 与取消事件。
+ * 输入／输出：输入合成 ICS 和明确的 Fixplatz UID 清单；输出实例身份、状态与跳过原因断言。
+ * 外部副作用：无；不读取私有订阅、不访问网络或日历。
+ * 不负责：真实 TUM Fixplatz 识别、Android Provider 或 Google 写入验证。
+ */
+package com.tequila.tumcalendarcontrol.sync
+
+import java.time.Instant
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class IcalSourceParserTest {
+    private val parser = IcalSourceParser()
+    private val windowStart = Instant.parse("2026-09-01T00:00:00Z")
+    private val windowEnd = Instant.parse("2026-10-01T00:00:00Z")
+
+    @Test
+    fun `展开重复 排除例外并以原始实例键合并改期`() {
+        val result = parser.parse(
+            icsText = syntheticCalendar(),
+            windowStart = windowStart,
+            windowEnd = windowEnd,
+            confirmedFixplatzUids = setOf("fixed-course", "cancelled-course", "timezone-course"),
+        )
+
+        val fixedOccurrences = result.occurrences.filter { it.sourceUid == "fixed-course" }
+        assertEquals(3, fixedOccurrences.size)
+        assertFalse(fixedOccurrences.any { it.startsAt == Instant.parse("2026-09-14T08:00:00Z") })
+        assertTrue(fixedOccurrences.any { it.startsAt == Instant.parse("2026-09-22T10:00:00Z") })
+        assertTrue(fixedOccurrences.all { it.instanceKey.startsWith("2026-") })
+    }
+
+    @Test
+    fun `保留取消事件并跳过未确认 Fixplatz`() {
+        val result = parser.parse(
+            icsText = syntheticCalendar(),
+            windowStart = windowStart,
+            windowEnd = windowEnd,
+            confirmedFixplatzUids = setOf("fixed-course", "cancelled-course", "timezone-course"),
+        )
+
+        assertTrue(result.occurrences.single { it.sourceUid == "cancelled-course" }.isCancelled)
+        assertTrue(result.occurrences.any { it.sourceUid == "timezone-course" })
+        assertEquals(
+            listOf(IcalSkipReason.NOT_CONFIRMED_FIXPLATZ),
+            result.skipped.map(IcalSkippedEvent::reason),
+        )
+    }
+
+    private fun syntheticCalendar(): String = """
+        BEGIN:VCALENDAR
+        VERSION:2.0
+        PRODID:-//Synthetic//TUM Calendar Control//EN
+        BEGIN:VEVENT
+        UID:fixed-course
+        DTSTART:20260907T080000Z
+        DTEND:20260907T100000Z
+        RRULE:FREQ=WEEKLY;COUNT=4
+        EXDATE:20260914T080000Z
+        SUMMARY:合成重复课程
+        END:VEVENT
+        BEGIN:VEVENT
+        UID:fixed-course
+        RECURRENCE-ID:20260921T080000Z
+        DTSTART:20260922T100000Z
+        DTEND:20260922T120000Z
+        SUMMARY:合成改期课程
+        END:VEVENT
+        BEGIN:VEVENT
+        UID:cancelled-course
+        DTSTART:20260909T090000Z
+        DTEND:20260909T100000Z
+        STATUS:CANCELLED
+        SUMMARY:合成取消课程
+        END:VEVENT
+        BEGIN:VEVENT
+        UID:timezone-course
+        DTSTART;TZID=Europe/Berlin:20260910T100000
+        DTEND;TZID=Europe/Berlin:20260910T110000
+        SUMMARY:合成时区课程
+        END:VEVENT
+        BEGIN:VEVENT
+        UID:not-confirmed
+        DTSTART:20260911T090000Z
+        DTEND:20260911T100000Z
+        SUMMARY:未确认课程
+        END:VEVENT
+        END:VCALENDAR
+    """.trimIndent()
+}
