@@ -1,8 +1,8 @@
 /*
- * 职责：提供三项互斥的出席状态选择和同一行的取消／确认操作。
+ * 职责：提供三态出席选择与四种统一生效范围。
  * 输入／输出：输入当前选课与待确认状态；输出用户选择并在确认后交给上层状态机。
  * 外部副作用：无，不直接写入日历、数据库或网络。
- * 不负责：真实日期选择器；灰色状态的具体实例截点将在持久化规则阶段实现。
+ * 不负责：真实来源实例选择器；当前合成原型只保存用户选择，不写入日历。
  */
 package com.tequila.tumcalendarcontrol.ui
 
@@ -23,6 +23,7 @@ import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.RadioButton
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -33,9 +34,14 @@ fun AttendanceScreen(state: CalendarControlState) {
         AttendanceOption(AttendanceState.MUST_ATTEND, state)
         AttendanceOption(AttendanceState.CHOOSE_TO_ATTEND, state)
         AttendanceOption(AttendanceState.STOP_ATTENDING, state)
-        if (state.pendingAttendance == AttendanceState.STOP_ATTENDING) {
-            InformationCard("生效范围", "从下一个合成实例起生效；过去实例保持原状")
-        }
+        Text("生效范围", style = MiuixTheme.textStyles.title3)
+        AttendanceEditScope.entries.forEach { scope -> AttendanceScopeOption(scope, state) }
+        if (state.pendingAttendanceScope == AttendanceEditScope.SPECIFIED_AND_FUTURE) TextField(
+            value = state.pendingEffectiveDate,
+            onValueChange = { state.pendingEffectiveDate = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = "指定日期（YYYY-MM-DD；合成预览）",
+        )
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -50,6 +56,23 @@ fun AttendanceScreen(state: CalendarControlState) {
                 onClick = state::confirmAttendance,
                 modifier = Modifier.width(220.dp),
             ) { Text("确认") }
+        }
+    }
+}
+
+@Composable
+private fun AttendanceScopeOption(scope: AttendanceEditScope, state: CalendarControlState) {
+    val selected = scope == state.pendingAttendanceScope
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable { state.pendingAttendanceScope = scope },
+        insideMargin = androidx.compose.foundation.layout.PaddingValues(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RadioButton(selected = selected, onClick = { state.pendingAttendanceScope = scope })
+            Column(modifier = Modifier.padding(start = 8.dp)) {
+                Text(scope.label, style = MiuixTheme.textStyles.body1)
+                Text(scope.description, color = LocalTumPalette.current.onSurfaceVariant)
+            }
         }
     }
 }

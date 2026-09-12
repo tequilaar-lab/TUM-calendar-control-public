@@ -6,7 +6,10 @@
  */
 package com.tequila.tumcalendarcontrol.ui
 
+import android.Manifest
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -37,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfigurationStore
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerPreferences
+import com.tequila.tumcalendarcontrol.domain.SampleCourses
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,13 +66,18 @@ fun CalendarControlApp() {
     val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
     val privateSyncConfigurationStore = remember(context) { PrivateSyncConfigurationStore(context) }
     val ruleLedgerPreferences = remember(context) { RuleLedgerPreferences(context) }
+    val courseOverridePreferences = remember(context) { CourseOverridePreferences(context) }
     val state = remember {
         CalendarControlState(
+            initialCourses = courseOverridePreferences.applyTo(SampleCourses.all()),
             initialProfile = profilePreferences.load(),
             initialSyncDestinations = syncDestinationPreferences.load(),
             initialPrivateSyncConfiguration = privateSyncConfigurationStore.load(),
             initialRuleLedger = ruleLedgerPreferences.load(),
         )
+    }
+    val localCalendarPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        state.resolveLocalCalendarPermission(granted)
     }
     LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
     LaunchedEffect(state.syncDestinations) { syncDestinationPreferences.save(state.syncDestinations) }
@@ -76,6 +85,10 @@ fun CalendarControlApp() {
         privateSyncConfigurationStore.save(state.privateSyncConfiguration)
     }
     LaunchedEffect(state.ruleLedger) { ruleLedgerPreferences.save(state.ruleLedger) }
+    LaunchedEffect(state.courses) { courseOverridePreferences.save(state.courses) }
+    LaunchedEffect(state.localCalendarPermissionRequestPending) {
+        if (state.localCalendarPermissionRequestPending) localCalendarPermissionLauncher.launch(Manifest.permission.WRITE_CALENDAR)
+    }
     BackHandler(enabled = state.canHandleBack()) { state.handleBack() }
     TumCalendarTheme(mode = state.themeMode) {
         Box(Modifier.fillMaxSize()) {
@@ -278,6 +291,7 @@ private fun AppScreen.usesBottomNavigation(): Boolean = this in setOf(
 private fun AppScreen.usesBackArrow(): Boolean = this in setOf(
     AppScreen.DETAIL,
     AppScreen.ATTENDANCE,
+    AppScreen.COURSE_EDIT,
     AppScreen.PROFILE,
     AppScreen.SYNC_CONFIGURATION,
     AppScreen.SYNC_PREVIEW,
@@ -295,6 +309,7 @@ private fun AppScreen.title(): String = when (this) {
     AppScreen.OVERVIEW -> "TUM 日历控制"
     AppScreen.DETAIL -> "课程详情"
     AppScreen.ATTENDANCE -> "状态选择"
+    AppScreen.COURSE_EDIT -> "编辑课程"
     AppScreen.SEARCH -> "搜索课程"
     AppScreen.FAVORITES -> "收藏课程"
     AppScreen.MORE -> "更多操作"

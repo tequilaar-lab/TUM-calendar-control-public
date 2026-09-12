@@ -9,9 +9,9 @@ package com.tequila.tumcalendarcontrol.domain
 object SampleCourses {
     fun all(): List<Course> = listOf(
         Course("course-a", "课程 A", "周二 10:00–12:00", "示例校区", AttendanceState.MUST_ATTEND, false),
-        Course("course-b", "课程 B", "周三 14:00–16:00", "示例校区", AttendanceState.CHOOSE_TO_ATTEND, true),
-        Course("course-c", "课程 C", "周四 08:00–10:00", "示例校区", AttendanceState.STOP_ATTENDING, false),
-        Course("course-d", "课程 D", "周四 16:00–18:00", "示例校区", AttendanceState.CHOOSE_TO_ATTEND, false),
+        Course("course-b", "课程 B", "周三 14:00–16:00", "示例校区", AttendanceState.CHOOSE_TO_ATTEND, true, sourceStatus = TumEventStatus.PLANNED),
+        Course("course-c", "课程 C", "周四 08:00–10:00", "示例校区", AttendanceState.STOP_ATTENDING, false, sourceStatus = TumEventStatus.MOVED),
+        Course("course-d", "课程 D", "周四 16:00–18:00", "示例校区", AttendanceState.CHOOSE_TO_ATTEND, false, sourceStatus = TumEventStatus.CANCELLED),
         Course("course-e", "课程 E", "周五 10:00–12:00", "示例校区", AttendanceState.MUST_ATTEND, false),
     )
 }

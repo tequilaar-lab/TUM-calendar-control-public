@@ -33,6 +33,11 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Refresh
 import com.tequila.tumcalendarcontrol.domain.Course
+import com.tequila.tumcalendarcontrol.domain.CourseLocalOverride
+import com.tequila.tumcalendarcontrol.domain.TumEventStatus
+import com.tequila.tumcalendarcontrol.domain.displayLocation
+import com.tequila.tumcalendarcontrol.domain.displaySchedule
+import com.tequila.tumcalendarcontrol.domain.displayTitle
 import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfiguration
 import com.tequila.tumcalendarcontrol.sync.SyncChangeType
 import top.yukonga.miuix.kmp.basic.Button
@@ -50,6 +55,7 @@ fun AppScreenContent(state: CalendarControlState, screen: AppScreen) {
         AppScreen.OVERVIEW -> OverviewScreen(state)
         AppScreen.DETAIL -> DetailScreen(state)
         AppScreen.ATTENDANCE -> AttendanceScreen(state)
+        AppScreen.COURSE_EDIT -> CourseEditScreen(state)
         AppScreen.SEARCH -> SearchScreen(state)
         AppScreen.FAVORITES -> FavoritesScreen(state)
         AppScreen.MORE -> MoreScreen(state)
@@ -63,7 +69,7 @@ fun AppScreenContent(state: CalendarControlState, screen: AppScreen) {
 @Composable
 private fun OverviewScreen(state: CalendarControlState) {
     CourseList(
-        courses = state.courses.filter { it.hasFixedPlus },
+        courses = state.courses.filter { it.hasFixedPlus && it.sourceStatus in state.visibleSourceStatuses },
         heading = "已获 Fixplatz 的课程",
         onCourseClick = state::openCourse,
     )
@@ -74,7 +80,9 @@ private fun DetailScreen(state: CalendarControlState) {
     val palette = LocalTumPalette.current
     val course = state.selectedCourse
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        InformationCard("${course.title}（合成示例）", "${course.schedule} · ${course.location}")
+        InformationCard("${course.displayTitle}（合成示例）", "${course.displaySchedule} · ${course.displayLocation} · ${course.sourceStatus.label}")
+        InformationCard("本机字段覆盖", if (course.localOverride == CourseLocalOverride()) "尚未覆盖；当前显示来源字段" else "已覆盖；来源原始字段未被改写")
+        Button(onClick = state::openCourseEdit, modifier = Modifier.fillMaxWidth()) { Text("编辑名称、时间与地点") }
         InformationCard(
             "当前状态：${course.attendance.label}",
             "${course.attendance.colorLabel}色 · ${course.attendance.description}",
@@ -92,6 +100,22 @@ private fun DetailScreen(state: CalendarControlState) {
             Text(if (course.isFavorite) "取消收藏" else "收藏课程", modifier = Modifier.padding(start = 8.dp))
         }
         state.feedback?.let { Text(it, color = palette.onSurfaceVariant) }
+    }
+}
+
+/** 只编辑本机覆盖值；留空即恢复显示来源字段，不会回写 TUM。 */
+@Composable
+private fun CourseEditScreen(state: CalendarControlState) {
+    val course = state.selectedCourse
+    var title by remember(course.localOverride) { mutableStateOf(course.localOverride.title.orEmpty()) }
+    var schedule by remember(course.localOverride) { mutableStateOf(course.localOverride.schedule.orEmpty()) }
+    var location by remember(course.localOverride) { mutableStateOf(course.localOverride.location.orEmpty()) }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        InformationCard("编辑本机覆盖", "留空会显示来源字段；不会回写 TUMonline。")
+        TextField(title, { title = it }, Modifier.fillMaxWidth(), label = "名称（当前来源：${course.title}）")
+        TextField(schedule, { schedule = it }, Modifier.fillMaxWidth(), label = "时间（当前来源：${course.schedule}）")
+        TextField(location, { location = it }, Modifier.fillMaxWidth(), label = "地点（当前来源：${course.location}）")
+        Button(onClick = { state.updateSelectedCourseOverride(CourseLocalOverride(title.ifBlank { null }, schedule.ifBlank { null }, location.ifBlank { null })); state.handleBack() }, modifier = Modifier.fillMaxWidth()) { Text("仅保存本机覆盖") }
     }
 }
 
@@ -149,6 +173,7 @@ private fun SettingsScreen(state: CalendarControlState) {
             }
         }
         item { InformationCard("规则与范围", "只处理已获 Fixplatz 的日程；绿／蓝／灰规则由本应用统一决定") }
+        item { SourceStatusSelector(state) }
         item { Button(onClick = state::openSyncPreview, modifier = Modifier.fillMaxWidth()) { Text("查看离线同步预览") } }
         item { SyncDestinationSelector(state) }
         item { InformationCard("写入边界", "仅管理本应用创建的目标日历；不改动用户、订阅或其他应用的日程") }
@@ -163,6 +188,18 @@ private fun SettingsScreen(state: CalendarControlState) {
         }
         state.feedback?.let { feedback ->
             item { Text(feedback, color = palette.onSurfaceVariant) }
+        }
+    }
+}
+
+@Composable
+private fun SourceStatusSelector(state: CalendarControlState) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("来源状态筛选", style = MiuixTheme.textStyles.title3)
+        Text("只控制显示，不会让未确认 Fixplatz 进入输出。", color = LocalTumPalette.current.onSurfaceVariant)
+        TumEventStatus.entries.forEach { status ->
+            Switch(checked = status in state.visibleSourceStatuses, onCheckedChange = { state.toggleSourceStatusVisible(status) })
+            Text(status.label, modifier = Modifier.padding(start = 8.dp))
         }
     }
 }
@@ -254,12 +291,15 @@ private fun SyncDestinationSelector(state: CalendarControlState) {
                     }
                     Switch(
                         checked = enabled,
-                        onCheckedChange = { state.setSyncDestinationEnabled(destination, it) },
+                        onCheckedChange = { requested ->
+                            if (destination == SyncDestination.LOCAL_CALENDAR && requested) state.requestLocalCalendarOutput()
+                            else state.setSyncDestinationEnabled(destination, requested)
+                        },
                     )
                 }
             }
         }
-        InformationCard("当前阶段", "开关只保存在本机；尚未连接账户、申请权限或发送任何日程数据")
+        InformationCard("权限与写入", "本机开关开启时会请求系统日历权限；同意后仍须在未来预览确认，当前不会写入日历")
     }
 }
 

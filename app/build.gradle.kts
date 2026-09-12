@@ -20,8 +20,8 @@ android {
         minSdk = 26
         targetSdk = 37
         // 每次可验收发布均递增构建号；完整记录见仓库根目录 VERSIONING.md。
-        versionCode = 8
-        versionName = "0.1.7"
+        versionCode = 9
+        versionName = "0.1.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

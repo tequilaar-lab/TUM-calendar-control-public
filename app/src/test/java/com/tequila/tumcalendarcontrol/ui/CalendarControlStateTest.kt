@@ -7,6 +7,8 @@
 package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
+import com.tequila.tumcalendarcontrol.domain.CourseLocalOverride
+import com.tequila.tumcalendarcontrol.domain.TumEventStatus
 import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfiguration
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -145,5 +147,52 @@ class CalendarControlStateTest {
         assertEquals(AppScreen.SETTINGS, state.screen)
         assertFalse(state.syncDestinations.localCalendarEnabled)
         assertFalse(state.syncDestinations.googleCalendarEnabled)
+    }
+
+    @Test
+    fun `本机课程覆盖不改写来源字段 且来源筛选不改变Fixplatz资格`() {
+        val state = CalendarControlState()
+        state.openCourse("course-b")
+
+        state.updateSelectedCourseOverride(CourseLocalOverride(title = "本机名称"))
+        state.toggleSourceStatusVisible(TumEventStatus.PLANNED)
+
+        assertEquals("课程 B", state.selectedCourse.title)
+        assertEquals("本机名称", state.selectedCourse.localOverride.title)
+        assertFalse(state.searchedCourses.any { it.id == "course-b" })
+        assertTrue(state.selectedCourse.hasFixedPlus)
+    }
+
+    @Test
+    fun `本机日历权限拒绝保持关闭 同意只允许未来输出`() {
+        val state = CalendarControlState()
+
+        state.requestLocalCalendarOutput()
+        assertTrue(state.localCalendarPermissionRequestPending)
+        state.resolveLocalCalendarPermission(false)
+        assertFalse(state.syncDestinations.localCalendarEnabled)
+
+        state.requestLocalCalendarOutput()
+        state.resolveLocalCalendarPermission(true)
+        assertTrue(state.syncDestinations.localCalendarEnabled)
+        assertTrue(state.feedback!!.contains("不会创建或写入"))
+    }
+
+    @Test
+    fun `四种范围都可写入规则资料库 且指定日期格式无效不会确认`() {
+        val state = CalendarControlState()
+        AttendanceEditScope.entries.forEach { scope ->
+            state.openCourse("course-a")
+            state.openAttendance()
+            state.pendingAttendanceScope = scope
+            state.pendingEffectiveDate = if (scope == AttendanceEditScope.SPECIFIED_AND_FUTURE) "2026-10-10" else ""
+            state.confirmAttendance()
+            assertTrue(state.ruleLedger.rules.any { it.sourceUid == "course-a" })
+        }
+        state.openAttendance()
+        state.pendingAttendanceScope = AttendanceEditScope.SPECIFIED_AND_FUTURE
+        state.pendingEffectiveDate = "无效日期"
+        state.confirmAttendance()
+        assertEquals(AppScreen.ATTENDANCE, state.screen)
     }
 }
