@@ -1,0 +1,22 @@
+<!--
+  职责：声明离线原型的 Android 应用入口。
+  输入／输出：系统读取 Activity 与主题声明；不申请任何权限。
+  外部副作用：无网络、账户或日历 Provider 访问。
+  不负责：同步、iCal 输入或真实日历写入。
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application
+        android:allowBackup="false"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.TumCalendarControl">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

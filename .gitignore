@@ -19,3 +19,7 @@ private-config.properties
 
 # 仅本机保存的计划、验收与审计记录；禁止提交或推送
 .local-audit/
+.gradle/
+build/
+local.properties
+*.iml
