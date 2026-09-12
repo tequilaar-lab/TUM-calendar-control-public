@@ -125,19 +125,23 @@ fun MoreScreen(state: CalendarControlState) {
 @Composable
 private fun SettingsScreen(state: CalendarControlState) {
     val palette = LocalTumPalette.current
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        InformationCard("同步账户", "Google 日历 · 未连接")
-        InformationCard("日历来源", "TUM 私有 iCal 订阅地址 · 尚未配置")
-        InformationCard("同步方向", "读取 TUM → 写入 Google 日历受控日程")
-        InformationCard("写入范围", "仅管理本应用创建的日程；不改动其他日历")
-        InformationCard("应用版本", "${BuildConfig.VERSION_NAME} · 构建号 ${BuildConfig.VERSION_CODE}")
-        ThemeModeSelector(state)
-        Spacer(Modifier.height(4.dp))
-        Button(onClick = state::requestSync, modifier = Modifier.fillMaxWidth()) {
-            Icon(Icons.Rounded.Refresh, "刷新同步")
-            Text("刷新同步", modifier = Modifier.padding(start = 8.dp))
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item { InformationCard("同步账户", "Google 日历 · 未连接") }
+        item { InformationCard("日历来源", "TUM 私有 iCal 订阅地址 · 尚未配置") }
+        item { InformationCard("同步方向", "读取 TUM → 写入 Google 日历受控日程") }
+        item { InformationCard("写入范围", "仅管理本应用创建的日程；不改动其他日历") }
+        item { InformationCard("应用版本", "${BuildConfig.VERSION_NAME} · 构建号 ${BuildConfig.VERSION_CODE}") }
+        item { ThemeModeSelector(state) }
+        item { Spacer(Modifier.height(4.dp)) }
+        item {
+            Button(onClick = state::requestSync, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Rounded.Refresh, "刷新同步")
+                Text("刷新同步", modifier = Modifier.padding(start = 8.dp))
+            }
         }
-        state.feedback?.let { Text(it, color = palette.onSurfaceVariant) }
+        state.feedback?.let { feedback ->
+            item { Text(feedback, color = palette.onSurfaceVariant) }
+        }
     }
 }
 

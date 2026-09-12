@@ -11,6 +11,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -28,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -55,7 +57,7 @@ import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.theme.LocalContentColor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-private val FixedTopBarHeight = 96.dp
+private val FixedTopBarHeight = 136.dp
 private val FloatingNavigationShape = RoundedCornerShape(30.dp)
 
 @Composable
@@ -113,7 +115,7 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                 .padding(
                     PaddingValues(
                         start = 16.dp,
-                        top = innerPadding.calculateTopPadding() + 8.dp,
+                        top = innerPadding.calculateTopPadding() + 16.dp,
                         end = 16.dp,
                         bottom = innerPadding.calculateBottomPadding() + 8.dp,
                     ),
@@ -138,7 +140,7 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
     }
 }
 
-/** 顶栏拥有固定总高度，空副标题保留空间，从而避免主页面横移时内容上下跳动。 */
+/** 顶栏预留状态栏安全区和固定内容高度，避免图标侵入通知栏或正文侵入副标题。 */
 @Composable
 private fun FixedAppTopBar(
     title: String,
@@ -146,7 +148,12 @@ private fun FixedAppTopBar(
     navigationIcon: @Composable () -> Unit,
     actions: @Composable RowScope.() -> Unit,
 ) {
-    Box(Modifier.fillMaxWidth().height(FixedTopBarHeight)) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(FixedTopBarHeight)
+            .statusBarsPadding(),
+    ) {
         TopAppBar(
             title = title,
             subtitle = subtitle,
@@ -160,7 +167,7 @@ private fun FixedAppTopBar(
 @Composable
 private fun AppBottomNavigation(state: CalendarControlState, selectedScreen: AppScreen) {
     val palette = LocalTumPalette.current
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
@@ -170,25 +177,46 @@ private fun AppBottomNavigation(state: CalendarControlState, selectedScreen: App
             .background(palette.surfaceContainer.copy(alpha = 0.88f))
             .border(1.dp, palette.outline.copy(alpha = 0.35f), FloatingNavigationShape)
             .padding(horizontal = 6.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        TactileNavigationItem(
-            Icons.Rounded.Home, "首页", selectedScreen == AppScreen.OVERVIEW,
-            onClick = { state.open(AppScreen.OVERVIEW) },
-        )
-        TactileNavigationItem(
-            Icons.Rounded.Search, "搜索", selectedScreen == AppScreen.SEARCH,
-            onClick = { state.open(AppScreen.SEARCH) },
-        )
-        TactileNavigationItem(
-            Icons.Rounded.Favorite, "收藏", selectedScreen == AppScreen.FAVORITES,
-            onClick = { state.open(AppScreen.FAVORITES) },
-        )
-        TactileNavigationItem(
-            Icons.Rounded.Settings, "设置", selectedScreen == AppScreen.SETTINGS,
-            onClick = { state.open(AppScreen.SETTINGS) },
-        )
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val itemWidth = maxWidth / 4
+            val selectedOffset = animateDpAsState(
+                targetValue = itemWidth * selectedScreen.bottomNavigationIndex(),
+                label = "底栏选中块滑动",
+            ).value
+            Box(
+                modifier = Modifier
+                    .offset(x = selectedOffset)
+                    .width(itemWidth)
+                    .height(60.dp)
+                    .padding(horizontal = 4.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(palette.primaryContainer.copy(alpha = 0.82f)),
+            )
+            Box(Modifier.fillMaxWidth()) {
+                // 四个等宽槽位与指示器使用同一 itemWidth，避免依赖冲突造成对齐漂移。
+                TactileNavigationItem(
+                    Icons.Rounded.Home, "首页", selectedScreen == AppScreen.OVERVIEW,
+                    onClick = { state.open(AppScreen.OVERVIEW) },
+                    modifier = Modifier.width(itemWidth).offset(x = itemWidth * 0),
+                )
+                TactileNavigationItem(
+                    Icons.Rounded.Search, "搜索", selectedScreen == AppScreen.SEARCH,
+                    onClick = { state.open(AppScreen.SEARCH) },
+                    modifier = Modifier.width(itemWidth).offset(x = itemWidth * 1),
+                )
+                TactileNavigationItem(
+                    Icons.Rounded.Favorite, "收藏", selectedScreen == AppScreen.FAVORITES,
+                    onClick = { state.open(AppScreen.FAVORITES) },
+                    modifier = Modifier.width(itemWidth).offset(x = itemWidth * 2),
+                )
+                TactileNavigationItem(
+                    Icons.Rounded.Settings, "设置", selectedScreen == AppScreen.SETTINGS,
+                    onClick = { state.open(AppScreen.SETTINGS) },
+                    modifier = Modifier.width(itemWidth).offset(x = itemWidth * 3),
+                )
+            }
+        }
     }
 }
 
@@ -221,7 +249,7 @@ private fun MoreOverlay(state: CalendarControlState) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
             ) {
                 MoreScreen(state)
             }
@@ -300,6 +328,14 @@ private fun AppScreen.usesBackArrow(): Boolean = this in setOf(
     AppScreen.DETAIL,
     AppScreen.ATTENDANCE,
 )
+
+private fun AppScreen.bottomNavigationIndex(): Int = when (this) {
+    AppScreen.OVERVIEW -> 0
+    AppScreen.SEARCH -> 1
+    AppScreen.FAVORITES -> 2
+    AppScreen.SETTINGS -> 3
+    else -> 0
+}
 
 private fun AppScreen.title(): String = when (this) {
     AppScreen.OVERVIEW -> "TUM 日历控制"

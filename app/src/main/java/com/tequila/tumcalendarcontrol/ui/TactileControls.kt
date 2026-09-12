@@ -14,6 +14,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -66,10 +68,12 @@ fun TactileNavigationItem(
     val palette = LocalTumPalette.current
     val contentColor = if (selected) palette.primary else palette.onSurfaceVariant
     TactileSurface(
-        modifier = modifier.size(width = 72.dp, height = 60.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(60.dp),
         onClick = onClick,
         shape = RoundedCornerShape(22.dp),
-        restingColor = if (selected) palette.primaryContainer.copy(alpha = 0.82f) else Color.Transparent,
+        restingColor = Color.Transparent,
         pressedColor = palette.primary.copy(alpha = 0.18f),
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) {
