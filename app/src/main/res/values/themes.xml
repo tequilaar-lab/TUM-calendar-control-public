@@ -1,8 +1,8 @@
-<!-- 职责：为 Compose 承载 Activity 定义无操作栏主题；不承载业务样式。 -->
-<resources xmlns:tools="http://schemas.android.com/tools">
+<!-- 职责：为 MIUIX Compose 承载 Activity 定义无操作栏系统主题；不承载业务样式。 -->
+<resources>
     <style name="Theme.TumCalendarControl" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/white</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:fontFamily">sans</item>
     </style>

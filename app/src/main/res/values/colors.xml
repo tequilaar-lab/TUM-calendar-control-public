@@ -1,0 +1,4 @@
+<!-- 职责：定义启动器图标的纯色背景；不承载业务状态颜色。 -->
+<resources>
+    <color name="launcher_background">#146C94</color>
+</resources>

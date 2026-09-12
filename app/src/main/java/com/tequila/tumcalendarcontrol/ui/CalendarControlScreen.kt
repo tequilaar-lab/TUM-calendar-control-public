@@ -1,5 +1,5 @@
 /*
- * 职责：以颜色和说明呈现离线规则解析后的合成课程实例。
+ * 职责：以 MIUIX 主题与组件呈现离线规则解析后的合成课程实例。
  * 输入／输出：输入 PreviewEvent 列表；输出为只读 Compose 界面。
  * 外部副作用：无，不保存编辑、不联网也不访问日历 Provider。
  * 不负责：规则计算、课程筛选或实际同步。
@@ -9,43 +9,59 @@ package com.tequila.tumcalendarcontrol.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import com.tequila.tumcalendarcontrol.domain.PreviewEvent
 import java.time.format.DateTimeFormatter
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.theme.ColorSchemeMode
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.ThemeController
 
 @Composable
 fun CalendarControlScreen(events: List<PreviewEvent>) {
-    MaterialTheme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier.padding(20.dp),
+    val themeController = remember { ThemeController(ColorSchemeMode.System) }
+    MiuixTheme(controller = themeController) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = "TUM日历",
+                    largeTitle = "TUM 日历控制",
+                    subtitle = "离线原型 · 仅合成数据",
+                )
+            },
+        ) { innerPadding ->
+            LazyColumn(
+                contentPadding = PaddingValues(
+                    start = 20.dp,
+                    top = innerPadding.calculateTopPadding() + 8.dp,
+                    end = 20.dp,
+                    bottom = innerPadding.calculateBottomPadding() + 24.dp,
+                ),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text("TUM 日历控制", style = MaterialTheme.typography.headlineMedium)
-                Text(
-                    "离线规则原型：仅合成数据，尚未连接 TUM、Google 或荣耀日历。",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text("确认 Fixplatz 后的实例预览", fontWeight = FontWeight.SemiBold)
-                events.forEach { event -> PreviewEventCard(event) }
+                item {
+                    Text("确认 Fixplatz 后的实例预览", style = MiuixTheme.textStyles.title3)
+                }
+                items(events, key = { it.dateTime }) { event -> PreviewEventCard(event) }
             }
         }
     }
@@ -53,9 +69,11 @@ fun CalendarControlScreen(events: List<PreviewEvent>) {
 
 @Composable
 private fun PreviewEventCard(event: PreviewEvent) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        insideMargin = PaddingValues(16.dp),
+    ) {
         Row(
-            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Spacer(
@@ -65,7 +83,7 @@ private fun PreviewEventCard(event: PreviewEvent) {
             )
             Spacer(modifier = Modifier.size(12.dp))
             Column {
-                Text(event.title, fontWeight = FontWeight.SemiBold)
+                Text(event.title, style = MiuixTheme.textStyles.title3)
                 Text(event.dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
                 Text(event.state.label, color = stateColor(event.state))
             }

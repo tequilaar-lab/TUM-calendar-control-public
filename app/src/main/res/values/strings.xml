@@ -1,4 +1,4 @@
 <!-- 职责：保存应用可见文本；不含真实课程或账号信息。 -->
 <resources>
-    <string name="app_name">TUM 日历控制</string>
+    <string name="app_name">TUM日历</string>
 </resources>
