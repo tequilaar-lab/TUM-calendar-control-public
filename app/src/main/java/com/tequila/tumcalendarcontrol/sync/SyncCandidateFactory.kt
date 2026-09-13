@@ -17,12 +17,14 @@ class SyncCandidateFactory(private val zoneId: ZoneId = ZoneId.of("Europe/Berlin
     fun build(
         occurrences: List<SourceCalendarOccurrence>,
         selectedSourceCourseUids: Set<String>,
+        sourceOutputWindow: SourceOutputDateWindow = SourceOutputDateWindow(),
         rules: List<SyncRule>,
         manualEvents: List<ManualScheduleItem>,
     ): List<DesiredCalendarEvent> {
         val rulesByUid = rules.associateBy(SyncRule::sourceUid)
         val sourceEvents = occurrences.asSequence()
             .filter { it.sourceUid in selectedSourceCourseUids }
+            .filter { sourceOutputWindow.includes(it.startsAt, it.endsAt, zoneId) }
             .mapNotNull { occurrence ->
             val rule = rulesByUid[occurrence.sourceUid]
                 ?: SyncRule(occurrence.sourceUid, hasConfirmedFixplatz = true, defaultState = AttendanceState.CHOOSE_TO_ATTEND)

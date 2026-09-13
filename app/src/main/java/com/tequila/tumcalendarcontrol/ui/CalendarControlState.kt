@@ -389,6 +389,8 @@ class CalendarControlState(
         managedDesiredEvents = SyncCandidateFactory().build(
             occurrences = sourceOccurrences,
             selectedSourceCourseUids = selectedSourceCourseUids,
+            sourceOutputWindow = privateSyncConfiguration.sourceOutputWindow
+                ?: run { feedback = "来源输出日期范围无效；未生成同步预览。"; return },
             rules = ruleLedger.rules,
             manualEvents = ruleLedger.manualEvents,
         )

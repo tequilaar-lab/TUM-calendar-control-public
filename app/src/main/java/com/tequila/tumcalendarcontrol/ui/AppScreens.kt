@@ -345,6 +345,8 @@ private fun SyncConfigurationScreen(state: CalendarControlState) {
     var editingGoogleAdvanced by remember { mutableStateOf(false) }
     var googleClientId by remember(current.googleOAuthClientId) { mutableStateOf(current.googleOAuthClientId) }
     var calendarName by remember(current.googleCalendarName) { mutableStateOf(current.googleCalendarName) }
+    var sourceRangeStart by remember(current.sourceRangeStartDate) { mutableStateOf(current.sourceRangeStartDate) }
+    var sourceRangeEnd by remember(current.sourceRangeEndDate) { mutableStateOf(current.sourceRangeEndDate) }
     var validationMessage by remember { mutableStateOf<String?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         InformationCard(
@@ -355,6 +357,9 @@ private fun SyncConfigurationScreen(state: CalendarControlState) {
             value = replacementSubscriptionUrl,
             onValueChange = { replacementSubscriptionUrl = it },
         ) else Button(onClick = { replacingSubscription = true }, modifier = Modifier.fillMaxWidth()) { Text("替换私有 iCal 地址") }
+        InformationCard("iCal 来源输出范围", "可选；开始或结束留空即不设该边界。仅影响来源实例进入候选，不修改订阅链接或手动事项。")
+        TextField(value = sourceRangeStart, onValueChange = { sourceRangeStart = it }, modifier = Modifier.fillMaxWidth(), label = "开始日期（可留空，YYYY-MM-DD）")
+        TextField(value = sourceRangeEnd, onValueChange = { sourceRangeEnd = it }, modifier = Modifier.fillMaxWidth(), label = "结束日期（可留空，YYYY-MM-DD）")
         InformationCard("Google 日历", "Google 授权不是账户或密码。正式同步时会由系统选择账户，并仅请求本应用创建日历的最小权限；令牌不会保存。")
         if (editingGoogleAdvanced) TextField(
             value = googleClientId,
@@ -371,8 +376,10 @@ private fun SyncConfigurationScreen(state: CalendarControlState) {
         validationMessage?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
         Button(
             onClick = {
-                val updated = PrivateSyncConfiguration(
+                val updated = current.copy(
                     tumSubscriptionUrl = replacementSubscriptionUrl.trim().ifBlank { current.tumSubscriptionUrl },
+                    sourceRangeStartDate = sourceRangeStart,
+                    sourceRangeEndDate = sourceRangeEnd,
                     googleOAuthClientId = googleClientId,
                     googleCalendarName = calendarName,
                 )

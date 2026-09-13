@@ -10,6 +10,8 @@ import java.net.URI
 
 data class PrivateSyncConfiguration(
     val tumSubscriptionUrl: String = "",
+    val sourceRangeStartDate: String = "",
+    val sourceRangeEndDate: String = "",
     val googleOAuthClientId: String = "",
     val googleCalendarName: String = DEFAULT_GOOGLE_CALENDAR_NAME,
     /** 仅保存本应用创建的目标标识；不会保存账户名、令牌或日历正文。 */
@@ -18,6 +20,8 @@ data class PrivateSyncConfiguration(
 ) {
     val hasTumSubscription: Boolean get() = tumSubscriptionUrl.isNotBlank()
     val hasGoogleClient: Boolean get() = googleOAuthClientId.isNotBlank()
+    val sourceOutputWindow: SourceOutputDateWindow?
+        get() = SourceOutputDateWindow.parseOrNull(sourceRangeStartDate, sourceRangeEndDate)
 
     /** 配置页不展示地址的任何组成部分，避免主机名也成为可观察的私有信息。 */
     fun maskedTumSubscription(): String = if (hasTumSubscription) "•••••••• · 已加密保存在本机" else "尚未配置"
@@ -32,6 +36,7 @@ data class PrivateSyncConfiguration(
         if (hasGoogleClient && !googleOAuthClientId.trim().endsWith(".apps.googleusercontent.com")) {
             add(ConfigurationProblem.INVALID_GOOGLE_CLIENT_ID)
         }
+        if (sourceOutputWindow == null) add(ConfigurationProblem.INVALID_SOURCE_OUTPUT_RANGE)
         if (googleCalendarName.trim().isBlank()) add(ConfigurationProblem.BLANK_GOOGLE_CALENDAR_NAME)
     }
 
@@ -43,5 +48,6 @@ data class PrivateSyncConfiguration(
 enum class ConfigurationProblem(val message: String) {
     INVALID_TUM_SUBSCRIPTION("订阅地址必须是带主机名的 HTTPS 地址"),
     INVALID_GOOGLE_CLIENT_ID("Google OAuth 客户端标识应以 .apps.googleusercontent.com 结尾"),
+    INVALID_SOURCE_OUTPUT_RANGE("来源输出范围须为有效 YYYY-MM-DD，且开始日期不能晚于结束日期"),
     BLANK_GOOGLE_CALENDAR_NAME("Google 专用目标日历名称不能为空"),
 }

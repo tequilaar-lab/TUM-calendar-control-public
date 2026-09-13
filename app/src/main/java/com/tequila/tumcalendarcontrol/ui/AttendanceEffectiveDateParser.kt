@@ -6,23 +6,8 @@
  */
 package com.tequila.tumcalendarcontrol.ui
 
+import com.tequila.tumcalendarcontrol.sync.SourceDateTextParser
 import java.time.LocalDate
 
 /** 只兼容常见输入法的数字与横线差异；格式和实际日期仍由 LocalDate 严格验证。 */
-object AttendanceEffectiveDateParser {
-    fun parseOrNull(value: String): LocalDate? = runCatching {
-        LocalDate.parse(value.trim().normalizeCommonDateCharacters())
-    }.getOrNull()
-
-    private fun String.normalizeCommonDateCharacters(): String = buildString(length) {
-        this@normalizeCommonDateCharacters.forEach { character ->
-            append(
-                when (character) {
-                    '－', '–', '—', '−' -> '-'
-                    in '０'..'９' -> ('0'.code + character.code - '０'.code).toChar()
-                    else -> character
-                },
-            )
-        }
-    }
-}
+object AttendanceEffectiveDateParser { fun parseOrNull(value: String): LocalDate? = SourceDateTextParser.parseOrNull(value) }

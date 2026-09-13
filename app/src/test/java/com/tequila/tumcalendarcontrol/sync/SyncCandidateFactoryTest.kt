@@ -75,6 +75,22 @@ class SyncCandidateFactoryTest {
         assertEquals("manual:manual-1", events.single().identity.sourceUid)
     }
 
+    @Test
+    fun `来源日期窗口只过滤来源实例而不影响手动事项`() {
+        val events = factory.build(
+            occurrences = listOf(
+                occurrence("uid-a", "inside", "来源", "2026-10-20T08:00:00Z"),
+                occurrence("uid-a", "outside", "来源", "2026-11-20T08:00:00Z"),
+            ),
+            selectedSourceCourseUids = setOf("uid-a"),
+            sourceOutputWindow = SourceOutputDateWindow(java.time.LocalDate.parse("2026-10-01"), java.time.LocalDate.parse("2026-10-31")),
+            rules = emptyList(),
+            manualEvents = listOf(ManualScheduleItem("manual-1", "手动测试", Instant.parse("2026-11-22T08:00:00Z"), Instant.parse("2026-11-22T09:00:00Z"), AttendanceState.MUST_ATTEND)),
+        )
+
+        assertEquals(setOf("inside", "manual-1"), events.map { it.identity.instanceKey }.toSet())
+    }
+
     private fun occurrence(uid: String, key: String, title: String, start: String = "2026-10-01T08:00:00Z", cancelled: Boolean = false) = SourceCalendarOccurrence(
         sourceUid = uid,
         instanceKey = key,
