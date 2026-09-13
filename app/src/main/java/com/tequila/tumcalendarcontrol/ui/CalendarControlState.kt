@@ -319,10 +319,9 @@ class CalendarControlState(
         val command = when (pendingSourceAttendanceScope) {
             AttendanceEditScope.ALL_OCCURRENCES -> RuleEditCommand.WholeCourse(sourceUids, pendingSourceAttendance)
             AttendanceEditScope.CURRENT_AND_FUTURE -> RuleEditCommand.FromDate(sourceUids, LocalDate.now(), pendingSourceAttendance)
-            AttendanceEditScope.SPECIFIED_AND_FUTURE -> runCatching { LocalDate.parse(pendingSourceEffectiveDate) }.fold(
-                onSuccess = { RuleEditCommand.FromDate(sourceUids, it, pendingSourceAttendance) },
-                onFailure = { feedback = "请输入 YYYY-MM-DD 格式的指定日期。"; return },
-            )
+            AttendanceEditScope.SPECIFIED_AND_FUTURE -> AttendanceEffectiveDateParser.parseOrNull(pendingSourceEffectiveDate)
+                ?.let { RuleEditCommand.FromDate(sourceUids, it, pendingSourceAttendance) }
+                ?: run { feedback = "请输入 YYYY-MM-DD 格式的指定日期。"; return }
             AttendanceEditScope.ONLY_THIS_OCCURRENCE -> RuleEditCommand.InstancesBySource(
                 sourceUids = sourceUids,
                 instanceKeysBySourceUid = selected.associate { it.sourceUid to setOf(it.representativeInstanceKey) },
@@ -361,10 +360,9 @@ class CalendarControlState(
         AttendanceEditScope.ALL_OCCURRENCES -> RuleEditCommand.WholeCourse(setOf(selectedCourseId), pendingAttendance)
         AttendanceEditScope.ONLY_THIS_OCCURRENCE -> RuleEditCommand.Instances(setOf(selectedCourseId), setOf("$selectedCourseId:current-synthetic"), pendingAttendance)
         AttendanceEditScope.CURRENT_AND_FUTURE -> RuleEditCommand.FromDate(setOf(selectedCourseId), LocalDate.now(), pendingAttendance)
-        AttendanceEditScope.SPECIFIED_AND_FUTURE -> runCatching { LocalDate.parse(pendingEffectiveDate) }.fold(
-            onSuccess = { RuleEditCommand.FromDate(setOf(selectedCourseId), it, pendingAttendance) },
-            onFailure = { feedback = "请输入 YYYY-MM-DD 格式的指定日期。"; null },
-        )
+        AttendanceEditScope.SPECIFIED_AND_FUTURE -> AttendanceEffectiveDateParser.parseOrNull(pendingEffectiveDate)
+            ?.let { RuleEditCommand.FromDate(setOf(selectedCourseId), it, pendingAttendance) }
+            ?: run { feedback = "请输入 YYYY-MM-DD 格式的指定日期。"; null }
     }
 
     fun toggleFavorite(courseId: String) {
