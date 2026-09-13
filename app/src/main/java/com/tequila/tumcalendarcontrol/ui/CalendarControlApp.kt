@@ -8,6 +8,7 @@ package com.tequila.tumcalendarcontrol.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import java.util.concurrent.atomic.AtomicBoolean
@@ -51,6 +52,9 @@ import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfigurationStore
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerPreferences
 import com.tequila.tumcalendarcontrol.sync.ReadOnlyIcalImportService
 import com.tequila.tumcalendarcontrol.sync.PlatformManagedSyncRunner
+import com.tequila.tumcalendarcontrol.sync.PeriodicSourceCheckScheduler
+import com.tequila.tumcalendarcontrol.sync.RuleLedgerBackupCodec
+import com.tequila.tumcalendarcontrol.sync.SourceCheckSettingsStore
 import com.tequila.tumcalendarcontrol.domain.SampleCourses
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,6 +74,7 @@ import top.yukonga.miuix.kmp.basic.TopAppBar
 private val FixedTopBarHeight = 136.dp
 private val FloatingNavigationShape = RoundedCornerShape(30.dp)
 private const val SourceReadDeadlineMillis = 35_000L
+private const val MAX_RULE_BACKUP_CHARS = 1_000_000
 
 @Composable
 fun CalendarControlApp() {
@@ -78,6 +83,8 @@ fun CalendarControlApp() {
     val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
     val privateSyncConfigurationStore = remember(context) { PrivateSyncConfigurationStore(context) }
     val ruleLedgerPreferences = remember(context) { RuleLedgerPreferences(context) }
+    val sourceCheckSettingsStore = remember(context) { SourceCheckSettingsStore(context) }
+    val periodicSourceCheckScheduler = remember(context) { PeriodicSourceCheckScheduler(context) }
     val courseOverridePreferences = remember(context) { CourseOverridePreferences(context) }
     val readOnlyIcalImportService = remember { ReadOnlyIcalImportService() }
     val googleAuthorizationCoordinator = remember(context) { GoogleAuthorizationCoordinator(context) }
@@ -89,6 +96,8 @@ fun CalendarControlApp() {
             initialSyncDestinations = syncDestinationPreferences.load(),
             initialPrivateSyncConfiguration = privateSyncConfigurationStore.load(),
             initialRuleLedger = ruleLedgerPreferences.load(),
+            initialSourceCheckSettings = sourceCheckSettingsStore.loadSettings(),
+            initialSourceCheckStatus = sourceCheckSettingsStore.loadStatus(),
         )
     }
     var privateConfigurationInitialized by remember { mutableStateOf(false) }
@@ -96,6 +105,29 @@ fun CalendarControlApp() {
         state.resolveLocalCalendarPermission(
             grants[Manifest.permission.READ_CALENDAR] == true && grants[Manifest.permission.WRITE_CALENDAR] == true,
         )
+    }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        state.resolveNotificationPermission(granted)
+    }
+    val ruleBackupExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        val saved = uri?.let {
+            runCatching {
+                context.contentResolver.openOutputStream(it)?.bufferedWriter()?.use { writer ->
+                    writer.write(RuleLedgerBackupCodec.encode(state.ruleLedger))
+                } ?: error("无法打开备份文件")
+            }.isSuccess
+        } == true
+        state.resolveRuleBackupExport(saved)
+    }
+    val ruleBackupImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val backupText = uri?.let {
+            runCatching {
+                context.contentResolver.openInputStream(it)?.bufferedReader()?.use { reader ->
+                    reader.readText().also { text -> require(text.length <= MAX_RULE_BACKUP_CHARS) }
+                } ?: error("无法打开备份文件")
+            }.getOrNull()
+        }
+        state.resolveRuleBackupImport(backupText)
     }
     val googleAuthorizationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
         googleAuthorizationCoordinator.resolveResult(result.data, state::resolveGoogleAuthorization)
@@ -107,6 +139,7 @@ fun CalendarControlApp() {
         else privateConfigurationInitialized = true
     }
     LaunchedEffect(state.ruleLedger) { ruleLedgerPreferences.save(state.ruleLedger) }
+    LaunchedEffect(state.sourceCheckSettings) { sourceCheckSettingsStore.saveSettings(state.sourceCheckSettings) }
     LaunchedEffect(state.courses) { courseOverridePreferences.save(state.courses) }
     LaunchedEffect(Unit) {
         state.refreshLocalCalendarPermission(
@@ -118,6 +151,26 @@ fun CalendarControlApp() {
         if (state.localCalendarPermissionRequestPending) localCalendarPermissionLauncher.launch(
             arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR),
         )
+    }
+    LaunchedEffect(state.notificationPermissionRequestPending) {
+        if (!state.notificationPermissionRequestPending) return@LaunchedEffect
+        if (Build.VERSION.SDK_INT >= 33) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        else state.resolveNotificationPermission(true)
+    }
+    LaunchedEffect(state.sourceCheckSchedulingRequested) {
+        if (!state.sourceCheckSchedulingRequested) return@LaunchedEffect
+        periodicSourceCheckScheduler.apply(state.sourceCheckSettings)
+        state.consumeSourceCheckSchedulingRequest()
+    }
+    LaunchedEffect(state.ruleBackupExportRequested) {
+        if (!state.ruleBackupExportRequested) return@LaunchedEffect
+        state.consumeRuleBackupExportRequest()
+        ruleBackupExportLauncher.launch("tum-calendar-rules-backup.tumrules")
+    }
+    LaunchedEffect(state.ruleBackupImportRequested) {
+        if (!state.ruleBackupImportRequested) return@LaunchedEffect
+        state.consumeRuleBackupImportRequest()
+        ruleBackupImportLauncher.launch(arrayOf("text/plain", "application/octet-stream"))
     }
     LaunchedEffect(state.sourceReadRequested) {
         if (!state.sourceReadRequested) return@LaunchedEffect
@@ -385,6 +438,8 @@ private fun AppScreen.usesBackArrow(): Boolean = this in setOf(
     AppScreen.SOURCE_ATTENDANCE,
     AppScreen.MANUAL_EVENTS,
     AppScreen.MANAGED_SYNC_PREVIEW,
+    AppScreen.BACKGROUND_CHECK,
+    AppScreen.RULE_BACKUP,
 )
 
 private fun AppScreen.bottomNavigationIndex(): Int = when (this) {
@@ -412,6 +467,8 @@ private fun AppScreen.title(): String = when (this) {
     AppScreen.SOURCE_ATTENDANCE -> "设置来源课程状态"
     AppScreen.MANUAL_EVENTS -> "手动校园事项"
     AppScreen.MANAGED_SYNC_PREVIEW -> "受控同步预览"
+    AppScreen.BACKGROUND_CHECK -> "后台 iCal 检查"
+    AppScreen.RULE_BACKUP -> "规则备份与恢复"
 }
 
 private fun AppScreen.subtitle(): String? = when (this) {
@@ -424,5 +481,7 @@ private fun AppScreen.subtitle(): String? = when (this) {
     AppScreen.SOURCE_ATTENDANCE -> "只保存本机规则 · 不写入日历"
     AppScreen.MANUAL_EVENTS -> "先保存本机 · 下次同步预览可见"
     AppScreen.MANAGED_SYNC_PREVIEW -> "先预览，后确认执行"
+    AppScreen.BACKGROUND_CHECK -> "只读检查 · 不自动写入日历"
+    AppScreen.RULE_BACKUP -> "仅规则与手动事项 · 导入需确认"
     else -> null
 }

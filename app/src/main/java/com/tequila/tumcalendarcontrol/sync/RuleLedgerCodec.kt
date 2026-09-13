@@ -31,7 +31,10 @@ object RuleLedgerCodec {
         ledger.lastSummary?.let { summary -> add(listOf("s", summary.completedAt, summary.createdCount, summary.updatedCount, summary.removedCount, summary.skippedCount, pack(summary.failureSummary.orEmpty())).joinToString("|")) }
     }.joinToString("\n")
 
-    fun decode(text: String?): RuleLedger = runCatching {
+    fun decode(text: String?): RuleLedger = decodeOrNull(text) ?: RuleLedger()
+
+    /** 供备份导入区分“合法空资料库”和“无法解析文件”；偏好恢复仍使用安全空默认值。 */
+    fun decodeOrNull(text: String?): RuleLedger? = runCatching {
         val lines = text?.lineSequence()?.filter(String::isNotBlank)?.toList().orEmpty()
         require(lines.firstOrNull() == VERSION)
         val rules = linkedMapOf<String, SyncRule>()
@@ -51,7 +54,7 @@ object RuleLedgerCodec {
             }
         }
         RuleLedger(rules.values.toList(), manualEvents, mappings, summary)
-    }.getOrElse { RuleLedger() }
+    }.getOrNull()
 
     private fun pack(value: String): String = Base64.getUrlEncoder().withoutPadding().encodeToString(value.toByteArray(StandardCharsets.UTF_8))
     private fun unpack(value: String): String = String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8)

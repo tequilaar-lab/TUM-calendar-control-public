@@ -36,6 +36,11 @@ import com.tequila.tumcalendarcontrol.sync.OutputTarget
 import com.tequila.tumcalendarcontrol.sync.DesiredCalendarEvent
 import com.tequila.tumcalendarcontrol.sync.SyncRunSummary
 import com.tequila.tumcalendarcontrol.sync.StoredEventMapping
+import com.tequila.tumcalendarcontrol.sync.RuleLedgerBackup
+import com.tequila.tumcalendarcontrol.sync.RuleLedgerBackupCodec
+import com.tequila.tumcalendarcontrol.sync.SourceCheckSettings
+import com.tequila.tumcalendarcontrol.sync.SourceCheckStatus
+import com.tequila.tumcalendarcontrol.sync.SourceCheckCadence
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -43,7 +48,7 @@ import java.util.UUID
 import java.time.LocalDate
 
 enum class AppScreen {
-    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_RANGE, SOURCE_PREVIEW, SOURCE_ATTENDANCE, MANUAL_EVENTS, MANAGED_SYNC_PREVIEW,
+    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_RANGE, SOURCE_PREVIEW, SOURCE_ATTENDANCE, MANUAL_EVENTS, MANAGED_SYNC_PREVIEW, BACKGROUND_CHECK, RULE_BACKUP,
 }
 
 enum class ThemeMode(val label: String) {
@@ -62,6 +67,8 @@ class CalendarControlState(
     initialSyncDestinations: SyncDestinations = SyncDestinations(),
     initialPrivateSyncConfiguration: PrivateSyncConfiguration = PrivateSyncConfiguration(),
     initialRuleLedger: RuleLedger = RuleLedger(),
+    initialSourceCheckSettings: SourceCheckSettings = SourceCheckSettings(),
+    initialSourceCheckStatus: SourceCheckStatus = SourceCheckStatus(),
 ) {
     var courses by mutableStateOf(initialCourses)
         private set
@@ -85,6 +92,20 @@ class CalendarControlState(
     var privateSyncConfiguration by mutableStateOf(initialPrivateSyncConfiguration)
         private set
     var ruleLedger by mutableStateOf(initialRuleLedger)
+        private set
+    var sourceCheckSettings by mutableStateOf(initialSourceCheckSettings)
+        private set
+    var sourceCheckStatus by mutableStateOf(initialSourceCheckStatus)
+        private set
+    var sourceCheckSchedulingRequested by mutableStateOf(false)
+        private set
+    var notificationPermissionRequestPending by mutableStateOf(false)
+        private set
+    var ruleBackupExportRequested by mutableStateOf(false)
+        private set
+    var ruleBackupImportRequested by mutableStateOf(false)
+        private set
+    var pendingRuleBackup by mutableStateOf<RuleLedgerBackup?>(null)
         private set
     val offlinePreview: SyncPreview = OfflinePreviewSamples.preview()
     var sourceReadRequested by mutableStateOf(false)
@@ -112,6 +133,8 @@ class CalendarControlState(
     var pendingSourceAttendanceScope by mutableStateOf(AttendanceEditScope.ALL_OCCURRENCES)
     var pendingSourceEffectiveDate by mutableStateOf("")
     private var sourceAttendanceReturnScreen by mutableStateOf(AppScreen.SOURCE_PREVIEW)
+    private var backgroundCheckReturnScreen by mutableStateOf(AppScreen.SETTINGS)
+    private var ruleBackupReturnScreen by mutableStateOf(AppScreen.SETTINGS)
     var managedSyncPreview by mutableStateOf<ManagedSyncPreview?>(null)
         private set
     private var managedDesiredEvents by mutableStateOf<List<DesiredCalendarEvent>>(emptyList())
@@ -246,6 +269,59 @@ class CalendarControlState(
         // 范围页是从设置继续进入的子页面，必须从右侧进入；返回时由 handleBack 反向处理。
         navigationDirection = NavigationDirection.FORWARD
         screen = AppScreen.SOURCE_RANGE
+    }
+
+    /** 后台检查只在用户已经配置来源后才可开启；排程本身不会读取或写入日历。 */
+    fun updateSourceCheck(enabled: Boolean, cadence: SourceCheckCadence = sourceCheckSettings.cadence) {
+        if (enabled && !privateSyncConfiguration.hasTumSubscription) {
+            feedback = "请先保存私有 iCal 地址；未创建后台检查。"
+            return
+        }
+        val newlyEnabled = enabled && !sourceCheckSettings.enabled
+        sourceCheckSettings = SourceCheckSettings(enabled, cadence)
+        sourceCheckSchedulingRequested = true
+        if (newlyEnabled) notificationPermissionRequestPending = true
+        feedback = if (enabled) "已设置只读后台检查；它不会自动写入任何日历。" else "已关闭后台 iCal 检查并取消后续任务。"
+    }
+
+    fun consumeSourceCheckSchedulingRequest() { sourceCheckSchedulingRequested = false }
+    fun consumeNotificationPermissionRequest() { notificationPermissionRequestPending = false }
+    fun resolveNotificationPermission(granted: Boolean) {
+        notificationPermissionRequestPending = false
+        if (!granted && sourceCheckSettings.enabled) feedback = "未授予通知权限；后台检查仍只在应用内记录状态。"
+    }
+    fun refreshSourceCheckStatus(status: SourceCheckStatus) { sourceCheckStatus = status }
+
+    fun openBackgroundCheck() {
+        backgroundCheckReturnScreen = contentScreen
+        navigationDirection = NavigationDirection.FORWARD
+        screen = AppScreen.BACKGROUND_CHECK
+    }
+
+    fun openRuleBackup() {
+        ruleBackupReturnScreen = contentScreen
+        navigationDirection = NavigationDirection.FORWARD
+        screen = AppScreen.RULE_BACKUP
+    }
+
+    /** SAF 写入只能由用户选择文件后触发；此处仅表达 UI 请求。 */
+    fun requestRuleBackupExport() { ruleBackupExportRequested = true }
+    fun consumeRuleBackupExportRequest() { ruleBackupExportRequested = false }
+    fun resolveRuleBackupExport(saved: Boolean) { feedback = if (saved) "规则备份已保存；其中不含私有地址、账户、令牌或日历映射。" else "未保存规则备份。" }
+
+    /** SAF 读取后的文本只留在内存解析为待确认草稿，未确认前不改动规则资料库。 */
+    fun requestRuleBackupImport() { ruleBackupImportRequested = true }
+    fun consumeRuleBackupImportRequest() { ruleBackupImportRequested = false }
+    fun resolveRuleBackupImport(text: String?) {
+        pendingRuleBackup = text?.let(RuleLedgerBackupCodec::decode)
+        feedback = if (pendingRuleBackup == null) "无法读取规则备份；本机规则没有改变。" else "已读取备份预览；确认后才替换规则与手动事项。"
+    }
+    fun cancelRuleBackupImport() { pendingRuleBackup = null }
+    fun confirmRuleBackupImport() {
+        val backup = pendingRuleBackup ?: return
+        ruleLedger = ruleLedger.copy(rules = backup.rules, manualEvents = backup.manualEvents)
+        pendingRuleBackup = null
+        feedback = "已替换本机规则与手动事项；没有同步、撤销或改动目标日历。"
     }
 
     /** 保存范围只写入加密本机配置；不会清除当前来源目录或选择。 */
@@ -563,6 +639,8 @@ class CalendarControlState(
             AppScreen.SOURCE_ATTENDANCE -> sourceAttendanceReturnScreen
             AppScreen.MANUAL_EVENTS -> manualEventsReturnScreen
             AppScreen.MANAGED_SYNC_PREVIEW -> managedSyncPreviewReturnScreen
+            AppScreen.BACKGROUND_CHECK -> backgroundCheckReturnScreen
+            AppScreen.RULE_BACKUP -> ruleBackupReturnScreen
             else -> return false
         }
         navigationDirection = NavigationDirection.BACKWARD
@@ -583,6 +661,8 @@ class CalendarControlState(
         AppScreen.SOURCE_ATTENDANCE,
         AppScreen.MANUAL_EVENTS,
         AppScreen.MANAGED_SYNC_PREVIEW,
+        AppScreen.BACKGROUND_CHECK,
+        AppScreen.RULE_BACKUP,
     )
 
     private fun enabledOutputTargets(): Set<OutputTarget> = buildSet {

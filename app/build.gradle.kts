@@ -20,8 +20,8 @@ android {
         minSdk = 26
         targetSdk = 37
         // 每次可验收发布均递增构建号；完整记录见仓库根目录 VERSIONING.md。
-        versionCode = 21
-        versionName = "0.3.2"
+        versionCode = 22
+        versionName = "0.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -69,6 +69,8 @@ dependencies {
     implementation("org.mnode.ical4j:ical4j:3.1.0")
     // 官方 Android 授权客户端；只在用户点按连接 Google 时请求最小的 app.created 范围。
     implementation("com.google.android.gms:play-services-auth:21.6.0")
+    // Android 官方稳定 WorkManager；后台任务只读检查来源，不执行日历同步。
+    implementation("androidx.work:work-runtime:2.11.2")
 
     testImplementation("junit:junit:4.13.2")
 }

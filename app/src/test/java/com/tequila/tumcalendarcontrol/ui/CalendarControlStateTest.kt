@@ -16,6 +16,7 @@ import com.tequila.tumcalendarcontrol.sync.ManualScheduleItem
 import com.tequila.tumcalendarcontrol.sync.RuleLedger
 import com.tequila.tumcalendarcontrol.sync.SourceCourse
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
+import com.tequila.tumcalendarcontrol.sync.SourceCheckCadence
 import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -82,6 +83,48 @@ class CalendarControlStateTest {
         assertTrue(state.handleBack())
         assertEquals(AppScreen.SETTINGS, state.screen)
         assertEquals(NavigationDirection.BACKWARD, state.navigationDirection)
+    }
+
+    @Test
+    fun `后台检查需要私有来源且关闭会请求取消排程`() {
+        val state = CalendarControlState()
+
+        state.updateSourceCheck(true)
+        assertFalse(state.sourceCheckSettings.enabled)
+        assertTrue(state.feedback!!.contains("先保存私有 iCal 地址"))
+
+        state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
+        state.updateSourceCheck(true, SourceCheckCadence.WEEKLY)
+        assertTrue(state.sourceCheckSettings.enabled)
+        assertEquals(SourceCheckCadence.WEEKLY, state.sourceCheckSettings.cadence)
+        assertTrue(state.sourceCheckSchedulingRequested)
+        state.consumeSourceCheckSchedulingRequest()
+        state.updateSourceCheck(false)
+        assertFalse(state.sourceCheckSettings.enabled)
+        assertTrue(state.sourceCheckSchedulingRequested)
+    }
+
+    @Test
+    fun `备份导入预览须确认且保留现有映射`() {
+        val currentMapping = com.tequila.tumcalendarcontrol.sync.StoredEventMapping(
+            com.tequila.tumcalendarcontrol.sync.OutputTarget.LOCAL_CALENDAR,
+            com.tequila.tumcalendarcontrol.sync.ManagedEventIdentity("current", "instance"),
+            "event-id",
+            "fingerprint",
+        )
+        val state = CalendarControlState(initialRuleLedger = RuleLedger(mappings = listOf(currentMapping)))
+        val backupText = com.tequila.tumcalendarcontrol.sync.RuleLedgerBackupCodec.encode(
+            RuleLedger(rules = listOf(com.tequila.tumcalendarcontrol.sync.SyncRule("imported", false, AttendanceState.MUST_ATTEND))),
+        )
+
+        state.resolveRuleBackupImport(backupText)
+        assertEquals(0, state.ruleLedger.rules.size)
+        assertTrue(state.pendingRuleBackup != null)
+        state.confirmRuleBackupImport()
+
+        assertEquals(listOf("imported"), state.ruleLedger.rules.map { it.sourceUid })
+        assertEquals(listOf(currentMapping), state.ruleLedger.mappings)
+        assertFalse(state.managedSyncRequested)
     }
 
     @Test

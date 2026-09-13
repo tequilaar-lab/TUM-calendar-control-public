@@ -70,6 +70,8 @@ fun AppScreenContent(state: CalendarControlState, screen: AppScreen) {
         AppScreen.SOURCE_ATTENDANCE -> SourceAttendanceScreen(state)
         AppScreen.MANUAL_EVENTS -> ManualEventsScreen(state)
         AppScreen.MANAGED_SYNC_PREVIEW -> ManagedSyncPreviewScreen(state)
+        AppScreen.BACKGROUND_CHECK -> BackgroundCheckScreen(state)
+        AppScreen.RULE_BACKUP -> RuleBackupScreen(state)
     }
 }
 
@@ -207,6 +209,8 @@ private fun SettingsScreen(state: CalendarControlState) {
         item { InformationCard("规则与范围", "来源课程默认蓝色；绿色必去、蓝色选择出席、灰色从指定日期起不去。") }
         item { SourceStatusSelector(state) }
         item { Button(onClick = state::openManualEvents, modifier = Modifier.fillMaxWidth()) { Text("管理手动校园事项") } }
+        item { Button(onClick = state::openBackgroundCheck, modifier = Modifier.fillMaxWidth()) { Text("后台 iCal 检查") } }
+        item { Button(onClick = state::openRuleBackup, modifier = Modifier.fillMaxWidth()) { Text("规则备份与恢复") } }
         item { Button(onClick = state::openSyncPreview, modifier = Modifier.fillMaxWidth()) { Text("查看离线同步预览") } }
         item { SyncDestinationSelector(state) }
         item { InformationCard("写入边界", "仅管理本应用创建且带所有权标记的目标日历；不改动主日历、订阅或其他应用日程") }

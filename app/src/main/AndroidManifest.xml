@@ -1,13 +1,14 @@
 <!--
   职责：声明离线原型的 Android 应用入口。
   输入／输出：系统读取 Activity、主题及未来本机日历写入所需权限声明。
-  外部副作用：仅在用户点按私有 iCal 预览时发起 HTTPS 只读请求；本机输出仍需另行申请日历权限。
-  不负责：自动读取、创建、修改或删除任何日历；权限本身不触发同步。
+  外部副作用：用户点按预览或明确开启后台只读检查时才发起 HTTPS 请求；本机输出仍需另行申请日历权限。
+  不负责：自动写入、创建、修改或删除任何日历；权限本身不触发同步。
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
