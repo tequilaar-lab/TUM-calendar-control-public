@@ -11,7 +11,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import java.util.concurrent.atomic.AtomicBoolean
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfigurationStore
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerPreferences
 import com.tequila.tumcalendarcontrol.sync.ReadOnlyIcalImportService
+import com.tequila.tumcalendarcontrol.sync.SourceReadCoordinator
 import com.tequila.tumcalendarcontrol.sync.PlatformManagedSyncRunner
 import com.tequila.tumcalendarcontrol.sync.PeriodicSourceCheckScheduler
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerBackupCodec
@@ -75,6 +76,7 @@ private val FixedTopBarHeight = 136.dp
 private val FloatingNavigationShape = RoundedCornerShape(30.dp)
 private const val SourceReadDeadlineMillis = 35_000L
 private const val MAX_RULE_BACKUP_CHARS = 1_000_000
+private const val SourceReadLogTag = "TumSourceRead"
 
 @Composable
 fun CalendarControlApp() {
@@ -87,6 +89,7 @@ fun CalendarControlApp() {
     val periodicSourceCheckScheduler = remember(context) { PeriodicSourceCheckScheduler(context) }
     val courseOverridePreferences = remember(context) { CourseOverridePreferences(context) }
     val readOnlyIcalImportService = remember { ReadOnlyIcalImportService() }
+    val sourceReadCoordinator = remember { SourceReadCoordinator(readOnlyIcalImportService::preview, SourceReadDeadlineMillis) }
     val googleAuthorizationCoordinator = remember(context) { GoogleAuthorizationCoordinator(context) }
     val platformManagedSyncRunner = remember(context) { PlatformManagedSyncRunner(context) }
     val state = remember {
@@ -172,31 +175,16 @@ fun CalendarControlApp() {
         state.consumeRuleBackupImportRequest()
         ruleBackupImportLauncher.launch(arrayOf("text/plain", "application/octet-stream"))
     }
-    LaunchedEffect(state.sourceReadRequested) {
-        if (!state.sourceReadRequested) return@LaunchedEffect
+    LaunchedEffect(state.sourceReadToken) {
+        if (!state.sourceReadInProgress || !state.sourceReadRequested) return@LaunchedEffect
         val privateUrl = state.privateSyncConfiguration.tumSubscriptionUrl
         val requestToken = state.sourceReadToken
-        val resolved = AtomicBoolean(false)
         val mainHandler = Handler(Looper.getMainLooper())
-        fun resolveOnce(result: com.tequila.tumcalendarcontrol.sync.IcalReadOnlyImportResult) {
-            if (resolved.compareAndSet(false, true)) {
-                mainHandler.post { state.resolveSourcePreview(requestToken, result) }
-            }
+        Log.i(SourceReadLogTag, "stage=started token=$requestToken")
+        sourceReadCoordinator.start(privateUrl) { completion ->
+            Log.i(SourceReadLogTag, "stage=${completion.stage} token=$requestToken elapsedMs=${completion.elapsedMillis}")
+            mainHandler.post { state.resolveSourcePreview(requestToken, completion.result) }
         }
-        mainHandler.postDelayed(
-            {
-                resolveOnce(
-                    com.tequila.tumcalendarcontrol.sync.IcalReadOnlyImportResult.Failure(
-                        "来源读取超过 35 秒，已停止等待；请检查网络后再试",
-                    ),
-                )
-            },
-            SourceReadDeadlineMillis,
-        )
-        Thread {
-            val result = readOnlyIcalImportService.preview(privateUrl)
-            resolveOnce(result)
-        }.start()
     }
     LaunchedEffect(state.googleAuthorizationRequested) {
         if (!state.googleAuthorizationRequested) return@LaunchedEffect
