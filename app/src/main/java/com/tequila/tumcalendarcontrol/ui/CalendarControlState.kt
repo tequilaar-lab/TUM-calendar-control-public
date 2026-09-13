@@ -43,7 +43,7 @@ import java.util.UUID
 import java.time.LocalDate
 
 enum class AppScreen {
-    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_PREVIEW, SOURCE_ATTENDANCE, MANUAL_EVENTS, MANAGED_SYNC_PREVIEW,
+    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_RANGE, SOURCE_PREVIEW, SOURCE_ATTENDANCE, MANUAL_EVENTS, MANAGED_SYNC_PREVIEW,
 }
 
 enum class ThemeMode(val label: String) {
@@ -100,7 +100,13 @@ class CalendarControlState(
         private set
     /** 真正来源实例只在当前进程用于预览／同步候选，退出或重新读取时丢弃。 */
     private var sourceOccurrences by mutableStateOf<List<SourceCalendarOccurrence>>(emptyList())
+    /** 只暴露本次运行实例给浏览器；调用者不得用它写入或持久化来源内容。 */
+    val currentSourceOccurrences: List<SourceCalendarOccurrence> get() = sourceOccurrences
     var selectedSourceCourseUids by mutableStateOf<Set<String>>(emptySet())
+        private set
+    var sourceBrowserQuery by mutableStateOf("")
+    var sourceBrowserFilter by mutableStateOf(SourceCourseFilter.ALL)
+    var sourceReloadConfirmationPending by mutableStateOf(false)
         private set
     var pendingSourceAttendance by mutableStateOf(AttendanceState.CHOOSE_TO_ATTEND)
     var pendingSourceAttendanceScope by mutableStateOf(AttendanceEditScope.ALL_OCCURRENCES)
@@ -109,6 +115,9 @@ class CalendarControlState(
     var managedSyncPreview by mutableStateOf<ManagedSyncPreview?>(null)
         private set
     private var managedDesiredEvents by mutableStateOf<List<DesiredCalendarEvent>>(emptyList())
+    /** 预览分项仅按应用生成身份前缀统计，不暴露来源标题或正文。 */
+    val managedSourceCandidateCount: Int get() = managedDesiredEvents.count { !it.identity.sourceUid.startsWith("manual:") }
+    val managedManualCandidateCount: Int get() = managedDesiredEvents.count { it.identity.sourceUid.startsWith("manual:") }
     var managedSyncRequested by mutableStateOf(false)
         private set
     var managedRollbackRequested by mutableStateOf(false)
@@ -131,6 +140,7 @@ class CalendarControlState(
     private var moreReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
     private var profileReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
     private var syncConfigurationReturnScreen by mutableStateOf(AppScreen.SETTINGS)
+    private var sourceRangeReturnScreen by mutableStateOf(AppScreen.SETTINGS)
     private var syncPreviewReturnScreen by mutableStateOf(AppScreen.SETTINGS)
     private var courseEditReturnScreen by mutableStateOf(AppScreen.DETAIL)
     private var manualEventsReturnScreen by mutableStateOf(AppScreen.SETTINGS)
@@ -230,6 +240,42 @@ class CalendarControlState(
         screen = AppScreen.SYNC_CONFIGURATION
     }
 
+    /** 范围配置独立于账户表单；打开和保存都不触发网络读取。 */
+    fun openSourceRange() {
+        sourceRangeReturnScreen = contentScreen
+        screen = AppScreen.SOURCE_RANGE
+    }
+
+    /** 保存范围只写入加密本机配置；不会清除当前来源目录或选择。 */
+    fun saveSourceOutputRange(startDate: String, endDate: String): List<String> {
+        val updated = privateSyncConfiguration.copy(sourceRangeStartDate = startDate, sourceRangeEndDate = endDate)
+        val problems = updated.validate()
+        if (problems.isEmpty()) {
+            privateSyncConfiguration = updated
+            feedback = "已保存同步范围；现有读取结果和课程选择保持不变。"
+        }
+        return problems.map { it.message }
+    }
+
+    /** 重新读取会替换运行内目录；已有选择时必须经明确确认。 */
+    fun requestSourceReadForCurrentRange() {
+        if (sourceCourses.isNotEmpty()) sourceReloadConfirmationPending = true else requestSourcePreview()
+    }
+
+    fun resolveSourceReloadConfirmation(accepted: Boolean) {
+        sourceReloadConfirmationPending = false
+        if (accepted) requestSourcePreview()
+    }
+
+    /** 已读课程目录可直接返回；无目录时只提示，不能暗中发起来源读取。 */
+    fun openSourceCourseSelector() {
+        if (sourcePreview == null) {
+            feedback = "尚未读取 iCal；请先在“iCal 来源与同步范围”中主动读取。"
+            return
+        }
+        screen = AppScreen.SOURCE_PREVIEW
+    }
+
     /** 预览只展示合成差异，不能触发网络、权限申请或任何日历写入。 */
     fun openSyncPreview() { syncPreviewReturnScreen = contentScreen; screen = AppScreen.SYNC_PREVIEW }
 
@@ -262,6 +308,8 @@ class CalendarControlState(
                 sourceCourses = result.preview.courses
                 sourceOccurrences = result.preview.occurrences
                 selectedSourceCourseUids = emptySet()
+                sourceBrowserQuery = ""
+                sourceBrowserFilter = SourceCourseFilter.ALL
                 sourcePreviewError = null
                 syncPreviewReturnScreen = contentScreen
                 screen = AppScreen.SOURCE_PREVIEW
@@ -286,6 +334,10 @@ class CalendarControlState(
     fun selectAllSourceCourses() { selectedSourceCourseUids = sourceCourses.map(SourceCourse::sourceUid).toSet() }
 
     fun clearSourceCourseSelection() { selectedSourceCourseUids = emptySet() }
+
+    fun updateSourceBrowserQuery(query: String) { sourceBrowserQuery = query }
+
+    fun updateSourceBrowserFilter(filter: SourceCourseFilter) { sourceBrowserFilter = filter }
 
     /** 新来源课程无规则时默认蓝色；用户可按单课或多选打开同一三态编辑器。 */
     fun sourceAttendanceFor(sourceUid: String): AttendanceState = ruleLedger.rules
@@ -504,6 +556,7 @@ class CalendarControlState(
             AppScreen.PROFILE -> profileReturnScreen
             AppScreen.SYNC_CONFIGURATION -> syncConfigurationReturnScreen
             AppScreen.SYNC_PREVIEW -> syncPreviewReturnScreen
+            AppScreen.SOURCE_RANGE -> sourceRangeReturnScreen
             AppScreen.SOURCE_PREVIEW -> syncPreviewReturnScreen
             AppScreen.SOURCE_ATTENDANCE -> sourceAttendanceReturnScreen
             AppScreen.MANUAL_EVENTS -> manualEventsReturnScreen
@@ -523,6 +576,7 @@ class CalendarControlState(
         AppScreen.PROFILE,
         AppScreen.SYNC_CONFIGURATION,
         AppScreen.SYNC_PREVIEW,
+        AppScreen.SOURCE_RANGE,
         AppScreen.SOURCE_PREVIEW,
         AppScreen.SOURCE_ATTENDANCE,
         AppScreen.MANUAL_EVENTS,

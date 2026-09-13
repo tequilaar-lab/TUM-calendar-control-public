@@ -306,6 +306,30 @@ class CalendarControlStateTest {
 
         assertEquals(AppScreen.MANAGED_SYNC_PREVIEW, state.screen)
         assertEquals(1, state.managedSyncPreview!!.desiredEventCount)
+        assertEquals(0, state.managedSourceCandidateCount)
+        assertEquals(1, state.managedManualCandidateCount)
+    }
+
+    @Test
+    fun `保存范围不读取不清除选择 重新读取需要确认`() {
+        val state = CalendarControlState()
+        state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
+        state.requestSourcePreview()
+        state.resolveSourcePreview(state.sourceReadToken, IcalReadOnlyImportResult.Success(sourcePreview()))
+        state.toggleSourceCourseSelection("uid-a")
+
+        assertTrue(state.saveSourceOutputRange("2026-09-14", "2026-09-30").isEmpty())
+        assertEquals(setOf("uid-a"), state.selectedSourceCourseUids)
+        assertFalse(state.sourceReadRequested)
+        state.requestSourceReadForCurrentRange()
+        assertTrue(state.sourceReloadConfirmationPending)
+        assertFalse(state.sourceReadRequested)
+
+        state.resolveSourceReloadConfirmation(false)
+        assertEquals(setOf("uid-a"), state.selectedSourceCourseUids)
+        state.requestSourceReadForCurrentRange()
+        state.resolveSourceReloadConfirmation(true)
+        assertTrue(state.sourceReadRequested)
     }
 
     @Test

@@ -380,6 +380,7 @@ private fun AppScreen.usesBackArrow(): Boolean = this in setOf(
     AppScreen.PROFILE,
     AppScreen.SYNC_CONFIGURATION,
     AppScreen.SYNC_PREVIEW,
+    AppScreen.SOURCE_RANGE,
     AppScreen.SOURCE_PREVIEW,
     AppScreen.SOURCE_ATTENDANCE,
     AppScreen.MANUAL_EVENTS,
@@ -406,7 +407,8 @@ private fun AppScreen.title(): String = when (this) {
     AppScreen.PROFILE -> "个人资料"
     AppScreen.SYNC_CONFIGURATION -> "来源与 Google 连接"
     AppScreen.SYNC_PREVIEW -> "同步预览"
-    AppScreen.SOURCE_PREVIEW -> "iCal 来源预览"
+    AppScreen.SOURCE_RANGE -> "选择同步时间范围"
+    AppScreen.SOURCE_PREVIEW -> "选择来源课程"
     AppScreen.SOURCE_ATTENDANCE -> "设置来源课程状态"
     AppScreen.MANUAL_EVENTS -> "手动校园事项"
     AppScreen.MANAGED_SYNC_PREVIEW -> "受控同步预览"
@@ -417,7 +419,8 @@ private fun AppScreen.subtitle(): String? = when (this) {
     AppScreen.SETTINGS -> "可手动只读 iCal；不写入日历"
     AppScreen.SYNC_CONFIGURATION -> "仅保存本机配置，不会联网"
     AppScreen.SYNC_PREVIEW -> "离线合成预览 · 不写入日历"
-    AppScreen.SOURCE_PREVIEW -> "只读目录 · 不写入日历"
+    AppScreen.SOURCE_RANGE -> "1/4 范围可选 · 保存不会重新读取"
+    AppScreen.SOURCE_PREVIEW -> "2/4 只读目录 · 不写入日历"
     AppScreen.SOURCE_ATTENDANCE -> "只保存本机规则 · 不写入日历"
     AppScreen.MANUAL_EVENTS -> "先保存本机 · 下次同步预览可见"
     AppScreen.MANAGED_SYNC_PREVIEW -> "先预览，后确认执行"

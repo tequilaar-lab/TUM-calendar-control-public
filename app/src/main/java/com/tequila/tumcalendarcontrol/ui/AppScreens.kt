@@ -65,7 +65,8 @@ fun AppScreenContent(state: CalendarControlState, screen: AppScreen) {
         AppScreen.PROFILE -> ProfileScreen(state)
         AppScreen.SYNC_CONFIGURATION -> SyncConfigurationScreen(state)
         AppScreen.SYNC_PREVIEW -> SyncPreviewScreen(state)
-        AppScreen.SOURCE_PREVIEW -> SourcePreviewScreen(state)
+        AppScreen.SOURCE_RANGE -> SourceRangeScreen(state)
+        AppScreen.SOURCE_PREVIEW -> SourceCourseSelectorScreen(state)
         AppScreen.SOURCE_ATTENDANCE -> SourceAttendanceScreen(state)
         AppScreen.MANUAL_EVENTS -> ManualEventsScreen(state)
         AppScreen.MANAGED_SYNC_PREVIEW -> ManagedSyncPreviewScreen(state)
@@ -186,29 +187,27 @@ fun MoreScreen(state: CalendarControlState) {
 private fun SettingsScreen(state: CalendarControlState) {
     val palette = LocalTumPalette.current
     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item { InformationCard("同步工作流", "1 设置范围 · 2 读取并选择课程 · 3 设置三态 · 4 预览后确认。常规返回不会清除已选课程。") }
+        item { Button(onClick = state::openSourceRange, modifier = Modifier.fillMaxWidth()) { Text("iCal 来源与同步范围") } }
         item {
-            InformationCard(
-                "日历来源",
-                "TUM 私有 iCal · ${state.privateSyncConfiguration.maskedTumSubscription()}",
-            )
+            val summary = state.privateSyncConfiguration.sourceOutputWindow?.let {
+                if (it.startsOn == null && it.endsOn == null) "当前不限时间；点按可使用日历选择范围。" else "当前已设置范围；点按可查看、修改或清除。"
+            } ?: "当前范围格式无效；请点按修正。"
+            InformationCard("范围摘要", summary)
         }
         item {
-            Button(onClick = state::openSyncConfiguration, modifier = Modifier.fillMaxWidth()) {
-                Text("配置来源与 Google 连接")
+            val courseSummary = when {
+                state.sourcePreview == null -> "尚未读取；先进入“iCal 来源与同步范围”主动读取。"
+                else -> "本次已读取 ${state.sourceCourses.size} 个来源项；已选择 ${state.selectedSourceCourseUids.size} 个。"
             }
+            InformationCard("已读取课程", courseSummary)
         }
-        item { InformationCard("规则与范围", "来源课程默认蓝色；绿／蓝／灰规则会在确认同步前先生成双目标差异预览") }
+        item { Button(onClick = state::openSourceCourseSelector, modifier = Modifier.fillMaxWidth()) { Text("选择来源课程") } }
+        item { Button(onClick = state::openSyncConfiguration, modifier = Modifier.fillMaxWidth()) { Text("私有地址与 Google 高级设置") } }
+        item { InformationCard("规则与范围", "来源课程默认蓝色；绿色必去、蓝色选择出席、灰色从指定日期起不去。") }
         item { SourceStatusSelector(state) }
         item { Button(onClick = state::openManualEvents, modifier = Modifier.fillMaxWidth()) { Text("管理手动校园事项") } }
         item { Button(onClick = state::openSyncPreview, modifier = Modifier.fillMaxWidth()) { Text("查看离线同步预览") } }
-        item {
-            Button(
-                onClick = state::requestSourcePreview,
-                enabled = !state.sourceReadInProgress,
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(if (state.sourceReadInProgress) "正在读取私有 iCal…" else "读取并预览私有 iCal") }
-        }
-        item { InformationCard("只读边界", "只有点按上方按钮才会以 HTTPS 读取一次；不会显示订阅地址或 ICS 原文。读取后仍需先预览、再确认写入。") }
         item { SyncDestinationSelector(state) }
         item { InformationCard("写入边界", "仅管理本应用创建且带所有权标记的目标日历；不改动主日历、订阅或其他应用日程") }
         if (state.syncDestinations.googleCalendarEnabled) {
@@ -258,84 +257,6 @@ private fun SyncPreviewScreen(state: CalendarControlState) {
     }
 }
 
-/** 来源目录只在当前运行内显示；规则身份使用 UID，标题与地点绝不持久化。 */
-@Composable
-private fun SourcePreviewScreen(state: CalendarControlState) {
-    val preview = state.sourcePreview
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        item { InformationCard("私有 iCal 课程目录", "已完成一次只读读取。课程默认蓝色“选择出席”；本页只保存规则，不写入、授权或同步。") }
-        if (preview == null) {
-            item { InformationCard("没有可显示的预览", "请返回设置重新执行用户主动读取；不会自动重试。") }
-        } else {
-            item { InformationCard("来源汇总", "解析到 ${preview.sourceEventCount} 条来源记录；可管理实例 ${preview.manageableOccurrenceCount} 条，聚合为 ${preview.courses.size} 门课程。") }
-            item {
-                val first = preview.firstManageableStart?.toString() ?: "无"
-                val last = preview.lastManageableEnd?.toString() ?: "无"
-                InformationCard("读取时间范围", "$first 至 $last")
-            }
-            item { InformationCard("跳过汇总", if (preview.skippedByReason.isEmpty()) "无跳过记录" else preview.skippedByReason.entries.joinToString("；") { "${it.key.label} ${it.value} 条" }) }
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    Button(onClick = state::selectAllSourceCourses, modifier = Modifier.weight(1f)) { Text("全选课程") }
-                    Button(onClick = state::clearSourceCourseSelection, modifier = Modifier.weight(1f)) { Text("清除选择") }
-                }
-            }
-            if (state.selectedSourceCourseUids.isNotEmpty()) {
-                item {
-                    Button(onClick = { state.openSourceAttendanceEditor() }, modifier = Modifier.fillMaxWidth()) {
-                        Text("设置已选 ${state.selectedSourceCourseUids.size} 门课程的状态")
-                    }
-                }
-            }
-            item {
-                Button(onClick = state::requestManagedSyncPreview, modifier = Modifier.fillMaxWidth()) {
-                    Text("生成受控同步预览")
-                }
-            }
-            items(preview.courses, key = { it.sourceUid }) { course ->
-                SourceCourseRow(
-                    course = course,
-                    selected = course.sourceUid in state.selectedSourceCourseUids,
-                    attendance = state.sourceAttendanceFor(course.sourceUid),
-                    onToggle = { state.toggleSourceCourseSelection(course.sourceUid) },
-                    onEdit = { state.openSourceAttendanceEditor(setOf(course.sourceUid)) },
-                )
-            }
-        }
-    }
-}
-
-/** 每张卡片只负责选择或打开该来源 UID 的规则编辑器，不把来源资料写入规则库。 */
-@Composable
-private fun SourceCourseRow(
-    course: com.tequila.tumcalendarcontrol.sync.SourceCourse,
-    selected: Boolean,
-    attendance: com.tequila.tumcalendarcontrol.domain.AttendanceState,
-    onToggle: () -> Unit,
-    onEdit: () -> Unit,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onToggle),
-        insideMargin = androidx.compose.foundation.layout.PaddingValues(14.dp),
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(selected = selected, onClick = onToggle)
-                Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-                    Text(course.title, style = MiuixTheme.textStyles.title3)
-                    Text(
-                        "${attendance.colorLabel}色 · ${attendance.label} · ${course.occurrenceCount} 次实例",
-                        color = LocalTumPalette.current.onSurfaceVariant,
-                    )
-                }
-            }
-            if (course.location.isNotBlank()) Text("地点：${course.location}", color = LocalTumPalette.current.onSurfaceVariant)
-            Text("首个实例：${course.firstStart}", color = LocalTumPalette.current.onSurfaceVariant)
-            Button(onClick = onEdit, modifier = Modifier.fillMaxWidth()) { Text("单独设置状态") }
-        }
-    }
-}
-
 /** 编辑私有配置的草稿；已保存的订阅地址绝不作为初始值回显。 */
 @Composable
 private fun SyncConfigurationScreen(state: CalendarControlState) {
@@ -345,8 +266,6 @@ private fun SyncConfigurationScreen(state: CalendarControlState) {
     var editingGoogleAdvanced by remember { mutableStateOf(false) }
     var googleClientId by remember(current.googleOAuthClientId) { mutableStateOf(current.googleOAuthClientId) }
     var calendarName by remember(current.googleCalendarName) { mutableStateOf(current.googleCalendarName) }
-    var sourceRangeStart by remember(current.sourceRangeStartDate) { mutableStateOf(current.sourceRangeStartDate) }
-    var sourceRangeEnd by remember(current.sourceRangeEndDate) { mutableStateOf(current.sourceRangeEndDate) }
     var validationMessage by remember { mutableStateOf<String?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         InformationCard(
@@ -357,9 +276,7 @@ private fun SyncConfigurationScreen(state: CalendarControlState) {
             value = replacementSubscriptionUrl,
             onValueChange = { replacementSubscriptionUrl = it },
         ) else Button(onClick = { replacingSubscription = true }, modifier = Modifier.fillMaxWidth()) { Text("替换私有 iCal 地址") }
-        InformationCard("iCal 来源输出范围", "可选；开始或结束留空即不设该边界。仅影响来源实例进入候选，不修改订阅链接或手动事项。")
-        TextField(value = sourceRangeStart, onValueChange = { sourceRangeStart = it }, modifier = Modifier.fillMaxWidth(), label = "开始日期（可留空，YYYY-MM-DD）")
-        TextField(value = sourceRangeEnd, onValueChange = { sourceRangeEnd = it }, modifier = Modifier.fillMaxWidth(), label = "结束日期（可留空，YYYY-MM-DD）")
+        InformationCard("同步范围", "范围已移至独立的“iCal 来源与同步范围”页面；它使用日历选择，不再要求输入日期文本。")
         InformationCard("Google 日历", "Google 授权不是账户或密码。正式同步时会由系统选择账户，并仅请求本应用创建日历的最小权限；令牌不会保存。")
         if (editingGoogleAdvanced) TextField(
             value = googleClientId,
@@ -378,8 +295,6 @@ private fun SyncConfigurationScreen(state: CalendarControlState) {
             onClick = {
                 val updated = current.copy(
                     tumSubscriptionUrl = replacementSubscriptionUrl.trim().ifBlank { current.tumSubscriptionUrl },
-                    sourceRangeStartDate = sourceRangeStart,
-                    sourceRangeEndDate = sourceRangeEnd,
                     googleOAuthClientId = googleClientId,
                     googleCalendarName = calendarName,
                 )

@@ -26,7 +26,7 @@ fun ManagedSyncPreviewScreen(state: CalendarControlState) {
             InformationCard("没有可执行的预览", "请返回设置，先读取来源并生成预览。")
             return
         }
-        InformationCard("候选日程", "当前将输出 ${preview.desiredEventCount} 条来源／手动事项候选。")
+        InformationCard("候选日程", "当前将输出 ${preview.desiredEventCount} 条候选。已选来源课程 ${state.managedSourceCandidateCount} 条；手动校园事项 ${state.managedManualCandidateCount} 条（不受 iCal 范围影响）。")
         preview.targetChanges.toSortedMap(compareBy(OutputTarget::name)).forEach { (target, changes) ->
             InformationCard(
                 target.label(),
