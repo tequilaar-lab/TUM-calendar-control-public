@@ -7,6 +7,7 @@
 package com.tequila.tumcalendarcontrol.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.sync.SourceCourse
 import com.tequila.tumcalendarcontrol.sync.SourceOutputDateWindow
@@ -42,6 +44,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val CourseDisplayTime = DateTimeFormatter.ofPattern("M月d日 HH:mm")
 private val CourseBrowserZone = ZoneId.of("Europe/Berlin")
+private val SourceSelectionBarShape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
 
 private enum class SourceBrowserMode(val label: String) { GROUPS("分组列表"), DATES("按日期查看") }
 
@@ -114,7 +117,7 @@ private fun SourceModeRow(mode: SourceBrowserMode, onChange: (SourceBrowserMode)
 private fun SourceGroupList(state: CalendarControlState, groups: List<SourceCourseDisplayGroup>) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(10.dp),
-        contentPadding = PaddingValues(bottom = 118.dp),
+        contentPadding = PaddingValues(bottom = 156.dp),
     ) {
         if (groups.isEmpty()) item { InformationCard("没有匹配课程", "尝试清除搜索或切换到“全部”。") }
         items(groups, key = { it.displayTitle + it.earliestStart }) { group -> SourceGroupRow(state, group) }
@@ -185,7 +188,13 @@ private fun SourceSelectionBottomBar(
 ) {
     val palette = LocalTumPalette.current
     Card(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 4.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(22.dp)),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .shadow(elevation = 16.dp, shape = SourceSelectionBarShape, clip = false)
+            .clip(SourceSelectionBarShape)
+            .background(palette.surfaceHighest)
+            .border(width = 1.dp, color = palette.outline.copy(alpha = 0.52f), shape = SourceSelectionBarShape),
         insideMargin = PaddingValues(12.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

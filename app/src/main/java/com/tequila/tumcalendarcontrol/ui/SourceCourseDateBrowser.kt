@@ -121,7 +121,7 @@ private fun SourceDayCell(day: LocalDate, occurrenceCount: Int, selected: Boolea
 
 @Composable
 private fun SourceDateCourseList(day: LocalDate, courses: List<SourceCourse>, state: CalendarControlState, modifier: Modifier) {
-    LazyColumn(modifier = modifier, contentPadding = PaddingValues(bottom = 118.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    LazyColumn(modifier = modifier, contentPadding = PaddingValues(bottom = 156.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         item { Text("${day.monthValue}月${day.dayOfMonth}日 · ${courses.size} 个来源课程", style = MiuixTheme.textStyles.title3) }
         if (courses.isEmpty()) item { InformationCard("当天没有范围内来源课程", "切换月份或选择其他带圆点的日期。") }
         items(courses, key = SourceCourse::sourceUid) { course ->
