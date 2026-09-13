@@ -252,11 +252,9 @@ private fun SyncConfigurationScreen(state: CalendarControlState) {
             "私有订阅地址",
             "当前：${current.maskedTumSubscription()}。地址不会回显；只有主动替换才会写入新值。",
         )
-        if (replacingSubscription) TextField(
+        if (replacingSubscription) PrivateAddressInput(
             value = replacementSubscriptionUrl,
             onValueChange = { replacementSubscriptionUrl = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = "新的 TUM 私有 iCal 地址",
         ) else Button(onClick = { replacingSubscription = true }, modifier = Modifier.fillMaxWidth()) { Text("替换私有 iCal 地址") }
         InformationCard("Google 日历（暂不需要）", "Google OAuth 不是账户或密码；它只是在未来授权页中让你选择 Google 账户的应用身份。当前不会联网，也无需填写。")
         if (editingGoogleAdvanced) TextField(
