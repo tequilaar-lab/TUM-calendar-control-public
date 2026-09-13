@@ -71,6 +71,20 @@ class CalendarControlStateTest {
     }
 
     @Test
+    fun `范围页从设置向前进入且返回使用后退动效`() {
+        val state = CalendarControlState()
+
+        state.open(AppScreen.SETTINGS)
+        state.openSourceRange()
+
+        assertEquals(AppScreen.SOURCE_RANGE, state.screen)
+        assertEquals(NavigationDirection.FORWARD, state.navigationDirection)
+        assertTrue(state.handleBack())
+        assertEquals(AppScreen.SETTINGS, state.screen)
+        assertEquals(NavigationDirection.BACKWARD, state.navigationDirection)
+    }
+
+    @Test
     fun `更多操作打开时保留原页面作为稳定背景`() {
         val state = CalendarControlState()
 

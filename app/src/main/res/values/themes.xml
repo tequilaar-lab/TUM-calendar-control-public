@@ -6,4 +6,22 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:fontFamily">sans</item>
     </style>
+
+    <!-- 职责：向 Android 平台 DatePickerDialog 提供与 Compose TUM 蓝一致的亮色主题。 -->
+    <style name="Theme.TumCalendarControl.DatePicker.Light" parent="android:style/Theme.Material.Light.Dialog.Alert">
+        <item name="android:colorAccent">@color/tum_date_picker_light_primary</item>
+        <item name="android:colorControlActivated">@color/tum_date_picker_light_primary</item>
+        <item name="android:windowBackground">@color/tum_date_picker_light_surface</item>
+        <item name="android:textColorPrimary">@color/tum_date_picker_light_on_surface</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <!-- 职责：向 Android 平台 DatePickerDialog 提供与 Compose TUM 蓝一致的深色主题。 -->
+    <style name="Theme.TumCalendarControl.DatePicker.Dark" parent="android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">@color/tum_date_picker_dark_primary</item>
+        <item name="android:colorControlActivated">@color/tum_date_picker_dark_primary</item>
+        <item name="android:windowBackground">@color/tum_date_picker_dark_surface</item>
+        <item name="android:textColorPrimary">@color/tum_date_picker_dark_on_surface</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
 </resources>

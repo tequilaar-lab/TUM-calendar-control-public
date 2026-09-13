@@ -65,13 +65,16 @@ object TumPalettes {
 }
 val LocalTumPalette = staticCompositionLocalOf { TumPalettes.light }
 
+/** 将本机保存的主题偏好解析为实际明暗值，供 Compose 与平台日期弹窗共用。 */
+fun ThemeMode.usesDarkTheme(systemIsDark: Boolean): Boolean = when (this) {
+    ThemeMode.LIGHT -> false
+    ThemeMode.DARK -> true
+    ThemeMode.SYSTEM -> systemIsDark
+}
+
 @Composable
 fun TumCalendarTheme(mode: ThemeMode, content: @Composable () -> Unit) {
-    val usesDarkTheme = when (mode) {
-        ThemeMode.LIGHT -> false
-        ThemeMode.DARK -> true
-        ThemeMode.SYSTEM -> isSystemInDarkTheme()
-    }
+    val usesDarkTheme = mode.usesDarkTheme(isSystemInDarkTheme())
     val palette = if (usesDarkTheme) TumPalettes.dark else TumPalettes.light
     val colors = (if (usesDarkTheme) darkColorScheme() else lightColorScheme()).copy(
         primary = palette.primary,

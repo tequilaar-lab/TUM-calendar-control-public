@@ -243,6 +243,8 @@ class CalendarControlState(
     /** 范围配置独立于账户表单；打开和保存都不触发网络读取。 */
     fun openSourceRange() {
         sourceRangeReturnScreen = contentScreen
+        // 范围页是从设置继续进入的子页面，必须从右侧进入；返回时由 handleBack 反向处理。
+        navigationDirection = NavigationDirection.FORWARD
         screen = AppScreen.SOURCE_RANGE
     }
 

@@ -7,6 +7,7 @@
 package com.tequila.tumcalendarcontrol.ui
 
 import android.app.DatePickerDialog
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.tequila.tumcalendarcontrol.R
 import com.tequila.tumcalendarcontrol.sync.SourceOutputDateWindow
 import java.time.Instant
 import java.time.LocalDate
@@ -39,14 +41,15 @@ private val BerlinZone = ZoneId.of("Europe/Berlin")
 @Composable
 fun SourceRangeScreen(state: CalendarControlState) {
     val configuration = state.privateSyncConfiguration
+    val usesDarkTheme = state.themeMode.usesDarkTheme(isSystemInDarkTheme())
     var startDate by remember(configuration.sourceRangeStartDate) { mutableStateOf(configuration.sourceRangeStartDate) }
     var endDate by remember(configuration.sourceRangeEndDate) { mutableStateOf(configuration.sourceRangeEndDate) }
     var validation by remember { mutableStateOf<List<String>>(emptyList()) }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         InformationCard("同步时间范围", "它决定哪些来源实例会进入后续预览和输出；不会改变订阅地址，也不会过滤手动校园事项。")
         val context = LocalContext.current
-        DateRangeField("开始日期", startDate, "不限", onClick = { showDatePicker(context, startDate) { startDate = it } })
-        DateRangeField("结束日期", endDate, "不限", onClick = { showDatePicker(context, endDate) { endDate = it } })
+        DateRangeField("开始日期", startDate, "不限", onClick = { showDatePicker(context, startDate, usesDarkTheme) { startDate = it } })
+        DateRangeField("结束日期", endDate, "不限", onClick = { showDatePicker(context, endDate, usesDarkTheme) { endDate = it } })
         QuickRangeButtons(
             onFromToday = { startDate = LocalDate.now(BerlinZone).format(DateText); endDate = "" },
             onNextNinetyDays = {
@@ -120,10 +123,12 @@ private fun ReadCoverageCard(state: CalendarControlState) {
 
 private fun Instant?.toLocalDateText(): String = this?.atZone(BerlinZone)?.toLocalDate()?.format(DateText) ?: "无"
 
-private fun showDatePicker(context: android.content.Context, it: String, onPicked: (String) -> Unit) {
+/** 平台日期选择器沿用应用已解析的明暗模式，避免 Compose 深色页弹出浅色系统对话框。 */
+private fun showDatePicker(context: android.content.Context, it: String, usesDarkTheme: Boolean, onPicked: (String) -> Unit) {
     val initial = runCatching { LocalDate.parse(it) }.getOrElse { LocalDate.now(BerlinZone) }
     DatePickerDialog(
         context,
+        if (usesDarkTheme) R.style.Theme_TumCalendarControl_DatePicker_Dark else R.style.Theme_TumCalendarControl_DatePicker_Light,
         { _, year, month, day -> onPicked(LocalDate.of(year, month + 1, day).format(DateText)) },
         initial.year,
         initial.monthValue - 1,

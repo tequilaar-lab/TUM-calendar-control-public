@@ -1,4 +1,10 @@
 <!-- 职责：定义启动器图标的纯色背景；不承载业务状态颜色。 -->
 <resources>
     <color name="launcher_background">#146C94</color>
+    <color name="tum_date_picker_light_primary">#0065BD</color>
+    <color name="tum_date_picker_light_surface">#F9F9FF</color>
+    <color name="tum_date_picker_light_on_surface">#17202A</color>
+    <color name="tum_date_picker_dark_primary">#A8C8FF</color>
+    <color name="tum_date_picker_dark_surface">#10151C</color>
+    <color name="tum_date_picker_dark_on_surface">#E1E7EF</color>
 </resources>
