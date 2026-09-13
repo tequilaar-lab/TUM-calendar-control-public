@@ -194,5 +194,6 @@ class CalendarControlStateTest {
         state.pendingEffectiveDate = "无效日期"
         state.confirmAttendance()
         assertEquals(AppScreen.ATTENDANCE, state.screen)
+        assertEquals("请输入 YYYY-MM-DD 格式的指定日期。", state.feedback)
     }
 }

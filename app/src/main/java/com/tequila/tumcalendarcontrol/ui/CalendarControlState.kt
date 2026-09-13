@@ -112,6 +112,7 @@ class CalendarControlState(
         pendingAttendance = selectedCourse.attendance
         pendingAttendanceScope = AttendanceEditScope.ALL_OCCURRENCES
         pendingEffectiveDate = ""
+        feedback = null
         open(AppScreen.ATTENDANCE)
     }
 

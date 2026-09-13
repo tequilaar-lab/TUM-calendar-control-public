@@ -7,6 +7,8 @@
 package com.tequila.tumcalendarcontrol.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,7 +31,10 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun AttendanceScreen(state: CalendarControlState) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(
+        modifier = Modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
         Text("为“${state.selectedCourse.title}”选择状态", style = MiuixTheme.textStyles.title3)
         AttendanceOption(AttendanceState.MUST_ATTEND, state)
         AttendanceOption(AttendanceState.CHOOSE_TO_ATTEND, state)
@@ -42,6 +47,9 @@ fun AttendanceScreen(state: CalendarControlState) {
             modifier = Modifier.fillMaxWidth(),
             label = "指定日期（YYYY-MM-DD；合成预览）",
         )
+        state.feedback?.let { message ->
+            Text(message, color = LocalTumPalette.current.onSurfaceVariant)
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
