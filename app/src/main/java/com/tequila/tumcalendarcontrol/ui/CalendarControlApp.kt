@@ -1,18 +1,21 @@
 /*
  * 职责：组合主题、固定顶栏、浮动主导航、全屏更多覆盖层及本机偏好装载。
- * 输入／输出：输入内存中的 CalendarControlState；输出整个离线 Compose-Miuix 应用界面。
- * 外部副作用：保存本机偏好；仅在用户点按后后台读取一次私有 iCal。
- * 不负责：账户授权、Android Calendar Provider 或真实日历写入。
+ * 输入／输出：输入内存中的 CalendarControlState；输出 Compose-Miuix 应用及用户确认的同步流程。
+ * 外部副作用：保存私有偏好；仅在用户点按后读取 iCal、申请授权或执行已预览的受控输出。
+ * 不负责：自动同步、访问用户主日历、保存 Google 令牌或替代真机验证。
  */
 package com.tequila.tumcalendarcontrol.ui
 
 import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
 import java.util.concurrent.atomic.AtomicBoolean
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.IntentSenderRequest
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -47,6 +50,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfigurationStore
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerPreferences
 import com.tequila.tumcalendarcontrol.sync.ReadOnlyIcalImportService
+import com.tequila.tumcalendarcontrol.sync.PlatformManagedSyncRunner
 import com.tequila.tumcalendarcontrol.domain.SampleCourses
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,6 +80,8 @@ fun CalendarControlApp() {
     val ruleLedgerPreferences = remember(context) { RuleLedgerPreferences(context) }
     val courseOverridePreferences = remember(context) { CourseOverridePreferences(context) }
     val readOnlyIcalImportService = remember { ReadOnlyIcalImportService() }
+    val googleAuthorizationCoordinator = remember(context) { GoogleAuthorizationCoordinator(context) }
+    val platformManagedSyncRunner = remember(context) { PlatformManagedSyncRunner(context) }
     val state = remember {
         CalendarControlState(
             initialCourses = courseOverridePreferences.applyTo(SampleCourses.all()),
@@ -86,8 +92,13 @@ fun CalendarControlApp() {
         )
     }
     var privateConfigurationInitialized by remember { mutableStateOf(false) }
-    val localCalendarPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        state.resolveLocalCalendarPermission(granted)
+    val localCalendarPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
+        state.resolveLocalCalendarPermission(
+            grants[Manifest.permission.READ_CALENDAR] == true && grants[Manifest.permission.WRITE_CALENDAR] == true,
+        )
+    }
+    val googleAuthorizationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        googleAuthorizationCoordinator.resolveResult(result.data, state::resolveGoogleAuthorization)
     }
     LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
     LaunchedEffect(state.syncDestinations) { syncDestinationPreferences.save(state.syncDestinations) }
@@ -97,8 +108,16 @@ fun CalendarControlApp() {
     }
     LaunchedEffect(state.ruleLedger) { ruleLedgerPreferences.save(state.ruleLedger) }
     LaunchedEffect(state.courses) { courseOverridePreferences.save(state.courses) }
+    LaunchedEffect(Unit) {
+        state.refreshLocalCalendarPermission(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_CALENDAR) == PackageManager.PERMISSION_GRANTED,
+        )
+    }
     LaunchedEffect(state.localCalendarPermissionRequestPending) {
-        if (state.localCalendarPermissionRequestPending) localCalendarPermissionLauncher.launch(Manifest.permission.WRITE_CALENDAR)
+        if (state.localCalendarPermissionRequestPending) localCalendarPermissionLauncher.launch(
+            arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR),
+        )
     }
     LaunchedEffect(state.sourceReadRequested) {
         if (!state.sourceReadRequested) return@LaunchedEffect
@@ -124,6 +143,35 @@ fun CalendarControlApp() {
         Thread {
             val result = readOnlyIcalImportService.preview(privateUrl)
             resolveOnce(result)
+        }.start()
+    }
+    LaunchedEffect(state.googleAuthorizationRequested) {
+        if (!state.googleAuthorizationRequested) return@LaunchedEffect
+        googleAuthorizationCoordinator.authorize { outcome ->
+            state.resolveGoogleAuthorization(outcome)
+            if (outcome is GoogleAuthorizationOutcome.LaunchConsent) {
+                googleAuthorizationLauncher.launch(IntentSenderRequest.Builder(outcome.pendingIntent.intentSender).build())
+            }
+        }
+    }
+    LaunchedEffect(state.managedSyncRequested, state.managedRollbackRequested) {
+        if (!state.managedSyncRequested && !state.managedRollbackRequested) return@LaunchedEffect
+        val token = state.currentManagedOperationToken()
+        val rollback = state.managedRollbackRequested
+        val configuration = state.privateSyncConfiguration
+        val targets = state.currentManagedTargets()
+        val desired = state.currentDesiredEvents()
+        val mappings = state.ruleLedger.mappings
+        val googleToken = state.currentGoogleAccessToken()
+        Thread {
+            val outcome = runCatching {
+                if (rollback) platformManagedSyncRunner.rollback(mappings, targets, configuration, googleToken)
+                else platformManagedSyncRunner.execute(desired, mappings, targets, configuration, googleToken)
+            }
+            Handler(Looper.getMainLooper()).post {
+                outcome.onSuccess { state.resolveManagedOperation(token, it.result, it.configuration) }
+                    .onFailure { state.failManagedOperation(token, "受控同步未完成；请检查权限或网络后重试") }
+            }
         }.start()
     }
     BackHandler(enabled = state.canHandleBack()) { state.handleBack() }
@@ -334,6 +382,8 @@ private fun AppScreen.usesBackArrow(): Boolean = this in setOf(
     AppScreen.SYNC_PREVIEW,
     AppScreen.SOURCE_PREVIEW,
     AppScreen.SOURCE_ATTENDANCE,
+    AppScreen.MANUAL_EVENTS,
+    AppScreen.MANAGED_SYNC_PREVIEW,
 )
 
 private fun AppScreen.bottomNavigationIndex(): Int = when (this) {
@@ -358,6 +408,8 @@ private fun AppScreen.title(): String = when (this) {
     AppScreen.SYNC_PREVIEW -> "同步预览"
     AppScreen.SOURCE_PREVIEW -> "iCal 来源预览"
     AppScreen.SOURCE_ATTENDANCE -> "设置来源课程状态"
+    AppScreen.MANUAL_EVENTS -> "手动校园事项"
+    AppScreen.MANAGED_SYNC_PREVIEW -> "受控同步预览"
 }
 
 private fun AppScreen.subtitle(): String? = when (this) {
@@ -367,5 +419,7 @@ private fun AppScreen.subtitle(): String? = when (this) {
     AppScreen.SYNC_PREVIEW -> "离线合成预览 · 不写入日历"
     AppScreen.SOURCE_PREVIEW -> "只读目录 · 不写入日历"
     AppScreen.SOURCE_ATTENDANCE -> "只保存本机规则 · 不写入日历"
+    AppScreen.MANUAL_EVENTS -> "先保存本机 · 下次同步预览可见"
+    AppScreen.MANAGED_SYNC_PREVIEW -> "先预览，后确认执行"
     else -> null
 }

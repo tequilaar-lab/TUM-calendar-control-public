@@ -25,10 +25,25 @@ import com.tequila.tumcalendarcontrol.sync.SourceCourse
 import com.tequila.tumcalendarcontrol.sync.RuleEditCommand
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerEditor
 import com.tequila.tumcalendarcontrol.sync.SyncRule
+import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
+import com.tequila.tumcalendarcontrol.sync.SyncCandidateFactory
+import com.tequila.tumcalendarcontrol.sync.ManagedSyncEngine
+import com.tequila.tumcalendarcontrol.sync.ManagedSyncPreview
+import com.tequila.tumcalendarcontrol.sync.ManagedSyncResult
+import com.tequila.tumcalendarcontrol.sync.ManualScheduleEditor
+import com.tequila.tumcalendarcontrol.sync.ManualScheduleItem
+import com.tequila.tumcalendarcontrol.sync.OutputTarget
+import com.tequila.tumcalendarcontrol.sync.DesiredCalendarEvent
+import com.tequila.tumcalendarcontrol.sync.SyncRunSummary
+import com.tequila.tumcalendarcontrol.sync.StoredEventMapping
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.util.UUID
 import java.time.LocalDate
 
 enum class AppScreen {
-    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_PREVIEW, SOURCE_ATTENDANCE,
+    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_PREVIEW, SOURCE_ATTENDANCE, MANUAL_EVENTS, MANAGED_SYNC_PREVIEW,
 }
 
 enum class ThemeMode(val label: String) {
@@ -83,12 +98,30 @@ class CalendarControlState(
     /** 真实来源资料仅在当前进程内保存，重新读取或退出后由用户源重新生成。 */
     var sourceCourses by mutableStateOf<List<SourceCourse>>(emptyList())
         private set
+    /** 真正来源实例只在当前进程用于预览／同步候选，退出或重新读取时丢弃。 */
+    private var sourceOccurrences by mutableStateOf<List<SourceCalendarOccurrence>>(emptyList())
     var selectedSourceCourseUids by mutableStateOf<Set<String>>(emptySet())
         private set
     var pendingSourceAttendance by mutableStateOf(AttendanceState.CHOOSE_TO_ATTEND)
     var pendingSourceAttendanceScope by mutableStateOf(AttendanceEditScope.ALL_OCCURRENCES)
     var pendingSourceEffectiveDate by mutableStateOf("")
     private var sourceAttendanceReturnScreen by mutableStateOf(AppScreen.SOURCE_PREVIEW)
+    var managedSyncPreview by mutableStateOf<ManagedSyncPreview?>(null)
+        private set
+    private var managedDesiredEvents by mutableStateOf<List<DesiredCalendarEvent>>(emptyList())
+    var managedSyncRequested by mutableStateOf(false)
+        private set
+    var managedRollbackRequested by mutableStateOf(false)
+        private set
+    var managedSyncInProgress by mutableStateOf(false)
+        private set
+    var googleAuthorizationRequested by mutableStateOf(false)
+        private set
+    private var googleAccessToken by mutableStateOf<String?>(null)
+    val hasGoogleAuthorization: Boolean get() = googleAccessToken != null
+    var localCalendarPermissionGranted by mutableStateOf(false)
+        private set
+    private var managedOperationToken by mutableStateOf(0L)
     /** 只读请求的单调编号；忽略超时后才返回的旧线程结果，避免覆盖新的用户操作。 */
     var sourceReadToken by mutableStateOf(0L)
         private set
@@ -100,6 +133,8 @@ class CalendarControlState(
     private var syncConfigurationReturnScreen by mutableStateOf(AppScreen.SETTINGS)
     private var syncPreviewReturnScreen by mutableStateOf(AppScreen.SETTINGS)
     private var courseEditReturnScreen by mutableStateOf(AppScreen.DETAIL)
+    private var manualEventsReturnScreen by mutableStateOf(AppScreen.SETTINGS)
+    private var managedSyncPreviewReturnScreen by mutableStateOf(AppScreen.SETTINGS)
 
     /** 更多操作覆盖层打开时，仍保持下方主页面稳定，避免与主标签页共用过渡。 */
     val contentScreen: AppScreen
@@ -176,9 +211,13 @@ class CalendarControlState(
 
     fun resolveLocalCalendarPermission(granted: Boolean) {
         localCalendarPermissionRequestPending = false
+        localCalendarPermissionGranted = granted
         syncDestinations = syncDestinations.withEnabled(SyncDestination.LOCAL_CALENDAR, granted)
         feedback = if (granted) "已获本机日历写入许可；本轮仍不会创建或写入日历。" else "未获本机日历权限，已保持本机输出关闭。"
     }
+
+    /** 启动时仅读取系统已授予状态，不申请权限也不改变用户的输出开关。 */
+    fun refreshLocalCalendarPermission(granted: Boolean) { localCalendarPermissionGranted = granted }
 
     /** 保存前由页面展示格式问题；状态机不发起任何连接或日历写入。 */
     fun updatePrivateSyncConfiguration(configuration: PrivateSyncConfiguration) {
@@ -221,6 +260,7 @@ class CalendarControlState(
             is IcalReadOnlyImportResult.Success -> {
                 sourcePreview = result.preview
                 sourceCourses = result.preview.courses
+                sourceOccurrences = result.preview.occurrences
                 selectedSourceCourseUids = emptySet()
                 sourcePreviewError = null
                 syncPreviewReturnScreen = contentScreen
@@ -334,7 +374,119 @@ class CalendarControlState(
     }
 
     fun requestSync() {
-        feedback = "同步引擎尚未配置；本轮不会读取或写入任何真实日历。"
+        requestManagedSyncPreview()
+    }
+
+    /** 基于当前进程来源和本机规则生成差异；不查询、创建或写入任何目标日历。 */
+    fun requestManagedSyncPreview() {
+        if (sourceOccurrences.isEmpty()) {
+            feedback = "请先主动读取私有 iCal 并确认课程目录；当前没有来源实例可预览。"
+            return
+        }
+        val targets = enabledOutputTargets()
+        if (targets.isEmpty()) {
+            feedback = "请先启用本机日历或 Google 日历输出；当前不会写入任何日历。"
+            return
+        }
+        managedDesiredEvents = SyncCandidateFactory().build(sourceOccurrences, ruleLedger.rules, ruleLedger.manualEvents)
+        managedSyncPreview = ManagedSyncEngine().preview(managedDesiredEvents, ruleLedger.mappings, targets)
+        managedSyncPreviewReturnScreen = contentScreen
+        screen = AppScreen.MANAGED_SYNC_PREVIEW
+    }
+
+    /** Google 授权只由显式点按触发；令牌成功后仅存活在本进程。 */
+    fun requestGoogleAuthorization() {
+        if (!syncDestinations.googleCalendarEnabled) {
+            feedback = "请先开启 Google 日历镜像输出；当前未发起授权。"
+            return
+        }
+        googleAuthorizationRequested = true
+    }
+
+    fun resolveGoogleAuthorization(outcome: GoogleAuthorizationOutcome) {
+        googleAuthorizationRequested = false
+        when (outcome) {
+            is GoogleAuthorizationOutcome.AccessToken -> { googleAccessToken = outcome.value; feedback = "Google 日历已获本次运行的授权；尚未创建或写入日历。" }
+            is GoogleAuthorizationOutcome.Failure -> feedback = outcome.summary
+            is GoogleAuthorizationOutcome.LaunchConsent -> Unit
+        }
+    }
+
+    fun consumeGoogleAuthorizationRequest() { googleAuthorizationRequested = false }
+
+    /** 执行请求只表达用户确认；界面层再在后台建立专用目标并调用网关。 */
+    fun requestManagedSyncExecution() {
+        if (managedSyncPreview == null) { feedback = "请先生成同步预览，再确认执行。"; return }
+        if (syncDestinations.localCalendarEnabled && !localCalendarPermissionGranted) { feedback = "本机日历尚未获得系统权限；未执行写入。"; return }
+        if (syncDestinations.googleCalendarEnabled && !hasGoogleAuthorization) { feedback = "请先完成 Google 授权；未执行写入。"; return }
+        if (managedSyncInProgress) return
+        managedOperationToken += 1
+        managedSyncInProgress = true
+        managedSyncRequested = true
+        feedback = "正在执行已预览的受控同步…"
+    }
+
+    fun requestManagedRollback() {
+        if (ruleLedger.mappings.isEmpty()) { feedback = "没有本应用已映射的输出事件可撤销。"; return }
+        val targets = ruleLedger.mappings.map(StoredEventMapping::target).toSet()
+        if (OutputTarget.LOCAL_CALENDAR in targets && !localCalendarPermissionGranted) { feedback = "本机日历尚未获得系统权限；未执行撤销。"; return }
+        if (OutputTarget.GOOGLE_CALENDAR in targets && !hasGoogleAuthorization) { feedback = "请先完成 Google 授权；未执行撤销。"; return }
+        if (managedSyncInProgress) return
+        managedOperationToken += 1
+        managedSyncInProgress = true
+        managedRollbackRequested = true
+        feedback = "正在撤销本应用已映射的输出事件…"
+    }
+
+    fun currentGoogleAccessToken(): String? = googleAccessToken
+    fun currentManagedOperationToken(): Long = managedOperationToken
+    fun currentDesiredEvents(): List<DesiredCalendarEvent> = managedDesiredEvents
+    fun currentManagedTargets(): Set<OutputTarget> = if (managedRollbackRequested) {
+        ruleLedger.mappings.map(StoredEventMapping::target).toSet()
+    } else {
+        enabledOutputTargets()
+    }
+
+    /** 后台网关完成后只合并返回映射与脱敏计数，令牌和来源正文绝不进入资料库。 */
+    fun resolveManagedOperation(token: Long, result: ManagedSyncResult, configuration: PrivateSyncConfiguration) {
+        if (token != managedOperationToken || !managedSyncInProgress) return
+        managedSyncRequested = false
+        managedRollbackRequested = false
+        managedSyncInProgress = false
+        ruleLedger = ruleLedger.copy(
+            mappings = result.mappings,
+            lastSummary = SyncRunSummary(Instant.now(), result.createdCount, result.updatedCount, result.removedCount, 0, result.failureSummary),
+        )
+        privateSyncConfiguration = configuration
+        feedback = result.failureSummary ?: "受控同步已完成：新增 ${result.createdCount}、更新 ${result.updatedCount}、移除 ${result.removedCount}。"
+    }
+
+    fun failManagedOperation(token: Long, summary: String) {
+        if (token != managedOperationToken || !managedSyncInProgress) return
+        managedSyncRequested = false
+        managedRollbackRequested = false
+        managedSyncInProgress = false
+        feedback = summary
+    }
+
+    fun openManualEvents() { manualEventsReturnScreen = contentScreen; screen = AppScreen.MANUAL_EVENTS }
+
+    /** 手动事项的 ID 由应用生成；时间采用 Europe/Berlin，输入错误不会改变资料库。 */
+    fun addManualEvent(title: String, date: String, startHour: String, startMinute: String, endHour: String, endMinute: String, attendance: AttendanceState) {
+        val item = runCatching {
+            val day = LocalDate.parse(date)
+            val start = LocalDateTime.of(day, java.time.LocalTime.of(startHour.toInt(), startMinute.toInt())).atZone(ZoneId.of("Europe/Berlin")).toInstant()
+            val end = LocalDateTime.of(day, java.time.LocalTime.of(endHour.toInt(), endMinute.toInt())).atZone(ZoneId.of("Europe/Berlin")).toInstant()
+            require(end.isAfter(start))
+            ManualScheduleItem(UUID.randomUUID().toString(), title.trim().ifBlank { error("标题不能为空") }, start, end, attendance)
+        }.getOrElse { feedback = "请填写有效的标题、YYYY-MM-DD 日期和小时／分钟；结束须晚于开始。"; return }
+        ruleLedger = ruleLedger.copy(manualEvents = ManualScheduleEditor().upsert(ruleLedger.manualEvents, item))
+        feedback = "已保存手动校园事项；它将在下次同步预览中出现。"
+    }
+
+    fun removeManualEvent(itemId: String) {
+        ruleLedger = ruleLedger.copy(manualEvents = ManualScheduleEditor().remove(ruleLedger.manualEvents, itemId))
+        feedback = "已从本机规则移除手动事项；尚未改动目标日历。"
     }
 
     /** 处理应用内层级返回；只有主页面才交还给系统执行退出。 */
@@ -349,6 +501,8 @@ class CalendarControlState(
             AppScreen.SYNC_PREVIEW -> syncPreviewReturnScreen
             AppScreen.SOURCE_PREVIEW -> syncPreviewReturnScreen
             AppScreen.SOURCE_ATTENDANCE -> sourceAttendanceReturnScreen
+            AppScreen.MANUAL_EVENTS -> manualEventsReturnScreen
+            AppScreen.MANAGED_SYNC_PREVIEW -> managedSyncPreviewReturnScreen
             else -> return false
         }
         navigationDirection = NavigationDirection.BACKWARD
@@ -366,7 +520,14 @@ class CalendarControlState(
         AppScreen.SYNC_PREVIEW,
         AppScreen.SOURCE_PREVIEW,
         AppScreen.SOURCE_ATTENDANCE,
+        AppScreen.MANUAL_EVENTS,
+        AppScreen.MANAGED_SYNC_PREVIEW,
     )
+
+    private fun enabledOutputTargets(): Set<OutputTarget> = buildSet {
+        if (syncDestinations.localCalendarEnabled) add(OutputTarget.LOCAL_CALENDAR)
+        if (syncDestinations.googleCalendarEnabled) add(OutputTarget.GOOGLE_CALENDAR)
+    }
 
     private fun navigationDirectionBetween(source: AppScreen, destination: AppScreen): NavigationDirection {
         val sourceIndex = source.primaryIndex()

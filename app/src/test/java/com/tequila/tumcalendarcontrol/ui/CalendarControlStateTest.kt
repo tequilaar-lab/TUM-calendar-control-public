@@ -13,6 +13,7 @@ import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfiguration
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyImportResult
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyPreview
 import com.tequila.tumcalendarcontrol.sync.SourceCourse
+import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
 import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -265,6 +266,37 @@ class CalendarControlStateTest {
         assertEquals(AttendanceState.STOP_ATTENDING, rules.getValue("uid-b").instanceOverrides["b-instance"])
     }
 
+    @Test
+    fun `来源实例可生成受控双目标预览 预览阶段不要求权限`() {
+        val state = CalendarControlState()
+        state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
+        state.requestSourcePreview()
+        state.resolveSourcePreview(state.sourceReadToken, IcalReadOnlyImportResult.Success(sourcePreview()))
+        state.setSyncDestinationEnabled(SyncDestination.LOCAL_CALENDAR, true)
+        state.setSyncDestinationEnabled(SyncDestination.GOOGLE_CALENDAR, true)
+
+        state.requestManagedSyncPreview()
+
+        assertEquals(AppScreen.MANAGED_SYNC_PREVIEW, state.screen)
+        assertEquals(2, state.managedSyncPreview!!.desiredEventCount)
+        assertEquals(2, state.managedSyncPreview!!.targetChanges.size)
+    }
+
+    @Test
+    fun `未获本机权限时确认执行被拒绝且不发出后台请求`() {
+        val state = CalendarControlState()
+        state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
+        state.requestSourcePreview()
+        state.resolveSourcePreview(state.sourceReadToken, IcalReadOnlyImportResult.Success(sourcePreview()))
+        state.setSyncDestinationEnabled(SyncDestination.LOCAL_CALENDAR, true)
+        state.requestManagedSyncPreview()
+
+        state.requestManagedSyncExecution()
+
+        assertFalse(state.managedSyncRequested)
+        assertTrue(state.feedback!!.contains("尚未获得系统权限"))
+    }
+
     private fun sourcePreview(): IcalReadOnlyPreview = IcalReadOnlyPreview(
         sourceEventCount = 2,
         manageableOccurrenceCount = 2,
@@ -274,6 +306,10 @@ class CalendarControlStateTest {
         courses = listOf(
             SourceCourse("uid-a", "合成 A", "地点 A", Instant.parse("2026-09-14T08:00:00Z"), Instant.parse("2026-09-14T10:00:00Z"), "a-instance", 1, 0),
             SourceCourse("uid-b", "合成 B", "地点 B", Instant.parse("2026-09-15T08:00:00Z"), Instant.parse("2026-09-15T10:00:00Z"), "b-instance", 1, 0),
+        ),
+        occurrences = listOf(
+            SourceCalendarOccurrence("uid-a", "a-instance", "合成 A", Instant.parse("2026-09-14T08:00:00Z"), Instant.parse("2026-09-14T10:00:00Z"), false, "地点 A"),
+            SourceCalendarOccurrence("uid-b", "b-instance", "合成 B", Instant.parse("2026-09-15T08:00:00Z"), Instant.parse("2026-09-15T10:00:00Z"), false, "地点 B"),
         ),
     )
 }

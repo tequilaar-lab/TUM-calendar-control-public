@@ -67,6 +67,8 @@ fun AppScreenContent(state: CalendarControlState, screen: AppScreen) {
         AppScreen.SYNC_PREVIEW -> SyncPreviewScreen(state)
         AppScreen.SOURCE_PREVIEW -> SourcePreviewScreen(state)
         AppScreen.SOURCE_ATTENDANCE -> SourceAttendanceScreen(state)
+        AppScreen.MANUAL_EVENTS -> ManualEventsScreen(state)
+        AppScreen.MANAGED_SYNC_PREVIEW -> ManagedSyncPreviewScreen(state)
     }
 }
 
@@ -195,8 +197,9 @@ private fun SettingsScreen(state: CalendarControlState) {
                 Text("配置来源与 Google 连接")
             }
         }
-        item { InformationCard("规则与范围", "来源课程默认蓝色；绿／蓝／灰规则只保存在本机，尚不写入日历") }
+        item { InformationCard("规则与范围", "来源课程默认蓝色；绿／蓝／灰规则会在确认同步前先生成双目标差异预览") }
         item { SourceStatusSelector(state) }
+        item { Button(onClick = state::openManualEvents, modifier = Modifier.fillMaxWidth()) { Text("管理手动校园事项") } }
         item { Button(onClick = state::openSyncPreview, modifier = Modifier.fillMaxWidth()) { Text("查看离线同步预览") } }
         item {
             Button(
@@ -205,16 +208,24 @@ private fun SettingsScreen(state: CalendarControlState) {
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(if (state.sourceReadInProgress) "正在读取私有 iCal…" else "读取并预览私有 iCal") }
         }
-        item { InformationCard("只读边界", "只有点按上方按钮才会以 HTTPS 读取一次；不会显示地址或来源标题，也不会写入本机或 Google 日历。") }
+        item { InformationCard("只读边界", "只有点按上方按钮才会以 HTTPS 读取一次；不会显示订阅地址或 ICS 原文。读取后仍需先预览、再确认写入。") }
         item { SyncDestinationSelector(state) }
-        item { InformationCard("写入边界", "仅管理本应用创建的目标日历；不改动用户、订阅或其他应用的日程") }
+        item { InformationCard("写入边界", "仅管理本应用创建且带所有权标记的目标日历；不改动主日历、订阅或其他应用日程") }
+        if (state.syncDestinations.googleCalendarEnabled) {
+            item {
+                Button(onClick = state::requestGoogleAuthorization, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (state.hasGoogleAuthorization) "Google 已获本次运行授权" else "连接 Google 日历")
+                }
+            }
+        }
+        item { Button(onClick = state::requestManagedSyncPreview, modifier = Modifier.fillMaxWidth()) { Text("生成受控同步预览") } }
         item { InformationCard("应用版本", "${BuildConfig.VERSION_NAME} · 构建号 ${BuildConfig.VERSION_CODE}") }
         item { ThemeModeSelector(state) }
         item { Spacer(Modifier.height(4.dp)) }
         item {
             Button(onClick = state::requestSync, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Rounded.Refresh, "刷新同步")
-                Text("刷新同步", modifier = Modifier.padding(start = 8.dp))
+                Text("刷新同步预览", modifier = Modifier.padding(start = 8.dp))
             }
         }
         state.feedback?.let { feedback ->
@@ -274,6 +285,11 @@ private fun SourcePreviewScreen(state: CalendarControlState) {
                     Button(onClick = { state.openSourceAttendanceEditor() }, modifier = Modifier.fillMaxWidth()) {
                         Text("设置已选 ${state.selectedSourceCourseUids.size} 门课程的状态")
                     }
+                }
+            }
+            item {
+                Button(onClick = state::requestManagedSyncPreview, modifier = Modifier.fillMaxWidth()) {
+                    Text("生成受控同步预览")
                 }
             }
             items(preview.courses, key = { it.sourceUid }) { course ->
@@ -339,7 +355,7 @@ private fun SyncConfigurationScreen(state: CalendarControlState) {
             value = replacementSubscriptionUrl,
             onValueChange = { replacementSubscriptionUrl = it },
         ) else Button(onClick = { replacingSubscription = true }, modifier = Modifier.fillMaxWidth()) { Text("替换私有 iCal 地址") }
-        InformationCard("Google 日历（暂不需要）", "Google OAuth 不是账户或密码；它只是在未来授权页中让你选择 Google 账户的应用身份。当前不会联网，也无需填写。")
+        InformationCard("Google 日历", "Google 授权不是账户或密码。正式同步时会由系统选择账户，并仅请求本应用创建日历的最小权限；令牌不会保存。")
         if (editingGoogleAdvanced) TextField(
             value = googleClientId,
             onValueChange = { googleClientId = it },
@@ -403,7 +419,7 @@ private fun SyncDestinationSelector(state: CalendarControlState) {
                 }
             }
         }
-        InformationCard("权限与写入", "本机开关开启时会请求系统日历权限；同意后仍须在未来预览确认，当前不会写入日历")
+        InformationCard("权限与写入", "本机开关开启时会请求读取／写入日历权限；同意后仍须先预览，再点按确认执行")
     }
 }
 
