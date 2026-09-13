@@ -79,6 +79,9 @@ class CalendarControlState(
         private set
     var sourcePreviewError by mutableStateOf<String?>(null)
         private set
+    /** 只读请求的单调编号；忽略超时后才返回的旧线程结果，避免覆盖新的用户操作。 */
+    var sourceReadToken by mutableStateOf(0L)
+        private set
     var navigationDirection by mutableStateOf(NavigationDirection.FORWARD)
         private set
     private var detailReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
@@ -193,13 +196,15 @@ class CalendarControlState(
         if (sourceReadInProgress) return
         sourcePreview = null
         sourcePreviewError = null
+        sourceReadToken += 1
         sourceReadInProgress = true
         sourceReadRequested = true
         feedback = "正在只读读取私有 iCal；不会写入任何日历。"
     }
 
     /** 后台读取完成后只保留脱敏摘要，不保留 URL、ICS 原文或来源标题。 */
-    fun resolveSourcePreview(result: IcalReadOnlyImportResult) {
+    fun resolveSourcePreview(token: Long, result: IcalReadOnlyImportResult) {
+        if (token != sourceReadToken || !sourceReadInProgress) return
         sourceReadRequested = false
         sourceReadInProgress = false
         when (result) {

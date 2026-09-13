@@ -10,6 +10,7 @@ import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import com.tequila.tumcalendarcontrol.domain.CourseLocalOverride
 import com.tequila.tumcalendarcontrol.domain.TumEventStatus
 import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfiguration
+import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyImportResult
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -158,6 +159,21 @@ class CalendarControlStateTest {
         assertFalse(state.sourceReadRequested)
         assertFalse(state.sourceReadInProgress)
         assertTrue(state.feedback!!.contains("未发起网络请求"))
+    }
+
+    @Test
+    fun `只读请求忽略旧令牌结果并在当前失败后复位`() {
+        val state = CalendarControlState()
+        state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
+        state.requestSourcePreview()
+        val token = state.sourceReadToken
+
+        state.resolveSourcePreview(token + 1, IcalReadOnlyImportResult.Failure("旧结果"))
+        assertTrue(state.sourceReadInProgress)
+
+        state.resolveSourcePreview(token, IcalReadOnlyImportResult.Failure("超时"))
+        assertFalse(state.sourceReadInProgress)
+        assertTrue(state.feedback!!.contains("超时"))
     }
 
     @Test

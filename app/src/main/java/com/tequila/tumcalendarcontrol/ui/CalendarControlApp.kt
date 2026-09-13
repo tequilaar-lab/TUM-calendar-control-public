@@ -9,6 +9,7 @@ package com.tequila.tumcalendarcontrol.ui
 import android.Manifest
 import android.os.Handler
 import android.os.Looper
+import java.util.concurrent.atomic.AtomicBoolean
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -64,6 +65,7 @@ import top.yukonga.miuix.kmp.basic.TopAppBar
 
 private val FixedTopBarHeight = 136.dp
 private val FloatingNavigationShape = RoundedCornerShape(30.dp)
+private const val SourceReadDeadlineMillis = 35_000L
 
 @Composable
 fun CalendarControlApp() {
@@ -102,9 +104,27 @@ fun CalendarControlApp() {
         if (!state.sourceReadRequested) return@LaunchedEffect
         val privateUrl = state.privateSyncConfiguration.tumSubscriptionUrl
         val confirmedUids = state.courses.filter { it.hasFixedPlus }.map { it.id }.toSet()
+        val requestToken = state.sourceReadToken
+        val resolved = AtomicBoolean(false)
+        val mainHandler = Handler(Looper.getMainLooper())
+        fun resolveOnce(result: com.tequila.tumcalendarcontrol.sync.IcalReadOnlyImportResult) {
+            if (resolved.compareAndSet(false, true)) {
+                mainHandler.post { state.resolveSourcePreview(requestToken, result) }
+            }
+        }
+        mainHandler.postDelayed(
+            {
+                resolveOnce(
+                    com.tequila.tumcalendarcontrol.sync.IcalReadOnlyImportResult.Failure(
+                        "来源读取超过 35 秒，已停止等待；请检查网络后再试",
+                    ),
+                )
+            },
+            SourceReadDeadlineMillis,
+        )
         Thread {
             val result = readOnlyIcalImportService.preview(privateUrl, confirmedUids)
-            Handler(Looper.getMainLooper()).post { state.resolveSourcePreview(result) }
+            resolveOnce(result)
         }.start()
     }
     BackHandler(enabled = state.canHandleBack()) { state.handleBack() }
