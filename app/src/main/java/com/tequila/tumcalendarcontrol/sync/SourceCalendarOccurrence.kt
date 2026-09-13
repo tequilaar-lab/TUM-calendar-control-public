@@ -15,6 +15,7 @@ data class SourceCalendarOccurrence(
     val startsAt: Instant,
     val endsAt: Instant,
     val isCancelled: Boolean,
+    val location: String = "",
 )
 
 data class IcalImportResult(

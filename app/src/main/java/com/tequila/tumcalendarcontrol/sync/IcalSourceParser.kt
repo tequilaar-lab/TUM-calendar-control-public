@@ -1,6 +1,6 @@
 /*
- * 职责：通过 iCal4j 解析 RFC 5545 文本、展开指定窗口内的重复事件，并依据显式 Fixplatz 清单筛选。
- * 输入／输出：输入 ICS 文本、时间窗口和已确认 UID；输出稳定实例与跳过原因。
+ * 职责：通过 iCal4j 解析 RFC 5545 文本、展开指定窗口内的重复事件，并可选按 UID 筛选。
+ * 输入／输出：输入 ICS 文本、时间窗口和可选 UID 清单；输出稳定实例与跳过原因。
  * 外部副作用：无；调用者负责以已授权方式取得文本，本类不访问网络或文件。
  * 不负责：推断 Fixplatz、手写 ICS 语法、保存规则或写入目标日历。
  */
@@ -17,14 +17,14 @@ import java.time.Instant
 
 class IcalSourceParser {
     /**
-     * 不把来源标题或分类当作 Fixplatz 证据；只有用户确认的 UID 才会进入候选输出。
+     * `null` UID 清单代表接受全部来源课程；非空清单只用于兼容旧的显式筛选场景。
      * `windowStart` 与 `windowEnd` 限制展开范围，避免无限 RRULE 占用资源。
      */
     fun parse(
         icsText: String,
         windowStart: Instant,
         windowEnd: Instant,
-        confirmedFixplatzUids: Set<String>,
+        allowedSourceUids: Set<String>? = null,
     ): IcalImportResult {
         require(windowEnd.isAfter(windowStart)) { "iCalendar 展开窗口必须有正长度。" }
         Ical4jRuntimeConfiguration.configureOfflineCache()
@@ -39,7 +39,7 @@ class IcalSourceParser {
                 skipped += IcalSkippedEvent(null, IcalSkipReason.MISSING_UID)
                 return@forEach
             }
-            if (uid !in confirmedFixplatzUids) {
+            if (allowedSourceUids != null && uid !in allowedSourceUids) {
                 skipped += IcalSkippedEvent(uid, IcalSkipReason.NOT_CONFIRMED_FIXPLATZ)
                 return@forEach
             }
@@ -72,6 +72,7 @@ class IcalSourceParser {
             sourceUid = uid,
             instanceKey = recurrenceId ?: start.toString(),
             title = event.summary?.value.orEmpty().ifBlank { "未命名来源日程" },
+            location = event.location?.value.orEmpty(),
             startsAt = start,
             endsAt = end,
             isCancelled = event.status?.value.equals(Status.VEVENT_CANCELLED.value, ignoreCase = true),

@@ -1,6 +1,6 @@
 /*
  * 职责：以纯合成 RFC 5545 文本验证 iCal4j 解析、重复展开、EXDATE、RECURRENCE-ID 与取消事件。
- * 输入／输出：输入合成 ICS 和明确的 Fixplatz UID 清单；输出实例身份、状态与跳过原因断言。
+ * 输入／输出：输入合成 ICS、时间窗口和可选 UID 清单；输出实例身份、状态与跳过原因断言。
  * 外部副作用：无；不读取私有订阅、不访问网络或日历。
  * 不负责：真实 TUM Fixplatz 识别、Android Provider 或 Google 写入验证。
  */
@@ -23,7 +23,6 @@ class IcalSourceParserTest {
             icsText = syntheticCalendar(),
             windowStart = windowStart,
             windowEnd = windowEnd,
-            confirmedFixplatzUids = setOf("fixed-course", "cancelled-course", "timezone-course"),
         )
 
         val fixedOccurrences = result.occurrences.filter { it.sourceUid == "fixed-course" }
@@ -34,20 +33,17 @@ class IcalSourceParserTest {
     }
 
     @Test
-    fun `保留取消事件并跳过未确认 Fixplatz`() {
+    fun `保留取消事件并默认接受全部来源 UID`() {
         val result = parser.parse(
             icsText = syntheticCalendar(),
             windowStart = windowStart,
             windowEnd = windowEnd,
-            confirmedFixplatzUids = setOf("fixed-course", "cancelled-course", "timezone-course"),
         )
 
         assertTrue(result.occurrences.single { it.sourceUid == "cancelled-course" }.isCancelled)
         assertTrue(result.occurrences.any { it.sourceUid == "timezone-course" })
-        assertEquals(
-            listOf(IcalSkipReason.NOT_CONFIRMED_FIXPLATZ),
-            result.skipped.map(IcalSkippedEvent::reason),
-        )
+        assertTrue(result.occurrences.any { it.sourceUid == "not-confirmed" })
+        assertEquals(emptyList<IcalSkippedEvent>(), result.skipped)
     }
 
     private fun syntheticCalendar(): String = """

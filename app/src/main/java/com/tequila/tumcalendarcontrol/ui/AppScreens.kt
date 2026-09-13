@@ -66,6 +66,7 @@ fun AppScreenContent(state: CalendarControlState, screen: AppScreen) {
         AppScreen.SYNC_CONFIGURATION -> SyncConfigurationScreen(state)
         AppScreen.SYNC_PREVIEW -> SyncPreviewScreen(state)
         AppScreen.SOURCE_PREVIEW -> SourcePreviewScreen(state)
+        AppScreen.SOURCE_ATTENDANCE -> SourceAttendanceScreen(state)
     }
 }
 
@@ -194,7 +195,7 @@ private fun SettingsScreen(state: CalendarControlState) {
                 Text("配置来源与 Google 连接")
             }
         }
-        item { InformationCard("规则与范围", "只处理已获 Fixplatz 的日程；绿／蓝／灰规则由本应用统一决定") }
+        item { InformationCard("规则与范围", "来源课程默认蓝色；绿／蓝／灰规则只保存在本机，尚不写入日历") }
         item { SourceStatusSelector(state) }
         item { Button(onClick = state::openSyncPreview, modifier = Modifier.fillMaxWidth()) { Text("查看离线同步预览") } }
         item {
@@ -226,7 +227,7 @@ private fun SettingsScreen(state: CalendarControlState) {
 private fun SourceStatusSelector(state: CalendarControlState) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("来源状态筛选", style = MiuixTheme.textStyles.title3)
-        Text("只控制显示，不会让未确认 Fixplatz 进入输出。", color = LocalTumPalette.current.onSurfaceVariant)
+        Text("只控制合成示例课程的显示；不会影响私有 iCal 读取或任何日历。", color = LocalTumPalette.current.onSurfaceVariant)
         TumEventStatus.entries.forEach { status ->
             Switch(checked = status in state.visibleSourceStatuses, onCheckedChange = { state.toggleSourceStatusVisible(status) })
             Text(status.label, modifier = Modifier.padding(start = 8.dp))
@@ -246,23 +247,75 @@ private fun SyncPreviewScreen(state: CalendarControlState) {
     }
 }
 
-/** 真实来源预览只呈现脱敏计数与时间边界，不渲染 URL、UID、标题、地点或 ICS 原文。 */
+/** 来源目录只在当前运行内显示；规则身份使用 UID，标题与地点绝不持久化。 */
 @Composable
 private fun SourcePreviewScreen(state: CalendarControlState) {
     val preview = state.sourcePreview
     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        item { InformationCard("私有 iCal 只读预览", "已完成一次只读读取；本页没有写入、授权或同步按钮。") }
+        item { InformationCard("私有 iCal 课程目录", "已完成一次只读读取。课程默认蓝色“选择出席”；本页只保存规则，不写入、授权或同步。") }
         if (preview == null) {
             item { InformationCard("没有可显示的预览", "请返回设置重新执行用户主动读取；不会自动重试。") }
         } else {
-            item { InformationCard("来源汇总", "解析到 ${preview.sourceEventCount} 条来源记录；符合当前 Fixplatz 确认清单的实例 ${preview.eligibleOccurrenceCount} 条。") }
+            item { InformationCard("来源汇总", "解析到 ${preview.sourceEventCount} 条来源记录；可管理实例 ${preview.manageableOccurrenceCount} 条，聚合为 ${preview.courses.size} 门课程。") }
             item {
-                val first = preview.firstEligibleStart?.toString() ?: "无"
-                val last = preview.lastEligibleEnd?.toString() ?: "无"
-                InformationCard("符合条件的时间范围", "$first 至 $last")
+                val first = preview.firstManageableStart?.toString() ?: "无"
+                val last = preview.lastManageableEnd?.toString() ?: "无"
+                InformationCard("读取时间范围", "$first 至 $last")
             }
             item { InformationCard("跳过汇总", if (preview.skippedByReason.isEmpty()) "无跳过记录" else preview.skippedByReason.entries.joinToString("；") { "${it.key.label} ${it.value} 条" }) }
-            item { InformationCard("下一步", "未确认 Fixplatz 的来源不会进入输出。后续需由你确认资格后，才会进入本机或 Google 的受控写入预览。") }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    Button(onClick = state::selectAllSourceCourses, modifier = Modifier.weight(1f)) { Text("全选课程") }
+                    Button(onClick = state::clearSourceCourseSelection, modifier = Modifier.weight(1f)) { Text("清除选择") }
+                }
+            }
+            if (state.selectedSourceCourseUids.isNotEmpty()) {
+                item {
+                    Button(onClick = { state.openSourceAttendanceEditor() }, modifier = Modifier.fillMaxWidth()) {
+                        Text("设置已选 ${state.selectedSourceCourseUids.size} 门课程的状态")
+                    }
+                }
+            }
+            items(preview.courses, key = { it.sourceUid }) { course ->
+                SourceCourseRow(
+                    course = course,
+                    selected = course.sourceUid in state.selectedSourceCourseUids,
+                    attendance = state.sourceAttendanceFor(course.sourceUid),
+                    onToggle = { state.toggleSourceCourseSelection(course.sourceUid) },
+                    onEdit = { state.openSourceAttendanceEditor(setOf(course.sourceUid)) },
+                )
+            }
+        }
+    }
+}
+
+/** 每张卡片只负责选择或打开该来源 UID 的规则编辑器，不把来源资料写入规则库。 */
+@Composable
+private fun SourceCourseRow(
+    course: com.tequila.tumcalendarcontrol.sync.SourceCourse,
+    selected: Boolean,
+    attendance: com.tequila.tumcalendarcontrol.domain.AttendanceState,
+    onToggle: () -> Unit,
+    onEdit: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onToggle),
+        insideMargin = androidx.compose.foundation.layout.PaddingValues(14.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(selected = selected, onClick = onToggle)
+                Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+                    Text(course.title, style = MiuixTheme.textStyles.title3)
+                    Text(
+                        "${attendance.colorLabel}色 · ${attendance.label} · ${course.occurrenceCount} 次实例",
+                        color = LocalTumPalette.current.onSurfaceVariant,
+                    )
+                }
+            }
+            if (course.location.isNotBlank()) Text("地点：${course.location}", color = LocalTumPalette.current.onSurfaceVariant)
+            Text("首个实例：${course.firstStart}", color = LocalTumPalette.current.onSurfaceVariant)
+            Button(onClick = onEdit, modifier = Modifier.fillMaxWidth()) { Text("单独设置状态") }
         }
     }
 }

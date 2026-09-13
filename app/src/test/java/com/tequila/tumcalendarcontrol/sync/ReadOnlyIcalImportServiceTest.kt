@@ -1,5 +1,5 @@
 /*
- * 职责：以合成 HTTPS 响应验证只读来源获取、失败脱敏和 Fixplatz 预览汇总。
+ * 职责：以合成 HTTPS 响应验证只读来源获取、失败脱敏和全部来源课程预览汇总。
  * 输入／输出：输入伪造传输和 RFC 5545 文本；输出获取器及服务结果断言。
  * 外部副作用：无；不请求网络、不读取私有地址或真实日历。
  * 不负责：Android UI、真实 TUM 订阅或目标日历写入验证。
@@ -42,20 +42,21 @@ class ReadOnlyIcalImportServiceTest {
     }
 
     @Test
-    fun `服务只汇总已确认Fixplatz且不返回标题`() {
+    fun `服务汇总全部来源并按 UID 生成本机课程目录`() {
         val service = ReadOnlyIcalImportService(
             fetcher = HttpsIcalSourceFetcher(transport = FakeTransport { IcalHttpResponse(200, syntheticCalendar().toByteArray()) }),
             clock = Clock.fixed(Instant.parse("2026-09-13T00:00:00Z"), ZoneOffset.UTC),
         )
 
-        val result = service.preview("https://synthetic.example.test/calendar", setOf("confirmed"))
+        val result = service.preview("https://synthetic.example.test/calendar")
 
         assertTrue(result is IcalReadOnlyImportResult.Success)
         val preview = (result as IcalReadOnlyImportResult.Success).preview
         assertEquals(2, preview.sourceEventCount)
-        assertEquals(1, preview.eligibleOccurrenceCount)
-        assertEquals(1, preview.skippedByReason[IcalSkipReason.NOT_CONFIRMED_FIXPLATZ])
-        assertEquals(Instant.parse("2026-09-14T08:00:00Z"), preview.firstEligibleStart)
+        assertEquals(2, preview.manageableOccurrenceCount)
+        assertTrue(preview.skippedByReason.isEmpty())
+        assertEquals(Instant.parse("2026-09-14T08:00:00Z"), preview.firstManageableStart)
+        assertEquals(2, preview.courses.size)
     }
 
     @Test
@@ -66,7 +67,7 @@ class ReadOnlyIcalImportServiceTest {
 
         assertEquals(
             IcalReadOnlyImportResult.Failure("来源内容无法作为 iCal 日历解析"),
-            service.preview("https://synthetic.example.test/calendar", emptySet()),
+            service.preview("https://synthetic.example.test/calendar"),
         )
     }
 

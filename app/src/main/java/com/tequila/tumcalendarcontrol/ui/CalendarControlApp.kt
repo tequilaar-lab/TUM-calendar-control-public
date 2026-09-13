@@ -103,7 +103,6 @@ fun CalendarControlApp() {
     LaunchedEffect(state.sourceReadRequested) {
         if (!state.sourceReadRequested) return@LaunchedEffect
         val privateUrl = state.privateSyncConfiguration.tumSubscriptionUrl
-        val confirmedUids = state.courses.filter { it.hasFixedPlus }.map { it.id }.toSet()
         val requestToken = state.sourceReadToken
         val resolved = AtomicBoolean(false)
         val mainHandler = Handler(Looper.getMainLooper())
@@ -123,7 +122,7 @@ fun CalendarControlApp() {
             SourceReadDeadlineMillis,
         )
         Thread {
-            val result = readOnlyIcalImportService.preview(privateUrl, confirmedUids)
+            val result = readOnlyIcalImportService.preview(privateUrl)
             resolveOnce(result)
         }.start()
     }
@@ -334,6 +333,7 @@ private fun AppScreen.usesBackArrow(): Boolean = this in setOf(
     AppScreen.SYNC_CONFIGURATION,
     AppScreen.SYNC_PREVIEW,
     AppScreen.SOURCE_PREVIEW,
+    AppScreen.SOURCE_ATTENDANCE,
 )
 
 private fun AppScreen.bottomNavigationIndex(): Int = when (this) {
@@ -357,6 +357,7 @@ private fun AppScreen.title(): String = when (this) {
     AppScreen.SYNC_CONFIGURATION -> "来源与 Google 连接"
     AppScreen.SYNC_PREVIEW -> "同步预览"
     AppScreen.SOURCE_PREVIEW -> "iCal 来源预览"
+    AppScreen.SOURCE_ATTENDANCE -> "设置来源课程状态"
 }
 
 private fun AppScreen.subtitle(): String? = when (this) {
@@ -364,6 +365,7 @@ private fun AppScreen.subtitle(): String? = when (this) {
     AppScreen.SETTINGS -> "可手动只读 iCal；不写入日历"
     AppScreen.SYNC_CONFIGURATION -> "仅保存本机配置，不会联网"
     AppScreen.SYNC_PREVIEW -> "离线合成预览 · 不写入日历"
-    AppScreen.SOURCE_PREVIEW -> "只读摘要 · 不写入日历"
+    AppScreen.SOURCE_PREVIEW -> "只读目录 · 不写入日历"
+    AppScreen.SOURCE_ATTENDANCE -> "只保存本机规则 · 不写入日历"
     else -> null
 }

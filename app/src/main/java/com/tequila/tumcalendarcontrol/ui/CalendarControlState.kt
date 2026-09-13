@@ -21,13 +21,14 @@ import com.tequila.tumcalendarcontrol.sync.RuleLedger
 import com.tequila.tumcalendarcontrol.sync.SyncPreview
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyImportResult
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyPreview
+import com.tequila.tumcalendarcontrol.sync.SourceCourse
 import com.tequila.tumcalendarcontrol.sync.RuleEditCommand
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerEditor
 import com.tequila.tumcalendarcontrol.sync.SyncRule
 import java.time.LocalDate
 
 enum class AppScreen {
-    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_PREVIEW,
+    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_PREVIEW, SOURCE_ATTENDANCE,
 }
 
 enum class ThemeMode(val label: String) {
@@ -79,6 +80,15 @@ class CalendarControlState(
         private set
     var sourcePreviewError by mutableStateOf<String?>(null)
         private set
+    /** 真实来源资料仅在当前进程内保存，重新读取或退出后由用户源重新生成。 */
+    var sourceCourses by mutableStateOf<List<SourceCourse>>(emptyList())
+        private set
+    var selectedSourceCourseUids by mutableStateOf<Set<String>>(emptySet())
+        private set
+    var pendingSourceAttendance by mutableStateOf(AttendanceState.CHOOSE_TO_ATTEND)
+    var pendingSourceAttendanceScope by mutableStateOf(AttendanceEditScope.ALL_OCCURRENCES)
+    var pendingSourceEffectiveDate by mutableStateOf("")
+    private var sourceAttendanceReturnScreen by mutableStateOf(AppScreen.SOURCE_PREVIEW)
     /** 只读请求的单调编号；忽略超时后才返回的旧线程结果，避免覆盖新的用户操作。 */
     var sourceReadToken by mutableStateOf(0L)
         private set
@@ -202,7 +212,7 @@ class CalendarControlState(
         feedback = "正在只读读取私有 iCal；不会写入任何日历。"
     }
 
-    /** 后台读取完成后只保留脱敏摘要，不保留 URL、ICS 原文或来源标题。 */
+    /** 后台读取完成后保留摘要与仅本次运行可见的课程目录；不保留 URL 或 ICS 原文。 */
     fun resolveSourcePreview(token: Long, result: IcalReadOnlyImportResult) {
         if (token != sourceReadToken || !sourceReadInProgress) return
         sourceReadRequested = false
@@ -210,6 +220,8 @@ class CalendarControlState(
         when (result) {
             is IcalReadOnlyImportResult.Success -> {
                 sourcePreview = result.preview
+                sourceCourses = result.preview.courses
+                selectedSourceCourseUids = emptySet()
                 sourcePreviewError = null
                 syncPreviewReturnScreen = contentScreen
                 screen = AppScreen.SOURCE_PREVIEW
@@ -220,6 +232,74 @@ class CalendarControlState(
                 feedback = "私有 iCal 未导入：${result.message}。未写入任何日历。"
             }
         }
+    }
+
+    /** 课程目录的多选只保留 UID；来源标题、地点与正文不进入规则资料库。 */
+    fun toggleSourceCourseSelection(sourceUid: String) {
+        selectedSourceCourseUids = if (sourceUid in selectedSourceCourseUids) {
+            selectedSourceCourseUids - sourceUid
+        } else {
+            selectedSourceCourseUids + sourceUid
+        }
+    }
+
+    fun selectAllSourceCourses() { selectedSourceCourseUids = sourceCourses.map(SourceCourse::sourceUid).toSet() }
+
+    fun clearSourceCourseSelection() { selectedSourceCourseUids = emptySet() }
+
+    /** 新来源课程无规则时默认蓝色；用户可按单课或多选打开同一三态编辑器。 */
+    fun sourceAttendanceFor(sourceUid: String): AttendanceState = ruleLedger.rules
+        .firstOrNull { it.sourceUid == sourceUid }
+        ?.defaultState
+        ?: AttendanceState.CHOOSE_TO_ATTEND
+
+    fun openSourceAttendanceEditor(sourceUids: Set<String> = selectedSourceCourseUids) {
+        if (sourceUids.isEmpty()) {
+            feedback = "请先选择至少一门来源课程。"
+            return
+        }
+        val firstState = sourceAttendanceFor(sourceUids.first())
+        pendingSourceAttendance = firstState
+        pendingSourceAttendanceScope = AttendanceEditScope.ALL_OCCURRENCES
+        pendingSourceEffectiveDate = ""
+        selectedSourceCourseUids = sourceUids
+        sourceAttendanceReturnScreen = AppScreen.SOURCE_PREVIEW
+        screen = AppScreen.SOURCE_ATTENDANCE
+    }
+
+    /** 将 UI 范围转换为 UID 规则；“仅本次”取每门课的代表实例，避免跨 UID 误用实例键。 */
+    fun confirmSourceAttendance() {
+        val selected = sourceCourses.filter { it.sourceUid in selectedSourceCourseUids }
+        if (selected.isEmpty()) {
+            feedback = "来源课程目录已失效；请重新读取后再修改。"
+            screen = sourceAttendanceReturnScreen
+            return
+        }
+        val sourceUids = selected.map(SourceCourse::sourceUid).toSet()
+        val command = when (pendingSourceAttendanceScope) {
+            AttendanceEditScope.ALL_OCCURRENCES -> RuleEditCommand.WholeCourse(sourceUids, pendingSourceAttendance)
+            AttendanceEditScope.CURRENT_AND_FUTURE -> RuleEditCommand.FromDate(sourceUids, LocalDate.now(), pendingSourceAttendance)
+            AttendanceEditScope.SPECIFIED_AND_FUTURE -> runCatching { LocalDate.parse(pendingSourceEffectiveDate) }.fold(
+                onSuccess = { RuleEditCommand.FromDate(sourceUids, it, pendingSourceAttendance) },
+                onFailure = { feedback = "请输入 YYYY-MM-DD 格式的指定日期。"; return },
+            )
+            AttendanceEditScope.ONLY_THIS_OCCURRENCE -> RuleEditCommand.InstancesBySource(
+                sourceUids = sourceUids,
+                instanceKeysBySourceUid = selected.associate { it.sourceUid to setOf(it.representativeInstanceKey) },
+                state = pendingSourceAttendance,
+            )
+        }
+        val existing = ruleLedger.rules.associateBy(SyncRule::sourceUid)
+        val ensuredRules = sourceUids.map { uid ->
+            // 该历史字段只为旧本机规则编码兼容而保留；来源目录不再以它过滤课程。
+            existing[uid] ?: SyncRule(uid, hasConfirmedFixplatz = true, defaultState = AttendanceState.CHOOSE_TO_ATTEND)
+        }
+        ruleLedger = ruleLedger.copy(rules = RuleLedgerEditor.apply(
+            ruleLedger.rules.filterNot { it.sourceUid in sourceUids } + ensuredRules,
+            command,
+        ))
+        feedback = "已更新 ${sourceUids.size} 门来源课程的${pendingSourceAttendance.label}规则；尚未写入任何日历。"
+        screen = sourceAttendanceReturnScreen
     }
 
     fun confirmAttendance() {
@@ -268,6 +348,7 @@ class CalendarControlState(
             AppScreen.SYNC_CONFIGURATION -> syncConfigurationReturnScreen
             AppScreen.SYNC_PREVIEW -> syncPreviewReturnScreen
             AppScreen.SOURCE_PREVIEW -> syncPreviewReturnScreen
+            AppScreen.SOURCE_ATTENDANCE -> sourceAttendanceReturnScreen
             else -> return false
         }
         navigationDirection = NavigationDirection.BACKWARD
@@ -284,6 +365,7 @@ class CalendarControlState(
         AppScreen.SYNC_CONFIGURATION,
         AppScreen.SYNC_PREVIEW,
         AppScreen.SOURCE_PREVIEW,
+        AppScreen.SOURCE_ATTENDANCE,
     )
 
     private fun navigationDirectionBetween(source: AppScreen, destination: AppScreen): NavigationDirection {

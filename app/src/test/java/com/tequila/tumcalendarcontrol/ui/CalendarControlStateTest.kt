@@ -11,6 +11,9 @@ import com.tequila.tumcalendarcontrol.domain.CourseLocalOverride
 import com.tequila.tumcalendarcontrol.domain.TumEventStatus
 import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfiguration
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyImportResult
+import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyPreview
+import com.tequila.tumcalendarcontrol.sync.SourceCourse
+import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -223,4 +226,54 @@ class CalendarControlStateTest {
         assertEquals(AppScreen.ATTENDANCE, state.screen)
         assertEquals("请输入 YYYY-MM-DD 格式的指定日期。", state.feedback)
     }
+
+    @Test
+    fun `来源课程默认蓝色并支持批量三态与范围规则`() {
+        val state = CalendarControlState()
+        state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
+        state.requestSourcePreview()
+        state.resolveSourcePreview(state.sourceReadToken, IcalReadOnlyImportResult.Success(sourcePreview()))
+
+        assertEquals(AppScreen.SOURCE_PREVIEW, state.screen)
+        assertEquals(AttendanceState.CHOOSE_TO_ATTEND, state.sourceAttendanceFor("uid-a"))
+        state.selectAllSourceCourses()
+        state.openSourceAttendanceEditor()
+        state.pendingSourceAttendance = AttendanceState.MUST_ATTEND
+        state.pendingSourceAttendanceScope = AttendanceEditScope.ALL_OCCURRENCES
+        state.confirmSourceAttendance()
+
+        assertEquals(AppScreen.SOURCE_PREVIEW, state.screen)
+        assertEquals(AttendanceState.MUST_ATTEND, state.sourceAttendanceFor("uid-a"))
+        assertEquals(AttendanceState.MUST_ATTEND, state.sourceAttendanceFor("uid-b"))
+    }
+
+    @Test
+    fun `来源课程仅本次按 UID 保存各自实例键`() {
+        val state = CalendarControlState()
+        state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
+        state.requestSourcePreview()
+        state.resolveSourcePreview(state.sourceReadToken, IcalReadOnlyImportResult.Success(sourcePreview()))
+        state.selectAllSourceCourses()
+        state.openSourceAttendanceEditor()
+        state.pendingSourceAttendance = AttendanceState.STOP_ATTENDING
+        state.pendingSourceAttendanceScope = AttendanceEditScope.ONLY_THIS_OCCURRENCE
+        state.confirmSourceAttendance()
+
+        val rules = state.ruleLedger.rules.associateBy { it.sourceUid }
+        assertEquals(AttendanceState.STOP_ATTENDING, rules.getValue("uid-a").instanceOverrides["a-instance"])
+        assertFalse(rules.getValue("uid-a").instanceOverrides.containsKey("b-instance"))
+        assertEquals(AttendanceState.STOP_ATTENDING, rules.getValue("uid-b").instanceOverrides["b-instance"])
+    }
+
+    private fun sourcePreview(): IcalReadOnlyPreview = IcalReadOnlyPreview(
+        sourceEventCount = 2,
+        manageableOccurrenceCount = 2,
+        skippedByReason = emptyMap(),
+        firstManageableStart = Instant.parse("2026-09-14T08:00:00Z"),
+        lastManageableEnd = Instant.parse("2026-09-15T10:00:00Z"),
+        courses = listOf(
+            SourceCourse("uid-a", "合成 A", "地点 A", Instant.parse("2026-09-14T08:00:00Z"), Instant.parse("2026-09-14T10:00:00Z"), "a-instance", 1, 0),
+            SourceCourse("uid-b", "合成 B", "地点 B", Instant.parse("2026-09-15T08:00:00Z"), Instant.parse("2026-09-15T10:00:00Z"), "b-instance", 1, 0),
+        ),
+    )
 }

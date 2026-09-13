@@ -15,28 +15,43 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RuleLedgerEditorTest {
-    private val confirmed = SyncRule("synthetic-a", true, AttendanceState.CHOOSE_TO_ATTEND)
-    private val pending = SyncRule("synthetic-b", false, AttendanceState.MUST_ATTEND)
+    private val firstCourse = SyncRule("synthetic-a", true, AttendanceState.CHOOSE_TO_ATTEND)
+    private val secondCourse = SyncRule("synthetic-b", false, AttendanceState.MUST_ATTEND)
 
     @Test fun `从日期起批量编辑不改写此前实例`() {
-        val updated = RuleLedgerEditor.apply(listOf(confirmed, pending), RuleEditCommand.FromDate(setOf("synthetic-a", "synthetic-b"), LocalDate.parse("2026-10-10"), AttendanceState.STOP_ATTENDING))
+        val updated = RuleLedgerEditor.apply(listOf(firstCourse, secondCourse), RuleEditCommand.FromDate(setOf("synthetic-a", "synthetic-b"), LocalDate.parse("2026-10-10"), AttendanceState.STOP_ATTENDING))
         val rule = updated.first()
         assertEquals(AttendanceState.CHOOSE_TO_ATTEND, SyncRuleResolver.resolve(rule, occurrence("2026-10-03T08:00:00Z"), ZoneOffset.UTC))
         assertEquals(AttendanceState.STOP_ATTENDING, SyncRuleResolver.resolve(rule, occurrence("2026-10-10T08:00:00Z"), ZoneOffset.UTC))
-        assertTrue(updated.last().futureStateOverrides.isEmpty())
+        assertEquals(AttendanceState.STOP_ATTENDING, SyncRuleResolver.resolve(updated.last(), occurrence("2026-10-10T08:00:00Z").copy(sourceUid = "synthetic-b"), ZoneOffset.UTC))
     }
 
-    @Test fun `整课与单次编辑可以批量并保持未确认课程不变`() {
-        val all = RuleLedgerEditor.apply(listOf(confirmed, pending), RuleEditCommand.WholeCourse(setOf("synthetic-a", "synthetic-b"), AttendanceState.MUST_ATTEND))
+    @Test fun `整课与单次编辑可以批量应用于全部来源课程`() {
+        val all = RuleLedgerEditor.apply(listOf(firstCourse, secondCourse), RuleEditCommand.WholeCourse(setOf("synthetic-a", "synthetic-b"), AttendanceState.MUST_ATTEND))
         val one = RuleLedgerEditor.apply(all, RuleEditCommand.Instances(setOf("synthetic-a"), setOf("2026-10-17T08:00:00Z"), AttendanceState.STOP_ATTENDING))
         assertEquals(AttendanceState.MUST_ATTEND, one.first().defaultState)
         assertEquals(AttendanceState.STOP_ATTENDING, one.first().instanceOverrides.getValue("2026-10-17T08:00:00Z"))
         assertEquals(AttendanceState.MUST_ATTEND, one.last().defaultState)
     }
 
+    @Test fun `多选仅本次按来源 UID 隔离实例键`() {
+        val updated = RuleLedgerEditor.apply(
+            listOf(firstCourse, secondCourse),
+            RuleEditCommand.InstancesBySource(
+                sourceUids = setOf("synthetic-a", "synthetic-b"),
+                instanceKeysBySourceUid = mapOf("synthetic-a" to setOf("a-instance"), "synthetic-b" to setOf("b-instance")),
+                state = AttendanceState.STOP_ATTENDING,
+            ),
+        )
+        assertEquals(AttendanceState.STOP_ATTENDING, updated.first().instanceOverrides["a-instance"])
+        assertEquals(null, updated.first().instanceOverrides["b-instance"])
+        assertEquals(AttendanceState.STOP_ATTENDING, updated.last().instanceOverrides["b-instance"])
+        assertEquals(null, updated.last().instanceOverrides["a-instance"])
+    }
+
     @Test fun `资料库可往返特殊字符 映射和脱敏摘要 损坏数据安全清空`() {
         val ledger = RuleLedger(
-            rules = listOf(confirmed.copy(instanceOverrides = mapOf("k|中文" to AttendanceState.MUST_ATTEND))),
+            rules = listOf(firstCourse.copy(instanceOverrides = mapOf("k|中文" to AttendanceState.MUST_ATTEND))),
             manualEvents = listOf(ManualScheduleItem("manual-1", "合成 | 事项", Instant.parse("2026-10-01T08:00:00Z"), Instant.parse("2026-10-01T09:00:00Z"), AttendanceState.CHOOSE_TO_ATTEND)),
             mappings = listOf(StoredEventMapping(OutputTarget.LOCAL_CALENDAR, ManagedEventIdentity("synthetic-a", "k|中文"), "event-1", "fingerprint")),
             lastSummary = SyncRunSummary(Instant.parse("2026-10-01T10:00:00Z"), 1, 2, 3, 4, "仅合成失败摘要"),

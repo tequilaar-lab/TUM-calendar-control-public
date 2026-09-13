@@ -1,5 +1,5 @@
 /*
- * 职责：验证 Fixplatz 准入、单实例覆盖及“从此不去”只影响未来的规则决议。
+ * 职责：验证全部来源、单实例覆盖及“从此不去”只影响未来的规则决议。
  * 输入／输出：输入合成规则与实例；输出三态或空值断言。
  * 外部副作用：无。
  * 不负责：iCalendar 文本、持久化或外部日历输出。
@@ -34,11 +34,11 @@ class SyncRuleResolverTest {
     }
 
     @Test
-    fun `未确认或取消来源均不能输出`() {
+    fun `旧资格字段不再筛选来源但取消来源仍不能输出`() {
         val unconfirmed = SyncRule(uid, false, AttendanceState.MUST_ATTEND)
         val confirmed = SyncRule(uid, true, AttendanceState.MUST_ATTEND)
 
-        assertNull(SyncRuleResolver.resolve(unconfirmed, occurrence("one", "2026-10-01T08:00:00Z"), zone))
+        assertEquals(AttendanceState.MUST_ATTEND, SyncRuleResolver.resolve(unconfirmed, occurrence("one", "2026-10-01T08:00:00Z"), zone))
         assertNull(SyncRuleResolver.resolve(confirmed, occurrence("two", "2026-10-01T08:00:00Z", true), zone))
     }
 
