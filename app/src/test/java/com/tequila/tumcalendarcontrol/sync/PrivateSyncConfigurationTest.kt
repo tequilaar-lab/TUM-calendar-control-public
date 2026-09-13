@@ -14,6 +14,13 @@ import org.junit.Test
 class PrivateSyncConfigurationTest {
 
     @Test
+    fun `私有来源只接受HTTPS`() {
+        val problems = PrivateSyncConfiguration(tumSubscriptionUrl = "http://synthetic.example.test/calendar").validate()
+
+        assertTrue(problems.contains(ConfigurationProblem.INVALID_TUM_SUBSCRIPTION))
+    }
+
+    @Test
     fun `已配置订阅只显示全遮罩 不泄露主机或路径`() {
         val configuration = PrivateSyncConfiguration(tumSubscriptionUrl = "https://private.example.test/path?token=synthetic")
 

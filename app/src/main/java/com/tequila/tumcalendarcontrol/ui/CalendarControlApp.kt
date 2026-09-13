@@ -1,12 +1,14 @@
 /*
  * 职责：组合主题、固定顶栏、浮动主导航、全屏更多覆盖层及本机偏好装载。
  * 输入／输出：输入内存中的 CalendarControlState；输出整个离线 Compose-Miuix 应用界面。
- * 外部副作用：只保存非敏感资料和同步目标开关到应用私有偏好。
- * 不负责：账户授权、私有 iCal、Android Calendar Provider 或真实日历写入。
+ * 外部副作用：保存本机偏好；仅在用户点按后后台读取一次私有 iCal。
+ * 不负责：账户授权、Android Calendar Provider 或真实日历写入。
  */
 package com.tequila.tumcalendarcontrol.ui
 
 import android.Manifest
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -43,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfigurationStore
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerPreferences
+import com.tequila.tumcalendarcontrol.sync.ReadOnlyIcalImportService
 import com.tequila.tumcalendarcontrol.domain.SampleCourses
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,6 +73,7 @@ fun CalendarControlApp() {
     val privateSyncConfigurationStore = remember(context) { PrivateSyncConfigurationStore(context) }
     val ruleLedgerPreferences = remember(context) { RuleLedgerPreferences(context) }
     val courseOverridePreferences = remember(context) { CourseOverridePreferences(context) }
+    val readOnlyIcalImportService = remember { ReadOnlyIcalImportService() }
     val state = remember {
         CalendarControlState(
             initialCourses = courseOverridePreferences.applyTo(SampleCourses.all()),
@@ -93,6 +97,15 @@ fun CalendarControlApp() {
     LaunchedEffect(state.courses) { courseOverridePreferences.save(state.courses) }
     LaunchedEffect(state.localCalendarPermissionRequestPending) {
         if (state.localCalendarPermissionRequestPending) localCalendarPermissionLauncher.launch(Manifest.permission.WRITE_CALENDAR)
+    }
+    LaunchedEffect(state.sourceReadRequested) {
+        if (!state.sourceReadRequested) return@LaunchedEffect
+        val privateUrl = state.privateSyncConfiguration.tumSubscriptionUrl
+        val confirmedUids = state.courses.filter { it.hasFixedPlus }.map { it.id }.toSet()
+        Thread {
+            val result = readOnlyIcalImportService.preview(privateUrl, confirmedUids)
+            Handler(Looper.getMainLooper()).post { state.resolveSourcePreview(result) }
+        }.start()
     }
     BackHandler(enabled = state.canHandleBack()) { state.handleBack() }
     TumCalendarTheme(mode = state.themeMode) {
@@ -300,6 +313,7 @@ private fun AppScreen.usesBackArrow(): Boolean = this in setOf(
     AppScreen.PROFILE,
     AppScreen.SYNC_CONFIGURATION,
     AppScreen.SYNC_PREVIEW,
+    AppScreen.SOURCE_PREVIEW,
 )
 
 private fun AppScreen.bottomNavigationIndex(): Int = when (this) {
@@ -322,6 +336,7 @@ private fun AppScreen.title(): String = when (this) {
     AppScreen.PROFILE -> "个人资料"
     AppScreen.SYNC_CONFIGURATION -> "来源与 Google 连接"
     AppScreen.SYNC_PREVIEW -> "同步预览"
+    AppScreen.SOURCE_PREVIEW -> "iCal 来源预览"
 }
 
 private fun AppScreen.subtitle(): String? = when (this) {
@@ -329,5 +344,6 @@ private fun AppScreen.subtitle(): String? = when (this) {
     AppScreen.SETTINGS -> "本轮不连接任何真实日历"
     AppScreen.SYNC_CONFIGURATION -> "仅保存本机配置，不会联网"
     AppScreen.SYNC_PREVIEW -> "离线合成预览 · 不写入日历"
+    AppScreen.SOURCE_PREVIEW -> "只读摘要 · 不写入日历"
     else -> null
 }

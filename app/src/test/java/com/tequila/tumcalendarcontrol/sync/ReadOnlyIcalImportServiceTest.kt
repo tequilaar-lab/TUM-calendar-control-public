@@ -1,0 +1,94 @@
+/*
+ * 职责：以合成 HTTPS 响应验证只读来源获取、失败脱敏和 Fixplatz 预览汇总。
+ * 输入／输出：输入伪造传输和 RFC 5545 文本；输出获取器及服务结果断言。
+ * 外部副作用：无；不请求网络、不读取私有地址或真实日历。
+ * 不负责：Android UI、真实 TUM 订阅或目标日历写入验证。
+ */
+package com.tequila.tumcalendarcontrol.sync
+
+import java.net.URI
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class ReadOnlyIcalImportServiceTest {
+    @Test
+    fun `获取器拒绝非HTTPS且不调用传输`() {
+        var calls = 0
+        val fetcher = HttpsIcalSourceFetcher(transport = FakeTransport { calls += 1; IcalHttpResponse(200, ByteArray(0)) })
+
+        val result = fetcher.fetch("http://synthetic.example.test/calendar")
+
+        assertEquals(IcalFetchResult.Failure("只允许 HTTPS 私有订阅地址"), result)
+        assertEquals(0, calls)
+    }
+
+    @Test
+    fun `获取器覆盖成功 状态码 超限与传输失败`() {
+        val success = HttpsIcalSourceFetcher(transport = FakeTransport { IcalHttpResponse(200, "BEGIN:VCALENDAR".toByteArray()) })
+        assertEquals(IcalFetchResult.Success("BEGIN:VCALENDAR"), success.fetch("https://synthetic.example.test/calendar"))
+
+        val status = HttpsIcalSourceFetcher(transport = FakeTransport { IcalHttpResponse(503, ByteArray(0)) })
+        assertEquals(IcalFetchResult.Failure("来源服务器未成功响应"), status.fetch("https://synthetic.example.test/calendar"))
+
+        val oversized = HttpsIcalSourceFetcher(maxBytes = 3, transport = FakeTransport { IcalHttpResponse(200, ByteArray(4)) })
+        assertEquals(IcalFetchResult.Failure("来源响应超过大小限制"), oversized.fetch("https://synthetic.example.test/calendar"))
+
+        val failing = HttpsIcalSourceFetcher(transport = FakeTransport { error("synthetic timeout") })
+        assertEquals(IcalFetchResult.Failure("来源读取失败"), failing.fetch("https://synthetic.example.test/calendar"))
+    }
+
+    @Test
+    fun `服务只汇总已确认Fixplatz且不返回标题`() {
+        val service = ReadOnlyIcalImportService(
+            fetcher = HttpsIcalSourceFetcher(transport = FakeTransport { IcalHttpResponse(200, syntheticCalendar().toByteArray()) }),
+            clock = Clock.fixed(Instant.parse("2026-09-13T00:00:00Z"), ZoneOffset.UTC),
+        )
+
+        val result = service.preview("https://synthetic.example.test/calendar", setOf("confirmed"))
+
+        assertTrue(result is IcalReadOnlyImportResult.Success)
+        val preview = (result as IcalReadOnlyImportResult.Success).preview
+        assertEquals(2, preview.sourceEventCount)
+        assertEquals(1, preview.eligibleOccurrenceCount)
+        assertEquals(1, preview.skippedByReason[IcalSkipReason.NOT_CONFIRMED_FIXPLATZ])
+        assertEquals(Instant.parse("2026-09-14T08:00:00Z"), preview.firstEligibleStart)
+    }
+
+    @Test
+    fun `服务将无效内容归为脱敏解析失败`() {
+        val service = ReadOnlyIcalImportService(
+            fetcher = HttpsIcalSourceFetcher(transport = FakeTransport { IcalHttpResponse(200, "not an ical".toByteArray()) }),
+        )
+
+        assertEquals(
+            IcalReadOnlyImportResult.Failure("来源内容无法作为 iCal 日历解析"),
+            service.preview("https://synthetic.example.test/calendar", emptySet()),
+        )
+    }
+
+    private class FakeTransport(private val response: (URI) -> IcalHttpResponse) : IcalHttpTransport {
+        override fun get(uri: URI, connectTimeoutMillis: Int, readTimeoutMillis: Int, maxBytes: Int): IcalHttpResponse = response(uri)
+    }
+
+    private fun syntheticCalendar(): String = """
+        BEGIN:VCALENDAR
+        VERSION:2.0
+        BEGIN:VEVENT
+        UID:confirmed
+        DTSTART:20260914T080000Z
+        DTEND:20260914T100000Z
+        SUMMARY:绝不应出现在预览中的合成标题
+        END:VEVENT
+        BEGIN:VEVENT
+        UID:unconfirmed
+        DTSTART:20260915T080000Z
+        DTEND:20260915T100000Z
+        SUMMARY:另一条合成标题
+        END:VEVENT
+        END:VCALENDAR
+    """.trimIndent()
+}

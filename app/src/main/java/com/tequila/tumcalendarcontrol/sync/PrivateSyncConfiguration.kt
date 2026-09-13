@@ -22,7 +22,7 @@ data class PrivateSyncConfiguration(
     fun validate(): List<ConfigurationProblem> = buildList {
         if (hasTumSubscription) {
             val uri = runCatching { URI(tumSubscriptionUrl.trim()) }.getOrNull()
-            if (uri?.scheme !in setOf("https", "http") || uri?.host.isNullOrBlank()) {
+            if (uri?.scheme != "https" || uri.host.isNullOrBlank()) {
                 add(ConfigurationProblem.INVALID_TUM_SUBSCRIPTION)
             }
         }
@@ -38,7 +38,7 @@ data class PrivateSyncConfiguration(
 }
 
 enum class ConfigurationProblem(val message: String) {
-    INVALID_TUM_SUBSCRIPTION("订阅地址必须是带主机名的 http 或 https 地址"),
+    INVALID_TUM_SUBSCRIPTION("订阅地址必须是带主机名的 HTTPS 地址"),
     INVALID_GOOGLE_CLIENT_ID("Google OAuth 客户端标识应以 .apps.googleusercontent.com 结尾"),
     BLANK_GOOGLE_CALENDAR_NAME("Google 专用目标日历名称不能为空"),
 }

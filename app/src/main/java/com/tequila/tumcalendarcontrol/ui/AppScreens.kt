@@ -65,6 +65,7 @@ fun AppScreenContent(state: CalendarControlState, screen: AppScreen) {
         AppScreen.PROFILE -> ProfileScreen(state)
         AppScreen.SYNC_CONFIGURATION -> SyncConfigurationScreen(state)
         AppScreen.SYNC_PREVIEW -> SyncPreviewScreen(state)
+        AppScreen.SOURCE_PREVIEW -> SourcePreviewScreen(state)
     }
 }
 
@@ -196,6 +197,14 @@ private fun SettingsScreen(state: CalendarControlState) {
         item { InformationCard("规则与范围", "只处理已获 Fixplatz 的日程；绿／蓝／灰规则由本应用统一决定") }
         item { SourceStatusSelector(state) }
         item { Button(onClick = state::openSyncPreview, modifier = Modifier.fillMaxWidth()) { Text("查看离线同步预览") } }
+        item {
+            Button(
+                onClick = state::requestSourcePreview,
+                enabled = !state.sourceReadInProgress,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(if (state.sourceReadInProgress) "正在读取私有 iCal…" else "读取并预览私有 iCal") }
+        }
+        item { InformationCard("只读边界", "只有点按上方按钮才会以 HTTPS 读取一次；不会显示地址或来源标题，也不会写入本机或 Google 日历。") }
         item { SyncDestinationSelector(state) }
         item { InformationCard("写入边界", "仅管理本应用创建的目标日历；不改动用户、订阅或其他应用的日程") }
         item { InformationCard("应用版本", "${BuildConfig.VERSION_NAME} · 构建号 ${BuildConfig.VERSION_CODE}") }
@@ -234,6 +243,27 @@ private fun SyncPreviewScreen(state: CalendarControlState) {
         item { InformationCard("变更汇总", "新增 ${preview.createCount} · 更新 ${preview.updateCount} · 移除 ${preview.removeCount} · 保持 ${preview.keepCount} · 跳过 ${preview.skipCount}") }
         items(preview.changes) { change -> InformationCard(change.type.label, "合成身份：${change.identity.sourceUid}／${change.identity.instanceKey}") }
         items(preview.skipped) { skipped -> InformationCard("跳过", "${skipped.reason}（${skipped.sourceUid ?: "无 UID"}）") }
+    }
+}
+
+/** 真实来源预览只呈现脱敏计数与时间边界，不渲染 URL、UID、标题、地点或 ICS 原文。 */
+@Composable
+private fun SourcePreviewScreen(state: CalendarControlState) {
+    val preview = state.sourcePreview
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item { InformationCard("私有 iCal 只读预览", "已完成一次只读读取；本页没有写入、授权或同步按钮。") }
+        if (preview == null) {
+            item { InformationCard("没有可显示的预览", "请返回设置重新执行用户主动读取；不会自动重试。") }
+        } else {
+            item { InformationCard("来源汇总", "解析到 ${preview.sourceEventCount} 条来源记录；符合当前 Fixplatz 确认清单的实例 ${preview.eligibleOccurrenceCount} 条。") }
+            item {
+                val first = preview.firstEligibleStart?.toString() ?: "无"
+                val last = preview.lastEligibleEnd?.toString() ?: "无"
+                InformationCard("符合条件的时间范围", "$first 至 $last")
+            }
+            item { InformationCard("跳过汇总", if (preview.skippedByReason.isEmpty()) "无跳过记录" else preview.skippedByReason.entries.joinToString("；") { "${it.key.label} ${it.value} 条" }) }
+            item { InformationCard("下一步", "未确认 Fixplatz 的来源不会进入输出。后续需由你确认资格后，才会进入本机或 Google 的受控写入预览。") }
+        }
     }
 }
 

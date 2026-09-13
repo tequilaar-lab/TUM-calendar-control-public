@@ -19,13 +19,15 @@ import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfiguration
 import com.tequila.tumcalendarcontrol.sync.OfflinePreviewSamples
 import com.tequila.tumcalendarcontrol.sync.RuleLedger
 import com.tequila.tumcalendarcontrol.sync.SyncPreview
+import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyImportResult
+import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyPreview
 import com.tequila.tumcalendarcontrol.sync.RuleEditCommand
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerEditor
 import com.tequila.tumcalendarcontrol.sync.SyncRule
 import java.time.LocalDate
 
 enum class AppScreen {
-    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW,
+    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_PREVIEW,
 }
 
 enum class ThemeMode(val label: String) {
@@ -69,6 +71,14 @@ class CalendarControlState(
     var ruleLedger by mutableStateOf(initialRuleLedger)
         private set
     val offlinePreview: SyncPreview = OfflinePreviewSamples.preview()
+    var sourceReadRequested by mutableStateOf(false)
+        private set
+    var sourceReadInProgress by mutableStateOf(false)
+        private set
+    var sourcePreview by mutableStateOf<IcalReadOnlyPreview?>(null)
+        private set
+    var sourcePreviewError by mutableStateOf<String?>(null)
+        private set
     var navigationDirection by mutableStateOf(NavigationDirection.FORWARD)
         private set
     private var detailReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
@@ -171,6 +181,42 @@ class CalendarControlState(
     /** 预览只展示合成差异，不能触发网络、权限申请或任何日历写入。 */
     fun openSyncPreview() { syncPreviewReturnScreen = contentScreen; screen = AppScreen.SYNC_PREVIEW }
 
+    /**
+     * 读取请求仅作为 UI 意图；界面层随后在后台执行一次 HTTPS 只读获取。
+     * 配置不存在时不发出请求，以防空地址被误认为一次同步。
+     */
+    fun requestSourcePreview() {
+        if (!privateSyncConfiguration.hasTumSubscription) {
+            feedback = "请先保存 HTTPS 私有 iCal 地址；当前未发起网络请求。"
+            return
+        }
+        if (sourceReadInProgress) return
+        sourcePreview = null
+        sourcePreviewError = null
+        sourceReadInProgress = true
+        sourceReadRequested = true
+        feedback = "正在只读读取私有 iCal；不会写入任何日历。"
+    }
+
+    /** 后台读取完成后只保留脱敏摘要，不保留 URL、ICS 原文或来源标题。 */
+    fun resolveSourcePreview(result: IcalReadOnlyImportResult) {
+        sourceReadRequested = false
+        sourceReadInProgress = false
+        when (result) {
+            is IcalReadOnlyImportResult.Success -> {
+                sourcePreview = result.preview
+                sourcePreviewError = null
+                syncPreviewReturnScreen = contentScreen
+                screen = AppScreen.SOURCE_PREVIEW
+            }
+            is IcalReadOnlyImportResult.Failure -> {
+                sourcePreview = null
+                sourcePreviewError = result.message
+                feedback = "私有 iCal 未导入：${result.message}。未写入任何日历。"
+            }
+        }
+    }
+
     fun confirmAttendance() {
         val command = attendanceCommand() ?: return
         val selectedRule = ruleLedger.rules.firstOrNull { it.sourceUid == selectedCourseId }
@@ -216,6 +262,7 @@ class CalendarControlState(
             AppScreen.PROFILE -> profileReturnScreen
             AppScreen.SYNC_CONFIGURATION -> syncConfigurationReturnScreen
             AppScreen.SYNC_PREVIEW -> syncPreviewReturnScreen
+            AppScreen.SOURCE_PREVIEW -> syncPreviewReturnScreen
             else -> return false
         }
         navigationDirection = NavigationDirection.BACKWARD
@@ -231,6 +278,7 @@ class CalendarControlState(
         AppScreen.PROFILE,
         AppScreen.SYNC_CONFIGURATION,
         AppScreen.SYNC_PREVIEW,
+        AppScreen.SOURCE_PREVIEW,
     )
 
     private fun navigationDirectionBetween(source: AppScreen, destination: AppScreen): NavigationDirection {

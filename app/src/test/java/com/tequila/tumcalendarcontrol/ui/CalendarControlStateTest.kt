@@ -150,6 +150,17 @@ class CalendarControlStateTest {
     }
 
     @Test
+    fun `未配置来源时不发起只读读取`() {
+        val state = CalendarControlState()
+
+        state.requestSourcePreview()
+
+        assertFalse(state.sourceReadRequested)
+        assertFalse(state.sourceReadInProgress)
+        assertTrue(state.feedback!!.contains("未发起网络请求"))
+    }
+
+    @Test
     fun `本机课程覆盖不改写来源字段 且来源筛选不改变Fixplatz资格`() {
         val state = CalendarControlState()
         state.openCourse("course-b")
