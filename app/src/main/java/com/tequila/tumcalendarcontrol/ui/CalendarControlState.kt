@@ -379,8 +379,8 @@ class CalendarControlState(
 
     /** 基于当前进程来源和本机规则生成差异；不查询、创建或写入任何目标日历。 */
     fun requestManagedSyncPreview() {
-        if (sourceOccurrences.isEmpty()) {
-            feedback = "请先主动读取私有 iCal 并确认课程目录；当前没有来源实例可预览。"
+        if (sourceOccurrences.isEmpty() && ruleLedger.manualEvents.isEmpty()) {
+            feedback = "请先主动读取私有 iCal 并选择课程，或添加手动校园事项；当前没有可预览的输出。"
             return
         }
         val targets = enabledOutputTargets()
@@ -388,7 +388,12 @@ class CalendarControlState(
             feedback = "请先启用本机日历或 Google 日历输出；当前不会写入任何日历。"
             return
         }
-        managedDesiredEvents = SyncCandidateFactory().build(sourceOccurrences, ruleLedger.rules, ruleLedger.manualEvents)
+        managedDesiredEvents = SyncCandidateFactory().build(
+            occurrences = sourceOccurrences,
+            selectedSourceCourseUids = selectedSourceCourseUids,
+            rules = ruleLedger.rules,
+            manualEvents = ruleLedger.manualEvents,
+        )
         managedSyncPreview = ManagedSyncEngine().preview(managedDesiredEvents, ruleLedger.mappings, targets)
         managedSyncPreviewReturnScreen = contentScreen
         screen = AppScreen.MANAGED_SYNC_PREVIEW

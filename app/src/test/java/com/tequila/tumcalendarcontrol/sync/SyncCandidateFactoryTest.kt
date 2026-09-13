@@ -19,6 +19,7 @@ class SyncCandidateFactoryTest {
     fun `未设规则来源默认蓝色 标题不参与身份`() {
         val events = factory.build(
             occurrences = listOf(occurrence("uid-a", "key-a", "同名课程"), occurrence("uid-b", "key-b", "同名课程")),
+            selectedSourceCourseUids = setOf("uid-a", "uid-b"),
             rules = emptyList(),
             manualEvents = emptyList(),
         )
@@ -36,6 +37,7 @@ class SyncCandidateFactoryTest {
                 occurrence("uid-a", "future", "来源", "2026-10-20T08:00:00Z"),
                 occurrence("uid-b", "cancelled", "取消", "2026-10-21T08:00:00Z", cancelled = true),
             ),
+            selectedSourceCourseUids = setOf("uid-a", "uid-b"),
             rules = listOf(SyncRule("uid-a", true, AttendanceState.CHOOSE_TO_ATTEND, stopAttendingFrom = java.time.LocalDate.parse("2026-10-10"))),
             manualEvents = listOf(ManualScheduleItem("manual-1", "手动校园事项", Instant.parse("2026-10-22T08:00:00Z"), Instant.parse("2026-10-22T09:00:00Z"), AttendanceState.MUST_ATTEND)),
         )
@@ -45,6 +47,32 @@ class SyncCandidateFactoryTest {
         assertEquals(AttendanceState.STOP_ATTENDING, events.single { it.identity.instanceKey == "future" }.attendanceState)
         assertEquals("manual:manual-1", events.single { it.title == "手动校园事项" }.identity.sourceUid)
         assertFalse(events.any { it.identity.instanceKey == "cancelled" })
+    }
+
+    @Test
+    fun `仅明确选择的来源 UID 才能进入候选`() {
+        val events = factory.build(
+            occurrences = listOf(occurrence("uid-a", "key-a", "来源 A"), occurrence("uid-b", "key-b", "来源 B")),
+            selectedSourceCourseUids = setOf("uid-a"),
+            rules = emptyList(),
+            manualEvents = emptyList(),
+        )
+
+        assertEquals(1, events.size)
+        assertEquals("uid-a", events.single().identity.sourceUid)
+    }
+
+    @Test
+    fun `未选择来源时仅保留独立手动事项`() {
+        val events = factory.build(
+            occurrences = listOf(occurrence("uid-a", "key-a", "来源课程")),
+            selectedSourceCourseUids = emptySet(),
+            rules = emptyList(),
+            manualEvents = listOf(ManualScheduleItem("manual-1", "手动测试", Instant.parse("2026-10-22T08:00:00Z"), Instant.parse("2026-10-22T09:00:00Z"), AttendanceState.MUST_ATTEND)),
+        )
+
+        assertEquals(1, events.size)
+        assertEquals("manual:manual-1", events.single().identity.sourceUid)
     }
 
     private fun occurrence(uid: String, key: String, title: String, start: String = "2026-10-01T08:00:00Z", cancelled: Boolean = false) = SourceCalendarOccurrence(

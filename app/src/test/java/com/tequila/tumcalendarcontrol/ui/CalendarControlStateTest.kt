@@ -12,6 +12,8 @@ import com.tequila.tumcalendarcontrol.domain.TumEventStatus
 import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfiguration
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyImportResult
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyPreview
+import com.tequila.tumcalendarcontrol.sync.ManualScheduleItem
+import com.tequila.tumcalendarcontrol.sync.RuleLedger
 import com.tequila.tumcalendarcontrol.sync.SourceCourse
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
 import java.time.Instant
@@ -267,11 +269,12 @@ class CalendarControlStateTest {
     }
 
     @Test
-    fun `来源实例可生成受控双目标预览 预览阶段不要求权限`() {
+    fun `来源实例须明确选择后才生成受控双目标预览`() {
         val state = CalendarControlState()
         state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
         state.requestSourcePreview()
         state.resolveSourcePreview(state.sourceReadToken, IcalReadOnlyImportResult.Success(sourcePreview()))
+        state.selectAllSourceCourses()
         state.setSyncDestinationEnabled(SyncDestination.LOCAL_CALENDAR, true)
         state.setSyncDestinationEnabled(SyncDestination.GOOGLE_CALENDAR, true)
 
@@ -280,6 +283,29 @@ class CalendarControlStateTest {
         assertEquals(AppScreen.MANAGED_SYNC_PREVIEW, state.screen)
         assertEquals(2, state.managedSyncPreview!!.desiredEventCount)
         assertEquals(2, state.managedSyncPreview!!.targetChanges.size)
+    }
+
+    @Test
+    fun `手动事项不依赖来源读取也能独立生成预览`() {
+        val state = CalendarControlState(
+            initialRuleLedger = RuleLedger(
+                manualEvents = listOf(
+                    ManualScheduleItem(
+                        id = "manual-1",
+                        title = "合成手动事项",
+                        startsAt = Instant.parse("2026-10-22T08:00:00Z"),
+                        endsAt = Instant.parse("2026-10-22T09:00:00Z"),
+                        attendanceState = AttendanceState.MUST_ATTEND,
+                    ),
+                ),
+            ),
+        )
+        state.setSyncDestinationEnabled(SyncDestination.LOCAL_CALENDAR, true)
+
+        state.requestManagedSyncPreview()
+
+        assertEquals(AppScreen.MANAGED_SYNC_PREVIEW, state.screen)
+        assertEquals(1, state.managedSyncPreview!!.desiredEventCount)
     }
 
     @Test
