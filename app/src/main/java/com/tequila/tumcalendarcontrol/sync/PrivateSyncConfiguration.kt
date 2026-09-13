@@ -16,10 +16,8 @@ data class PrivateSyncConfiguration(
     val hasTumSubscription: Boolean get() = tumSubscriptionUrl.isNotBlank()
     val hasGoogleClient: Boolean get() = googleOAuthClientId.isNotBlank()
 
-    /** 配置页只展示地址来源，不回显路径、查询参数或可能包含的访问令牌。 */
-    fun maskedTumSubscription(): String = runCatching {
-        URI(tumSubscriptionUrl.trim()).host?.let { host -> "$host · 已配置" }
-    }.getOrNull() ?: if (hasTumSubscription) "已配置 · 已隐藏" else "尚未配置"
+    /** 配置页不展示地址的任何组成部分，避免主机名也成为可观察的私有信息。 */
+    fun maskedTumSubscription(): String = if (hasTumSubscription) "•••••••• · 已加密保存在本机" else "尚未配置"
 
     fun validate(): List<ConfigurationProblem> = buildList {
         if (hasTumSubscription) {

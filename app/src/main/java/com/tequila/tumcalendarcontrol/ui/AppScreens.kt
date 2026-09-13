@@ -242,27 +242,29 @@ private fun SyncPreviewScreen(state: CalendarControlState) {
 private fun SyncConfigurationScreen(state: CalendarControlState) {
     val current = state.privateSyncConfiguration
     var replacementSubscriptionUrl by remember { mutableStateOf("") }
+    var replacingSubscription by remember { mutableStateOf(!current.hasTumSubscription) }
+    var editingGoogleAdvanced by remember { mutableStateOf(false) }
     var googleClientId by remember(current.googleOAuthClientId) { mutableStateOf(current.googleOAuthClientId) }
     var calendarName by remember(current.googleCalendarName) { mutableStateOf(current.googleCalendarName) }
     var validationMessage by remember { mutableStateOf<String?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         InformationCard(
             "私有订阅地址",
-            "当前：${current.maskedTumSubscription()}。旧地址不会回显；只有输入新地址才会替换。",
+            "当前：${current.maskedTumSubscription()}。地址不会回显；只有主动替换才会写入新值。",
         )
-        TextField(
+        if (replacingSubscription) TextField(
             value = replacementSubscriptionUrl,
             onValueChange = { replacementSubscriptionUrl = it },
             modifier = Modifier.fillMaxWidth(),
-            label = "替换 TUM 私有 iCal 地址（可留空）",
-        )
-        InformationCard("Google 连接", "客户端标识只用于未来由你确认的 OAuth 授权；保存配置不会联网。")
-        TextField(
+            label = "新的 TUM 私有 iCal 地址",
+        ) else Button(onClick = { replacingSubscription = true }, modifier = Modifier.fillMaxWidth()) { Text("替换私有 iCal 地址") }
+        InformationCard("Google 日历（暂不需要）", "Google OAuth 不是账户或密码；它只是在未来授权页中让你选择 Google 账户的应用身份。当前不会联网，也无需填写。")
+        if (editingGoogleAdvanced) TextField(
             value = googleClientId,
             onValueChange = { googleClientId = it },
             modifier = Modifier.fillMaxWidth(),
-            label = "Google OAuth 客户端标识（可留空）",
-        )
+            label = "Google OAuth 客户端标识（高级，可留空）",
+        ) else Button(onClick = { editingGoogleAdvanced = true }, modifier = Modifier.fillMaxWidth()) { Text("配置 Google 高级选项") }
         TextField(
             value = calendarName,
             onValueChange = { calendarName = it },

@@ -23,11 +23,11 @@ class PrivateSyncConfigurationStore(context: Context) {
 
     fun save(configuration: PrivateSyncConfiguration) {
         require(configuration.validate().isEmpty()) { "私有同步配置格式无效，拒绝保存。" }
-        preferences.edit()
+        check(preferences.edit()
             .putString(KEY_TUM_URL, cipher.encrypt(configuration.tumSubscriptionUrl.trim()))
             .putString(KEY_GOOGLE_CLIENT_ID, cipher.encrypt(configuration.googleOAuthClientId.trim()))
             .putString(KEY_GOOGLE_CALENDAR_NAME, cipher.encrypt(configuration.googleCalendarName.trim()))
-            .apply()
+            .commit()) { "私有配置未能保存到应用本机存储。" }
     }
 
     private companion object {

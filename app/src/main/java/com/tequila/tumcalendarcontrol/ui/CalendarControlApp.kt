@@ -36,7 +36,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.tequila.tumcalendarcontrol.sync.PrivateSyncConfigurationStore
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerPreferences
@@ -76,13 +79,15 @@ fun CalendarControlApp() {
             initialRuleLedger = ruleLedgerPreferences.load(),
         )
     }
+    var privateConfigurationInitialized by remember { mutableStateOf(false) }
     val localCalendarPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         state.resolveLocalCalendarPermission(granted)
     }
     LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
     LaunchedEffect(state.syncDestinations) { syncDestinationPreferences.save(state.syncDestinations) }
     LaunchedEffect(state.privateSyncConfiguration) {
-        privateSyncConfigurationStore.save(state.privateSyncConfiguration)
+        if (privateConfigurationInitialized) privateSyncConfigurationStore.save(state.privateSyncConfiguration)
+        else privateConfigurationInitialized = true
     }
     LaunchedEffect(state.ruleLedger) { ruleLedgerPreferences.save(state.ruleLedger) }
     LaunchedEffect(state.courses) { courseOverridePreferences.save(state.courses) }

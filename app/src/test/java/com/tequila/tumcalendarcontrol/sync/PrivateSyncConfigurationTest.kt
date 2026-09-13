@@ -12,6 +12,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PrivateSyncConfigurationTest {
+
+    @Test
+    fun `已配置订阅只显示全遮罩 不泄露主机或路径`() {
+        val configuration = PrivateSyncConfiguration(tumSubscriptionUrl = "https://private.example.test/path?token=synthetic")
+
+        assertEquals("•••••••• · 已加密保存在本机", configuration.maskedTumSubscription())
+    }
     @Test
     fun `有效的合成配置通过并隐藏订阅路径`() {
         val configuration = PrivateSyncConfiguration(
@@ -21,7 +28,8 @@ class PrivateSyncConfigurationTest {
         )
 
         assertTrue(configuration.validate().isEmpty())
-        assertEquals("calendar.example.test · 已配置", configuration.maskedTumSubscription())
+        assertEquals("•••••••• · 已加密保存在本机", configuration.maskedTumSubscription())
+        assertFalse(configuration.maskedTumSubscription().contains("calendar.example.test"))
         assertFalse(configuration.maskedTumSubscription().contains("token-value"))
     }
 
