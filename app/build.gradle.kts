@@ -20,8 +20,8 @@ android {
         minSdk = 26
         targetSdk = 37
         // 每次可验收发布均递增构建号；完整记录见仓库根目录 VERSIONING.md。
-        versionCode = 16
-        versionName = "0.1.15"
+        versionCode = 17
+        versionName = "0.1.16"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -67,6 +67,8 @@ dependencies {
     implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.3")
     // 成熟的 RFC 5545 解析器；最低 API 26 与现有 Java 17 构建设置满足其 Android 前提。
     implementation("org.mnode.ical4j:ical4j:3.1.0")
+    // 官方 Android 授权客户端；只在用户点按连接 Google 时请求最小的 app.created 范围。
+    implementation("com.google.android.gms:play-services-auth:21.6.0")
 
     testImplementation("junit:junit:4.13.2")
 }

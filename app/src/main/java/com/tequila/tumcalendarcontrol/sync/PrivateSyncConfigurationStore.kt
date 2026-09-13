@@ -18,6 +18,8 @@ class PrivateSyncConfigurationStore(context: Context) {
             googleOAuthClientId = preferences.getString(KEY_GOOGLE_CLIENT_ID, null)?.let(cipher::decrypt).orEmpty(),
             googleCalendarName = preferences.getString(KEY_GOOGLE_CALENDAR_NAME, null)?.let(cipher::decrypt)
                 ?: PrivateSyncConfiguration.DEFAULT_GOOGLE_CALENDAR_NAME,
+            localCalendarId = preferences.getString(KEY_LOCAL_CALENDAR_ID, null)?.let(cipher::decrypt).orEmpty(),
+            googleCalendarId = preferences.getString(KEY_GOOGLE_CALENDAR_ID, null)?.let(cipher::decrypt).orEmpty(),
         )
     }.getOrElse { PrivateSyncConfiguration() }
 
@@ -27,6 +29,8 @@ class PrivateSyncConfigurationStore(context: Context) {
             .putString(KEY_TUM_URL, cipher.encrypt(configuration.tumSubscriptionUrl.trim()))
             .putString(KEY_GOOGLE_CLIENT_ID, cipher.encrypt(configuration.googleOAuthClientId.trim()))
             .putString(KEY_GOOGLE_CALENDAR_NAME, cipher.encrypt(configuration.googleCalendarName.trim()))
+            .putString(KEY_LOCAL_CALENDAR_ID, cipher.encrypt(configuration.localCalendarId.trim()))
+            .putString(KEY_GOOGLE_CALENDAR_ID, cipher.encrypt(configuration.googleCalendarId.trim()))
             .commit()) { "私有配置未能保存到应用本机存储。" }
     }
 
@@ -35,5 +39,7 @@ class PrivateSyncConfigurationStore(context: Context) {
         const val KEY_TUM_URL = "tum_subscription_url"
         const val KEY_GOOGLE_CLIENT_ID = "google_oauth_client_id"
         const val KEY_GOOGLE_CALENDAR_NAME = "google_calendar_name"
+        const val KEY_LOCAL_CALENDAR_ID = "local_calendar_id"
+        const val KEY_GOOGLE_CALENDAR_ID = "google_calendar_id"
     }
 }

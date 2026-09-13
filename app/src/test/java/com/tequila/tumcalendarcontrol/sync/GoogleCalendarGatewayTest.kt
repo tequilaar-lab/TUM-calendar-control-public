@@ -1,0 +1,55 @@
+/*
+ * 职责：验证 Google 专用目标的所有权标记、创建与拒绝路径。
+ * 输入／输出：输入合成 API；输出目标引用及写入次数断言。
+ * 外部副作用：无；不请求 Google、OAuth 或真实网络。
+ * 不负责：Android 授权界面、HTTP 传输或真人账户验证。
+ */
+package com.tequila.tumcalendarcontrol.sync
+
+import com.tequila.tumcalendarcontrol.domain.AttendanceState
+import java.time.Instant
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class GoogleCalendarGatewayTest {
+    @Test
+    fun `缓存的带标记日历复用 无标记目标拒绝`() {
+        val api = FakeGoogleCalendarApi("owned", "Created and owned by TUM Calendar Control. marker=tum-calendar-control")
+        val resolution = GoogleCalendarTarget(api).ensure("owned", "合成日历")
+        val calendar = (resolution as CalendarTargetResolution.Success).calendar
+        val gateway = GoogleCalendarGateway(api)
+
+        assertEquals("owned", calendar.calendarId)
+        assertTrue(gateway.verifyOwnership(calendar))
+        assertFalse(gateway.verifyOwnership(calendar.copy(calendarId = "other")))
+    }
+
+    @Test
+    fun `无缓存目标创建专用日历 事件只写入已验证目标`() {
+        val api = FakeGoogleCalendarApi(null, null)
+        val calendar = (GoogleCalendarTarget(api).ensure("", "合成日历") as CalendarTargetResolution.Success).calendar
+        val gateway = GoogleCalendarGateway(api)
+        val event = DesiredCalendarEvent(ManagedEventIdentity("uid", "instance"), "合成", Instant.parse("2026-10-01T08:00:00Z"), Instant.parse("2026-10-01T09:00:00Z"), AttendanceState.MUST_ATTEND)
+
+        gateway.create(calendar, event)
+
+        assertEquals(1, api.createdCalendars)
+        assertEquals(1, api.createdEvents)
+    }
+
+    private class FakeGoogleCalendarApi(initialId: String?, initialDescription: String?) : GoogleCalendarApi {
+        private val calendars = initialId?.let { mutableMapOf(it to GoogleRemoteCalendar(it, initialDescription)) } ?: mutableMapOf()
+        var createdCalendars = 0
+        var createdEvents = 0
+        override fun getCalendar(calendarId: String): GoogleRemoteCalendar? = calendars[calendarId]
+        override fun createCalendar(summary: String, description: String): GoogleRemoteCalendar {
+            createdCalendars += 1
+            return GoogleRemoteCalendar("created", description).also { calendars[it.id] = it }
+        }
+        override fun createEvent(calendarId: String, event: DesiredCalendarEvent): String { check(calendars.containsKey(calendarId)); createdEvents += 1; return "event-$createdEvents" }
+        override fun updateEvent(calendarId: String, eventId: String, event: DesiredCalendarEvent) = Unit
+        override fun deleteEvent(calendarId: String, eventId: String) = Unit
+    }
+}

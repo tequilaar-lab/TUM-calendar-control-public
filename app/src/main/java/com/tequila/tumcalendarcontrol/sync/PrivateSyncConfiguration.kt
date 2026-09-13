@@ -12,6 +12,9 @@ data class PrivateSyncConfiguration(
     val tumSubscriptionUrl: String = "",
     val googleOAuthClientId: String = "",
     val googleCalendarName: String = DEFAULT_GOOGLE_CALENDAR_NAME,
+    /** 仅保存本应用创建的目标标识；不会保存账户名、令牌或日历正文。 */
+    val localCalendarId: String = "",
+    val googleCalendarId: String = "",
 ) {
     val hasTumSubscription: Boolean get() = tumSubscriptionUrl.isNotBlank()
     val hasGoogleClient: Boolean get() = googleOAuthClientId.isNotBlank()
