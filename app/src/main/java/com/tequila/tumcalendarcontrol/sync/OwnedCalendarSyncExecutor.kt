@@ -54,6 +54,20 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
         }
         return TargetSyncResult(calendar.target, otherMappings + next.values, changes)
     }
+
+    /** 只删除资料库已经映射的本应用事件；不删除日历本身或未映射的用户事件。 */
+    fun rollback(
+        calendar: OwnedCalendarRef,
+        storedMappings: List<StoredEventMapping>,
+        gateway: OwnedCalendarGateway,
+    ): TargetSyncResult {
+        if (!gateway.verifyOwnership(calendar)) return TargetSyncResult(calendar.target, storedMappings, emptyList(), "目标日历不属于本应用，已拒绝撤销。")
+        val targetMappings = storedMappings.filter { it.target == calendar.target }
+        val otherMappings = storedMappings.filterNot { it.target == calendar.target }
+        targetMappings.forEach { gateway.remove(calendar, it.targetEventId) }
+        val changes = targetMappings.map { SyncChange(SyncChangeType.REMOVE, it.identity, it.targetEventId) }
+        return TargetSyncResult(calendar.target, otherMappings, changes)
+    }
 }
 
 /** 仅供单元测试的内存网关；可记录写入，不代表任何真实 Calendar Provider。 */

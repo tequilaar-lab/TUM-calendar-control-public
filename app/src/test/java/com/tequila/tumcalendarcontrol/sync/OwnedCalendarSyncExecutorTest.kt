@@ -35,4 +35,19 @@ class OwnedCalendarSyncExecutorTest {
         assertTrue(result.failureSummary!!.contains("拒绝"))
         assertTrue(gateway.operations.isEmpty())
     }
+
+    @Test fun `撤销只删除映射事件 不触碰其他目标映射`() {
+        val executor = OwnedCalendarSyncExecutor()
+        val gateway = FakeOwnedCalendarGateway(setOf("local", "google"))
+        val local = OwnedCalendarRef(OutputTarget.LOCAL_CALENDAR, "local", "tum-calendar-control")
+        val google = OwnedCalendarRef(OutputTarget.GOOGLE_CALENDAR, "google", "tum-calendar-control")
+        val localResult = executor.execute(local, listOf(event), emptyList(), gateway)
+        val both = executor.execute(google, listOf(event), localResult.mappings, gateway)
+
+        val rolledBack = executor.rollback(local, both.mappings, gateway)
+
+        assertEquals(1, rolledBack.mappings.size)
+        assertEquals(OutputTarget.GOOGLE_CALENDAR, rolledBack.mappings.single().target)
+        assertEquals(listOf("create:local_calendar-1", "create:google_calendar-2", "remove:local_calendar-1"), gateway.operations)
+    }
 }

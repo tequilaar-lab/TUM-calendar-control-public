@@ -18,6 +18,8 @@ data class IcalReadOnlyPreview(
     val lastManageableEnd: Instant?,
     /** 仅交给内存 UI 显示；不得由偏好、日志或审计文档持久化。 */
     val courses: List<SourceCourse>,
+    /** 仅在当前进程用于生成同步候选；不得进入偏好、日志、计划或 Git。 */
+    val occurrences: List<SourceCalendarOccurrence> = emptyList(),
 )
 
 sealed interface IcalReadOnlyImportResult {
@@ -54,6 +56,7 @@ class ReadOnlyIcalImportService(
                 firstManageableStart = occurrences.minOfOrNull(SourceCalendarOccurrence::startsAt),
                 lastManageableEnd = occurrences.maxOfOrNull(SourceCalendarOccurrence::endsAt),
                 courses = courses,
+                occurrences = occurrences,
             ),
         )
     }

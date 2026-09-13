@@ -17,6 +17,7 @@ data class DesiredCalendarEvent(
     val startsAt: Instant,
     val endsAt: Instant,
     val attendanceState: AttendanceState,
+    val location: String = "",
 )
 
 data class ManagedEventMapping(
@@ -59,5 +60,6 @@ class SyncDiffPlanner {
         startsAt.toString(),
         endsAt.toString(),
         attendanceState.name,
+        location,
     ).joinToString("|")
 }
