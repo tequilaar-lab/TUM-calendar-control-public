@@ -133,7 +133,7 @@ fun CalendarControlApp() {
         state.resolveRuleBackupImport(backupText)
     }
     val googleAuthorizationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-        googleAuthorizationCoordinator.resolveResult(result.data, state::resolveGoogleAuthorization)
+        googleAuthorizationCoordinator.resolveResult(result.resultCode, result.data, state::resolveGoogleAuthorization)
     }
     LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
     LaunchedEffect(state.syncDestinations) { syncDestinationPreferences.save(state.syncDestinations) }

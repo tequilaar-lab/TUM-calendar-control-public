@@ -7,12 +7,14 @@
 package com.tequila.tumcalendarcontrol.ui
 
 import android.app.PendingIntent
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.AuthorizationResult
 import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Scope
 
 sealed interface GoogleAuthorizationOutcome {
@@ -35,16 +37,29 @@ class GoogleAuthorizationCoordinator(context: Context) {
                 callback(outcome)
             }
             .addOnFailureListener { error ->
-                Log.w(GoogleAuthorizationLogTag, "stage=authorize_failed type=${error.javaClass.simpleName}")
-                callback(GoogleAuthorizationOutcome.Failure("Google 授权未完成；请检查网络与设备上的 Google 服务后重试"))
+                val summary = failureSummary("请求失败", error)
+                Log.w(GoogleAuthorizationLogTag, "stage=authorize_failed diagnostic=${failureDiagnostic(error)}")
+                callback(GoogleAuthorizationOutcome.Failure(summary))
             }
     }
 
-    fun resolveResult(data: Intent?, callback: (GoogleAuthorizationOutcome) -> Unit) {
-        val outcome = runCatching { client.getAuthorizationResultFromIntent(requireNotNull(data)).toOutcome() }
+    fun resolveResult(resultCode: Int, data: Intent?, callback: (GoogleAuthorizationOutcome) -> Unit) {
+        if (resultCode != Activity.RESULT_OK) {
+            val outcome = GoogleAuthorizationOutcome.Failure("Google 授权页未完成（系统结果码：$resultCode）。")
+            Log.w(GoogleAuthorizationLogTag, "stage=consent_return_not_ok resultCode=$resultCode")
+            callback(outcome)
+            return
+        }
+        if (data == null) {
+            val outcome = GoogleAuthorizationOutcome.Failure("Google 授权返回为空（系统结果码：$resultCode）。")
+            Log.w(GoogleAuthorizationLogTag, "stage=consent_return_empty_data resultCode=$resultCode")
+            callback(outcome)
+            return
+        }
+        val outcome = runCatching { client.getAuthorizationResultFromIntent(data).toOutcome() }
             .getOrElse { error ->
-                Log.w(GoogleAuthorizationLogTag, "stage=consent_return_failed type=${error.javaClass.simpleName}")
-                GoogleAuthorizationOutcome.Failure("Google 授权未完成或已取消；未获得令牌")
+                Log.w(GoogleAuthorizationLogTag, "stage=consent_return_failed diagnostic=${failureDiagnostic(error)}")
+                GoogleAuthorizationOutcome.Failure(failureSummary("返回失败", error))
             }
         Log.i(GoogleAuthorizationLogTag, "stage=consent_return outcome=${outcome.logLabel}")
         callback(outcome)
@@ -58,6 +73,17 @@ class GoogleAuthorizationCoordinator(context: Context) {
             consent != null -> GoogleAuthorizationOutcome.LaunchConsent(consent)
             else -> GoogleAuthorizationOutcome.Failure("Google 未返回日历访问令牌")
         }
+    }
+
+    /** 仅把可公开的系统状态码带到界面；不保留或显示异常正文。 */
+    private fun failureSummary(stage: String, error: Throwable): String = when (error) {
+        is ApiException -> "Google 授权$stage（服务状态码：${error.statusCode}）。"
+        else -> "Google 授权$stage（异常类型：${error.javaClass.simpleName}）。"
+    }
+
+    private fun failureDiagnostic(error: Throwable): String = when (error) {
+        is ApiException -> "apiStatus=${error.statusCode}"
+        else -> "exceptionType=${error.javaClass.simpleName}"
     }
 
     private companion object {

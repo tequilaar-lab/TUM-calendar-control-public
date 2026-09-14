@@ -226,9 +226,9 @@ class CalendarControlStateTest {
         assertEquals(GoogleAuthorizationStatus.AUTHORIZING, state.googleAuthorizationStatus)
         assertFalse(state.hasGoogleAuthorization)
 
-        state.resolveGoogleAuthorization(GoogleAuthorizationOutcome.Failure("授权已取消；未获得令牌"))
+        state.resolveGoogleAuthorization(GoogleAuthorizationOutcome.Failure("Google 授权返回失败（服务状态码：10）。"))
         assertEquals(GoogleAuthorizationStatus.FAILED, state.googleAuthorizationStatus)
-        assertTrue(state.googleAuthorizationDetail.contains("未获得令牌"))
+        assertTrue(state.googleAuthorizationDetail.contains("服务状态码：10"))
         assertFalse(state.hasGoogleAuthorization)
 
         state.requestGoogleAuthorization()
