@@ -10,7 +10,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -61,28 +60,26 @@ fun SourceCourseSelectorScreen(state: CalendarControlState) {
         zoneId = CourseBrowserZone,
     )
     var mode by remember { mutableStateOf(SourceBrowserMode.GROUPS) }
-    Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            InformationCard(
-                "2/4 选择课程",
-                "共读取 ${state.sourceCourses.size} 个来源 UID；标题分组仅为浏览，选择与同步始终按 UID 分开处理。",
-            )
-            TextField(
-                value = state.sourceBrowserQuery,
-                onValueChange = state::updateSourceBrowserQuery,
-                modifier = Modifier.fillMaxWidth(),
-                label = "搜索课程或地点",
-            )
-            SourceFilterRow(state)
-            SourceModeRow(mode = mode, onChange = { mode = it })
-            when (mode) {
-                SourceBrowserMode.GROUPS -> SourceGroupList(state, groups)
-                SourceBrowserMode.DATES -> SourceCourseDateBrowser(state, outputWindow, Modifier.weight(1f))
-            }
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        InformationCard(
+            "2/4 选择课程",
+            "共读取 ${state.sourceCourses.size} 个来源 UID；标题分组仅为浏览，选择与同步始终按 UID 分开处理。",
+        )
+        TextField(
+            value = state.sourceBrowserQuery,
+            onValueChange = state::updateSourceBrowserQuery,
+            modifier = Modifier.fillMaxWidth(),
+            label = "搜索课程或地点",
+        )
+        SourceFilterRow(state)
+        SourceModeRow(mode = mode, onChange = { mode = it })
+        when (mode) {
+            SourceBrowserMode.GROUPS -> SourceGroupList(state, groups, Modifier.weight(1f))
+            SourceBrowserMode.DATES -> SourceCourseDateBrowser(state, outputWindow, Modifier.weight(1f))
         }
         SourceSelectionBottomBar(
             selectedCount = state.selectedSourceCourseUids.size,
-            modifier = Modifier.align(Alignment.BottomCenter),
+            modifier = Modifier.fillMaxWidth(),
             onClear = state::clearSourceCourseSelection,
             onAttendance = state::openSourceAttendanceEditor,
             onPreview = state::requestManagedSyncPreview,
@@ -114,10 +111,11 @@ private fun SourceModeRow(mode: SourceBrowserMode, onChange: (SourceBrowserMode)
 }
 
 @Composable
-private fun SourceGroupList(state: CalendarControlState, groups: List<SourceCourseDisplayGroup>) {
+private fun SourceGroupList(state: CalendarControlState, groups: List<SourceCourseDisplayGroup>, modifier: Modifier) {
     LazyColumn(
+        modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(10.dp),
-        contentPadding = PaddingValues(bottom = 156.dp),
+        contentPadding = PaddingValues(bottom = 16.dp),
     ) {
         if (groups.isEmpty()) item { InformationCard("没有匹配课程", "尝试清除搜索或切换到“全部”。") }
         items(groups, key = { it.displayTitle + it.earliestStart }) { group -> SourceGroupRow(state, group) }

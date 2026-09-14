@@ -8,8 +8,12 @@ package com.tequila.tumcalendarcontrol.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -19,7 +23,10 @@ import top.yukonga.miuix.kmp.basic.Text
 @Composable
 fun RuleBackupScreen(state: CalendarControlState) {
     val pending = state.pendingRuleBackup
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         InformationCard("规则备份", "备份只包含三态规则和手动校园事项；不含私有 iCal 地址、Google、账户、令牌、目标日历、已写入事件映射或同步记录。")
         InformationCard("当前本机资料", "${state.ruleLedger.rules.size} 条来源规则 · ${state.ruleLedger.manualEvents.size} 条手动事项")
         Button(onClick = state::requestRuleBackupExport, modifier = Modifier.fillMaxWidth()) { Text("导出规则备份") }

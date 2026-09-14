@@ -8,8 +8,11 @@ package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.BuildConfig
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -88,7 +92,10 @@ private fun OverviewScreen(state: CalendarControlState) {
 private fun DetailScreen(state: CalendarControlState) {
     val palette = LocalTumPalette.current
     val course = state.selectedCourse
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         InformationCard(course.displayTitle, "${course.displaySchedule} · ${course.displayLocation} · ${course.sourceStatus.label}")
         InformationCard("本机字段覆盖", if (course.localOverride == CourseLocalOverride()) "尚未覆盖；当前显示来源字段" else "已覆盖；来源原始字段未被改写")
         Button(onClick = state::openCourseEdit, modifier = Modifier.fillMaxWidth()) { Text("编辑名称、时间与地点") }
@@ -124,7 +131,10 @@ private fun CourseEditScreen(state: CalendarControlState) {
     var endHour by remember(course.localOverride) { mutableStateOf(course.localOverride.meetingTime?.endHour?.toString() ?: "12") }
     var endMinute by remember(course.localOverride) { mutableStateOf(course.localOverride.meetingTime?.endMinute?.toString() ?: "0") }
     var validation by remember { mutableStateOf<String?>(null) }
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         InformationCard("编辑本机课程资料", "名称、地点留空会显示来源字段；时间用星期与小时／分钟填写，不需要输入冒号。")
         TextField(title, { title = it }, Modifier.fillMaxWidth(), label = "名称（当前来源：${course.title}）")
         TextField(location, { location = it }, Modifier.fillMaxWidth(), label = "地点（当前来源：${course.location}）")
@@ -149,14 +159,20 @@ private fun CourseEditScreen(state: CalendarControlState) {
 
 @Composable
 private fun SearchScreen(state: CalendarControlState) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        TextField(
-            value = state.searchQuery,
-            onValueChange = { state.searchQuery = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = "搜索已获 Fixplatz 的课程",
-        )
-        CourseList(
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item {
+            TextField(
+                value = state.searchQuery,
+                onValueChange = { state.searchQuery = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = "搜索已获 Fixplatz 的课程",
+            )
+        }
+        courseListItems(
             courses = state.searchedCourses,
             heading = if (state.searchQuery.isBlank()) "可搜索的课程" else "搜索结果",
             onCourseClick = state::openCourse,
@@ -166,16 +182,23 @@ private fun SearchScreen(state: CalendarControlState) {
 
 @Composable
 private fun FavoritesScreen(state: CalendarControlState) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        InformationCard("已收藏课程", "收藏只影响显示，不改变出席状态")
-        CourseList(state.favoriteCourses, "收藏列表", state::openCourse)
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item { InformationCard("已收藏课程", "收藏只影响显示，不改变出席状态") }
+        courseListItems(state.favoriteCourses, "收藏列表", state::openCourse)
     }
 }
 
 /** 由完整覆盖层承载的更多操作内容；不直接创建覆盖层或处理返回动效。 */
 @Composable
 fun MoreScreen(state: CalendarControlState) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         InformationCard("筛选显示", "仅显示已获 Fixplatz 的课程")
         InformationCard("同步状态", "尚未连接任何真实日历；没有待写入的更改")
         InformationCard("应用设置", "日历来源、颜色与显示偏好")
@@ -188,7 +211,11 @@ fun MoreScreen(state: CalendarControlState) {
 @Composable
 private fun SettingsScreen(state: CalendarControlState) {
     val palette = LocalTumPalette.current
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         item { InformationCard("同步工作流", "1 设置范围 · 2 读取并选择课程 · 3 设置三态 · 4 预览后确认。常规返回不会清除已选课程。") }
         item { Button(onClick = state::openSourceRange, modifier = Modifier.fillMaxWidth()) { Text("iCal 来源与同步范围") } }
         item {
@@ -253,7 +280,11 @@ private fun SourceStatusSelector(state: CalendarControlState) {
 @Composable
 private fun SyncPreviewScreen(state: CalendarControlState) {
     val preview = state.offlinePreview
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
         item { InformationCard("离线合成预览", "不会读取来源、申请权限或写入本机／Google 日历") }
         item { InformationCard("变更汇总", "新增 ${preview.createCount} · 更新 ${preview.updateCount} · 移除 ${preview.removeCount} · 保持 ${preview.keepCount} · 跳过 ${preview.skipCount}") }
         items(preview.changes) { change -> InformationCard(change.type.label, "合成身份：${change.identity.sourceUid}／${change.identity.instanceKey}") }
@@ -271,7 +302,10 @@ private fun SyncConfigurationScreen(state: CalendarControlState) {
     var googleClientId by remember(current.googleOAuthClientId) { mutableStateOf(current.googleOAuthClientId) }
     var calendarName by remember(current.googleCalendarName) { mutableStateOf(current.googleCalendarName) }
     var validationMessage by remember { mutableStateOf<String?>(null) }
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         InformationCard(
             "私有订阅地址",
             "当前：${current.maskedTumSubscription()}。地址不会回显；只有主动替换才会写入新值。",
@@ -354,7 +388,10 @@ private fun SyncDestinationSelector(state: CalendarControlState) {
 private fun ProfileScreen(state: CalendarControlState) {
     var draftName by remember(state.profile) { mutableStateOf(state.profile.displayName) }
     var draftTone by remember(state.profile) { mutableStateOf(state.profile.avatarTone) }
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         InformationCard("本机个人资料", "昵称和头像颜色只保存在这台设备的应用内，不是 Google 或 TUM 账户")
         TextField(
             value = draftName,
@@ -401,15 +438,21 @@ private fun ProfileScreen(state: CalendarControlState) {
 private fun CourseList(courses: List<Course>, heading: String, onCourseClick: (String) -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        item { Text(heading, style = MiuixTheme.textStyles.title3) }
-        if (courses.isEmpty()) {
-            item { InformationCard("暂无课程", "当前筛选条件下没有可显示的已获 Fixplatz 课程") }
-        } else {
-            items(courses, key = { it.id }) { course ->
-                CourseRow(course) { onCourseClick(course.id) }
-            }
+        courseListItems(courses, heading, onCourseClick)
+    }
+}
+
+/** 让总览、搜索和收藏共用同一批列表项，避免在可滚动页面中嵌套 LazyColumn。 */
+private fun LazyListScope.courseListItems(courses: List<Course>, heading: String, onCourseClick: (String) -> Unit) {
+    item { Text(heading, style = MiuixTheme.textStyles.title3) }
+    if (courses.isEmpty()) {
+        item { InformationCard("暂无课程", "当前筛选条件下没有可显示的已获 Fixplatz 课程") }
+    } else {
+        items(courses, key = { it.id }) { course ->
+            CourseRow(course) { onCourseClick(course.id) }
         }
     }
 }

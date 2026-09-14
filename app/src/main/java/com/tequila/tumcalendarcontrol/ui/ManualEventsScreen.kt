@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -35,7 +36,7 @@ fun ManualEventsScreen(state: CalendarControlState) {
     var endMinute by remember { mutableStateOf("0") }
     var attendance by remember { mutableStateOf(AttendanceState.CHOOSE_TO_ATTEND) }
     Column(
-        modifier = Modifier.verticalScroll(rememberScrollState()),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         InformationCard("手动校园事项", "可先连续录入多条事项；它们会和来源课程一起出现在下一次同步预览，当前不会写入日历。")

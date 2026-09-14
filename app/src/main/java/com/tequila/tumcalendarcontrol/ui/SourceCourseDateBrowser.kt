@@ -55,15 +55,33 @@ fun SourceCourseDateBrowser(state: CalendarControlState, outputWindow: SourceOut
     var month by remember { mutableStateOf(initialMonth) }
     var chosenDate by remember { mutableStateOf<LocalDate?>(null) }
     val byDate = visibleOccurrences.groupBy { it.startsAt.atZone(BrowserZone).toLocalDate() }
-    val coursesOnDate = chosenDate?.let { day ->
+    val selectedDay = chosenDate
+    val coursesOnDate = selectedDay?.let { day ->
         byDate[day].orEmpty().mapNotNull { coursesByUid[it.sourceUid] }.distinctBy(SourceCourse::sourceUid)
     }.orEmpty()
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        InformationCard("按日期查看", "月格仅帮助定位课程；日期上的圆点表示该日有范围内来源日程，不改变课程 UID 身份。")
-        MonthNavigation(month, onPrevious = { month = month.minusMonths(1) }, onNext = { month = month.plusMonths(1) })
-        SourceMonthGrid(month, byDate, chosenDate, onDateSelected = { chosenDate = it })
-        if (chosenDate == null) InformationCard("选择一个日期", "点按带圆点的日期，查看并选择当天的来源课程。")
-        else chosenDate?.let { selectedDay -> SourceDateCourseList(selectedDay, coursesOnDate, state, Modifier.weight(1f)) }
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        item { InformationCard("按日期查看", "月格仅帮助定位课程；日期上的圆点表示该日有范围内来源日程，不改变课程 UID 身份。") }
+        item { MonthNavigation(month, onPrevious = { month = month.minusMonths(1) }, onNext = { month = month.plusMonths(1) }) }
+        item { SourceMonthGrid(month, byDate, chosenDate, onDateSelected = { chosenDate = it }) }
+        if (selectedDay == null) {
+            item { InformationCard("选择一个日期", "点按带圆点的日期，查看并选择当天的来源课程。") }
+        } else {
+            item { Text("${selectedDay.monthValue}月${selectedDay.dayOfMonth}日 · ${coursesOnDate.size} 个来源课程", style = MiuixTheme.textStyles.title3) }
+            if (coursesOnDate.isEmpty()) item { InformationCard("当天没有范围内来源课程", "切换月份或选择其他带圆点的日期。") }
+            items(coursesOnDate, key = SourceCourse::sourceUid) { course ->
+                Card(modifier = Modifier.fillMaxWidth(), insideMargin = PaddingValues(10.dp)) {
+                    SourceCourseChoiceRow(
+                        course = course,
+                        selected = course.sourceUid in state.selectedSourceCourseUids,
+                        onToggle = { state.toggleSourceCourseSelection(course.sourceUid) },
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -116,23 +134,6 @@ private fun SourceDayCell(day: LocalDate, occurrenceCount: Int, selected: Boolea
     ) {
         Text(day.dayOfMonth.toString(), style = MiuixTheme.textStyles.body2)
         if (occurrenceCount > 0) Text("●", color = palette.primary, style = MiuixTheme.textStyles.body2)
-    }
-}
-
-@Composable
-private fun SourceDateCourseList(day: LocalDate, courses: List<SourceCourse>, state: CalendarControlState, modifier: Modifier) {
-    LazyColumn(modifier = modifier, contentPadding = PaddingValues(bottom = 156.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        item { Text("${day.monthValue}月${day.dayOfMonth}日 · ${courses.size} 个来源课程", style = MiuixTheme.textStyles.title3) }
-        if (courses.isEmpty()) item { InformationCard("当天没有范围内来源课程", "切换月份或选择其他带圆点的日期。") }
-        items(courses, key = SourceCourse::sourceUid) { course ->
-            Card(modifier = Modifier.fillMaxWidth(), insideMargin = PaddingValues(10.dp)) {
-                SourceCourseChoiceRow(
-                    course = course,
-                    selected = course.sourceUid in state.selectedSourceCourseUids,
-                    onToggle = { state.toggleSourceCourseSelection(course.sourceUid) },
-                )
-            }
-        }
     }
 }
 

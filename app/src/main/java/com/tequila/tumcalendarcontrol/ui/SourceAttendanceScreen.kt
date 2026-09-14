@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -31,7 +32,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 fun SourceAttendanceScreen(state: CalendarControlState) {
     Column(
-        modifier = Modifier.verticalScroll(rememberScrollState()),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text("为 ${state.selectedSourceCourseUids.size} 门来源课程设置状态", style = MiuixTheme.textStyles.title3)

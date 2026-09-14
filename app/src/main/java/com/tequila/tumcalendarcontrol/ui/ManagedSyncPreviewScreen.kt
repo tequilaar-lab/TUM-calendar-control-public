@@ -8,7 +8,11 @@ package com.tequila.tumcalendarcontrol.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -20,7 +24,10 @@ import top.yukonga.miuix.kmp.basic.Text
 @Composable
 fun ManagedSyncPreviewScreen(state: CalendarControlState) {
     val preview = state.managedSyncPreview
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         InformationCard("受控同步预览", "预览只比较本应用映射与当前候选；不会查询、创建或写入目标日历。")
         if (preview == null) {
             InformationCard("没有可执行的预览", "请返回设置，先读取来源并生成预览。")
