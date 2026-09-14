@@ -94,7 +94,7 @@ class GoogleCalendarRestApi(
     private fun DesiredCalendarEvent.jsonBody(): String = JSONObject().apply {
         put("summary", title)
         put("location", location)
-        put("description", AppOwnedCalendarContract.eventDescription(this@jsonBody))
+        put("description", AppOwnedCalendarContract.eventDescription())
         put("colorId", attendanceState.googleColorId())
         put("start", JSONObject().put("dateTime", startsAt.toString()).put("timeZone", ZoneId.of("Europe/Berlin").id))
         put("end", JSONObject().put("dateTime", endsAt.toString()).put("timeZone", ZoneId.of("Europe/Berlin").id))

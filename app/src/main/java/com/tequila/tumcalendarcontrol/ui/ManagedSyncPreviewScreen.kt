@@ -30,7 +30,15 @@ fun ManagedSyncPreviewScreen(state: CalendarControlState) {
     ) {
         InformationCard("受控同步预览", "预览只比较本应用映射与当前候选；不会查询、创建或写入目标日历。")
         if (preview == null) {
-            InformationCard("没有可执行的预览", "请返回设置，先读取来源并生成预览。")
+            InformationCard("已有映射的安全撤销", "来源目录只存在于本次运行；重启后仍可仅凭应用私有映射撤销本应用创建的输出。此页不能执行新的写入。")
+            if (state.ruleLedger.mappings.isNotEmpty()) {
+                Button(
+                    onClick = state::requestManagedRollback,
+                    enabled = !state.managedSyncInProgress,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(if (state.managedSyncInProgress) "正在撤销…" else "撤销本应用已映射的输出") }
+            } else InformationCard("没有可撤销的映射", "当前没有本应用已映射的输出事件。")
+            state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
             return
         }
         InformationCard("候选日程", "当前将输出 ${preview.desiredEventCount} 条候选。已选来源课程 ${state.managedSourceCandidateCount} 条；手动校园事项 ${state.managedManualCandidateCount} 条（不受 iCal 范围影响）。")

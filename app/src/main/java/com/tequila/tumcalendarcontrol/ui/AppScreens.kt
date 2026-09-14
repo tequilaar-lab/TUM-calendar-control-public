@@ -249,6 +249,9 @@ private fun SettingsScreen(state: CalendarControlState) {
             }
         }
         item { Button(onClick = state::requestManagedSyncPreview, modifier = Modifier.fillMaxWidth()) { Text("生成受控同步预览") } }
+        if (state.ruleLedger.mappings.isNotEmpty()) {
+            item { Button(onClick = state::openMappedOutputRollback, modifier = Modifier.fillMaxWidth()) { Text("撤销已映射的应用输出") } }
+        }
         item { InformationCard("应用版本", "${BuildConfig.VERSION_NAME} · 构建号 ${BuildConfig.VERSION_CODE}") }
         item { ThemeModeSelector(state) }
         item { Spacer(Modifier.height(4.dp)) }

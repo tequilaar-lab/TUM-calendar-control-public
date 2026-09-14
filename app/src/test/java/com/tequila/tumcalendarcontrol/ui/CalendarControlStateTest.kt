@@ -128,6 +128,26 @@ class CalendarControlStateTest {
     }
 
     @Test
+    fun `重启后仅凭已持久化映射也可进入安全撤销页`() {
+        val mapping = com.tequila.tumcalendarcontrol.sync.StoredEventMapping(
+            com.tequila.tumcalendarcontrol.sync.OutputTarget.LOCAL_CALENDAR,
+            com.tequila.tumcalendarcontrol.sync.ManagedEventIdentity("synthetic-uid", "synthetic-instance"),
+            "event-id",
+            "fingerprint",
+        )
+        val state = CalendarControlState(initialRuleLedger = RuleLedger(mappings = listOf(mapping)))
+
+        state.open(AppScreen.SETTINGS)
+        state.openMappedOutputRollback()
+
+        assertEquals(AppScreen.MANAGED_SYNC_PREVIEW, state.screen)
+        assertEquals(null, state.managedSyncPreview)
+        assertFalse(state.managedSyncRequested)
+        assertTrue(state.handleBack())
+        assertEquals(AppScreen.SETTINGS, state.screen)
+    }
+
+    @Test
     fun `更多操作打开时保留原页面作为稳定背景`() {
         val state = CalendarControlState()
 

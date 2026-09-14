@@ -20,9 +20,10 @@ object AppOwnedCalendarContract {
     const val LOCAL_ACCOUNT_NAME = "TUM Calendar Control"
     const val LOCAL_CALENDAR_NAME = "tum-calendar-control-local"
     const val LOCAL_DISPLAY_NAME = "TUM 日历控制"
-    private const val EVENT_DESCRIPTION_PREFIX = "由 TUM 日历控制创建；身份："
+    private const val EVENT_DESCRIPTION = "由 TUM 日历控制创建。"
 
-    fun eventDescription(event: DesiredCalendarEvent): String = EVENT_DESCRIPTION_PREFIX + event.identity.sourceUid + "/" + event.identity.instanceKey
+    /** 日历描述只声明应用归属；同步身份仅保存在应用私有映射中。 */
+    fun eventDescription(): String = EVENT_DESCRIPTION
 }
 
 sealed interface CalendarTargetResolution {
@@ -111,7 +112,7 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
         put(CalendarContract.Events.DTEND, event.endsAt.toEpochMilli())
         put(CalendarContract.Events.EVENT_TIMEZONE, ZoneId.of("Europe/Berlin").id)
         put(CalendarContract.Events.EVENT_LOCATION, event.location)
-        put(CalendarContract.Events.DESCRIPTION, AppOwnedCalendarContract.eventDescription(event))
+        put(CalendarContract.Events.DESCRIPTION, AppOwnedCalendarContract.eventDescription())
         put(CalendarContract.Events.EVENT_COLOR, event.attendanceState.androidColor())
     }
 

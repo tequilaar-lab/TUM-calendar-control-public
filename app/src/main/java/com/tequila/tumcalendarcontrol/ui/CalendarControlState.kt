@@ -505,6 +505,18 @@ class CalendarControlState(
         requestManagedSyncPreview()
     }
 
+    /** 已持久化的映射可在来源目录丢失后单独进入撤销页；该入口不生成候选或写入。 */
+    fun openMappedOutputRollback() {
+        if (ruleLedger.mappings.isEmpty()) {
+            feedback = "没有本应用已映射的输出事件可撤销。"
+            return
+        }
+        managedSyncPreview = null
+        managedSyncPreviewReturnScreen = screen
+        navigationDirection = NavigationDirection.FORWARD
+        screen = AppScreen.MANAGED_SYNC_PREVIEW
+    }
+
     /** 基于当前进程来源和本机规则生成差异；不查询、创建或写入任何目标日历。 */
     fun requestManagedSyncPreview() {
         if (sourceOccurrences.isEmpty() && ruleLedger.manualEvents.isEmpty()) {
