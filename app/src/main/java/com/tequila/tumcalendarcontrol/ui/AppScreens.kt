@@ -82,8 +82,8 @@ fun AppScreenContent(state: CalendarControlState, screen: AppScreen) {
 @Composable
 private fun OverviewScreen(state: CalendarControlState) {
     CourseList(
-        courses = state.courses.filter { it.hasFixedPlus && it.sourceStatus in state.visibleSourceStatuses },
-        heading = "已获 Fixplatz 的课程",
+        courses = state.displayedCourses,
+        heading = if (state.sourceCatalogLoaded) "已读取的来源课程" else "课程总览",
         onCourseClick = state::openCourse,
     )
 }
@@ -169,7 +169,7 @@ private fun SearchScreen(state: CalendarControlState) {
                 value = state.searchQuery,
                 onValueChange = { state.searchQuery = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = "搜索已获 Fixplatz 的课程",
+                label = "搜索课程",
             )
         }
         courseListItems(
@@ -199,7 +199,7 @@ fun MoreScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("筛选显示", "仅显示已获 Fixplatz 的课程")
+        InformationCard("筛选显示", if (state.sourceCatalogLoaded) "正在显示已读取的完整来源课程目录" else "当前显示本机示例课程")
         InformationCard("同步状态", "尚未连接任何真实日历；没有待写入的更改")
         InformationCard("应用设置", "日历来源、颜色与显示偏好")
         Button(onClick = { state.open(AppScreen.SETTINGS) }, modifier = Modifier.fillMaxWidth()) {
@@ -267,10 +267,14 @@ private fun SettingsScreen(state: CalendarControlState) {
 private fun SourceStatusSelector(state: CalendarControlState) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("来源状态筛选", style = MiuixTheme.textStyles.title3)
-        Text("只控制合成示例课程的显示；不会影响私有 iCal 读取或任何日历。", color = LocalTumPalette.current.onSurfaceVariant)
-        TumEventStatus.entries.forEach { status ->
-            Switch(checked = status in state.visibleSourceStatuses, onCheckedChange = { state.toggleSourceStatusVisible(status) })
-            Text(status.label, modifier = Modifier.padding(start = 8.dp))
+        if (state.sourceCatalogLoaded) {
+            Text("当前来源没有可可靠映射的 fix／geplant 状态字段；已读取课程不会被此筛选隐藏。", color = LocalTumPalette.current.onSurfaceVariant)
+        } else {
+            Text("仅控制尚未读取来源时的本机示例课程显示；不会影响私有 iCal 或任何日历。", color = LocalTumPalette.current.onSurfaceVariant)
+            TumEventStatus.entries.forEach { status ->
+                Switch(checked = status in state.visibleSourceStatuses, onCheckedChange = { state.toggleSourceStatusVisible(status) })
+                Text(status.label, modifier = Modifier.padding(start = 8.dp))
+            }
         }
     }
 }
@@ -456,7 +460,7 @@ private fun CourseList(courses: List<Course>, heading: String, onCourseClick: (S
 private fun LazyListScope.courseListItems(courses: List<Course>, heading: String, onCourseClick: (String) -> Unit) {
     item { Text(heading, style = MiuixTheme.textStyles.title3) }
     if (courses.isEmpty()) {
-        item { InformationCard("暂无课程", "当前筛选条件下没有可显示的已获 Fixplatz 课程") }
+        item { InformationCard("暂无课程", "请先读取来源，或检查当前课程筛选条件。") }
     } else {
         items(courses, key = { it.id }) { course ->
             CourseRow(course) { onCourseClick(course.id) }

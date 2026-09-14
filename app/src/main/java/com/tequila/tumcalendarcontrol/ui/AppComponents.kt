@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Star
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import com.tequila.tumcalendarcontrol.domain.Course
+import com.tequila.tumcalendarcontrol.domain.displayLocation
 import com.tequila.tumcalendarcontrol.domain.displaySchedule
 import com.tequila.tumcalendarcontrol.domain.displayTitle
 import top.yukonga.miuix.kmp.basic.Card
@@ -55,7 +56,7 @@ fun CourseRow(course: Course, onClick: () -> Unit) {
             Column(modifier = Modifier.padding(end = 8.dp)) {
                 Text("${course.displayTitle} · ${course.attendance.label}", style = MiuixTheme.textStyles.title3)
                 Text(
-                    "${course.displaySchedule} · ${course.attendance.colorLabel} · 已获 Fixplatz" +
+                    "${course.displaySchedule} · ${course.displayLocation} · ${course.attendance.colorLabel}" +
                         if (course.attendance == AttendanceState.STOP_ATTENDING) "；历史不改" else "",
                     color = palette.onSurfaceVariant,
                 )

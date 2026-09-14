@@ -349,6 +349,39 @@ class CalendarControlStateTest {
         assertEquals(AppScreen.SOURCE_PREVIEW, state.screen)
         assertEquals(AttendanceState.MUST_ATTEND, state.sourceAttendanceFor("uid-a"))
         assertEquals(AttendanceState.MUST_ATTEND, state.sourceAttendanceFor("uid-b"))
+        assertTrue(state.displayedCourses.all { it.attendance == AttendanceState.MUST_ATTEND })
+    }
+
+    @Test
+    fun `成功读取来源会一次回流首页 搜索和收藏数据源`() {
+        val state = CalendarControlState()
+        state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
+        state.requestSourcePreview()
+        state.resolveSourcePreview(state.sourceReadToken, IcalReadOnlyImportResult.Success(sourcePreview()))
+
+        assertTrue(state.sourceCatalogLoaded)
+        assertEquals(listOf("uid-a", "uid-b"), state.displayedCourses.map { it.id })
+        state.searchQuery = "合成 B"
+        assertEquals(listOf("uid-b"), state.searchedCourses.map { it.id })
+        state.toggleFavorite("uid-b")
+        assertEquals(listOf("uid-b"), state.favoriteCourses.map { it.id })
+    }
+
+    @Test
+    fun `重新读取来源会按 UID 保留本机收藏与覆盖`() {
+        val state = CalendarControlState()
+        state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
+        state.requestSourcePreview()
+        state.resolveSourcePreview(state.sourceReadToken, IcalReadOnlyImportResult.Success(sourcePreview()))
+        state.toggleFavorite("uid-a")
+        state.openCourse("uid-a")
+        state.updateSelectedCourseOverride(CourseLocalOverride(title = "本机名称"))
+        state.requestSourcePreview()
+        state.resolveSourcePreview(state.sourceReadToken, IcalReadOnlyImportResult.Success(sourcePreview()))
+
+        val restored = state.displayedCourses.first { it.id == "uid-a" }
+        assertTrue(restored.isFavorite)
+        assertEquals("本机名称", restored.localOverride.title)
     }
 
     @Test

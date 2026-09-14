@@ -460,7 +460,7 @@ private fun AppScreen.title(): String = when (this) {
 }
 
 private fun AppScreen.subtitle(): String? = when (this) {
-    AppScreen.OVERVIEW -> "离线原型 · 仅合成数据"
+    AppScreen.OVERVIEW -> "读取 iCal 后显示来源课程"
     AppScreen.SETTINGS -> "可手动只读 iCal；不写入日历"
     AppScreen.SYNC_CONFIGURATION -> "仅保存本机配置，不会联网"
     AppScreen.SYNC_PREVIEW -> "离线合成预览 · 不写入日历"

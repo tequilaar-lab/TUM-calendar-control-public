@@ -1,6 +1,6 @@
 /*
- * 职责：保存离线原型的屏幕栈、主题、选课、搜索、收藏、出席状态、个人资料及同步目标状态。
- * 输入／输出：接收用户的本地点击；输出 Compose 可观察状态和更新后的合成课程列表。
+ * 职责：保存界面屏幕栈、主题、来源课程、搜索、收藏、出席状态、个人资料及同步目标状态。
+ * 输入／输出：接收用户的本地点击；输出 Compose 可观察状态和更新后的运行内课程列表。
  * 外部副作用：无；个人资料和同步目标的本机保存均由界面层的偏好模块单独负责。
  * 不负责：数据库、日期选择器、真实日历写入、网络同步或账户身份。
  */
@@ -127,6 +127,9 @@ class CalendarControlState(
     /** 真实来源资料仅在当前进程内保存，重新读取或退出后由用户源重新生成。 */
     var sourceCourses by mutableStateOf<List<SourceCourse>>(emptyList())
         private set
+    /** 成功读取过来源后，主标签页应只显示来源投影，不能退回合成示例。 */
+    var sourceCatalogLoaded by mutableStateOf(false)
+        private set
     /** 真正来源实例只在当前进程用于预览／同步候选，退出或重新读取时丢弃。 */
     private var sourceOccurrences by mutableStateOf<List<SourceCalendarOccurrence>>(emptyList())
     /** 只暴露本次运行实例给浏览器；调用者不得用它写入或持久化来源内容。 */
@@ -191,8 +194,12 @@ class CalendarControlState(
     val selectedCourse: Course
         get() = courses.first { it.id == selectedCourseId }
 
+    /** 真实来源没有可依赖的 TUM 状态字段，读取后主界面完整显示其课程目录。 */
+    val displayedCourses: List<Course>
+        get() = if (sourceCatalogLoaded) courses else courses.filter { it.hasFixedPlus && it.sourceStatus in visibleSourceStatuses }
+
     val searchedCourses: List<Course>
-        get() = courses.filter { it.hasFixedPlus && it.sourceStatus in visibleSourceStatuses && it.displayTitle.contains(searchQuery, ignoreCase = true) }
+        get() = displayedCourses.filter { it.displayTitle.contains(searchQuery, ignoreCase = true) }
 
     val favoriteCourses: List<Course>
         get() = courses.filter { it.isFavorite && it.hasFixedPlus }
@@ -338,6 +345,7 @@ class CalendarControlState(
     fun confirmRuleBackupImport() {
         val backup = pendingRuleBackup ?: return
         ruleLedger = ruleLedger.copy(rules = backup.rules, manualEvents = backup.manualEvents)
+        refreshCoursesFromSource()
         pendingRuleBackup = null
         feedback = "已替换本机规则与手动事项；没有同步、撤销或改动目标日历。"
     }
@@ -403,6 +411,9 @@ class CalendarControlState(
                 sourcePreview = result.preview
                 sourceCourses = result.preview.courses
                 sourceOccurrences = result.preview.occurrences
+                sourceCatalogLoaded = true
+                refreshCoursesFromSource()
+                selectedCourseId = courses.firstOrNull()?.id ?: ""
                 selectedSourceCourseUids = emptySet()
                 sourceBrowserQuery = ""
                 sourceBrowserFilter = SourceCourseFilter.ALL
@@ -485,6 +496,7 @@ class CalendarControlState(
             ruleLedger.rules.filterNot { it.sourceUid in sourceUids } + ensuredRules,
             command,
         ))
+        refreshCoursesFromSource()
         feedback = "已更新 ${sourceUids.size} 门来源课程的${pendingSourceAttendance.label}规则；尚未写入任何日历。"
         screen = sourceAttendanceReturnScreen
     }
@@ -717,6 +729,17 @@ class CalendarControlState(
     private fun enabledOutputTargets(): Set<OutputTarget> = buildSet {
         if (syncDestinations.localCalendarEnabled) add(OutputTarget.LOCAL_CALENDAR)
         if (syncDestinations.googleCalendarEnabled) add(OutputTarget.GOOGLE_CALENDAR)
+    }
+
+    /** 来源读取和规则变更后的唯一 UI 回流点；不会变更来源、规则或任何目标日历。 */
+    private fun refreshCoursesFromSource() {
+        if (!sourceCatalogLoaded) return
+        courses = SourceCourseProjection.courses(
+            sourceCourses = sourceCourses,
+            occurrences = sourceOccurrences,
+            rules = ruleLedger.rules,
+            previousCourses = courses,
+        )
     }
 
     private fun navigationDirectionBetween(source: AppScreen, destination: AppScreen): NavigationDirection {
