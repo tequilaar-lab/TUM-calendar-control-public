@@ -9,6 +9,7 @@ package com.tequila.tumcalendarcontrol.ui
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.AuthorizationResult
 import com.google.android.gms.auth.api.identity.Identity
@@ -28,13 +29,24 @@ class GoogleAuthorizationCoordinator(context: Context) {
             .setRequestedScopes(listOf(Scope(GOOGLE_CALENDAR_APP_CREATED_SCOPE)))
             .build()
         client.authorize(request)
-            .addOnSuccessListener { callback(it.toOutcome()) }
-            .addOnFailureListener { callback(GoogleAuthorizationOutcome.Failure("Google 授权未完成；请检查设备上的 Google 服务后重试")) }
+            .addOnSuccessListener {
+                val outcome = it.toOutcome()
+                Log.i(GoogleAuthorizationLogTag, "stage=authorization_result outcome=${outcome.logLabel}")
+                callback(outcome)
+            }
+            .addOnFailureListener { error ->
+                Log.w(GoogleAuthorizationLogTag, "stage=authorize_failed type=${error.javaClass.simpleName}")
+                callback(GoogleAuthorizationOutcome.Failure("Google 授权未完成；请检查网络与设备上的 Google 服务后重试"))
+            }
     }
 
     fun resolveResult(data: Intent?, callback: (GoogleAuthorizationOutcome) -> Unit) {
         val outcome = runCatching { client.getAuthorizationResultFromIntent(requireNotNull(data)).toOutcome() }
-            .getOrElse { GoogleAuthorizationOutcome.Failure("Google 授权未完成或已取消；未获得令牌") }
+            .getOrElse { error ->
+                Log.w(GoogleAuthorizationLogTag, "stage=consent_return_failed type=${error.javaClass.simpleName}")
+                GoogleAuthorizationOutcome.Failure("Google 授权未完成或已取消；未获得令牌")
+            }
+        Log.i(GoogleAuthorizationLogTag, "stage=consent_return outcome=${outcome.logLabel}")
         callback(outcome)
     }
 
@@ -49,6 +61,15 @@ class GoogleAuthorizationCoordinator(context: Context) {
     }
 
     private companion object {
+        const val GoogleAuthorizationLogTag = "TumGoogleAuth"
         const val GOOGLE_CALENDAR_APP_CREATED_SCOPE = "https://www.googleapis.com/auth/calendar.app.created"
     }
 }
+
+/** 仅输出脱敏阶段标签；令牌、账户、日历和异常正文均不得进入日志。 */
+private val GoogleAuthorizationOutcome.logLabel: String
+    get() = when (this) {
+        is GoogleAuthorizationOutcome.AccessToken -> "access_token_received"
+        is GoogleAuthorizationOutcome.LaunchConsent -> "consent_required"
+        is GoogleAuthorizationOutcome.Failure -> "failure"
+    }

@@ -61,6 +61,14 @@ enum class NavigationDirection {
     FORWARD, BACKWARD,
 }
 
+/** 仅描述当前进程的 Google 授权结果；令牌绝不持久化，重启后必须重新授权。 */
+enum class GoogleAuthorizationStatus(val title: String, val defaultDetail: String) {
+    NOT_CONNECTED("Google 日历未连接", "尚未获得本次运行的授权；不会创建或写入 Google 日历。"),
+    AUTHORIZING("正在连接 Google 日历", "请在 Google 页面完成账户选择与授权，然后自动返回本应用。"),
+    AUTHORIZED("Google 日历已获本次运行授权", "尚未创建或写入 Google 日历；仍需先生成预览并明确确认。"),
+    FAILED("Google 授权未完成", "没有获得令牌，因此没有访问或修改 Google 日历。可检查配置后重试。"),
+}
+
 class CalendarControlState(
     initialCourses: List<Course> = SampleCourses.all(),
     initialProfile: UserProfile = UserProfile(),
@@ -151,6 +159,10 @@ class CalendarControlState(
         private set
     private var googleAccessToken by mutableStateOf<String?>(null)
     val hasGoogleAuthorization: Boolean get() = googleAccessToken != null
+    var googleAuthorizationStatus by mutableStateOf(GoogleAuthorizationStatus.NOT_CONNECTED)
+        private set
+    var googleAuthorizationDetail by mutableStateOf(GoogleAuthorizationStatus.NOT_CONNECTED.defaultDetail)
+        private set
     var localCalendarPermissionGranted by mutableStateOf(false)
         private set
     private var managedOperationToken by mutableStateOf(0L)
@@ -237,6 +249,12 @@ class CalendarControlState(
     /** 只更新未来输出许可；真正的日历连接和写入仍由后续经授权的同步模块负责。 */
     fun setSyncDestinationEnabled(destination: SyncDestination, enabled: Boolean) {
         syncDestinations = syncDestinations.withEnabled(destination, enabled)
+        if (destination == SyncDestination.GOOGLE_CALENDAR && !enabled) {
+            googleAuthorizationRequested = false
+            googleAccessToken = null
+            googleAuthorizationStatus = GoogleAuthorizationStatus.NOT_CONNECTED
+            googleAuthorizationDetail = GoogleAuthorizationStatus.NOT_CONNECTED.defaultDetail
+        }
     }
 
     /** 申请权限不是写入：只有系统同意后才保存未来本机输出许可。 */
@@ -545,17 +563,36 @@ class CalendarControlState(
     fun requestGoogleAuthorization() {
         if (!syncDestinations.googleCalendarEnabled) {
             feedback = "请先开启 Google 日历镜像输出；当前未发起授权。"
+            googleAuthorizationStatus = GoogleAuthorizationStatus.FAILED
+            googleAuthorizationDetail = feedback.orEmpty()
             return
         }
+        googleAccessToken = null
         googleAuthorizationRequested = true
+        googleAuthorizationStatus = GoogleAuthorizationStatus.AUTHORIZING
+        googleAuthorizationDetail = GoogleAuthorizationStatus.AUTHORIZING.defaultDetail
+        feedback = googleAuthorizationDetail
     }
 
     fun resolveGoogleAuthorization(outcome: GoogleAuthorizationOutcome) {
         googleAuthorizationRequested = false
         when (outcome) {
-            is GoogleAuthorizationOutcome.AccessToken -> { googleAccessToken = outcome.value; feedback = "Google 日历已获本次运行的授权；尚未创建或写入日历。" }
-            is GoogleAuthorizationOutcome.Failure -> feedback = outcome.summary
-            is GoogleAuthorizationOutcome.LaunchConsent -> Unit
+            is GoogleAuthorizationOutcome.AccessToken -> {
+                googleAccessToken = outcome.value
+                googleAuthorizationStatus = GoogleAuthorizationStatus.AUTHORIZED
+                googleAuthorizationDetail = GoogleAuthorizationStatus.AUTHORIZED.defaultDetail
+                feedback = googleAuthorizationDetail
+            }
+            is GoogleAuthorizationOutcome.Failure -> {
+                googleAccessToken = null
+                googleAuthorizationStatus = GoogleAuthorizationStatus.FAILED
+                googleAuthorizationDetail = outcome.summary
+                feedback = outcome.summary
+            }
+            is GoogleAuthorizationOutcome.LaunchConsent -> {
+                googleAuthorizationStatus = GoogleAuthorizationStatus.AUTHORIZING
+                googleAuthorizationDetail = GoogleAuthorizationStatus.AUTHORIZING.defaultDetail
+            }
         }
     }
 

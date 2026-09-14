@@ -218,6 +218,30 @@ class CalendarControlStateTest {
     }
 
     @Test
+    fun `Google 授权状态会立即显示成功失败并在关闭输出时清除令牌`() {
+        val state = CalendarControlState()
+        state.setSyncDestinationEnabled(SyncDestination.GOOGLE_CALENDAR, true)
+
+        state.requestGoogleAuthorization()
+        assertEquals(GoogleAuthorizationStatus.AUTHORIZING, state.googleAuthorizationStatus)
+        assertFalse(state.hasGoogleAuthorization)
+
+        state.resolveGoogleAuthorization(GoogleAuthorizationOutcome.Failure("授权已取消；未获得令牌"))
+        assertEquals(GoogleAuthorizationStatus.FAILED, state.googleAuthorizationStatus)
+        assertTrue(state.googleAuthorizationDetail.contains("未获得令牌"))
+        assertFalse(state.hasGoogleAuthorization)
+
+        state.requestGoogleAuthorization()
+        state.resolveGoogleAuthorization(GoogleAuthorizationOutcome.AccessToken("synthetic-access-token"))
+        assertEquals(GoogleAuthorizationStatus.AUTHORIZED, state.googleAuthorizationStatus)
+        assertTrue(state.hasGoogleAuthorization)
+
+        state.setSyncDestinationEnabled(SyncDestination.GOOGLE_CALENDAR, false)
+        assertEquals(GoogleAuthorizationStatus.NOT_CONNECTED, state.googleAuthorizationStatus)
+        assertFalse(state.hasGoogleAuthorization)
+    }
+
+    @Test
     fun `保存同步配置后返回设置且不隐式打开输出`() {
         val state = CalendarControlState()
 

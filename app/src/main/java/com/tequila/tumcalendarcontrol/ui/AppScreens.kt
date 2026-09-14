@@ -242,11 +242,7 @@ private fun SettingsScreen(state: CalendarControlState) {
         item { SyncDestinationSelector(state) }
         item { InformationCard("写入边界", "仅管理本应用创建且带所有权标记的目标日历；不改动主日历、订阅或其他应用日程") }
         if (state.syncDestinations.googleCalendarEnabled) {
-            item {
-                Button(onClick = state::requestGoogleAuthorization, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (state.hasGoogleAuthorization) "Google 已获本次运行授权" else "连接 Google 日历")
-                }
-            }
+            item { GoogleAuthorizationPanel(state) }
         }
         item { Button(onClick = state::requestManagedSyncPreview, modifier = Modifier.fillMaxWidth()) { Text("生成受控同步预览") } }
         if (state.ruleLedger.mappings.isNotEmpty()) {
@@ -301,8 +297,6 @@ private fun SyncConfigurationScreen(state: CalendarControlState) {
     val current = state.privateSyncConfiguration
     var replacementSubscriptionUrl by remember { mutableStateOf("") }
     var replacingSubscription by remember { mutableStateOf(!current.hasTumSubscription) }
-    var editingGoogleAdvanced by remember { mutableStateOf(false) }
-    var googleClientId by remember(current.googleOAuthClientId) { mutableStateOf(current.googleOAuthClientId) }
     var calendarName by remember(current.googleCalendarName) { mutableStateOf(current.googleCalendarName) }
     var validationMessage by remember { mutableStateOf<String?>(null) }
     Column(
@@ -318,13 +312,8 @@ private fun SyncConfigurationScreen(state: CalendarControlState) {
             onValueChange = { replacementSubscriptionUrl = it },
         ) else Button(onClick = { replacingSubscription = true }, modifier = Modifier.fillMaxWidth()) { Text("替换私有 iCal 地址") }
         InformationCard("同步范围", "范围已移至独立的“iCal 来源与同步范围”页面；它使用日历选择，不再要求输入日期文本。")
-        InformationCard("Google 日历", "Google 授权不是账户或密码。正式同步时会由系统选择账户，并仅请求本应用创建日历的最小权限；令牌不会保存。")
-        if (editingGoogleAdvanced) TextField(
-            value = googleClientId,
-            onValueChange = { googleClientId = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = "Google OAuth 客户端标识（高级，可留空）",
-        ) else Button(onClick = { editingGoogleAdvanced = true }, modifier = Modifier.fillMaxWidth()) { Text("配置 Google 高级选项") }
+        InformationCard("Google 日历", "Google 授权不是账户或密码。正式同步时由系统选择账户，并只请求本应用创建日历的最小权限；令牌不会保存。")
+        InformationCard("授权配置", "Android OAuth 客户端须由开发者在 Google Cloud 按本应用包名与签名配置；不在本应用输入、保存或展示客户端标识。")
         TextField(
             value = calendarName,
             onValueChange = { calendarName = it },
@@ -336,7 +325,7 @@ private fun SyncConfigurationScreen(state: CalendarControlState) {
             onClick = {
                 val updated = current.copy(
                     tumSubscriptionUrl = replacementSubscriptionUrl.trim().ifBlank { current.tumSubscriptionUrl },
-                    googleOAuthClientId = googleClientId,
+                    googleOAuthClientId = "",
                     googleCalendarName = calendarName,
                 )
                 val problems = updated.validate()
@@ -349,6 +338,21 @@ private fun SyncConfigurationScreen(state: CalendarControlState) {
             },
             modifier = Modifier.fillMaxWidth(),
         ) { Text("仅保存本机配置") }
+    }
+}
+
+/** Google 状态卡始终紧邻连接操作，避免长设置页将成功或失败反馈藏到屏幕外。 */
+@Composable
+private fun GoogleAuthorizationPanel(state: CalendarControlState) {
+    InformationCard(state.googleAuthorizationStatus.title, state.googleAuthorizationDetail)
+    Button(onClick = state::requestGoogleAuthorization, modifier = Modifier.fillMaxWidth()) {
+        val label = when (state.googleAuthorizationStatus) {
+            GoogleAuthorizationStatus.NOT_CONNECTED -> "连接 Google 日历"
+            GoogleAuthorizationStatus.AUTHORIZING -> "正在等待 Google 授权"
+            GoogleAuthorizationStatus.AUTHORIZED -> "重新授权 Google 日历"
+            GoogleAuthorizationStatus.FAILED -> "重试 Google 授权"
+        }
+        Text(label)
     }
 }
 
