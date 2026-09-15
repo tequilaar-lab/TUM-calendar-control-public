@@ -243,6 +243,21 @@ class CalendarControlStateTest {
     }
 
     @Test
+    fun `Google 401 会清除运行内授权并要求用户重新连接`() {
+        val state = CalendarControlState()
+        state.setSyncDestinationEnabled(SyncDestination.GOOGLE_CALENDAR, true)
+        state.requestGoogleAuthorization()
+        state.resolveGoogleAuthorization(GoogleAuthorizationOutcome.AccessToken("synthetic-access-token"))
+
+        val summary = state.invalidateGoogleAuthorizationAfterUnauthorized()
+
+        assertEquals(GoogleAuthorizationStatus.FAILED, state.googleAuthorizationStatus)
+        assertFalse(state.hasGoogleAuthorization)
+        assertTrue(summary.contains("HTTP 401"))
+        assertTrue(summary.contains("重新连接"))
+    }
+
+    @Test
     fun `保存同步配置后返回设置且不隐式打开输出`() {
         val state = CalendarControlState()
 

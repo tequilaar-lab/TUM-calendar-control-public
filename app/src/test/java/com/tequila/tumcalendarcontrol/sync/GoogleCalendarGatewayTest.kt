@@ -41,12 +41,33 @@ class GoogleCalendarGatewayTest {
         assertEquals(1, api.visibilityRequests)
     }
 
-    private class FakeGoogleCalendarApi(initialId: String?, initialDescription: String?) : GoogleCalendarApi {
+    @Test
+    fun `Google 401 会成为结构化的重新授权失败码`() {
+        val api = FakeGoogleCalendarApi(
+            initialId = "owned",
+            initialDescription = "Created and owned by TUM Calendar Control. marker=tum-calendar-control",
+            failure = GoogleCalendarRequestException(401),
+        )
+
+        val resolution = GoogleCalendarTarget(api).ensure("owned", "合成日历") as CalendarTargetResolution.Failure
+
+        assertEquals(TargetFailureCode.GOOGLE_AUTHORIZATION_EXPIRED, resolution.failureCode)
+        assertTrue(resolution.summary.contains("HTTP 401"))
+    }
+
+    private class FakeGoogleCalendarApi(
+        initialId: String?,
+        initialDescription: String?,
+        private val failure: Throwable? = null,
+    ) : GoogleCalendarApi {
         private val calendars = initialId?.let { mutableMapOf(it to GoogleRemoteCalendar(it, initialDescription)) } ?: mutableMapOf()
         var createdCalendars = 0
         var createdEvents = 0
         var visibilityRequests = 0
-        override fun getCalendar(calendarId: String): GoogleRemoteCalendar? = calendars[calendarId]
+        override fun getCalendar(calendarId: String): GoogleRemoteCalendar? {
+            failure?.let { throw it }
+            return calendars[calendarId]
+        }
         override fun createCalendar(summary: String, description: String): GoogleRemoteCalendar {
             createdCalendars += 1
             return GoogleRemoteCalendar("created", description).also { calendars[it.id] = it }

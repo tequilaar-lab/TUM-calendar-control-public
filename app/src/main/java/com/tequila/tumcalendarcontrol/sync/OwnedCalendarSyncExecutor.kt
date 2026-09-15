@@ -19,11 +19,17 @@ interface OwnedCalendarGateway {
     fun remove(calendar: OwnedCalendarRef, eventId: String)
 }
 
+/** 脱敏失败分类供协调层做安全恢复；不保存 HTTP 响应、令牌或账户信息。 */
+enum class TargetFailureCode {
+    GOOGLE_AUTHORIZATION_EXPIRED,
+}
+
 data class TargetSyncResult(
     val target: OutputTarget,
     val mappings: List<StoredEventMapping>,
     val changes: List<SyncChange>,
     val failureSummary: String? = null,
+    val failureCode: TargetFailureCode? = null,
 )
 
 /** 所有权先验失败时零写入；稳定映射严格以目标、UID 和原始实例键定位。 */

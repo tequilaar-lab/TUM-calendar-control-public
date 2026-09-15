@@ -11,7 +11,12 @@ import android.content.Context
 data class PlatformManagedSyncOutcome(
     val result: ManagedSyncResult,
     val configuration: PrivateSyncConfiguration,
-)
+) {
+    /** 只由 Google HTTP 401 置位；供 UI 清理失效短令牌且要求用户显式重新连接。 */
+    val requiresGoogleReauthorization: Boolean get() = result.targetResults.any {
+        it.target == OutputTarget.GOOGLE_CALENDAR && it.failureCode == TargetFailureCode.GOOGLE_AUTHORIZATION_EXPIRED
+    }
+}
 
 class PlatformManagedSyncRunner(private val context: Context, private val engine: ManagedSyncEngine = ManagedSyncEngine()) {
     fun execute(
@@ -46,7 +51,13 @@ class PlatformManagedSyncRunner(private val context: Context, private val engine
                     nextConfiguration = nextConfiguration.copy(localCalendarId = resolution.calendar.calendarId)
                     bindings += TargetBinding(resolution.calendar, AndroidLocalCalendarGateway(context.contentResolver))
                 }
-                is CalendarTargetResolution.Failure -> failures += TargetSyncResult(OutputTarget.LOCAL_CALENDAR, mappings, emptyList(), resolution.summary)
+                is CalendarTargetResolution.Failure -> failures += TargetSyncResult(
+                    OutputTarget.LOCAL_CALENDAR,
+                    mappings,
+                    emptyList(),
+                    resolution.summary,
+                    resolution.failureCode,
+                )
             }
         }
         if (OutputTarget.GOOGLE_CALENDAR in targets) {
@@ -59,7 +70,13 @@ class PlatformManagedSyncRunner(private val context: Context, private val engine
                         nextConfiguration = nextConfiguration.copy(googleCalendarId = resolution.calendar.calendarId)
                         bindings += TargetBinding(resolution.calendar, GoogleCalendarGateway(api))
                     }
-                    is CalendarTargetResolution.Failure -> failures += TargetSyncResult(OutputTarget.GOOGLE_CALENDAR, mappings, emptyList(), resolution.summary)
+                    is CalendarTargetResolution.Failure -> failures += TargetSyncResult(
+                        OutputTarget.GOOGLE_CALENDAR,
+                        mappings,
+                        emptyList(),
+                        resolution.summary,
+                        resolution.failureCode,
+                    )
                 }
             }
         }

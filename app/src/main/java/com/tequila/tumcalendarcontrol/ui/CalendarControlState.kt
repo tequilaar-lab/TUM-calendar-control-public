@@ -516,6 +516,13 @@ class CalendarControlState(
         feedback = outputWorkflow.resolveGoogleAuthorization(outcome)
     }
 
+    /** 只由已结构化识别的 Google 401 调用；不触碰日历、映射或其他目标状态。 */
+    fun invalidateGoogleAuthorizationAfterUnauthorized(): String {
+        val summary = outputWorkflow.invalidateGoogleAuthorization()
+        feedback = summary
+        return summary
+    }
+
     fun consumeGoogleAuthorizationRequest() = outputWorkflow.consumeGoogleAuthorizationRequest()
 
     /** 执行请求只表达用户确认；界面层再在后台建立专用目标并调用网关。 */

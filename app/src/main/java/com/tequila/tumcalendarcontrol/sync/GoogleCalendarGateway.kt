@@ -37,7 +37,12 @@ class GoogleCalendarTarget(private val api: GoogleCalendarApi) {
         // Google 新建次级日历可能默认未在侧栏选中；显式请求可见。
         api.makeCalendarVisible(calendar.id)
         CalendarTargetResolution.Success(OwnedCalendarRef(OutputTarget.GOOGLE_CALENDAR, calendar.id, AppOwnedCalendarContract.OWNERSHIP_MARKER))
-    }.getOrElse { error -> CalendarTargetResolution.Failure(error.googleSafeSummary("Google 专用日历不可用")) }
+    }.getOrElse { error ->
+        CalendarTargetResolution.Failure(
+            summary = error.googleSafeSummary("Google 专用日历不可用"),
+            failureCode = error.targetFailureCode(),
+        )
+    }
 }
 
 /** 每次事件操作前验证专用日历的固定所有权标记，拒绝主日历和未标记日历。 */
@@ -149,6 +154,10 @@ data class GoogleHttpResponse(val statusCode: Int, val body: String) {
 
 /** 只携带状态码，避免 Google 响应正文、账户或令牌进入界面和日志。 */
 class GoogleCalendarRequestException(val statusCode: Int) : IllegalStateException("Google Calendar HTTP $statusCode")
+
+/** 只有 Google 明确拒绝访问令牌时才触发重新授权；403 等其他问题不清缓存。 */
+internal fun Throwable.targetFailureCode(): TargetFailureCode? =
+    if (this is GoogleCalendarRequestException && statusCode == HttpURLConnection.HTTP_UNAUTHORIZED) TargetFailureCode.GOOGLE_AUTHORIZATION_EXPIRED else null
 
 internal fun Throwable.googleSafeSummary(prefix: String): String =
     if (this is GoogleCalendarRequestException) "$prefix（HTTP $statusCode；请检查授权、Calendar API 与网络）" else "$prefix；请检查授权和网络后重试"

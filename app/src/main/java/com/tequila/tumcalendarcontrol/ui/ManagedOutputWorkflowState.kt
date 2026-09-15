@@ -78,6 +78,15 @@ internal class ManagedOutputWorkflowState {
         googleAuthorizationDetail = GoogleAuthorizationStatus.NOT_CONNECTED.defaultDetail
     }
 
+    /** HTTP 401 已证明当前短令牌无效；清除内存引用，下一次操作必须经用户重新连接。 */
+    fun invalidateGoogleAuthorization(): String {
+        googleAuthorizationRequested = false
+        googleAccessToken = null
+        googleAuthorizationStatus = GoogleAuthorizationStatus.FAILED
+        googleAuthorizationDetail = "Google 授权已失效（HTTP 401）；请重新连接 Google 日历后再写入。"
+        return googleAuthorizationDetail
+    }
+
     fun consumeGoogleAuthorizationRequest() { googleAuthorizationRequested = false }
 
     fun beginSync(): Long? {

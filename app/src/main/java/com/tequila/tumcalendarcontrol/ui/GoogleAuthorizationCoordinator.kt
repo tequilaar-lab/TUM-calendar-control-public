@@ -13,6 +13,7 @@ import android.content.Intent
 import android.util.Log
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.AuthorizationResult
+import com.google.android.gms.auth.api.identity.ClearTokenRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Scope
@@ -63,6 +64,14 @@ class GoogleAuthorizationCoordinator(context: Context) {
             }
         Log.i(GoogleAuthorizationLogTag, "stage=consent_return outcome=${outcome.logLabel}")
         callback(outcome)
+    }
+
+    /** 仅在 Calendar API 已明确返回 401 后清除 Play services 的本地令牌缓存；不会撤销授权。 */
+    fun clearRejectedAccessToken(accessToken: String) {
+        val request = ClearTokenRequest.builder().setToken(accessToken).build()
+        client.clearToken(request).addOnCompleteListener { result ->
+            Log.i(GoogleAuthorizationLogTag, "stage=token_cache_cleared success=${result.isSuccessful}")
+        }
     }
 
     private fun AuthorizationResult.toOutcome(): GoogleAuthorizationOutcome {

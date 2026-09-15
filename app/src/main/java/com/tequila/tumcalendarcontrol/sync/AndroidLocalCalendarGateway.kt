@@ -28,7 +28,7 @@ object AppOwnedCalendarContract {
 
 sealed interface CalendarTargetResolution {
     data class Success(val calendar: OwnedCalendarRef) : CalendarTargetResolution
-    data class Failure(val summary: String) : CalendarTargetResolution
+    data class Failure(val summary: String, val failureCode: TargetFailureCode? = null) : CalendarTargetResolution
 }
 
 /** 只有在同步已获权限的阶段调用；若缓存目标无效则新建一个本地专用日历。 */
