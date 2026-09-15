@@ -7,6 +7,7 @@
 package com.tequila.tumcalendarcontrol.sync
 
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
+import java.net.HttpURLConnection
 import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -51,6 +52,17 @@ class GoogleCalendarGatewayTest {
 
         assertEquals(TargetFailureCode.GOOGLE_AUTHORIZATION_EXPIRED, resolution.failureCode)
         assertTrue(resolution.summary.contains("HTTP 401"))
+    }
+
+    @Test
+    fun `删除已不存在的应用事件视为完成 其他阶段和 401 仍失败`() {
+        fun response(stage: GoogleCalendarRequestStage, status: Int) = GoogleHttpResponse(stage, status, "")
+
+        assertTrue(response(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, HttpURLConnection.HTTP_NO_CONTENT).isCompletedManagedEventRemoval())
+        assertTrue(response(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, HttpURLConnection.HTTP_NOT_FOUND).isCompletedManagedEventRemoval())
+        assertTrue(response(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, HttpURLConnection.HTTP_GONE).isCompletedManagedEventRemoval())
+        assertFalse(response(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, HttpURLConnection.HTTP_UNAUTHORIZED).isCompletedManagedEventRemoval())
+        assertFalse(response(GoogleCalendarRequestStage.CREATE_MANAGED_EVENT, HttpURLConnection.HTTP_GONE).isCompletedManagedEventRemoval())
     }
 
     private class FakeGoogleCalendarApi(

@@ -134,7 +134,8 @@ class GoogleCalendarRestApi(
     }
 
     override fun deleteEvent(calendarId: String, eventId: String) {
-        transport.execute(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, "DELETE", "/calendars/${calendarId.encodePath()}/events/${eventId.encodePath()}?sendUpdates=none", null, accessToken).requireSuccess()
+        val response = transport.execute(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, "DELETE", "/calendars/${calendarId.encodePath()}/events/${eventId.encodePath()}?sendUpdates=none", null, accessToken)
+        if (!response.isCompletedManagedEventRemoval()) response.requireSuccess()
     }
 
     private fun DesiredCalendarEvent.jsonBody(): String = JSONObject().apply {
@@ -167,6 +168,11 @@ data class GoogleHttpResponse(
         return this
     }
 }
+
+/** 仅对应用已映射事件的删除：404／410 表示目标本已不存在，清理目标已经达成。 */
+internal fun GoogleHttpResponse.isCompletedManagedEventRemoval(): Boolean =
+    stage == GoogleCalendarRequestStage.DELETE_MANAGED_EVENT &&
+        (statusCode in 200..299 || statusCode == HttpURLConnection.HTTP_NOT_FOUND || statusCode == HttpURLConnection.HTTP_GONE)
 
 /** 只携带状态码，避免 Google 响应正文、账户或令牌进入界面和日志。 */
 class GoogleCalendarRequestException(
