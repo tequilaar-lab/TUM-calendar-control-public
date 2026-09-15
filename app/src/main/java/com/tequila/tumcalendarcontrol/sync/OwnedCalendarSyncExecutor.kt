@@ -8,6 +8,9 @@ package com.tequila.tumcalendarcontrol.sync
 
 data class OwnedCalendarRef(val target: OutputTarget, val calendarId: String, val ownershipMarker: String)
 
+/** 目标事件已由用户或日历端删除；执行器可安全改为恢复创建。 */
+class ManagedEventMissingException : IllegalStateException()
+
 interface OwnedCalendarGateway {
     fun verifyOwnership(calendar: OwnedCalendarRef): Boolean
     fun findEventIdsByIdentity(calendar: OwnedCalendarRef, identity: ManagedEventIdentity): List<String>
@@ -49,8 +52,16 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
                 }
                 SyncChangeType.UPDATE -> {
                     val event = desiredByIdentity.getValue(change.identity)
-                    gateway.update(calendar, change.targetEventId!!, event)
-                    next[change.identity] = StoredEventMapping(calendar.target, change.identity, change.targetEventId, planner.run { event.fingerprint() })
+                    val targetId = try {
+                        gateway.update(calendar, change.targetEventId!!, event)
+                        change.targetEventId
+                    } catch (_: ManagedEventMissingException) {
+                        val recoveredIds = gateway.findEventIdsByIdentity(calendar, event.identity)
+                        check(recoveredIds.size <= 1) { "目标日历存在同一课次的重复项；请先执行重复项恢复预览" }
+                        recoveredIds.singleOrNull()?.also { gateway.update(calendar, it, event) }
+                            ?: gateway.create(calendar, event)
+                    }
+                    next[change.identity] = StoredEventMapping(calendar.target, change.identity, targetId, planner.run { event.fingerprint() })
                 }
                 SyncChangeType.REMOVE -> { gateway.remove(calendar, change.targetEventId!!); next.remove(change.identity) }
                 SyncChangeType.KEEP -> Unit

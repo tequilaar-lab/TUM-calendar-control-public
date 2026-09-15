@@ -112,7 +112,9 @@ class GoogleCalendarRestApi(
     }
 
     override fun updateEvent(calendarId: String, eventId: String, event: DesiredCalendarEvent) {
-        transport.execute("PUT", "/calendars/${calendarId.encodePath()}/events/${eventId.encodePath()}?sendUpdates=none", event.jsonBody(), accessToken).requireSuccess()
+        val response = transport.execute("PUT", "/calendars/${calendarId.encodePath()}/events/${eventId.encodePath()}?sendUpdates=none", event.jsonBody(), accessToken)
+        if (response.statusCode == HttpURLConnection.HTTP_NOT_FOUND) throw ManagedEventMissingException()
+        response.requireSuccess()
     }
 
     override fun deleteEvent(calendarId: String, eventId: String) {

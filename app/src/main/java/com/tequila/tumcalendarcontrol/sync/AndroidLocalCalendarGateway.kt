@@ -108,7 +108,9 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
 
     override fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent) {
         check(verifyOwnership(calendar)) { "拒绝向非应用拥有的本机日历更新。" }
-        check(resolver.update(ContentUris.withAppendedId(asSyncAdapter(CalendarContract.Events.CONTENT_URI), eventId.toLong()), eventValues(calendar, event), null, null) == 1) { "本机事件未能更新" }
+        val updated = resolver.update(ContentUris.withAppendedId(asSyncAdapter(CalendarContract.Events.CONTENT_URI), eventId.toLong()), eventValues(calendar, event), null, null)
+        if (updated == 0) throw ManagedEventMissingException()
+        check(updated == 1) { "本机事件未能更新" }
     }
 
     override fun remove(calendar: OwnedCalendarRef, eventId: String) {
