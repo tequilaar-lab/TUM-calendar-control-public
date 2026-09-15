@@ -15,3 +15,5 @@ Android 本地优先的 TUM 课程同步与个人出席规则控制器。它将�
 开始任何工作前后，必须阅读根目录 [AGENTS.md](AGENTS.md)。执行计划、验收结果与可复用规程只保存在本机 `.local-audit/`，不会纳入 Git 或 GitHub。
 
 界面回归测试使用 Roborazzi：首次记录基线后必须人工查看 PNG；日常使用 `verifyRoborazziDebug` 验证，不得自动接受新的截图。
+
+静态分析目前处于兼容性试验阶段：`lintCompatibilityReport` 只生成 Ktlint／Detekt 报告，不格式化、不改代码、不会阻断构建，也未接入 `check`。是否将其变为常规质量门禁，须待本机兼容性试验结果和后续人工决定。

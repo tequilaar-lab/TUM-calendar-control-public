@@ -5,11 +5,15 @@
  * 不负责：网络、账户授权、iCal 解析和任何真实日历写入。
  */
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import dev.detekt.gradle.Detekt
 
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("io.github.takahirom.roborazzi")
+    // 只生成诊断报告；不会格式化源文件，也不会成为 check 的前置任务。
+    id("org.jlleitschuh.gradle.ktlint")
+    id("dev.detekt")
 }
 
 android {
@@ -63,6 +67,42 @@ kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
     }
+}
+
+// 职责：提供可手动运行的静态分析报告，不改写代码、不设质量门槛、不接入常规构建。
+// 输入／输出：Kotlin 与 Gradle 源码；输出为 app/build/reports 下的 Ktlint 与 Detekt 报告。
+// 外部副作用：首次运行解析公开分析器依赖；不访问日历、账户或设备。
+// 不负责：自动格式化、基线生成、抑制规则或阻断 check／assemble。
+ktlint {
+    ignoreFailures.set(true)
+    outputToConsole.set(false)
+}
+
+detekt {
+    toolVersion = "2.0.0-alpha.6"
+    ignoreFailures = true
+    autoCorrect = false
+}
+
+tasks.withType<Detekt>().configureEach {
+    reports {
+        html.required.set(true)
+        checkstyle.required.set(true)
+        sarif.required.set(false)
+        markdown.required.set(false)
+    }
+}
+
+val lintCompatibilityReport = tasks.register("lintCompatibilityReport") {
+    group = "verification"
+    description = "试验性生成 Ktlint 与 Detekt 报告；不格式化且不阻断构建。"
+    dependsOn("ktlintCheck", "detekt")
+}
+
+// 两插件会默认把检查任务接到 Gradle check；恢复 Android app 原有的 lint 与 test 直接依赖，
+// 使新增分析只能由上方手动入口触发，而不影响既有 Android 校验范围。
+tasks.named("check") {
+    setDependsOn(listOf(tasks.named("lint"), tasks.named("test")))
 }
 
 dependencies {

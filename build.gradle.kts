@@ -8,4 +8,7 @@ plugins {
     id("com.android.application") version "9.4.0" apply false
     id("org.jetbrains.kotlin.plugin.compose") version "2.3.21" apply false
     id("io.github.takahirom.roborazzi") version "1.74.0" apply false
+    // 仅用于 app 模块的报告型兼容性试验；不在根项目应用，也不接入 check。
+    id("org.jlleitschuh.gradle.ktlint") version "14.1.0" apply false
+    id("dev.detekt") version "2.0.0-alpha.6" apply false
 }
