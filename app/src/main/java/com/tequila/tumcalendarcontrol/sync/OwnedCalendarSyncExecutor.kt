@@ -14,6 +14,8 @@ class ManagedEventMissingException : IllegalStateException()
 interface OwnedCalendarGateway {
     fun verifyOwnership(calendar: OwnedCalendarRef): Boolean
     fun findEventIdsByIdentity(calendar: OwnedCalendarRef, identity: ManagedEventIdentity): List<String>
+    /** 仅清理页显式选择“全部”时使用；只返回应用标记的事件 ID，绝不返回日程正文。 */
+    fun findAllManagedEventIds(calendar: OwnedCalendarRef): List<String>
     fun create(calendar: OwnedCalendarRef, event: DesiredCalendarEvent): String
     fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent)
     fun remove(calendar: OwnedCalendarRef, eventId: String)
@@ -30,7 +32,15 @@ data class TargetSyncResult(
     val changes: List<SyncChange>,
     val failureSummary: String? = null,
     val failureCode: TargetFailureCode? = null,
+    /** 旧版映射已丢失、但仍保有应用标记的事件已被显式清除；不保存其正文或身份。 */
+    val recoveredRemovalCount: Int = 0,
 )
+
+/** 清理必须由用户单独选择；常规写入绝不创建这个范围。 */
+sealed interface ManagedEventCleanupScope {
+    data object AllManagedEvents : ManagedEventCleanupScope
+    data class SelectedIdentities(val identities: Set<ManagedEventIdentity>) : ManagedEventCleanupScope
+}
 
 /** 所有权先验失败时零写入；稳定映射严格以目标、UID 和原始实例键定位。 */
 class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffPlanner()) {
@@ -76,18 +86,38 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
         return TargetSyncResult(calendar.target, otherMappings + next.values, changes)
     }
 
-    /** 只删除资料库已经映射的本应用事件；不删除日历本身或未映射的用户事件。 */
+    /**
+     * 只由独立清理操作调用。全量清理可恢复删除映射丢失但仍带应用标记的旧事件；
+     * 精确清理只读取用户已选 UID＋原始实例键对应的标记事件。两者均不按标题、时间或地点猜测。
+     */
     fun rollback(
         calendar: OwnedCalendarRef,
         storedMappings: List<StoredEventMapping>,
         gateway: OwnedCalendarGateway,
+        scope: ManagedEventCleanupScope = ManagedEventCleanupScope.AllManagedEvents,
     ): TargetSyncResult {
         if (!gateway.verifyOwnership(calendar)) return TargetSyncResult(calendar.target, storedMappings, emptyList(), "目标日历不属于本应用，已拒绝撤销。")
         val targetMappings = storedMappings.filter { it.target == calendar.target }
         val otherMappings = storedMappings.filterNot { it.target == calendar.target }
-        targetMappings.forEach { gateway.remove(calendar, it.targetEventId) }
-        val changes = targetMappings.map { SyncChange(SyncChangeType.REMOVE, it.identity, it.targetEventId) }
-        return TargetSyncResult(calendar.target, otherMappings, changes)
+        val selectedMappings = when (scope) {
+            ManagedEventCleanupScope.AllManagedEvents -> targetMappings
+            is ManagedEventCleanupScope.SelectedIdentities -> targetMappings.filter { it.identity in scope.identities }
+        }
+        val recoveredIds = when (scope) {
+            ManagedEventCleanupScope.AllManagedEvents -> gateway.findAllManagedEventIds(calendar)
+            is ManagedEventCleanupScope.SelectedIdentities -> scope.identities.flatMap { gateway.findEventIdsByIdentity(calendar, it) }
+        }
+        val mappedIds = selectedMappings.map(StoredEventMapping::targetEventId)
+        val idsToRemove = (mappedIds + recoveredIds).distinct()
+        idsToRemove.forEach { gateway.remove(calendar, it) }
+        val changes = selectedMappings.map { SyncChange(SyncChangeType.REMOVE, it.identity, it.targetEventId) }
+        val retainedMappings = targetMappings - selectedMappings.toSet()
+        return TargetSyncResult(
+            target = calendar.target,
+            mappings = otherMappings + retainedMappings,
+            changes = changes,
+            recoveredRemovalCount = idsToRemove.count { it !in mappedIds },
+        )
     }
 }
 
@@ -95,11 +125,13 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
 class FakeOwnedCalendarGateway(
     private val ownedCalendarIds: Set<String>,
     private val recoveredIds: Map<ManagedEventIdentity, List<String>> = emptyMap(),
+    private val allManagedIds: List<String> = emptyList(),
 ) : OwnedCalendarGateway {
     val operations = mutableListOf<String>()
     private var nextId = 1
     override fun verifyOwnership(calendar: OwnedCalendarRef): Boolean = calendar.calendarId in ownedCalendarIds && calendar.ownershipMarker == "tum-calendar-control"
     override fun findEventIdsByIdentity(calendar: OwnedCalendarRef, identity: ManagedEventIdentity): List<String> = recoveredIds[identity].orEmpty()
+    override fun findAllManagedEventIds(calendar: OwnedCalendarRef): List<String> = allManagedIds
     override fun create(calendar: OwnedCalendarRef, event: DesiredCalendarEvent): String = "${calendar.target.name.lowercase()}-${nextId++}".also { operations += "create:$it" }
     override fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent) { operations += "update:$eventId" }
     override fun remove(calendar: OwnedCalendarRef, eventId: String) { operations += "remove:$eventId" }

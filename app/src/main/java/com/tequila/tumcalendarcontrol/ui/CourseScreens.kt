@@ -9,8 +9,10 @@ package com.tequila.tumcalendarcontrol.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -140,47 +142,77 @@ internal fun CourseEditScreen(state: CalendarControlState) {
 
 @Composable
 internal fun SearchScreen(state: CalendarControlState) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item {
+    AdaptiveCourseBrowser(
+        courses = state.searchedCourses,
+        heading = if (state.searchQuery.isBlank()) "可搜索的课程" else "搜索结果",
+        onCourseClick = state::openCourse,
+        leadingItems = {
+            item {
             TextField(
                 value = state.searchQuery,
                 onValueChange = { state.searchQuery = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = "搜索课程",
             )
-        }
-        courseListItems(
-            courses = state.searchedCourses,
-            heading = if (state.searchQuery.isBlank()) "可搜索的课程" else "搜索结果",
-            onCourseClick = state::openCourse,
-        )
-    }
+            }
+        },
+    )
 }
 
 @Composable
 internal fun FavoritesScreen(state: CalendarControlState) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item { InformationCard("已收藏课程", "收藏只影响显示，不改变出席状态") }
-        courseListItems(state.favoriteCourses, "收藏列表", state::openCourse)
-    }
+    AdaptiveCourseBrowser(
+        courses = state.favoriteCourses,
+        heading = "收藏列表",
+        onCourseClick = state::openCourse,
+        leadingItems = { item { InformationCard("已收藏课程", "收藏只影响显示，不改变出席状态") } },
+    )
 }
 
 @Composable
 private fun CourseList(courses: List<Course>, heading: String, onCourseClick: (String) -> Unit) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+    AdaptiveCourseBrowser(courses, heading, onCourseClick)
+}
+
+/** 展开屏以列表＋辅助面板利用额外宽度；窄屏保持单一可滚动课程列表。 */
+@Composable
+private fun AdaptiveCourseBrowser(
+    courses: List<Course>,
+    heading: String,
+    onCourseClick: (String) -> Unit,
+    leadingItems: LazyListScope.() -> Unit = {},
+) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val listContent: @Composable (Modifier) -> Unit = { modifier ->
+            LazyColumn(
+                modifier = modifier,
+                contentPadding = PaddingValues(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                leadingItems()
+                courseListItems(courses, heading, onCourseClick)
+            }
+        }
+        if (maxWidth < 720.dp) {
+            listContent(Modifier.fillMaxSize())
+        } else {
+            Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                listContent(Modifier.weight(0.62f).fillMaxHeight())
+                CourseBrowserSupportPane(courses, Modifier.weight(0.38f).fillMaxHeight())
+            }
+        }
+    }
+}
+
+@Composable
+private fun CourseBrowserSupportPane(courses: List<Course>, modifier: Modifier) {
+    Column(
+        modifier = modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        courseListItems(courses, heading, onCourseClick)
+        InformationCard("课程浏览", "展开屏会把课程列表保持在左侧，右侧保留当前浏览说明，避免横向拉宽内容。")
+        InformationCard("当前结果", "共 ${courses.size} 条课程记录；同名课程会归在一起，但每个日期、时间和地点仍可单独打开。")
+        InformationCard("安全说明", "课程名称只用于显示分组。写入、更新和清理始终使用来源 UID 与具体课次身份。")
     }
 }
 

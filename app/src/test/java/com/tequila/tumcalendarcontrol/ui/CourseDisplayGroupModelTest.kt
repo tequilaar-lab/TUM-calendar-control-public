@@ -16,8 +16,8 @@ class CourseDisplayGroupModelTest {
     fun `同名课程只形成一个视觉组且保留独立课程记录`() {
         val groups = CourseDisplayGroupModel.groups(
             listOf(
-                course("a", "VHDL 设计"),
-                course("b", "  vhdl   设计 "),
+                course("a", "VHDL 设计", "周一 08:00–10:00", "A 教室"),
+                course("b", "  vhdl   设计 ", "周四 14:00–16:00", "B 教室"),
                 course("c", "嵌入式系统"),
             ),
         )
@@ -26,11 +26,11 @@ class CourseDisplayGroupModelTest {
         assertEquals(listOf("a", "b"), groups.first { it.displayTitle.contains("VHDL", ignoreCase = true) }.courses.map(Course::id))
     }
 
-    private fun course(id: String, title: String) = Course(
+    private fun course(id: String, title: String, schedule: String = "周一 10:00–12:00", location: String = "合成地点") = Course(
         id = id,
         title = title,
-        schedule = "周一 10:00–12:00",
-        location = "合成地点",
+        schedule = schedule,
+        location = location,
         attendance = AttendanceState.CHOOSE_TO_ATTEND,
         isFavorite = false,
     )

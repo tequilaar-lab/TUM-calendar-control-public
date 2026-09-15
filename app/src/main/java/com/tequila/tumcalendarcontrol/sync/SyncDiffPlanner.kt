@@ -10,6 +10,9 @@ import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import java.time.Instant
 import java.security.MessageDigest
 
+/** 变更可见输出字段或事件样式时递增，促使既有映射安全走更新而非删除重建。 */
+private const val EVENT_OUTPUT_FORMAT_REVISION = "2026-09-status-colors-v1"
+
 data class ManagedEventIdentity(val sourceUid: String, val instanceKey: String)
 
 /**
@@ -46,6 +49,10 @@ data class SyncChange(
 )
 
 class SyncDiffPlanner {
+    /**
+     * 正常写入只新增或更新当前选择，不会把本轮未选择的旧课程解释为“删除”。
+     * 所有删除都必须经 `OwnedCalendarSyncExecutor.rollback` 的单独、显式清理路径。
+     */
     fun plan(desired: List<DesiredCalendarEvent>, existing: List<ManagedEventMapping>): List<SyncChange> {
         val existingByIdentity = existing.associateBy(ManagedEventMapping::identity)
         val desiredByIdentity = desired.associateBy(DesiredCalendarEvent::identity)
@@ -59,13 +66,12 @@ class SyncDiffPlanner {
                 else -> SyncChange(SyncChangeType.UPDATE, event.identity, existingMapping.targetEventId)
             }
         }
-        val removals = existing.filter { it.identity !in desiredByIdentity }
-            .map { SyncChange(SyncChangeType.REMOVE, it.identity, it.targetEventId) }
-        return upserts + removals
+        return upserts
     }
 
     /** 指纹可包含可见输出字段，但绝不作为跨同步身份；身份始终来自 UID 与实例键。 */
     fun DesiredCalendarEvent.fingerprint(): String = listOf(
+        EVENT_OUTPUT_FORMAT_REVISION,
         title,
         startsAt.toString(),
         endsAt.toString(),

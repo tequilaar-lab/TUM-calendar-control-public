@@ -19,7 +19,7 @@ data class ManagedSyncResult(
 ) {
     val createdCount: Int get() = targetResults.sumOf { result -> result.changes.count { it.type == SyncChangeType.CREATE } }
     val updatedCount: Int get() = targetResults.sumOf { result -> result.changes.count { it.type == SyncChangeType.UPDATE } }
-    val removedCount: Int get() = targetResults.sumOf { result -> result.changes.count { it.type == SyncChangeType.REMOVE } }
+    val removedCount: Int get() = targetResults.sumOf { result -> result.changes.count { it.type == SyncChangeType.REMOVE } + result.recoveredRemovalCount }
     val failureSummary: String? get() = targetResults.mapNotNull(TargetSyncResult::failureSummary).takeIf(List<String>::isNotEmpty)?.joinToString("；")
 }
 
@@ -57,10 +57,14 @@ class ManagedSyncEngine(
     }
 
     /** 撤销仍逐目标隔离；只有映射中的应用事件可被删除。 */
-    fun rollback(mappings: List<StoredEventMapping>, bindings: List<TargetBinding>): ManagedSyncResult {
+    fun rollback(
+        mappings: List<StoredEventMapping>,
+        bindings: List<TargetBinding>,
+        scope: ManagedEventCleanupScope = ManagedEventCleanupScope.AllManagedEvents,
+    ): ManagedSyncResult {
         var currentMappings = mappings
         val results = bindings.map { binding ->
-            val result = runCatching { executor.rollback(binding.calendar, currentMappings, binding.gateway) }
+            val result = runCatching { executor.rollback(binding.calendar, currentMappings, binding.gateway, scope) }
                 .getOrElse { TargetSyncResult(binding.calendar.target, currentMappings, emptyList(), "${binding.calendar.target.name} 撤销失败；未丢失本机映射") }
             if (result.failureSummary == null) currentMappings = result.mappings
             result

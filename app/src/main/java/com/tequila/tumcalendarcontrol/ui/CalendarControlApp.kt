@@ -176,7 +176,7 @@ fun CalendarControlApp() {
         val googleToken = state.currentGoogleAccessToken()
         Thread {
             val outcome = runCatching {
-                if (rollback) platformManagedSyncRunner.rollback(mappings, targets, configuration, googleToken)
+                if (rollback) platformManagedSyncRunner.rollback(mappings, targets, configuration, googleToken, state.currentManagedCleanupScope())
                 else platformManagedSyncRunner.execute(desired, mappings, targets, configuration, googleToken)
             }
             Handler(Looper.getMainLooper()).post {

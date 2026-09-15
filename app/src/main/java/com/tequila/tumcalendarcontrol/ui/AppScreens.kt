@@ -31,6 +31,7 @@ internal val routedAppScreens: Set<AppScreen> =
     AppScreen.SOURCE_ATTENDANCE,
     AppScreen.MANUAL_EVENTS,
     AppScreen.MANAGED_SYNC_PREVIEW,
+    AppScreen.OUTPUT_CLEANUP,
     AppScreen.BACKGROUND_CHECK,
     AppScreen.RULE_BACKUP,
     )
@@ -61,6 +62,7 @@ fun AppScreenContent(
         AppScreen.SOURCE_ATTENDANCE,
         AppScreen.MANUAL_EVENTS,
         AppScreen.MANAGED_SYNC_PREVIEW,
+        AppScreen.OUTPUT_CLEANUP,
         AppScreen.BACKGROUND_CHECK,
         AppScreen.RULE_BACKUP,
         -> WorkflowScreenContent(state, screen)
@@ -100,6 +102,7 @@ private fun WorkflowScreenContent(state: CalendarControlState, screen: AppScreen
         AppScreen.SOURCE_ATTENDANCE -> SourceAttendanceScreen(state)
         AppScreen.MANUAL_EVENTS -> ManualEventsScreen(state)
         AppScreen.MANAGED_SYNC_PREVIEW -> ManagedSyncPreviewScreen(state)
+        AppScreen.OUTPUT_CLEANUP -> OutputCleanupScreen(state)
         AppScreen.BACKGROUND_CHECK -> BackgroundCheckScreen(state)
         AppScreen.RULE_BACKUP -> RuleBackupScreen(state)
         else -> error("工作流页面路由只接受工作流屏幕")

@@ -25,6 +25,7 @@ internal fun AppScreen.usesBackArrow(): Boolean = this in setOf(
     AppScreen.SOURCE_ATTENDANCE,
     AppScreen.MANUAL_EVENTS,
     AppScreen.MANAGED_SYNC_PREVIEW,
+    AppScreen.OUTPUT_CLEANUP,
     AppScreen.BACKGROUND_CHECK,
     AppScreen.RULE_BACKUP,
 )
@@ -54,6 +55,7 @@ internal fun AppScreen.title(): String = when (this) {
     AppScreen.SOURCE_ATTENDANCE -> "设置出席与收藏"
     AppScreen.MANUAL_EVENTS -> "手动校园事项"
     AppScreen.MANAGED_SYNC_PREVIEW -> "确认写入日历"
+    AppScreen.OUTPUT_CLEANUP -> "清理已写入日程"
     AppScreen.BACKGROUND_CHECK -> "检查课程更新"
     AppScreen.RULE_BACKUP -> "备份课程设置"
 }
@@ -68,6 +70,7 @@ internal fun AppScreen.subtitle(): String? = when (this) {
     AppScreen.SOURCE_ATTENDANCE -> "保存后可返回课程列表写入日历"
     AppScreen.MANUAL_EVENTS -> "保存后可与课程一起写入日历"
     AppScreen.MANAGED_SYNC_PREVIEW -> "确认后才会修改所选日历"
+    AppScreen.OUTPUT_CLEANUP -> "选择范围并确认后才会清理应用日程"
     AppScreen.BACKGROUND_CHECK -> "只检查课程变化，不会自动写入日历"
     AppScreen.RULE_BACKUP -> "备份课程设置；恢复前需确认"
     else -> null

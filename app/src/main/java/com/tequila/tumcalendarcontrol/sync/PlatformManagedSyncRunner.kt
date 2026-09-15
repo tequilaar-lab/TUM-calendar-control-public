@@ -38,7 +38,8 @@ class PlatformManagedSyncRunner(private val context: Context, private val engine
         targets: Set<OutputTarget>,
         configuration: PrivateSyncConfiguration,
         googleAccessToken: String?,
-    ): PlatformManagedSyncOutcome = run(emptyList(), mappings, targets, configuration, googleAccessToken, rollback = true)
+        scope: ManagedEventCleanupScope = ManagedEventCleanupScope.AllManagedEvents,
+    ): PlatformManagedSyncOutcome = run(emptyList(), mappings, targets, configuration, googleAccessToken, rollback = true, cleanupScope = scope)
 
     private fun run(
         desired: List<DesiredCalendarEvent>,
@@ -47,12 +48,14 @@ class PlatformManagedSyncRunner(private val context: Context, private val engine
         configuration: PrivateSyncConfiguration,
         googleAccessToken: String?,
         rollback: Boolean,
+        cleanupScope: ManagedEventCleanupScope = ManagedEventCleanupScope.AllManagedEvents,
     ): PlatformManagedSyncOutcome {
         var nextConfiguration = configuration
         val bindings = mutableListOf<TargetBinding>()
         val failures = mutableListOf<TargetSyncResult>()
         if (OutputTarget.LOCAL_CALENDAR in targets) {
-            when (val resolution = AndroidLocalCalendarTarget(context.contentResolver).ensure(configuration.localCalendarId)) {
+            when (val resolution = if (rollback) AndroidLocalCalendarTarget(context.contentResolver).resolveExisting(configuration.localCalendarId)
+            else AndroidLocalCalendarTarget(context.contentResolver).ensure(configuration.localCalendarId)) {
                 is CalendarTargetResolution.Success -> {
                     nextConfiguration = nextConfiguration.copy(localCalendarId = resolution.calendar.calendarId)
                     bindings += TargetBinding(resolution.calendar, AndroidLocalCalendarGateway(context.contentResolver))
@@ -71,7 +74,8 @@ class PlatformManagedSyncRunner(private val context: Context, private val engine
                 failures += TargetSyncResult(OutputTarget.GOOGLE_CALENDAR, mappings, emptyList(), "Google 未获本次运行授权；未执行写入")
             } else {
                 val api = GoogleCalendarRestApi(googleAccessToken)
-                when (val resolution = GoogleCalendarTarget(api).ensure(configuration.googleCalendarId, configuration.googleCalendarName)) {
+                when (val resolution = if (rollback) GoogleCalendarTarget(api).resolveExisting(configuration.googleCalendarId)
+                else GoogleCalendarTarget(api).ensure(configuration.googleCalendarId, configuration.googleCalendarName)) {
                     is CalendarTargetResolution.Success -> {
                         nextConfiguration = nextConfiguration.copy(googleCalendarId = resolution.calendar.calendarId)
                         bindings += TargetBinding(resolution.calendar, GoogleCalendarGateway(api))
@@ -86,7 +90,7 @@ class PlatformManagedSyncRunner(private val context: Context, private val engine
                 }
             }
         }
-        val completed = if (rollback) engine.rollback(mappings, bindings) else engine.execute(desired, mappings, bindings)
+        val completed = if (rollback) engine.rollback(mappings, bindings, cleanupScope) else engine.execute(desired, mappings, bindings)
         return PlatformManagedSyncOutcome(
             result = completed.copy(targetResults = completed.targetResults + failures),
             configuration = nextConfiguration,

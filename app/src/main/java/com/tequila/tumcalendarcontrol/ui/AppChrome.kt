@@ -34,7 +34,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.runtime.Composable
@@ -48,13 +47,10 @@ import top.yukonga.miuix.kmp.basic.TopAppBar
 private val FixedTopBarHeight = 136.dp
 private val FloatingNavigationShape = RoundedCornerShape(30.dp)
 
-/** 将主页面与全屏覆盖层并列，确保更多操作不会参与主标签页切换动画。 */
+/** 主页面外壳不保留无实际功能的更多操作入口。 */
 @Composable
 internal fun CalendarControlChrome(state: CalendarControlState) {
-    Box(Modifier.fillMaxSize()) {
-        CalendarControlScaffold(state)
-        MoreOverlay(state)
-    }
+    CalendarControlScaffold(state)
 }
 
 @Composable
@@ -79,13 +75,7 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                         )
                     }
                 },
-                actions = {
-                    TactileIconButton(
-                        icon = Icons.Rounded.MoreVert,
-                        contentDescription = "更多操作",
-                        onClick = state::openMore,
-                    )
-                },
+                actions = {},
             )
         },
         bottomBar = {
@@ -109,12 +99,11 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
             AnimatedContent(
                 targetState = contentScreen,
                 transitionSpec = {
-                    if (state.navigationDirection == NavigationDirection.FORWARD) {
-                        (slideInHorizontally { it } + fadeIn()) togetherWith
-                            (slideOutHorizontally { -it / 3 } + fadeOut())
-                    } else {
-                        (slideInHorizontally { -it / 3 } + fadeIn()) togetherWith
-                            (slideOutHorizontally { it } + fadeOut())
+                    when (state.navigationDirection) {
+                        NavigationDirection.FORWARD -> (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 3 } + fadeOut())
+                        NavigationDirection.BACKWARD -> (slideInHorizontally { -it / 3 } + fadeIn()) togetherWith (slideOutHorizontally { it } + fadeOut())
+                        NavigationDirection.PROFILE_ENTER -> (slideInHorizontally { -it } + fadeIn()) togetherWith (slideOutHorizontally { it / 3 } + fadeOut())
+                        NavigationDirection.PROFILE_EXIT -> (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 3 } + fadeOut())
                     }
                 },
                 label = "主页面切换",

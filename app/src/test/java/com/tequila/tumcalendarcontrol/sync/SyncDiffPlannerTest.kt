@@ -32,13 +32,29 @@ class SyncDiffPlannerTest {
     }
 
     @Test
-    fun `取消来源后缺失的应用映射只会被移除`() {
+    fun `本次未选择的旧课程在普通写入中保持不变`() {
         val existing = listOf(ManagedEventMapping(firstIdentity, "local-1", "旧指纹"))
 
         val changes = planner.plan(emptyList(), existing)
 
-        assertEquals(listOf(SyncChangeType.REMOVE), changes.map(SyncChange::type))
-        assertEquals("local-1", changes.single().targetEventId)
+        assertEquals(emptyList<SyncChangeType>(), changes.map(SyncChange::type))
+    }
+
+    @Test
+    fun `旧版未带状态颜色修订的映射会安全更新而不会删除重建`() {
+        val event = desired(firstIdentity, "合成课程", AttendanceState.MUST_ATTEND)
+        val legacyFingerprint = listOf(
+            event.title,
+            event.startsAt.toString(),
+            event.endsAt.toString(),
+            event.attendanceState.name,
+            event.location,
+        ).joinToString("|")
+
+        val changes = planner.plan(listOf(event), listOf(ManagedEventMapping(firstIdentity, "google-1", legacyFingerprint)))
+
+        assertEquals(listOf(SyncChangeType.UPDATE), changes.map(SyncChange::type))
+        assertEquals("google-1", changes.single().targetEventId)
     }
 
     @Test

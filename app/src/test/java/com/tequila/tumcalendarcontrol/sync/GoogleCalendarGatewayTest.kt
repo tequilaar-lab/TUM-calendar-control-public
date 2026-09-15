@@ -82,6 +82,7 @@ class GoogleCalendarGatewayTest {
             return GoogleRemoteCalendar("created", description).also { calendars[it.id] = it }
         }
         override fun findEventIdsByIdentity(calendarId: String, identityKey: String): List<String> = emptyList()
+        override fun findAllManagedEventIds(calendarId: String): List<String> = emptyList()
         override fun createEvent(calendarId: String, event: DesiredCalendarEvent): String { check(calendars.containsKey(calendarId)); createdEvents += 1; return "event-$createdEvents" }
         override fun updateEvent(calendarId: String, eventId: String, event: DesiredCalendarEvent) = Unit
         override fun deleteEvent(calendarId: String, eventId: String) = Unit

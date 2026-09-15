@@ -37,6 +37,8 @@ import com.tequila.tumcalendarcontrol.sync.OutputTarget
 import com.tequila.tumcalendarcontrol.sync.DesiredCalendarEvent
 import com.tequila.tumcalendarcontrol.sync.SyncRunSummary
 import com.tequila.tumcalendarcontrol.sync.StoredEventMapping
+import com.tequila.tumcalendarcontrol.sync.ManagedEventCleanupScope
+import com.tequila.tumcalendarcontrol.sync.ManagedEventIdentity
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerBackup
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerBackupCodec
 import com.tequila.tumcalendarcontrol.sync.SourceCheckSettings
@@ -49,7 +51,7 @@ import java.util.UUID
 import java.time.LocalDate
 
 enum class AppScreen {
-    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_RANGE, SOURCE_PREVIEW, SOURCE_ATTENDANCE, MANUAL_EVENTS, MANAGED_SYNC_PREVIEW, BACKGROUND_CHECK, RULE_BACKUP,
+    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_RANGE, SOURCE_PREVIEW, SOURCE_ATTENDANCE, MANUAL_EVENTS, MANAGED_SYNC_PREVIEW, OUTPUT_CLEANUP, BACKGROUND_CHECK, RULE_BACKUP,
 }
 
 enum class ThemeMode(val label: String) {
@@ -59,7 +61,7 @@ enum class ThemeMode(val label: String) {
 }
 
 enum class NavigationDirection {
-    FORWARD, BACKWARD,
+    FORWARD, BACKWARD, PROFILE_ENTER, PROFILE_EXIT,
 }
 
 /** 批量设置状态时可同时处理收藏；保持不变避免误改既有收藏。 */
@@ -107,6 +109,8 @@ class CalendarControlState(
     var feedback by mutableStateOf<String?>(null)
     var themeMode by mutableStateOf(ThemeMode.SYSTEM)
     var syncDestinations by mutableStateOf(initialSyncDestinations)
+        private set
+    var pendingSyncDestinationChange by mutableStateOf<PendingSyncDestinationChange?>(null)
         private set
     var privateSyncConfiguration by mutableStateOf(initialPrivateSyncConfiguration)
         private set
@@ -167,6 +171,9 @@ class CalendarControlState(
     private var managedDesiredEvents: List<DesiredCalendarEvent>
         get() = outputWorkflow.desiredEvents
         set(value) { outputWorkflow.desiredEvents = value }
+    /** 清理范围只在用户确认前后短暂存在，绝不写入规则资料库。 */
+    private var managedRollbackScope by mutableStateOf<ManagedEventCleanupScope>(ManagedEventCleanupScope.AllManagedEvents)
+    private var managedRollbackTargets by mutableStateOf<Set<OutputTarget>>(emptySet())
     /** 预览分项仅按应用生成身份前缀统计，不暴露来源标题或正文。 */
     val managedSourceCandidateCount: Int get() = managedDesiredEvents.count { !it.identity.sourceUid.startsWith("manual:") }
     val managedManualCandidateCount: Int get() = managedDesiredEvents.count { it.identity.sourceUid.startsWith("manual:") }
@@ -251,6 +258,25 @@ class CalendarControlState(
         syncDestinations = syncDestinations.withEnabled(destination, enabled)
         if (destination == SyncDestination.GOOGLE_CALENDAR && !enabled) {
             outputWorkflow.disconnectGoogle()
+        }
+    }
+
+    /** 开关先停留在确认框中；未确认不会申请权限、清除授权或修改本机保存状态。 */
+    fun requestSyncDestinationChange(destination: SyncDestination, enabled: Boolean) {
+        if (syncDestinations.isEnabled(destination) == enabled) return
+        pendingSyncDestinationChange = PendingSyncDestinationChange(destination, enabled)
+    }
+
+    fun cancelSyncDestinationChange() { pendingSyncDestinationChange = null }
+
+    fun confirmSyncDestinationChange() {
+        val change = pendingSyncDestinationChange ?: return
+        pendingSyncDestinationChange = null
+        if (change.destination == SyncDestination.LOCAL_CALENDAR && change.enabled) {
+            requestLocalCalendarOutput()
+        } else {
+            setSyncDestinationEnabled(change.destination, change.enabled)
+            feedback = if (change.enabled) "已开启${change.destination.title}；确认写入前不会改动日历。" else "已关闭${change.destination.title}；已写入日程保持不变。"
         }
     }
 
@@ -473,14 +499,14 @@ class CalendarControlState(
     /** 使用者点“写入日历”后的内部准备步骤；只计算确认信息，绝不在此处写入。 */
     fun prepareCalendarWrite() = requestManagedSyncPreview()
 
-    /** 已持久化的映射可在来源目录丢失后单独进入撤销页；该入口不生成候选或写入。 */
-    fun openMappedOutputRollback() {
-        if (ruleLedger.mappings.isEmpty()) {
-            feedback = "没有本应用写入的日程可清除。"
+    /** 清理页只准备范围与二次确认；打开本身不会访问任何日历。 */
+    fun openOutputCleanup() {
+        if (availableManagedOutputTargets().isEmpty()) {
+            feedback = "还没有可清理的应用专用日历。"
             return
         }
         managedSyncPreview = null
-        navigation.openMappedRollback()
+        navigation.openOutputCleanup()
     }
 
     /** 基于当前进程来源和本机规则生成差异；不查询、创建或写入任何目标日历。 */
@@ -551,22 +577,47 @@ class CalendarControlState(
         if (outputWorkflow.beginSync() != null) feedback = "正在写入日历…"
     }
 
-    fun requestManagedRollback() {
-        if (ruleLedger.mappings.isEmpty()) { feedback = "没有本应用写入的日程可清除。"; return }
-        val targets = ruleLedger.mappings.map(StoredEventMapping::target).toSet()
+    /** 二次确认后才调用；选中范围使用 UID＋原始实例键，绝不按显示标题判断删除对象。 */
+    fun requestManagedRollback(scope: ManagedEventCleanupScope = ManagedEventCleanupScope.AllManagedEvents) {
+        if (scope is ManagedEventCleanupScope.SelectedIdentities && scope.identities.isEmpty()) {
+            feedback = "请至少选择一门课程或一个日期范围内的课次。"
+            return
+        }
+        val targets = availableManagedOutputTargets()
+        if (targets.isEmpty()) { feedback = "没有可清理的应用专用日历。"; return }
         if (OutputTarget.LOCAL_CALENDAR in targets && !localCalendarPermissionGranted) { feedback = "本机日历没有获得系统权限；没有清除。"; return }
         if (OutputTarget.GOOGLE_CALENDAR in targets && !hasGoogleAuthorization) { feedback = "请先连接 Google 日历；没有清除。"; return }
-        if (outputWorkflow.beginRollback() != null) feedback = "正在清除本应用写入的日程…"
+        managedRollbackScope = scope
+        managedRollbackTargets = targets
+        if (outputWorkflow.beginRollback() != null) feedback = "正在清除已选择的应用日程…"
     }
+
+    /** 课程／日期清理仅从本次已读来源构造稳定身份；来源正文不会持久化。 */
+    fun cleanupIdentities(
+        sourceUids: Set<String>,
+        startsOn: LocalDate?,
+        endsOn: LocalDate?,
+    ): Set<ManagedEventIdentity> = currentSourceOccurrences.asSequence()
+        .filterNot(SourceCalendarOccurrence::isCancelled)
+        .filter { sourceUids.isEmpty() || it.sourceUid in sourceUids }
+        .filter { occurrence ->
+            val localDate = occurrence.startsAt.atZone(ZoneId.of("Europe/Berlin")).toLocalDate()
+            (startsOn == null || !localDate.isBefore(startsOn)) && (endsOn == null || !localDate.isAfter(endsOn))
+        }
+        .map { ManagedEventIdentity(it.sourceUid, it.instanceKey) }
+        .toSet()
+
+    val managedOutputTargetsForCleanup: Set<OutputTarget> get() = availableManagedOutputTargets()
 
     fun currentGoogleAccessToken(): String? = outputWorkflow.currentGoogleAccessToken()
     fun currentManagedOperationToken(): Long = outputWorkflow.operationToken
     fun currentDesiredEvents(): List<DesiredCalendarEvent> = managedDesiredEvents
     fun currentManagedTargets(): Set<OutputTarget> = if (managedRollbackRequested) {
-        ruleLedger.mappings.map(StoredEventMapping::target).toSet()
+        managedRollbackTargets
     } else {
         enabledOutputTargets()
     }
+    fun currentManagedCleanupScope(): ManagedEventCleanupScope = managedRollbackScope
 
     /** 后台网关完成后只合并返回映射与脱敏计数，令牌和来源正文绝不进入资料库。 */
     fun resolveManagedOperation(token: Long, result: ManagedSyncResult, configuration: PrivateSyncConfiguration) {
@@ -611,6 +662,13 @@ class CalendarControlState(
     private fun enabledOutputTargets(): Set<OutputTarget> = buildSet {
         if (syncDestinations.localCalendarEnabled) add(OutputTarget.LOCAL_CALENDAR)
         if (syncDestinations.googleCalendarEnabled) add(OutputTarget.GOOGLE_CALENDAR)
+    }
+
+    /** 已保存目标 ID 允许清理旧版遗留标记事件；此方法不解析日历正文或创建目标。 */
+    private fun availableManagedOutputTargets(): Set<OutputTarget> = buildSet {
+        addAll(ruleLedger.mappings.map(StoredEventMapping::target))
+        if (privateSyncConfiguration.localCalendarId.isNotBlank()) add(OutputTarget.LOCAL_CALENDAR)
+        if (privateSyncConfiguration.googleCalendarId.isNotBlank()) add(OutputTarget.GOOGLE_CALENDAR)
     }
 
     /** 来源读取和规则变更后的唯一 UI 回流点；不会变更来源、规则或任何目标日历。 */

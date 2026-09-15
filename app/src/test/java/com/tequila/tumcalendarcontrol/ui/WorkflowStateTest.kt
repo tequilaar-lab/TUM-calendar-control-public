@@ -40,16 +40,16 @@ class WorkflowStateTest {
     }
 
     @Test
-    fun `设置工作流的所有子页面入口不会继承主标签的旧方向`() {
+    fun `设置工作流的普通子页面入口不会继承主标签的旧方向`() {
         val navigation = NavigationState()
         navigation.open(AppScreen.SETTINGS)
         val entries = listOf(
-            AppScreen.PROFILE to navigation::openProfile,
             AppScreen.SYNC_CONFIGURATION to navigation::openSyncConfiguration,
             AppScreen.SYNC_PREVIEW to navigation::openSyncPreview,
             AppScreen.SOURCE_RANGE to navigation::openSourceRange,
             AppScreen.MANUAL_EVENTS to navigation::openManualEvents,
             AppScreen.MANAGED_SYNC_PREVIEW to navigation::openManagedSyncPreview,
+            AppScreen.OUTPUT_CLEANUP to navigation::openOutputCleanup,
             AppScreen.BACKGROUND_CHECK to navigation::openBackgroundCheck,
             AppScreen.RULE_BACKUP to navigation::openRuleBackup,
         )
@@ -61,6 +61,22 @@ class WorkflowStateTest {
             assertTrue(navigation.handleBack())
             assertEquals(AppScreen.SETTINGS, navigation.screen)
             assertEquals(NavigationDirection.BACKWARD, navigation.direction)
+        }
+    }
+
+    @Test
+    fun `个人资料从左进入 并向左退出回到进入前页面`() {
+        listOf(AppScreen.OVERVIEW, AppScreen.SEARCH, AppScreen.FAVORITES, AppScreen.SETTINGS).forEach { origin ->
+            val navigation = NavigationState()
+
+            navigation.open(origin)
+            navigation.openProfile()
+            assertEquals(AppScreen.PROFILE, navigation.screen)
+            assertEquals(NavigationDirection.PROFILE_ENTER, navigation.direction)
+
+            assertTrue(navigation.handleBack())
+            assertEquals(origin, navigation.screen)
+            assertEquals(NavigationDirection.PROFILE_EXIT, navigation.direction)
         }
     }
 

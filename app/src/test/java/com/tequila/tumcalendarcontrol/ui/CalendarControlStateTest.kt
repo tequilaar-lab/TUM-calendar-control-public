@@ -129,7 +129,7 @@ class CalendarControlStateTest {
     }
 
     @Test
-    fun `重启后仅凭已持久化映射也可进入安全撤销页`() {
+    fun `重启后仅凭已持久化映射也可进入独立清理页`() {
         val mapping = com.tequila.tumcalendarcontrol.sync.StoredEventMapping(
             com.tequila.tumcalendarcontrol.sync.OutputTarget.LOCAL_CALENDAR,
             com.tequila.tumcalendarcontrol.sync.ManagedEventIdentity("synthetic-uid", "synthetic-instance"),
@@ -139,9 +139,9 @@ class CalendarControlStateTest {
         val state = CalendarControlState(initialRuleLedger = RuleLedger(mappings = listOf(mapping)))
 
         state.open(AppScreen.SETTINGS)
-        state.openMappedOutputRollback()
+        state.openOutputCleanup()
 
-        assertEquals(AppScreen.MANAGED_SYNC_PREVIEW, state.screen)
+        assertEquals(AppScreen.OUTPUT_CLEANUP, state.screen)
         assertEquals(null, state.managedSyncPreview)
         assertFalse(state.managedSyncRequested)
         assertTrue(state.handleBack())
@@ -216,6 +216,31 @@ class CalendarControlStateTest {
 
         assertTrue(state.syncDestinations.localCalendarEnabled)
         assertTrue(state.syncDestinations.googleCalendarEnabled)
+    }
+
+    @Test
+    fun `输出开关在确认前不会改变 并在确认后才生效`() {
+        val state = CalendarControlState()
+
+        state.requestSyncDestinationChange(SyncDestination.GOOGLE_CALENDAR, true)
+
+        assertFalse(state.syncDestinations.googleCalendarEnabled)
+        assertEquals(SyncDestination.GOOGLE_CALENDAR, state.pendingSyncDestinationChange?.destination)
+        state.confirmSyncDestinationChange()
+        assertTrue(state.syncDestinations.googleCalendarEnabled)
+        assertEquals(null, state.pendingSyncDestinationChange)
+    }
+
+    @Test
+    fun `同时启用两种输出会在确认前提示荣耀日历可能显示两份`() {
+        val state = CalendarControlState()
+        state.setSyncDestinationEnabled(SyncDestination.LOCAL_CALENDAR, true)
+
+        state.requestSyncDestinationChange(SyncDestination.GOOGLE_CALENDAR, true)
+
+        val change = requireNotNull(state.pendingSyncDestinationChange)
+        assertTrue(change.consequence(state.syncDestinations).contains("两份"))
+        assertFalse(state.syncDestinations.googleCalendarEnabled)
     }
 
     @Test

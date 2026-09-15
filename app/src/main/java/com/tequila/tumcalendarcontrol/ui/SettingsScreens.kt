@@ -1,5 +1,5 @@
 /*
- * 职责：渲染更多操作、设置、输出位置、私有配置、资料与外观等设置页面。
+ * 职责：渲染设置、输出位置、私有配置、资料与外观等设置页面。
  * 输入／输出：输入 CalendarControlState 的既有状态和回调；输出可滚动 Compose-Miuix 设置页面。
  * 外部副作用：无；按钮仅表达既有权限、授权、保存或写入意图，实际外部协调仍由应用入口负责。
  * 不负责：页面路由、课程浏览／编辑、出席规则表单、iCal 读取、Google 网络调用或 Calendar Provider 操作。
@@ -8,11 +8,13 @@ package com.tequila.tumcalendarcontrol.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -38,6 +40,7 @@ import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import androidx.compose.ui.window.Dialog
 
 /** 由完整覆盖层承载的更多操作内容；不直接创建覆盖层或处理返回动效。 */
 @Composable
@@ -58,8 +61,31 @@ internal fun MoreScreen(state: CalendarControlState) {
 @Composable
 internal fun SettingsScreen(state: CalendarControlState) {
     val palette = LocalTumPalette.current
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        if (maxWidth < 720.dp) {
+            SettingsList(state, palette, Modifier.fillMaxSize())
+        } else {
+            Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SettingsList(state, palette, Modifier.weight(0.62f).fillMaxHeight())
+                SettingsWideSupportPane(state, Modifier.weight(0.38f).fillMaxHeight())
+            }
+        }
+    }
+    state.pendingSyncDestinationChange?.let { change ->
+        SyncDestinationChangeDialog(
+            change = change,
+            currentDestinations = state.syncDestinations,
+            onDismiss = state::cancelSyncDestinationChange,
+            onConfirm = state::confirmSyncDestinationChange,
+        )
+    }
+}
+
+/** 展开态将主要操作保留在左列，右列承担状态解释，避免设置卡片被无意义拉宽。 */
+@Composable
+private fun SettingsList(state: CalendarControlState, palette: TumPalette, modifier: Modifier) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier,
         contentPadding = PaddingValues(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -88,13 +114,34 @@ internal fun SettingsScreen(state: CalendarControlState) {
         item { InformationCard("写入到哪里", "应用只会写入自己创建的日程。你的主日历、订阅日历和其他应用日程不会改变。") }
         if (state.syncDestinations.googleCalendarEnabled) item { GoogleAuthorizationPanel(state) }
         item { Button(onClick = state::prepareCalendarWrite, modifier = Modifier.fillMaxWidth()) { Text("写入日历") } }
-        if (state.ruleLedger.mappings.isNotEmpty()) {
-            item { Button(onClick = state::openMappedOutputRollback, modifier = Modifier.fillMaxWidth()) { Text("清除或查看已写入日程") } }
+        if (state.managedOutputTargetsForCleanup.isNotEmpty()) {
+            item { Button(onClick = state::openOutputCleanup, modifier = Modifier.fillMaxWidth()) { Text("清理已写入日程") } }
         }
         item { InformationCard("应用版本", "${BuildConfig.VERSION_NAME} · 构建号 ${BuildConfig.VERSION_CODE}") }
         item { ThemeModeSelector(state) }
         item { Spacer(Modifier.height(4.dp)) }
         state.feedback?.let { feedback -> item { Text(feedback, color = palette.onSurfaceVariant) } }
+    }
+}
+
+/** 宽屏右列不复制操作入口，只解释当前工作流与输出，避免两列状态不一致。 */
+@Composable
+private fun SettingsWideSupportPane(state: CalendarControlState, modifier: Modifier) {
+    val targets = buildList {
+        if (state.syncDestinations.localCalendarEnabled) add("本机荣耀日历")
+        if (state.syncDestinations.googleCalendarEnabled) add("Google 日历镜像")
+    }.joinToString("、").ifBlank { "尚未启用输出" }
+    Column(
+        modifier = modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        InformationCard("当前设置", "展开屏把操作放在左侧，右侧显示同步与安全说明。")
+        InformationCard(
+            "已读课程",
+            if (state.sourceCatalogLoaded) "已读取 ${state.sourceCourses.size} 门课程、选择 ${state.selectedSourceOccurrences.size} 个具体课次。" else "尚未读取课程。",
+        )
+        InformationCard("写入位置", targets)
+        InformationCard("保护方式", "普通写入只新增或更新本次选择。清理旧日程要在左侧单独进入，并再次确认。")
     }
 }
 
@@ -230,17 +277,35 @@ private fun SyncDestinationSelector(state: CalendarControlState) {
                     Switch(
                         checked = enabled,
                         onCheckedChange = { requested ->
-                            if (destination == SyncDestination.LOCAL_CALENDAR && requested) {
-                                state.requestLocalCalendarOutput()
-                            } else {
-                                state.setSyncDestinationEnabled(destination, requested)
-                            }
+                            state.requestSyncDestinationChange(destination, requested)
                         },
                     )
                 }
             }
         }
         InformationCard("日历权限", "打开本机日历后，系统会请求日历权限。允许后仍要查看数量并确认写入。")
+    }
+}
+
+@Composable
+private fun SyncDestinationChangeDialog(
+    change: PendingSyncDestinationChange,
+    currentDestinations: SyncDestinations,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(modifier = Modifier.fillMaxWidth(), insideMargin = PaddingValues(20.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(change.title, style = MiuixTheme.textStyles.title2)
+                Text(change.consequence(currentDestinations))
+                Text("这不会删除已经写入的日程。", color = LocalTumPalette.current.onSurfaceVariant)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    Button(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text("取消") }
+                    Button(onClick = onConfirm, modifier = Modifier.weight(1f)) { Text("确认更改") }
+                }
+            }
+        }
     }
 }
 

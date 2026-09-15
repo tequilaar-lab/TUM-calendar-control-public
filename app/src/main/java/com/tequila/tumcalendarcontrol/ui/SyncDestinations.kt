@@ -24,6 +24,36 @@ enum class SyncDestination(
     ),
 }
 
+/** 用户切换输出开关前的暂存意图；确认前不改变偏好、权限或 Google 运行内授权。 */
+data class PendingSyncDestinationChange(
+    val destination: SyncDestination,
+    val enabled: Boolean,
+) {
+    val title: String get() = if (enabled) "启用${destination.title}" else "关闭${destination.title}"
+    /** 仅描述尚未确认的输出变化；不读取账户、日程或日历内容。 */
+    fun consequence(current: SyncDestinations): String = when (destination) {
+        SyncDestination.LOCAL_CALENDAR -> if (enabled) {
+            "确认后会请求本机日历权限；获得权限后，未来确认写入才会写入应用专用本机日历。" +
+                current.duplicateDisplayHint(otherEnabled = current.googleCalendarEnabled)
+        } else {
+            "确认后不再向本机日历写入；已经写入的日程不会被删除。"
+        }
+        SyncDestination.GOOGLE_CALENDAR -> if (enabled) {
+            "确认后可手动连接 Google 日历；连接和确认写入前不会发送任何日程。" +
+                current.duplicateDisplayHint(otherEnabled = current.localCalendarEnabled)
+        } else {
+            "确认后会结束本次 Google 授权并停止未来镜像；已经写入的日程不会被删除。"
+        }
+    }
+}
+
+private fun SyncDestinations.duplicateDisplayHint(otherEnabled: Boolean): String =
+    if (otherEnabled) {
+        " 另一种输出已开启；若荣耀日历同时显示两本应用日历，同一课次会出现两份。想只显示一份，请只启用一种输出，或在荣耀日历隐藏其中一本。"
+    } else {
+        ""
+    }
+
 /**
  * 只保存“未来允许输出到哪里”的用户意图。
  * 默认全部关闭，防止原型阶段产生任何意外外部写入。

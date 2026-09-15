@@ -54,6 +54,15 @@ class AndroidLocalCalendarTarget(private val resolver: ContentResolver) {
         CalendarTargetResolution.Success(localRef(ContentUris.parseId(uri).toString()))
     }.getOrElse { CalendarTargetResolution.Failure("本机专用日历不可用；请检查日历权限后重试") }
 
+    /** 显式清理绝不为“找不到旧日历”创建新的日历；只复用仍可验证的应用目标。 */
+    fun resolveExisting(existingCalendarId: String): CalendarTargetResolution = runCatching {
+        val resolvedId = existingCalendarId.takeIf(String::isNotBlank)
+            ?.takeIf { AndroidLocalCalendarGateway(resolver).verifyOwnership(localRef(it)) }
+            ?: findExisting()
+            ?: return CalendarTargetResolution.Failure("找不到本机应用专用日历；没有创建新日历。")
+        CalendarTargetResolution.Success(localRef(resolvedId))
+    }.getOrElse { CalendarTargetResolution.Failure("本机专用日历不可用；没有创建新日历。") }
+
     private fun findExisting(): String? = resolver.query(
         CalendarContract.Calendars.CONTENT_URI,
         arrayOf(CalendarContract.Calendars._ID),
@@ -106,6 +115,18 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
         )?.use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.getLong(0).toString()) } }.orEmpty()
     }
 
+    /** 只用于用户明确选择“清除全部”；查询仅返回应用同步字段，不读取标题、地点或时间。 */
+    override fun findAllManagedEventIds(calendar: OwnedCalendarRef): List<String> {
+        check(verifyOwnership(calendar)) { "拒绝读取非应用拥有的本机日历。" }
+        return resolver.query(
+            CalendarContract.Events.CONTENT_URI,
+            arrayOf(CalendarContract.Events._ID),
+            "${CalendarContract.Events.CALENDAR_ID}=? AND ${CalendarContract.Events.SYNC_DATA1} IS NOT NULL AND ${CalendarContract.Events.DESCRIPTION}=?",
+            arrayOf(calendar.calendarId, AppOwnedCalendarContract.eventDescription()),
+            null,
+        )?.use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.getLong(0).toString()) } }.orEmpty()
+    }
+
     override fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent) {
         check(verifyOwnership(calendar)) { "拒绝向非应用拥有的本机日历更新。" }
         val updated = resolver.update(ContentUris.withAppendedId(asSyncAdapter(CalendarContract.Events.CONTENT_URI), eventId.toLong()), eventValues(calendar, event), null, null)
@@ -115,7 +136,8 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
 
     override fun remove(calendar: OwnedCalendarRef, eventId: String) {
         check(verifyOwnership(calendar)) { "拒绝从非应用拥有的本机日历删除。" }
-        check(resolver.delete(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId.toLong()), null, null) == 1) { "本机事件未能删除" }
+        val removed = resolver.delete(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId.toLong()), null, null)
+        check(removed in 0..1) { "本机事件未能删除" }
     }
 
     private fun eventValues(calendar: OwnedCalendarRef, event: DesiredCalendarEvent) = ContentValues().apply {

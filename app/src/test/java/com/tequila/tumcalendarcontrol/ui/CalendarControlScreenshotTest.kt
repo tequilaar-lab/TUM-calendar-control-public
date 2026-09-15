@@ -86,18 +86,6 @@ class CalendarControlScreenshotTest {
 
     @Test
     @Config(sdk = [36], qualifiers = "w412dp-h892dp-420dpi")
-    fun `更多操作深色 使用独立覆盖层`() {
-        val state = CalendarControlState().also {
-            it.themeMode = ThemeMode.DARK
-            it.openMore()
-        }
-
-        render(state)
-        capture("more_overlay_dark_412x892")
-    }
-
-    @Test
-    @Config(sdk = [36], qualifiers = "w412dp-h892dp-420dpi")
     fun `设置页底栏选中块与四个槽位对齐`() {
         val state = CalendarControlState().also { it.open(AppScreen.SETTINGS) }
 

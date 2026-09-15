@@ -29,6 +29,7 @@ enum class GoogleCalendarRequestStage(val label: String) {
     CHECK_OWNED_CALENDAR("检查应用专用日历"),
     CREATE_OWNED_CALENDAR("创建应用专用日历"),
     FIND_MANAGED_EVENTS("核对应用已写入的日程"),
+    FIND_ALL_MANAGED_EVENTS("核对全部应用已写入的日程"),
     CREATE_MANAGED_EVENT("写入新的应用日程"),
     UPDATE_MANAGED_EVENT("更新应用已写入的日程"),
     DELETE_MANAGED_EVENT("删除应用已写入的日程"),
@@ -46,6 +47,7 @@ interface GoogleCalendarApi {
     fun getCalendar(calendarId: String): GoogleRemoteCalendar?
     fun createCalendar(summary: String, description: String): GoogleRemoteCalendar
     fun findEventIdsByIdentity(calendarId: String, identityKey: String): List<String>
+    fun findAllManagedEventIds(calendarId: String): List<String>
     fun createEvent(calendarId: String, event: DesiredCalendarEvent): String
     fun updateEvent(calendarId: String, eventId: String, event: DesiredCalendarEvent)
     fun deleteEvent(calendarId: String, eventId: String)
@@ -63,6 +65,18 @@ class GoogleCalendarTarget(private val api: GoogleCalendarApi) {
             failureCode = error.targetFailureCode(),
         )
     }
+
+    /** 显式清理只复用缓存的已拥有日历；空／失效 ID 只能报错，绝不创建新日历。 */
+    fun resolveExisting(existingCalendarId: String): CalendarTargetResolution = runCatching {
+        val calendar = existingCalendarId.takeIf(String::isNotBlank)?.let(api::getCalendar)
+        require(calendar?.description == GOOGLE_OWNERSHIP_DESCRIPTION) { "找不到 Google 应用专用日历；没有创建新日历。" }
+        CalendarTargetResolution.Success(OwnedCalendarRef(OutputTarget.GOOGLE_CALENDAR, calendar.id, AppOwnedCalendarContract.OWNERSHIP_MARKER))
+    }.getOrElse { error ->
+        CalendarTargetResolution.Failure(
+            summary = error.googleSafeSummary("Google 应用专用日历不可用；没有创建新日历"),
+            failureCode = error.targetFailureCode(),
+        )
+    }
 }
 
 /** 每次事件操作前验证专用日历的固定所有权标记，拒绝主日历和未标记日历。 */
@@ -74,6 +88,11 @@ class GoogleCalendarGateway(private val api: GoogleCalendarApi) : OwnedCalendarG
     override fun findEventIdsByIdentity(calendar: OwnedCalendarRef, identity: ManagedEventIdentity): List<String> {
         check(verifyOwnership(calendar)) { "拒绝读取非应用拥有的 Google 日历。" }
         return api.findEventIdsByIdentity(calendar.calendarId, identity.opaqueKey())
+    }
+
+    override fun findAllManagedEventIds(calendar: OwnedCalendarRef): List<String> {
+        check(verifyOwnership(calendar)) { "拒绝读取非应用拥有的 Google 日历。" }
+        return api.findAllManagedEventIds(calendar.calendarId)
     }
 
     override fun create(calendar: OwnedCalendarRef, event: DesiredCalendarEvent): String {
@@ -118,6 +137,28 @@ class GoogleCalendarRestApi(
         response.requireSuccess()
         return JSONObject(response.body).optJSONArray("items")?.let { items ->
             buildList { for (index in 0 until items.length()) add(items.getJSONObject(index).getString("id")) }
+        }.orEmpty()
+    }
+
+    /** 全量清理只解析事件 ID 与不可见应用标记；日历正文不会进入日志、资料库或 UI。 */
+    override fun findAllManagedEventIds(calendarId: String): List<String> {
+        val response = transport.execute(
+            GoogleCalendarRequestStage.FIND_ALL_MANAGED_EVENTS,
+            "GET",
+            "/calendars/${calendarId.encodePath()}/events?singleEvents=true&showDeleted=false&maxResults=2500",
+            null,
+            accessToken,
+        )
+        response.requireSuccess()
+        return JSONObject(response.body).optJSONArray("items")?.let { items ->
+            buildList {
+                for (index in 0 until items.length()) {
+                    val item = items.getJSONObject(index)
+                    if (item.optJSONObject("extendedProperties")?.optJSONObject("private")?.has(GOOGLE_EVENT_IDENTITY_KEY) == true) {
+                        add(item.getString("id"))
+                    }
+                }
+            }
         }.orEmpty()
     }
 

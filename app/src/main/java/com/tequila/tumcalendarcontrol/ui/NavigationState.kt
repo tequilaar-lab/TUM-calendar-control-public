@@ -26,6 +26,7 @@ internal class NavigationState {
     private var sourceAttendanceReturnScreen by mutableStateOf(AppScreen.SOURCE_PREVIEW)
     private var manualEventsReturnScreen by mutableStateOf(AppScreen.SETTINGS)
     private var managedSyncPreviewReturnScreen by mutableStateOf(AppScreen.SETTINGS)
+    private var outputCleanupReturnScreen by mutableStateOf(AppScreen.SETTINGS)
     private var backgroundCheckReturnScreen by mutableStateOf(AppScreen.SETTINGS)
     private var ruleBackupReturnScreen by mutableStateOf(AppScreen.SETTINGS)
 
@@ -41,7 +42,8 @@ internal class NavigationState {
     fun openDetail() { detailReturnScreen = contentScreen; open(AppScreen.DETAIL) }
     fun openCourseEdit() { courseEditReturnScreen = AppScreen.DETAIL; open(AppScreen.COURSE_EDIT) }
     fun openMore() { moreReturnScreen = contentScreen; screen = AppScreen.MORE }
-    fun openProfile() { profileReturnScreen = contentScreen; openChild(AppScreen.PROFILE) }
+    /** 个人资料是左侧入口：进入从左滑入，返回时资料向左滑出、原页面从右进入。 */
+    fun openProfile() { profileReturnScreen = contentScreen; direction = NavigationDirection.PROFILE_ENTER; screen = AppScreen.PROFILE }
     fun openSyncConfiguration() { syncConfigurationReturnScreen = contentScreen; openChild(AppScreen.SYNC_CONFIGURATION) }
     fun openSourceRange() { sourceRangeReturnScreen = contentScreen; direction = NavigationDirection.FORWARD; screen = AppScreen.SOURCE_RANGE }
     fun openSyncPreview() { syncPreviewReturnScreen = contentScreen; openChild(AppScreen.SYNC_PREVIEW) }
@@ -50,11 +52,12 @@ internal class NavigationState {
     fun openSourceAttendance() { sourceAttendanceReturnScreen = AppScreen.SOURCE_PREVIEW; openChild(AppScreen.SOURCE_ATTENDANCE) }
     fun openManualEvents() { manualEventsReturnScreen = contentScreen; openChild(AppScreen.MANUAL_EVENTS) }
     fun openManagedSyncPreview() { managedSyncPreviewReturnScreen = contentScreen; openChild(AppScreen.MANAGED_SYNC_PREVIEW) }
-    fun openMappedRollback() { managedSyncPreviewReturnScreen = screen; direction = NavigationDirection.FORWARD; screen = AppScreen.MANAGED_SYNC_PREVIEW }
+    fun openOutputCleanup() { outputCleanupReturnScreen = contentScreen; openChild(AppScreen.OUTPUT_CLEANUP) }
     fun openBackgroundCheck() { backgroundCheckReturnScreen = contentScreen; direction = NavigationDirection.FORWARD; screen = AppScreen.BACKGROUND_CHECK }
     fun openRuleBackup() { ruleBackupReturnScreen = contentScreen; direction = NavigationDirection.FORWARD; screen = AppScreen.RULE_BACKUP }
 
     fun handleBack(): Boolean {
+        val closingProfile = screen == AppScreen.PROFILE
         val destination = when (screen) {
             AppScreen.ATTENDANCE -> AppScreen.DETAIL
             AppScreen.COURSE_EDIT -> courseEditReturnScreen
@@ -68,11 +71,12 @@ internal class NavigationState {
             AppScreen.SOURCE_ATTENDANCE -> sourceAttendanceReturnScreen
             AppScreen.MANUAL_EVENTS -> manualEventsReturnScreen
             AppScreen.MANAGED_SYNC_PREVIEW -> managedSyncPreviewReturnScreen
+            AppScreen.OUTPUT_CLEANUP -> outputCleanupReturnScreen
             AppScreen.BACKGROUND_CHECK -> backgroundCheckReturnScreen
             AppScreen.RULE_BACKUP -> ruleBackupReturnScreen
             else -> return false
         }
-        direction = NavigationDirection.BACKWARD
+        direction = if (closingProfile) NavigationDirection.PROFILE_EXIT else NavigationDirection.BACKWARD
         screen = destination
         return true
     }

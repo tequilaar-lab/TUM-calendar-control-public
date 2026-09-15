@@ -248,7 +248,7 @@ private fun SourceSelectionBottomBar(
             Text("已选择 $selectedCount 个课次", style = MiuixTheme.textStyles.title3)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 Button(onClick = onClear, enabled = selectedCount > 0, modifier = Modifier.weight(1f)) { Text("取消选择") }
-                Button(onClick = onAttendance, enabled = selectedCount > 0, modifier = Modifier.weight(1f)) { Text("设置状态与收藏") }
+                Button(onClick = onAttendance, enabled = selectedCount > 0, modifier = Modifier.weight(1f)) { Text("状态和收藏") }
             }
             Button(onClick = onWrite, enabled = selectedCount > 0, modifier = Modifier.fillMaxWidth()) { Text("查看写入内容") }
             Text("这里只查看将写入的课次；最后确认前不会修改任何日历。", color = palette.onSurfaceVariant)

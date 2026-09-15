@@ -67,6 +67,7 @@ class GoogleConnectionCheckerTest {
 
         override fun createCalendar(summary: String, description: String): GoogleRemoteCalendar = error("not used")
         override fun findEventIdsByIdentity(calendarId: String, identityKey: String): List<String> = error("not used")
+        override fun findAllManagedEventIds(calendarId: String): List<String> = error("not used")
         override fun createEvent(calendarId: String, event: DesiredCalendarEvent): String = error("not used")
         override fun updateEvent(calendarId: String, eventId: String, event: DesiredCalendarEvent) = error("not used")
         override fun deleteEvent(calendarId: String, eventId: String) = error("not used")
