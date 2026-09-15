@@ -19,7 +19,7 @@ class SyncCandidateFactoryTest {
     fun `未设规则来源默认蓝色 标题不参与身份`() {
         val events = factory.build(
             occurrences = listOf(occurrence("uid-a", "key-a", "同名课程"), occurrence("uid-b", "key-b", "同名课程")),
-            selectedSourceCourseUids = setOf("uid-a", "uid-b"),
+            selectedSourceOccurrences = setOf(SourceOccurrenceIdentity("uid-a", "key-a"), SourceOccurrenceIdentity("uid-b", "key-b")),
             rules = emptyList(),
             manualEvents = emptyList(),
         )
@@ -37,7 +37,11 @@ class SyncCandidateFactoryTest {
                 occurrence("uid-a", "future", "来源", "2026-10-20T08:00:00Z"),
                 occurrence("uid-b", "cancelled", "取消", "2026-10-21T08:00:00Z", cancelled = true),
             ),
-            selectedSourceCourseUids = setOf("uid-a", "uid-b"),
+            selectedSourceOccurrences = setOf(
+                SourceOccurrenceIdentity("uid-a", "past"),
+                SourceOccurrenceIdentity("uid-a", "future"),
+                SourceOccurrenceIdentity("uid-b", "cancelled"),
+            ),
             rules = listOf(SyncRule("uid-a", true, AttendanceState.CHOOSE_TO_ATTEND, stopAttendingFrom = java.time.LocalDate.parse("2026-10-10"))),
             manualEvents = listOf(ManualScheduleItem("manual-1", "手动校园事项", Instant.parse("2026-10-22T08:00:00Z"), Instant.parse("2026-10-22T09:00:00Z"), AttendanceState.MUST_ATTEND)),
         )
@@ -50,23 +54,23 @@ class SyncCandidateFactoryTest {
     }
 
     @Test
-    fun `仅明确选择的来源 UID 才能进入候选`() {
+    fun `同一来源只选择一个具体课次时 不会输出该来源的其他课次`() {
         val events = factory.build(
-            occurrences = listOf(occurrence("uid-a", "key-a", "来源 A"), occurrence("uid-b", "key-b", "来源 B")),
-            selectedSourceCourseUids = setOf("uid-a"),
+            occurrences = listOf(occurrence("uid-a", "first", "来源 A"), occurrence("uid-a", "second", "来源 A")),
+            selectedSourceOccurrences = setOf(SourceOccurrenceIdentity("uid-a", "second")),
             rules = emptyList(),
             manualEvents = emptyList(),
         )
 
         assertEquals(1, events.size)
-        assertEquals("uid-a", events.single().identity.sourceUid)
+        assertEquals("second", events.single().identity.instanceKey)
     }
 
     @Test
     fun `未选择来源时仅保留独立手动事项`() {
         val events = factory.build(
             occurrences = listOf(occurrence("uid-a", "key-a", "来源课程")),
-            selectedSourceCourseUids = emptySet(),
+            selectedSourceOccurrences = emptySet(),
             rules = emptyList(),
             manualEvents = listOf(ManualScheduleItem("manual-1", "手动测试", Instant.parse("2026-10-22T08:00:00Z"), Instant.parse("2026-10-22T09:00:00Z"), AttendanceState.MUST_ATTEND)),
         )
@@ -82,7 +86,7 @@ class SyncCandidateFactoryTest {
                 occurrence("uid-a", "inside", "来源", "2026-10-20T08:00:00Z"),
                 occurrence("uid-a", "outside", "来源", "2026-11-20T08:00:00Z"),
             ),
-            selectedSourceCourseUids = setOf("uid-a"),
+            selectedSourceOccurrences = setOf(SourceOccurrenceIdentity("uid-a", "inside"), SourceOccurrenceIdentity("uid-a", "outside")),
             sourceOutputWindow = SourceOutputDateWindow(java.time.LocalDate.parse("2026-10-01"), java.time.LocalDate.parse("2026-10-31")),
             rules = emptyList(),
             manualEvents = listOf(ManualScheduleItem("manual-1", "手动测试", Instant.parse("2026-11-22T08:00:00Z"), Instant.parse("2026-11-22T09:00:00Z"), AttendanceState.MUST_ATTEND)),

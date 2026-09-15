@@ -69,6 +69,13 @@ class CalendarControlScreenshotTest {
     }
 
     @Test
+    @Config(sdk = [36], qualifiers = "w840dp-h892dp-420dpi")
+    fun `展开态课程选择 左侧控制浮块与右侧课次列表独立`() {
+        render(loadedSourceState())
+        capture("source_courses_selector_wide_840x892")
+    }
+
+    @Test
     @Config(sdk = [36], qualifiers = "w412dp-h892dp-420dpi")
     fun `按日期选课 月格显示完整`() {
         val state = loadedSourceState()

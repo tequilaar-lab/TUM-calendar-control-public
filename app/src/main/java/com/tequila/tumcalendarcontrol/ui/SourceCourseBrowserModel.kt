@@ -7,7 +7,7 @@
 package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
-import com.tequila.tumcalendarcontrol.sync.SourceCourse
+import com.tequila.tumcalendarcontrol.sync.SourceOccurrenceIdentity
 import com.tequila.tumcalendarcontrol.sync.SourceOutputDateWindow
 import java.time.Instant
 import java.time.ZoneId
@@ -19,16 +19,16 @@ enum class SourceCourseFilter(val label: String) {
     IN_OUTPUT_RANGE("范围内有日程"),
 }
 
-/** 同名课程的视觉容器；成员 UID 仍必须逐个选择与同步。 */
+/** 同名课程的视觉容器；成员仍按 UID + 实例键逐个选择与同步。 */
 data class SourceCourseDisplayGroup(
     val displayTitle: String,
-    val courses: List<SourceCourse>,
-    val selectedCount: Int,
-    val inOutputRangeCount: Int,
-    val totalOccurrenceCount: Int,
+    val occurrences: List<SourceCalendarOccurrence>,
+    val selectedOccurrenceCount: Int,
+    val inOutputRangeOccurrenceCount: Int,
     val earliestStart: Instant,
 ) {
-    val sourceUidCount: Int get() = courses.size
+    val sourceUidCount: Int get() = occurrences.map(SourceCalendarOccurrence::sourceUid).distinct().size
+    val totalOccurrenceCount: Int get() = occurrences.size
 }
 
 object SourceCourseBrowserModel {
@@ -37,40 +37,37 @@ object SourceCourseBrowserModel {
      * 空白归一化让同一可见标题不会被无意义空格拆成多个分组。
      */
     fun groups(
-        courses: List<SourceCourse>,
         occurrences: List<SourceCalendarOccurrence>,
-        selectedSourceUids: Set<String>,
+        selectedOccurrences: Set<SourceOccurrenceIdentity>,
         query: String,
         filter: SourceCourseFilter,
         outputWindow: SourceOutputDateWindow,
         zoneId: ZoneId,
     ): List<SourceCourseDisplayGroup> {
-        val occurrencesByUid = occurrences.groupBy(SourceCalendarOccurrence::sourceUid)
         val searchable = query.trim()
-        fun isInWindow(course: SourceCourse): Boolean = occurrencesByUid[course.sourceUid].orEmpty()
-            .any { outputWindow.includes(it.startsAt, it.endsAt, zoneId) }
-        fun matches(course: SourceCourse): Boolean {
-            val queryMatches = searchable.isBlank() || course.title.contains(searchable, ignoreCase = true) ||
-                course.location.contains(searchable, ignoreCase = true)
+        fun isInWindow(occurrence: SourceCalendarOccurrence): Boolean = outputWindow.includes(occurrence.startsAt, occurrence.endsAt, zoneId)
+        fun matches(occurrence: SourceCalendarOccurrence): Boolean {
+            val queryMatches = searchable.isBlank() || occurrence.title.contains(searchable, ignoreCase = true) ||
+                occurrence.location.contains(searchable, ignoreCase = true)
             val filterMatches = when (filter) {
                 SourceCourseFilter.ALL -> true
-                SourceCourseFilter.SELECTED -> course.sourceUid in selectedSourceUids
-                SourceCourseFilter.IN_OUTPUT_RANGE -> isInWindow(course)
+                SourceCourseFilter.SELECTED -> occurrence.identity in selectedOccurrences
+                SourceCourseFilter.IN_OUTPUT_RANGE -> isInWindow(occurrence)
             }
             return queryMatches && filterMatches
         }
-        return courses.asSequence()
+        return occurrences.asSequence()
+            .filterNot(SourceCalendarOccurrence::isCancelled)
             .filter(::matches)
             .groupBy { normalizedDisplayKey(it.title) }
             .map { (_, members) ->
-                val ordered = members.sortedWith(compareBy(SourceCourse::firstStart).thenBy(SourceCourse::sourceUid))
+                val ordered = members.sortedWith(compareBy(SourceCalendarOccurrence::startsAt).thenBy(SourceCalendarOccurrence::sourceUid).thenBy(SourceCalendarOccurrence::instanceKey))
                 SourceCourseDisplayGroup(
                     displayTitle = ordered.first().title,
-                    courses = ordered,
-                    selectedCount = ordered.count { it.sourceUid in selectedSourceUids },
-                    inOutputRangeCount = ordered.count(::isInWindow),
-                    totalOccurrenceCount = ordered.sumOf(SourceCourse::occurrenceCount),
-                    earliestStart = ordered.minOf(SourceCourse::firstStart),
+                    occurrences = ordered,
+                    selectedOccurrenceCount = ordered.count { it.identity in selectedOccurrences },
+                    inOutputRangeOccurrenceCount = ordered.count(::isInWindow),
+                    earliestStart = ordered.minOf(SourceCalendarOccurrence::startsAt),
                 )
             }
             .sortedWith(compareBy(SourceCourseDisplayGroup::earliestStart).thenBy(SourceCourseDisplayGroup::displayTitle))

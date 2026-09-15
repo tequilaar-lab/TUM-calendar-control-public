@@ -11,19 +11,19 @@ import java.time.ZoneId
 
 class SyncCandidateFactory(private val zoneId: ZoneId = ZoneId.of("Europe/Berlin")) {
     /**
-     * 仅将明确选中的来源 UID 转为候选；未配置规则的选中来源默认蓝色，取消实例不会输出。
-     * 强制传入选择集，避免调用方遗漏来源目录这一人工确认边界。
+     * 仅将明确选中的来源课次转为候选；未配置规则的选中课次默认蓝色，取消实例不会输出。
+     * 身份同时含 UID 与原始实例键，避免用户选一节课却输出整门课程的所有课次。
      */
     fun build(
         occurrences: List<SourceCalendarOccurrence>,
-        selectedSourceCourseUids: Set<String>,
+        selectedSourceOccurrences: Set<SourceOccurrenceIdentity>,
         sourceOutputWindow: SourceOutputDateWindow = SourceOutputDateWindow(),
         rules: List<SyncRule>,
         manualEvents: List<ManualScheduleItem>,
     ): List<DesiredCalendarEvent> {
         val rulesByUid = rules.associateBy(SyncRule::sourceUid)
         val sourceEvents = occurrences.asSequence()
-            .filter { it.sourceUid in selectedSourceCourseUids }
+            .filter { it.identity in selectedSourceOccurrences }
             .filter { sourceOutputWindow.includes(it.startsAt, it.endsAt, zoneId) }
             .mapNotNull { occurrence ->
             val rule = rulesByUid[occurrence.sourceUid]

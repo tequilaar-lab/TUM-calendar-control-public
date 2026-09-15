@@ -74,7 +74,7 @@ internal fun SettingsScreen(state: CalendarControlState) {
         item {
             val courseSummary = when {
                 state.sourcePreview == null -> "还没有读取课程。先选择时间并读取课程。"
-                else -> "本次已读取 ${state.sourceCourses.size} 门课程；已选择 ${state.selectedSourceCourseUids.size} 门。"
+                else -> "本次已读取 ${state.sourceCourses.size} 个来源课程；已选择 ${state.selectedSourceOccurrences.size} 个具体课次。"
             }
             InformationCard("已读取课程", courseSummary)
         }

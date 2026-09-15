@@ -26,6 +26,7 @@ import com.tequila.tumcalendarcontrol.sync.RuleEditCommand
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerEditor
 import com.tequila.tumcalendarcontrol.sync.SyncRule
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
+import com.tequila.tumcalendarcontrol.sync.SourceOccurrenceIdentity
 import com.tequila.tumcalendarcontrol.sync.SyncCandidateFactory
 import com.tequila.tumcalendarcontrol.sync.ManagedSyncEngine
 import com.tequila.tumcalendarcontrol.sync.ManagedSyncPreview
@@ -139,7 +140,8 @@ class CalendarControlState(
     /** 真正来源实例只在当前进程用于预览／同步候选，退出或重新读取时丢弃。 */
     /** 只暴露本次运行实例给浏览器；调用者不得用它写入或持久化来源内容。 */
     val currentSourceOccurrences: List<SourceCalendarOccurrence> get() = sourceWorkflow.occurrences
-    val selectedSourceCourseUids: Set<String> get() = sourceWorkflow.selectedCourseUids
+    /** 当前勾选的是具体课次；规则与收藏在需要时才从中聚合所属课程 UID。 */
+    val selectedSourceOccurrences: Set<SourceOccurrenceIdentity> get() = sourceWorkflow.selectedOccurrences
     var sourceBrowserQuery: String
         get() = sourceWorkflow.browserQuery
         set(value) { sourceWorkflow.browserQuery = value }
@@ -381,12 +383,12 @@ class CalendarControlState(
         }
     }
 
-    /** 课程目录的多选只保留 UID；来源标题、地点与正文不进入规则资料库。 */
-    fun toggleSourceCourseSelection(sourceUid: String) {
-        sourceWorkflow.toggleSelection(sourceUid)
+    /** 课程目录的多选保留精确课次身份；来源标题、地点与正文不进入规则资料库。 */
+    fun toggleSourceOccurrenceSelection(identity: SourceOccurrenceIdentity) {
+        sourceWorkflow.toggleSelection(identity)
     }
 
-    fun selectAllSourceCourses() = sourceWorkflow.selectAllCourses()
+    fun selectAllSourceOccurrences() = sourceWorkflow.selectAllOccurrences()
 
     fun clearSourceCourseSelection() = sourceWorkflow.clearSelection()
 
@@ -394,23 +396,23 @@ class CalendarControlState(
 
     fun updateSourceBrowserFilter(filter: SourceCourseFilter) { sourceBrowserFilter = filter }
 
-    /** 新来源课程无规则时默认蓝色；用户可按单课或多选打开同一三态编辑器。 */
+    /** 新来源课次无规则时默认蓝色；用户可按单课次或多选打开同一三态编辑器。 */
     fun sourceAttendanceFor(sourceUid: String): AttendanceState = ruleLedger.rules
         .firstOrNull { it.sourceUid == sourceUid }
         ?.defaultState
         ?: AttendanceState.CHOOSE_TO_ATTEND
 
-    fun openSourceAttendanceEditor(sourceUids: Set<String> = selectedSourceCourseUids) {
-        if (sourceUids.isEmpty()) {
-            feedback = "请至少选择一门课程。"
+    fun openSourceAttendanceEditor(selection: Set<SourceOccurrenceIdentity> = selectedSourceOccurrences) {
+        if (selection.isEmpty()) {
+            feedback = "请至少选择一个课次。"
             return
         }
-        val firstState = sourceAttendanceFor(sourceUids.first())
-        sourceWorkflow.prepareAttendanceEditor(sourceUids, firstState)
+        val firstState = sourceAttendanceFor(selection.first().sourceUid)
+        sourceWorkflow.prepareAttendanceEditor(selection, firstState)
         navigation.openSourceAttendance()
     }
 
-    /** 将 UI 范围转换为 UID 规则；“仅本次”取每门课的代表实例，避免跨 UID 误用实例键。 */
+    /** 将 UI 范围转换为 UID 规则；“仅本次”严格使用选中的原始实例键。 */
     fun confirmSourceAttendance() {
         val result = sourceWorkflow.applyAttendanceRules(ruleLedger)
         if (result is SourceAttendanceRuleResult.Invalid) {
@@ -426,7 +428,7 @@ class CalendarControlState(
                 if (course.id in result.sourceUids) course.copy(isFavorite = result.favoriteAction == SourceFavoriteAction.ADD) else course
             }
         }
-        feedback = "已保存 ${result.sourceUids.size} 门课程的出席方式${if (result.favoriteAction == SourceFavoriteAction.KEEP) "" else "与收藏设置"}；尚未写入日历。"
+        feedback = "已保存 ${selectedSourceOccurrences.size} 个课次的出席方式${if (result.favoriteAction == SourceFavoriteAction.KEEP) "" else "与收藏设置"}；尚未写入日历。"
         navigation.handleBack()
     }
 
@@ -490,7 +492,7 @@ class CalendarControlState(
         }
         managedDesiredEvents = SyncCandidateFactory().build(
             occurrences = currentSourceOccurrences,
-            selectedSourceCourseUids = selectedSourceCourseUids,
+            selectedSourceOccurrences = selectedSourceOccurrences,
             sourceOutputWindow = privateSyncConfiguration.sourceOutputWindow
                 ?: run { feedback = "读取时间不正确；回到“选择读取时间”修改后重试。"; return },
             rules = ruleLedger.rules,

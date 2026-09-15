@@ -8,6 +8,17 @@ package com.tequila.tumcalendarcontrol.sync
 
 import java.time.Instant
 
+/**
+ * 职责：给一次来源课次提供稳定、不可猜测的选择身份。
+ * 输入／输出：输入 iCal 展开的 UID 与原始实例键；输出可用于 UI 选择、候选过滤和单实例规则的值对象。
+ * 外部副作用：无；不包含标题、地点或账户资料。
+ * 不负责：按标题合并课程、iCal 解析、规则保存或目标日历写入。
+ */
+data class SourceOccurrenceIdentity(
+    val sourceUid: String,
+    val instanceKey: String,
+)
+
 data class SourceCalendarOccurrence(
     val sourceUid: String,
     val instanceKey: String,
@@ -16,7 +27,10 @@ data class SourceCalendarOccurrence(
     val endsAt: Instant,
     val isCancelled: Boolean,
     val location: String = "",
-)
+) {
+    /** 选择与同步都必须同时使用 UID 和原始实例键，避免同一重复课程的其他课次被误选。 */
+    val identity: SourceOccurrenceIdentity get() = SourceOccurrenceIdentity(sourceUid, instanceKey)
+}
 
 data class IcalImportResult(
     val occurrences: List<SourceCalendarOccurrence>,

@@ -1,6 +1,6 @@
 /*
  * 职责：保存私有来源的只读请求、当前运行目录与课程选择状态。
- * 输入／输出：接收读取结果、UID 选择及浏览条件；输出 UI 可观察的只读目录状态和请求令牌。
+ * 输入／输出：接收读取结果、精确课次选择及浏览条件；输出 UI 可观察的只读目录状态和请求令牌。
  * 外部副作用：无；不持久化地址、不解析网络响应、不访问网络、权限或日历。
  * 不负责：课程投影、出席规则写入、输出候选、账户连接或日历写入。
  */
@@ -18,6 +18,7 @@ import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyImportResult
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyPreview
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
 import com.tequila.tumcalendarcontrol.sync.SourceCourse
+import com.tequila.tumcalendarcontrol.sync.SourceOccurrenceIdentity
 
 /** 读取动作的纯状态机结果；调用者据此决定反馈文案或后台任务。 */
 internal sealed interface SourceReadRequest {
@@ -59,7 +60,8 @@ internal class SourceReadWorkflowState {
         private set
     var occurrences by mutableStateOf<List<SourceCalendarOccurrence>>(emptyList())
         private set
-    var selectedCourseUids by mutableStateOf<Set<String>>(emptySet())
+    /** 选择只在本次运行存在；每一项都精确指向一个 UID + 原始实例键。 */
+    var selectedOccurrences by mutableStateOf<Set<SourceOccurrenceIdentity>>(emptySet())
         private set
     var browserQuery by mutableStateOf("")
     var browserFilter by mutableStateOf(SourceCourseFilter.ALL)
@@ -115,7 +117,7 @@ internal class SourceReadWorkflowState {
                 courses = result.preview.courses
                 occurrences = result.preview.occurrences
                 catalogLoaded = true
-                selectedCourseUids = emptySet()
+                selectedOccurrences = emptySet()
                 browserQuery = ""
                 browserFilter = SourceCourseFilter.ALL
                 previewError = null
@@ -129,29 +131,29 @@ internal class SourceReadWorkflowState {
         }
     }
 
-    fun toggleSelection(sourceUid: String) {
-        selectedCourseUids = if (sourceUid in selectedCourseUids) selectedCourseUids - sourceUid else selectedCourseUids + sourceUid
+    fun toggleSelection(identity: SourceOccurrenceIdentity) {
+        selectedOccurrences = if (identity in selectedOccurrences) selectedOccurrences - identity else selectedOccurrences + identity
     }
 
-    fun selectAllCourses() { selectedCourseUids = courses.map(SourceCourse::sourceUid).toSet() }
-    fun clearSelection() { selectedCourseUids = emptySet() }
+    fun selectAllOccurrences() { selectedOccurrences = occurrences.filterNot(SourceCalendarOccurrence::isCancelled).map(SourceCalendarOccurrence::identity).toSet() }
+    fun clearSelection() { selectedOccurrences = emptySet() }
 
     /** 打开批量出席编辑器前重置表单，避免上次范围和收藏动作泄漏到下一批。 */
-    fun prepareAttendanceEditor(sourceUids: Set<String>, firstState: AttendanceState): Boolean {
-        if (sourceUids.isEmpty()) return false
+    fun prepareAttendanceEditor(selection: Set<SourceOccurrenceIdentity>, firstState: AttendanceState): Boolean {
+        if (selection.isEmpty()) return false
         pendingAttendance = firstState
         pendingAttendanceScope = AttendanceEditScope.ALL_OCCURRENCES
         pendingEffectiveDate = ""
         pendingFavoriteAction = SourceFavoriteAction.KEEP
-        selectedCourseUids = sourceUids
+        selectedOccurrences = selection
         return true
     }
 
-    /** 将批量编辑草稿转换为稳定 UID 规则；实例键只来自来源目录，不以标题猜测。 */
+    /** 将课次选择转换为稳定 UID 规则；“仅本次”严格保留每项的原始实例键。 */
     fun applyAttendanceRules(currentLedger: RuleLedger): SourceAttendanceRuleResult {
-        val selected = courses.filter { it.sourceUid in selectedCourseUids }
-        if (selected.isEmpty()) return SourceAttendanceRuleResult.Invalid("课程列表已过期；重新读取后再修改。")
-        val sourceUids = selected.map(SourceCourse::sourceUid).toSet()
+        val selected = occurrences.filter { it.identity in selectedOccurrences }
+        if (selected.isEmpty()) return SourceAttendanceRuleResult.Invalid("课次列表已过期；重新读取后再修改。")
+        val sourceUids = selected.map(SourceCalendarOccurrence::sourceUid).toSet()
         val command = when (pendingAttendanceScope) {
             AttendanceEditScope.ALL_OCCURRENCES -> RuleEditCommand.WholeCourse(sourceUids, pendingAttendance)
             AttendanceEditScope.CURRENT_AND_FUTURE -> RuleEditCommand.FromDate(sourceUids, java.time.LocalDate.now(), pendingAttendance)
@@ -160,7 +162,8 @@ internal class SourceReadWorkflowState {
                 ?: return SourceAttendanceRuleResult.Invalid("请输入 YYYY-MM-DD 格式的指定日期。")
             AttendanceEditScope.ONLY_THIS_OCCURRENCE -> RuleEditCommand.InstancesBySource(
                 sourceUids = sourceUids,
-                instanceKeysBySourceUid = selected.associate { it.sourceUid to setOf(it.representativeInstanceKey) },
+                instanceKeysBySourceUid = selected.groupBy(SourceCalendarOccurrence::sourceUid)
+                    .mapValues { (_, items) -> items.map(SourceCalendarOccurrence::instanceKey).toSet() },
                 state = pendingAttendance,
             )
         }

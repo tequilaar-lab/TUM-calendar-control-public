@@ -16,6 +16,7 @@ import com.tequila.tumcalendarcontrol.sync.ManualScheduleItem
 import com.tequila.tumcalendarcontrol.sync.RuleLedger
 import com.tequila.tumcalendarcontrol.sync.SourceCourse
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
+import com.tequila.tumcalendarcontrol.sync.SourceOccurrenceIdentity
 import com.tequila.tumcalendarcontrol.sync.SourceCheckCadence
 import java.time.Instant
 import org.junit.Assert.assertEquals
@@ -340,7 +341,7 @@ class CalendarControlStateTest {
 
         assertEquals(AppScreen.SOURCE_PREVIEW, state.screen)
         assertEquals(AttendanceState.CHOOSE_TO_ATTEND, state.sourceAttendanceFor("uid-a"))
-        state.selectAllSourceCourses()
+        state.selectAllSourceOccurrences()
         state.openSourceAttendanceEditor()
         state.pendingSourceAttendance = AttendanceState.MUST_ATTEND
         state.pendingSourceAttendanceScope = AttendanceEditScope.ALL_OCCURRENCES
@@ -358,7 +359,7 @@ class CalendarControlStateTest {
         state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
         state.requestSourcePreview()
         state.resolveSourcePreview(state.sourceReadToken, IcalReadOnlyImportResult.Success(sourcePreview()))
-        state.selectAllSourceCourses()
+        state.selectAllSourceOccurrences()
         state.openSourceAttendanceEditor()
         state.pendingSourceFavoriteAction = SourceFavoriteAction.ADD
         state.confirmSourceAttendance()
@@ -410,7 +411,7 @@ class CalendarControlStateTest {
         state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
         state.requestSourcePreview()
         state.resolveSourcePreview(state.sourceReadToken, IcalReadOnlyImportResult.Success(sourcePreview()))
-        state.selectAllSourceCourses()
+        state.selectAllSourceOccurrences()
         state.openSourceAttendanceEditor()
         state.pendingSourceAttendance = AttendanceState.STOP_ATTENDING
         state.pendingSourceAttendanceScope = AttendanceEditScope.ONLY_THIS_OCCURRENCE
@@ -428,7 +429,7 @@ class CalendarControlStateTest {
         state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
         state.requestSourcePreview()
         state.resolveSourcePreview(state.sourceReadToken, IcalReadOnlyImportResult.Success(sourcePreview()))
-        state.selectAllSourceCourses()
+        state.selectAllSourceOccurrences()
         state.setSyncDestinationEnabled(SyncDestination.LOCAL_CALENDAR, true)
         state.setSyncDestinationEnabled(SyncDestination.GOOGLE_CALENDAR, true)
 
@@ -470,17 +471,18 @@ class CalendarControlStateTest {
         state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
         state.requestSourcePreview()
         state.resolveSourcePreview(state.sourceReadToken, IcalReadOnlyImportResult.Success(sourcePreview()))
-        state.toggleSourceCourseSelection("uid-a")
+        val selected = SourceOccurrenceIdentity("uid-a", "a-instance")
+        state.toggleSourceOccurrenceSelection(selected)
 
         assertTrue(state.saveSourceOutputRange("2026-09-14", "2026-09-30").isEmpty())
-        assertEquals(setOf("uid-a"), state.selectedSourceCourseUids)
+        assertEquals(setOf(selected), state.selectedSourceOccurrences)
         assertFalse(state.sourceReadRequested)
         state.requestSourceReadForCurrentRange()
         assertTrue(state.sourceReloadConfirmationPending)
         assertFalse(state.sourceReadRequested)
 
         state.resolveSourceReloadConfirmation(false)
-        assertEquals(setOf("uid-a"), state.selectedSourceCourseUids)
+        assertEquals(setOf(selected), state.selectedSourceOccurrences)
         state.requestSourceReadForCurrentRange()
         state.resolveSourceReloadConfirmation(true)
         assertTrue(state.sourceReadRequested)

@@ -1,6 +1,6 @@
 /*
- * 职责：以只读月格浏览来源日程，并在点选日期后提供该日的 UID 课程选择入口。
- * 输入／输出：输入运行内来源实例、当前输出范围和 UID 选择集；输出点按选择意图。
+ * 职责：以只读月格浏览来源日程，并在点选日期后提供该日的具体课次选择入口。
+ * 输入／输出：输入运行内来源实例、当前输出范围和课次选择集；输出点按选择意图。
  * 外部副作用：无；不保存月视图、来源内容或用户选择。
  * 不负责：日历 Provider、重复规则展开、范围保存或同步候选计算。
  */
@@ -28,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
-import com.tequila.tumcalendarcontrol.sync.SourceCourse
 import com.tequila.tumcalendarcontrol.sync.SourceOutputDateWindow
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -45,9 +44,8 @@ private val MonthTitle = DateTimeFormatter.ofPattern("yyyy年M月")
 
 @Composable
 fun SourceCourseDateBrowser(state: CalendarControlState, outputWindow: SourceOutputDateWindow, modifier: Modifier = Modifier) {
-    val coursesByUid = remember(state.sourceCourses) { state.sourceCourses.associateBy(SourceCourse::sourceUid) }
     val visibleOccurrences = state.currentSourceOccurrences.filter {
-        outputWindow.includes(it.startsAt, it.endsAt, BrowserZone)
+        !it.isCancelled && outputWindow.includes(it.startsAt, it.endsAt, BrowserZone)
     }
     val initialMonth = visibleOccurrences.minByOrNull(SourceCalendarOccurrence::startsAt)
         ?.startsAt?.atZone(BrowserZone)?.let(YearMonth::from)
@@ -56,28 +54,26 @@ fun SourceCourseDateBrowser(state: CalendarControlState, outputWindow: SourceOut
     var chosenDate by remember { mutableStateOf<LocalDate?>(null) }
     val byDate = visibleOccurrences.groupBy { it.startsAt.atZone(BrowserZone).toLocalDate() }
     val selectedDay = chosenDate
-    val coursesOnDate = selectedDay?.let { day ->
-        byDate[day].orEmpty().mapNotNull { coursesByUid[it.sourceUid] }.distinctBy(SourceCourse::sourceUid)
-    }.orEmpty()
+    val occurrencesOnDate = selectedDay?.let(byDate::get).orEmpty()
     LazyColumn(
         modifier = modifier,
         contentPadding = PaddingValues(bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item { InformationCard("按日期找课程", "带圆点的日期有可选择的课程。") }
+        item { InformationCard("按日期找课次", "带圆点的日期有可选择的具体上课时间。") }
         item { MonthNavigation(month, onPrevious = { month = month.minusMonths(1) }, onNext = { month = month.plusMonths(1) }) }
         item { SourceMonthGrid(month, byDate, chosenDate, onDateSelected = { chosenDate = it }) }
         if (selectedDay == null) {
-            item { InformationCard("选择日期", "点按带圆点的日期，查看并选择当天课程。") }
+            item { InformationCard("选择日期", "点按带圆点的日期，查看并选择当天课次。") }
         } else {
-            item { Text("${selectedDay.monthValue}月${selectedDay.dayOfMonth}日 · ${coursesOnDate.size} 门课程", style = MiuixTheme.textStyles.title3) }
-            if (coursesOnDate.isEmpty()) item { InformationCard("当天没有课程", "切换月份或选择其他带圆点的日期。") }
-            items(coursesOnDate, key = SourceCourse::sourceUid) { course ->
+            item { Text("${selectedDay.monthValue}月${selectedDay.dayOfMonth}日 · ${occurrencesOnDate.size} 个课次", style = MiuixTheme.textStyles.title3) }
+            if (occurrencesOnDate.isEmpty()) item { InformationCard("当天没有课次", "切换月份或选择其他带圆点的日期。") }
+            items(occurrencesOnDate, key = { "${it.sourceUid}|${it.instanceKey}" }) { occurrence ->
                 Card(modifier = Modifier.fillMaxWidth(), insideMargin = PaddingValues(10.dp)) {
-                    SourceCourseChoiceRow(
-                        course = course,
-                        selected = course.sourceUid in state.selectedSourceCourseUids,
-                        onToggle = { state.toggleSourceCourseSelection(course.sourceUid) },
+                    SourceOccurrenceChoiceRow(
+                        occurrence = occurrence,
+                        selected = occurrence.identity in state.selectedSourceOccurrences,
+                        onToggle = { state.toggleSourceOccurrenceSelection(occurrence.identity) },
                     )
                 }
             }

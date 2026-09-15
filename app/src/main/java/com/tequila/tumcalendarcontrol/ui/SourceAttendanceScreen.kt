@@ -1,6 +1,6 @@
 /*
- * 职责：为选中的课程提供出席方式、收藏与生效范围编辑表单。
- * 输入／输出：输入 CalendarControlState 中的已选课程和待确认值；输出明确的本机设置请求。
+ * 职责：为选中的具体课次提供出席方式、收藏与生效范围编辑表单。
+ * 输入／输出：输入 CalendarControlState 中的已选课次和待确认值；输出明确的本机设置请求。
  * 外部副作用：无；确认仅更新内存规则，持久化由界面根部的私有偏好层负责。
  * 不负责：读取 iCal、展示内部身份、申请权限或写入任何日历。
  */
@@ -35,8 +35,8 @@ fun SourceAttendanceScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("为 ${state.selectedSourceCourseUids.size} 门课程设置出席和收藏", style = MiuixTheme.textStyles.title3)
-        Text("这一步只保存课程设置，还不会写入日历。新课程默认蓝色“选择出席”。", color = LocalTumPalette.current.onSurfaceVariant)
+        Text("为 ${state.selectedSourceOccurrences.size} 个课次设置出席和收藏", style = MiuixTheme.textStyles.title3)
+        Text("“仅本次”只改已选课次；其他范围按所属课程生效。此步骤还不会写入日历。", color = LocalTumPalette.current.onSurfaceVariant)
         Text("出席方式", style = MiuixTheme.textStyles.title3)
         AttendanceState.entries.forEach { option -> SourceAttendanceOption(option, state) }
         Text("收藏", style = MiuixTheme.textStyles.title3)

@@ -1,13 +1,13 @@
 /*
- * 职责：验证来源目录的视觉分组和筛选不改变 UID 身份。
- * 输入／输出：输入合成课程、实例、选择和日期窗口；断言显示组与 UID 成员。
+ * 职责：验证来源目录的视觉分组和筛选不改变“UID + 实例键”的课次身份。
+ * 输入／输出：输入合成课次、选择和日期窗口；断言显示组与课次成员。
  * 外部副作用：无。
  * 不负责：网络读取、真实日历或 Compose 截图。
  */
 package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
-import com.tequila.tumcalendarcontrol.sync.SourceCourse
+import com.tequila.tumcalendarcontrol.sync.SourceOccurrenceIdentity
 import com.tequila.tumcalendarcontrol.sync.SourceOutputDateWindow
 import java.time.Instant
 import java.time.LocalDate
@@ -20,33 +20,49 @@ class SourceCourseBrowserModelTest {
     private val berlin = ZoneId.of("Europe/Berlin")
 
     @Test
-    fun `同标题课程只视觉分组 仍保留两个独立 UID`() {
-        val courses = listOf(course("uid-a", "同名课程", "2026-10-01T08:00:00Z"), course("uid-b", "同名课程", "2026-10-02T08:00:00Z"))
+    fun `同标题课次只视觉分组 仍保留每个独立实例`() {
+        val occurrences = listOf(
+            occurrence("uid-a", "first", "同名课程", "2026-10-01T08:00:00Z"),
+            occurrence("uid-b", "second", "同名课程", "2026-10-02T08:00:00Z"),
+        )
 
-        val groups = SourceCourseBrowserModel.groups(courses, occurrences(courses), setOf("uid-a"), "", SourceCourseFilter.ALL, SourceOutputDateWindow(), berlin)
+        val groups = SourceCourseBrowserModel.groups(
+            occurrences = occurrences,
+            selectedOccurrences = setOf(SourceOccurrenceIdentity("uid-a", "first")),
+            query = "",
+            filter = SourceCourseFilter.ALL,
+            outputWindow = SourceOutputDateWindow(),
+            zoneId = berlin,
+        )
 
         assertEquals(1, groups.size)
-        assertEquals(setOf("uid-a", "uid-b"), groups.single().courses.map(SourceCourse::sourceUid).toSet())
-        assertEquals(1, groups.single().selectedCount)
+        assertEquals(setOf("uid-a", "uid-b"), groups.single().occurrences.map(SourceCalendarOccurrence::sourceUid).toSet())
+        assertEquals(1, groups.single().selectedOccurrenceCount)
     }
 
     @Test
-    fun `范围内筛选只显示相交 UID 查询仍可缩小结果`() {
-        val courses = listOf(course("uid-a", "线性代数", "2026-10-01T08:00:00Z"), course("uid-b", "物理", "2026-12-01T08:00:00Z"))
+    fun `范围内筛选只显示相交课次 查询仍可缩小结果`() {
+        val occurrences = listOf(
+            occurrence("uid-a", "inside", "线性代数", "2026-10-01T08:00:00Z"),
+            occurrence("uid-b", "outside", "物理", "2026-12-01T08:00:00Z"),
+        )
         val window = SourceOutputDateWindow(LocalDate.parse("2026-10-01"), LocalDate.parse("2026-10-31"))
 
-        val groups = SourceCourseBrowserModel.groups(courses, occurrences(courses), emptySet(), "线性", SourceCourseFilter.IN_OUTPUT_RANGE, window, berlin)
+        val groups = SourceCourseBrowserModel.groups(
+            occurrences = occurrences,
+            selectedOccurrences = emptySet(),
+            query = "线性",
+            filter = SourceCourseFilter.IN_OUTPUT_RANGE,
+            outputWindow = window,
+            zoneId = berlin,
+        )
 
         assertEquals(1, groups.size)
-        assertTrue(groups.single().courses.all { it.sourceUid == "uid-a" })
+        assertTrue(groups.single().occurrences.all { it.sourceUid == "uid-a" })
     }
 
-    private fun occurrences(courses: List<SourceCourse>): List<SourceCalendarOccurrence> = courses.map {
-        SourceCalendarOccurrence(it.sourceUid, "${it.sourceUid}:instance", it.title, it.firstStart, it.lastEnd, false, it.location)
-    }
-
-    private fun course(uid: String, title: String, start: String): SourceCourse {
+    private fun occurrence(uid: String, key: String, title: String, start: String): SourceCalendarOccurrence {
         val startsAt = Instant.parse(start)
-        return SourceCourse(uid, title, "合成地点", startsAt, startsAt.plusSeconds(3_600), "$uid:instance", 1, 0)
+        return SourceCalendarOccurrence(uid, key, title, startsAt, startsAt.plusSeconds(3_600), false, "合成地点")
     }
 }
