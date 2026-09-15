@@ -24,7 +24,6 @@ class GoogleCalendarGatewayTest {
         assertEquals("owned", calendar.calendarId)
         assertTrue(gateway.verifyOwnership(calendar))
         assertFalse(gateway.verifyOwnership(calendar.copy(calendarId = "other")))
-        assertEquals(1, api.visibilityRequests)
     }
 
     @Test
@@ -38,7 +37,6 @@ class GoogleCalendarGatewayTest {
 
         assertEquals(1, api.createdCalendars)
         assertEquals(1, api.createdEvents)
-        assertEquals(1, api.visibilityRequests)
     }
 
     @Test
@@ -63,7 +61,6 @@ class GoogleCalendarGatewayTest {
         private val calendars = initialId?.let { mutableMapOf(it to GoogleRemoteCalendar(it, initialDescription)) } ?: mutableMapOf()
         var createdCalendars = 0
         var createdEvents = 0
-        var visibilityRequests = 0
         override fun getCalendar(calendarId: String): GoogleRemoteCalendar? {
             failure?.let { throw it }
             return calendars[calendarId]
@@ -72,7 +69,6 @@ class GoogleCalendarGatewayTest {
             createdCalendars += 1
             return GoogleRemoteCalendar("created", description).also { calendars[it.id] = it }
         }
-        override fun makeCalendarVisible(calendarId: String) { check(calendars.containsKey(calendarId)); visibilityRequests += 1 }
         override fun findEventIdsByIdentity(calendarId: String, identityKey: String): List<String> = emptyList()
         override fun createEvent(calendarId: String, event: DesiredCalendarEvent): String { check(calendars.containsKey(calendarId)); createdEvents += 1; return "event-$createdEvents" }
         override fun updateEvent(calendarId: String, eventId: String, event: DesiredCalendarEvent) = Unit

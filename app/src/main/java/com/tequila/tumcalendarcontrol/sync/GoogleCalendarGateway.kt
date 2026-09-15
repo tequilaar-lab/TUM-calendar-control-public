@@ -28,7 +28,6 @@ data class GoogleRemoteCalendar(val id: String, val description: String?)
 enum class GoogleCalendarRequestStage(val label: String) {
     CHECK_OWNED_CALENDAR("检查应用专用日历"),
     CREATE_OWNED_CALENDAR("创建应用专用日历"),
-    SHOW_OWNED_CALENDAR("让应用专用日历显示在 Google 日历中"),
     FIND_MANAGED_EVENTS("核对应用已写入的日程"),
     CREATE_MANAGED_EVENT("写入新的应用日程"),
     UPDATE_MANAGED_EVENT("更新应用已写入的日程"),
@@ -46,20 +45,17 @@ enum class GoogleAuthorizationSignal(val label: String) {
 interface GoogleCalendarApi {
     fun getCalendar(calendarId: String): GoogleRemoteCalendar?
     fun createCalendar(summary: String, description: String): GoogleRemoteCalendar
-    fun makeCalendarVisible(calendarId: String)
     fun findEventIdsByIdentity(calendarId: String, identityKey: String): List<String>
     fun createEvent(calendarId: String, event: DesiredCalendarEvent): String
     fun updateEvent(calendarId: String, eventId: String, event: DesiredCalendarEvent)
     fun deleteEvent(calendarId: String, eventId: String)
 }
 
-/** 目标 ID 只接受先前创建且带固定标记的次级日历；失效时才创建新的专用日历。 */
+/** 目标 ID 只接受先前创建且带固定标记的次级日历；失效时才创建新的专用日历，不修改侧栏显示设置。 */
 class GoogleCalendarTarget(private val api: GoogleCalendarApi) {
     fun ensure(existingCalendarId: String, calendarName: String): CalendarTargetResolution = runCatching {
         val existing = existingCalendarId.takeIf(String::isNotBlank)?.let(api::getCalendar)
         val calendar = if (existing?.description == GOOGLE_OWNERSHIP_DESCRIPTION) existing else api.createCalendar(calendarName, GOOGLE_OWNERSHIP_DESCRIPTION)
-        // Google 新建次级日历可能默认未在侧栏选中；显式请求可见。
-        api.makeCalendarVisible(calendar.id)
         CalendarTargetResolution.Success(OwnedCalendarRef(OutputTarget.GOOGLE_CALENDAR, calendar.id, AppOwnedCalendarContract.OWNERSHIP_MARKER))
     }.getOrElse { error ->
         CalendarTargetResolution.Failure(
@@ -114,16 +110,6 @@ class GoogleCalendarRestApi(
         response.requireSuccess()
         val json = JSONObject(response.body)
         return GoogleRemoteCalendar(json.getString("id"), json.optString("description").takeIf(String::isNotBlank))
-    }
-
-    override fun makeCalendarVisible(calendarId: String) {
-        transport.execute(
-            GoogleCalendarRequestStage.SHOW_OWNED_CALENDAR,
-            "PATCH",
-            "/users/me/calendarList/${calendarId.encodePath()}",
-            JSONObject().put("selected", true).toString(),
-            accessToken,
-        ).requireSuccess()
     }
 
     override fun findEventIdsByIdentity(calendarId: String, identityKey: String): List<String> {
