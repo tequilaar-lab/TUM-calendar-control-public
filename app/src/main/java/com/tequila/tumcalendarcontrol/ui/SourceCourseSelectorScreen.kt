@@ -1,8 +1,8 @@
 /*
- * 职责：提供来源课程的分组列表、按日期浏览、搜索、选择和固定下一步操作。
- * 输入／输出：输入只读运行内来源和 UID 选择状态；输出选择/规则编辑/预览意图。
+ * 职责：提供读取后课程的分组列表、按日期浏览、搜索、选择和固定下一步操作。
+ * 输入／输出：输入只读运行内来源和选择状态；输出设置出席收藏或写入日历意图。
  * 外部副作用：无；不读取 iCal、不持久化来源正文、不执行日历写入。
- * 不负责：按标题合并同步身份、修改解析结果或替代同步确认页。
+ * 不负责：按标题合并同步身份、修改解析结果或替代写入确认。
  */
 package com.tequila.tumcalendarcontrol.ui
 
@@ -62,8 +62,8 @@ fun SourceCourseSelectorScreen(state: CalendarControlState) {
     var mode by remember { mutableStateOf(SourceBrowserMode.GROUPS) }
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         InformationCard(
-            "2/4 选择课程",
-            "共读取 ${state.sourceCourses.size} 个来源 UID；标题分组仅为浏览，选择与同步始终按 UID 分开处理。",
+            "选择要管理的课程",
+            "已读取 ${state.sourceCourses.size} 门课程。按课程名称或上课日期找到你想管理的课。",
         )
         TextField(
             value = state.sourceBrowserQuery,
@@ -82,7 +82,7 @@ fun SourceCourseSelectorScreen(state: CalendarControlState) {
             modifier = Modifier.fillMaxWidth(),
             onClear = state::clearSourceCourseSelection,
             onAttendance = state::openSourceAttendanceEditor,
-            onPreview = state::requestManagedSyncPreview,
+            onWrite = state::prepareCalendarWrite,
         )
     }
 }
@@ -137,7 +137,7 @@ private fun SourceGroupRow(state: CalendarControlState, group: SourceCourseDispl
                 Column(Modifier.weight(1f)) {
                     Text(group.displayTitle, style = MiuixTheme.textStyles.title3)
                     Text(
-                        "${group.sourceUidCount} 个来源项 · ${group.totalOccurrenceCount} 次课程 · 已选 ${group.selectedCount}",
+                        "${group.sourceUidCount} 个课程项 · ${group.totalOccurrenceCount} 次课程 · 已选 ${group.selectedCount}",
                         color = LocalTumPalette.current.onSurfaceVariant,
                     )
                     Text(
@@ -182,7 +182,7 @@ private fun SourceSelectionBottomBar(
     modifier: Modifier = Modifier,
     onClear: () -> Unit,
     onAttendance: () -> Unit,
-    onPreview: () -> Unit,
+    onWrite: () -> Unit,
 ) {
     val palette = LocalTumPalette.current
     Card(
@@ -199,10 +199,10 @@ private fun SourceSelectionBottomBar(
             Text("已选择 $selectedCount 门课程", style = MiuixTheme.textStyles.title3)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 Button(onClick = onClear, enabled = selectedCount > 0, modifier = Modifier.weight(1f)) { Text("清除") }
-                Button(onClick = onAttendance, enabled = selectedCount > 0, modifier = Modifier.weight(1f)) { Text("下一步：设置状态") }
+                Button(onClick = onAttendance, enabled = selectedCount > 0, modifier = Modifier.weight(1f)) { Text("设置出席与收藏") }
             }
-            Button(onClick = onPreview, enabled = selectedCount > 0, modifier = Modifier.fillMaxWidth()) { Text("生成预览（不写入）") }
-            Text("未单独设置时默认为蓝色“选择出席”。", color = palette.onSurfaceVariant)
+            Button(onClick = onWrite, enabled = selectedCount > 0, modifier = Modifier.fillMaxWidth()) { Text("写入日历") }
+            Text("未设置时会按蓝色“选择出席”处理；写入前仍会请你确认影响数量。", color = palette.onSurfaceVariant)
         }
     }
 }

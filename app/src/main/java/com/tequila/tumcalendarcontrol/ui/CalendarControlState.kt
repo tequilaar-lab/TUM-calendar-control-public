@@ -61,11 +61,18 @@ enum class NavigationDirection {
     FORWARD, BACKWARD,
 }
 
+/** 批量设置状态时可同时处理收藏；保持不变避免误改既有收藏。 */
+enum class SourceFavoriteAction(val label: String, val description: String) {
+    KEEP("不改变收藏", "保留每门课当前的收藏状态"),
+    ADD("加入收藏", "把这批课程同时加入收藏"),
+    REMOVE("取消收藏", "把这批课程同时移出收藏"),
+}
+
 /** 仅描述当前进程的 Google 授权结果；令牌绝不持久化，重启后必须重新授权。 */
 enum class GoogleAuthorizationStatus(val title: String, val defaultDetail: String) {
     NOT_CONNECTED("Google 日历未连接", "尚未获得本次运行的授权；不会创建或写入 Google 日历。"),
     AUTHORIZING("正在连接 Google 日历", "请在 Google 页面完成账户选择与授权，然后自动返回本应用。"),
-    AUTHORIZED("Google 日历已获本次运行授权", "尚未创建或写入 Google 日历；仍需先生成预览并明确确认。"),
+    AUTHORIZED("Google 日历已连接", "现在可以在写入确认页确认写入；尚未修改 Google 日历。"),
     FAILED("Google 授权未完成", "没有获得令牌，因此没有访问或修改 Google 日历。可检查配置后重试。"),
 }
 
@@ -146,6 +153,7 @@ class CalendarControlState(
     var pendingSourceAttendance by mutableStateOf(AttendanceState.CHOOSE_TO_ATTEND)
     var pendingSourceAttendanceScope by mutableStateOf(AttendanceEditScope.ALL_OCCURRENCES)
     var pendingSourceEffectiveDate by mutableStateOf("")
+    var pendingSourceFavoriteAction by mutableStateOf(SourceFavoriteAction.KEEP)
     private var sourceAttendanceReturnScreen by mutableStateOf(AppScreen.SOURCE_PREVIEW)
     private var backgroundCheckReturnScreen by mutableStateOf(AppScreen.SETTINGS)
     private var ruleBackupReturnScreen by mutableStateOf(AppScreen.SETTINGS)
@@ -464,6 +472,7 @@ class CalendarControlState(
         pendingSourceAttendance = firstState
         pendingSourceAttendanceScope = AttendanceEditScope.ALL_OCCURRENCES
         pendingSourceEffectiveDate = ""
+        pendingSourceFavoriteAction = SourceFavoriteAction.KEEP
         selectedSourceCourseUids = sourceUids
         sourceAttendanceReturnScreen = AppScreen.SOURCE_PREVIEW
         screen = AppScreen.SOURCE_ATTENDANCE
@@ -500,7 +509,12 @@ class CalendarControlState(
             command,
         ))
         refreshCoursesFromSource()
-        feedback = "已更新 ${sourceUids.size} 门来源课程的${pendingSourceAttendance.label}规则；尚未写入任何日历。"
+        if (pendingSourceFavoriteAction != SourceFavoriteAction.KEEP) {
+            courses = courses.map { course ->
+                if (course.id in sourceUids) course.copy(isFavorite = pendingSourceFavoriteAction == SourceFavoriteAction.ADD) else course
+            }
+        }
+        feedback = "已保存 ${sourceUids.size} 门课程的出席方式${if (pendingSourceFavoriteAction == SourceFavoriteAction.KEEP) "" else "与收藏设置"}；尚未写入日历。"
         screen = sourceAttendanceReturnScreen
     }
 
@@ -535,13 +549,16 @@ class CalendarControlState(
     }
 
     fun requestSync() {
-        requestManagedSyncPreview()
+        prepareCalendarWrite()
     }
+
+    /** 使用者点“写入日历”后的内部准备步骤；只计算确认信息，绝不在此处写入。 */
+    fun prepareCalendarWrite() = requestManagedSyncPreview()
 
     /** 已持久化的映射可在来源目录丢失后单独进入撤销页；该入口不生成候选或写入。 */
     fun openMappedOutputRollback() {
         if (ruleLedger.mappings.isEmpty()) {
-            feedback = "没有本应用已映射的输出事件可撤销。"
+            feedback = "没有本应用写入过、可清除的日程。"
             return
         }
         managedSyncPreview = null
@@ -553,19 +570,19 @@ class CalendarControlState(
     /** 基于当前进程来源和本机规则生成差异；不查询、创建或写入任何目标日历。 */
     fun requestManagedSyncPreview() {
         if (sourceOccurrences.isEmpty() && ruleLedger.manualEvents.isEmpty()) {
-            feedback = "请先主动读取私有 iCal 并选择课程，或添加手动校园事项；当前没有可预览的输出。"
+            feedback = "请先读取课程并选择要管理的课程，或添加校园事项；当前没有可写入的日程。"
             return
         }
         val targets = enabledOutputTargets()
         if (targets.isEmpty()) {
-            feedback = "请先启用本机日历或 Google 日历输出；当前不会写入任何日历。"
+            feedback = "请先在设置中选择要写入本机日历或 Google 日历；当前不会写入任何日历。"
             return
         }
         managedDesiredEvents = SyncCandidateFactory().build(
             occurrences = sourceOccurrences,
             selectedSourceCourseUids = selectedSourceCourseUids,
             sourceOutputWindow = privateSyncConfiguration.sourceOutputWindow
-                ?: run { feedback = "来源输出日期范围无效；未生成同步预览。"; return },
+                ?: run { feedback = "读取日期范围无效；请先回到来源设置修正。"; return },
             rules = ruleLedger.rules,
             manualEvents = ruleLedger.manualEvents,
         )
@@ -615,18 +632,18 @@ class CalendarControlState(
 
     /** 执行请求只表达用户确认；界面层再在后台建立专用目标并调用网关。 */
     fun requestManagedSyncExecution() {
-        if (managedSyncPreview == null) { feedback = "请先生成同步预览，再确认执行。"; return }
+        if (managedSyncPreview == null) { feedback = "请先点击“写入日历”并确认将要写入的内容。"; return }
         if (syncDestinations.localCalendarEnabled && !localCalendarPermissionGranted) { feedback = "本机日历尚未获得系统权限；未执行写入。"; return }
         if (syncDestinations.googleCalendarEnabled && !hasGoogleAuthorization) { feedback = "请先完成 Google 授权；未执行写入。"; return }
         if (managedSyncInProgress) return
         managedOperationToken += 1
         managedSyncInProgress = true
         managedSyncRequested = true
-        feedback = "正在执行已预览的受控同步…"
+        feedback = "正在写入日历…"
     }
 
     fun requestManagedRollback() {
-        if (ruleLedger.mappings.isEmpty()) { feedback = "没有本应用已映射的输出事件可撤销。"; return }
+        if (ruleLedger.mappings.isEmpty()) { feedback = "没有本应用写入过、可清除的日程。"; return }
         val targets = ruleLedger.mappings.map(StoredEventMapping::target).toSet()
         if (OutputTarget.LOCAL_CALENDAR in targets && !localCalendarPermissionGranted) { feedback = "本机日历尚未获得系统权限；未执行撤销。"; return }
         if (OutputTarget.GOOGLE_CALENDAR in targets && !hasGoogleAuthorization) { feedback = "请先完成 Google 授权；未执行撤销。"; return }
@@ -634,7 +651,7 @@ class CalendarControlState(
         managedOperationToken += 1
         managedSyncInProgress = true
         managedRollbackRequested = true
-        feedback = "正在撤销本应用已映射的输出事件…"
+        feedback = "正在清除本应用写入的日程…"
     }
 
     fun currentGoogleAccessToken(): String? = googleAccessToken
@@ -657,7 +674,7 @@ class CalendarControlState(
             lastSummary = SyncRunSummary(Instant.now(), result.createdCount, result.updatedCount, result.removedCount, 0, result.failureSummary),
         )
         privateSyncConfiguration = configuration
-        feedback = result.failureSummary ?: "受控同步已完成：新增 ${result.createdCount}、更新 ${result.updatedCount}、移除 ${result.removedCount}。"
+        feedback = result.failureSummary ?: "日历已写入：新增 ${result.createdCount}、调整 ${result.updatedCount}、清除 ${result.removedCount}。"
     }
 
     fun failManagedOperation(token: Long, summary: String) {
@@ -680,7 +697,7 @@ class CalendarControlState(
             ManualScheduleItem(UUID.randomUUID().toString(), title.trim().ifBlank { error("标题不能为空") }, start, end, attendance)
         }.getOrElse { feedback = "请填写有效的标题、YYYY-MM-DD 日期和小时／分钟；结束须晚于开始。"; return }
         ruleLedger = ruleLedger.copy(manualEvents = ManualScheduleEditor().upsert(ruleLedger.manualEvents, item))
-        feedback = "已保存手动校园事项；它将在下次同步预览中出现。"
+        feedback = "已保存校园事项；下次点“写入日历”时会与课程一起处理。"
     }
 
     fun removeManualEvent(itemId: String) {

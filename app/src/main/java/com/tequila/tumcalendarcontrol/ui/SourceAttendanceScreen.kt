@@ -1,8 +1,8 @@
 /*
- * 职责：为来源课程的单选或多选提供三态及生效范围编辑表单。
- * 输入／输出：输入 CalendarControlState 中的已选来源 UID 和待确认值；输出明确的本机规则编辑请求。
+ * 职责：为选中的课程提供出席方式、收藏与生效范围编辑表单。
+ * 输入／输出：输入 CalendarControlState 中的已选课程和待确认值；输出明确的本机设置请求。
  * 外部副作用：无；确认仅更新内存规则，持久化由界面根部的私有偏好层负责。
- * 不负责：读取 iCal、展示 UID、选择真实日期实例、申请权限或写入任何日历。
+ * 不负责：读取 iCal、展示内部身份、申请权限或写入任何日历。
  */
 package com.tequila.tumcalendarcontrol.ui
 
@@ -35,9 +35,11 @@ fun SourceAttendanceScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("为 ${state.selectedSourceCourseUids.size} 门来源课程设置状态", style = MiuixTheme.textStyles.title3)
-        Text("新课程默认蓝色；规则只保存 UID、状态与范围，不保存来源标题或地点。", color = LocalTumPalette.current.onSurfaceVariant)
+        Text("设置 ${state.selectedSourceCourseUids.size} 门课程", style = MiuixTheme.textStyles.title3)
+        Text("选择这批课的出席方式和收藏状态。新课程默认蓝色“选择出席”。", color = LocalTumPalette.current.onSurfaceVariant)
         AttendanceState.entries.forEach { option -> SourceAttendanceOption(option, state) }
+        Text("收藏", style = MiuixTheme.textStyles.title3)
+        SourceFavoriteAction.entries.forEach { action -> SourceFavoriteActionOption(action, state) }
         Text("生效范围", style = MiuixTheme.textStyles.title3)
         AttendanceEditScope.entries.forEach { scope -> SourceAttendanceScopeOption(scope, state) }
         if (state.pendingSourceAttendanceScope == AttendanceEditScope.SPECIFIED_AND_FUTURE) {
@@ -59,7 +61,25 @@ fun SourceAttendanceScreen(state: CalendarControlState) {
                 onClick = state::handleBack,
                 modifier = Modifier.width(112.dp),
             )
-            Button(onClick = state::confirmSourceAttendance, modifier = Modifier.weight(1f)) { Text("仅保存本机规则") }
+            Button(onClick = state::confirmSourceAttendance, modifier = Modifier.weight(1f)) { Text("保存设置") }
+        }
+    }
+}
+
+/** 收藏操作是可选批量操作；默认保持每门课已有状态，避免意外取消收藏。 */
+@Composable
+private fun SourceFavoriteActionOption(action: SourceFavoriteAction, state: CalendarControlState) {
+    val selected = action == state.pendingSourceFavoriteAction
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable { state.pendingSourceFavoriteAction = action },
+        insideMargin = androidx.compose.foundation.layout.PaddingValues(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RadioButton(selected = selected, onClick = { state.pendingSourceFavoriteAction = action })
+            Column(modifier = Modifier.padding(start = 8.dp)) {
+                Text(action.label, style = MiuixTheme.textStyles.body1)
+                Text(action.description, color = LocalTumPalette.current.onSurfaceVariant)
+            }
         }
     }
 }

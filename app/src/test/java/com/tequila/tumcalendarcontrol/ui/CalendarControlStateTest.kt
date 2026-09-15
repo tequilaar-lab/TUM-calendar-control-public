@@ -353,6 +353,26 @@ class CalendarControlStateTest {
     }
 
     @Test
+    fun `批量设置可同时收藏且写入准备不会直接发出写入请求`() {
+        val state = CalendarControlState()
+        state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
+        state.requestSourcePreview()
+        state.resolveSourcePreview(state.sourceReadToken, IcalReadOnlyImportResult.Success(sourcePreview()))
+        state.selectAllSourceCourses()
+        state.openSourceAttendanceEditor()
+        state.pendingSourceFavoriteAction = SourceFavoriteAction.ADD
+        state.confirmSourceAttendance()
+
+        assertEquals(listOf("uid-a", "uid-b"), state.favoriteCourses.map { it.id })
+        state.setSyncDestinationEnabled(SyncDestination.LOCAL_CALENDAR, true)
+        state.prepareCalendarWrite()
+
+        assertEquals(AppScreen.MANAGED_SYNC_PREVIEW, state.screen)
+        assertTrue(state.managedSyncPreview != null)
+        assertFalse(state.managedSyncRequested)
+    }
+
+    @Test
     fun `成功读取来源会一次回流首页 搜索和收藏数据源`() {
         val state = CalendarControlState()
         state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))

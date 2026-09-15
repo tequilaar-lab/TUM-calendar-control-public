@@ -82,7 +82,7 @@ fun SourceRangeScreen(state: CalendarControlState) {
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(if (state.sourceReadInProgress) "正在只读读取 iCal…" else "按此范围读取 iCal") }
         }
-        InformationCard("读取完成后自动进入下一步", "会进入“选择来源课程”。只有生成预览并再次确认后，才可能写入已开启的目标日历。")
+        InformationCard("读取完成后自动进入下一步", "会进入“选择课程”。设置出席与收藏后即可点“写入日历”；写入前会显示本机和 Google 将受影响的数量。")
     }
 }
 

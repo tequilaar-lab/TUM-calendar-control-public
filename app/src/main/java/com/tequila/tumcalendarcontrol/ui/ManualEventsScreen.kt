@@ -1,5 +1,5 @@
 /*
- * 职责：录入和移除应用拥有的手动校园事项，供下一次同步预览批量输出。
+ * 职责：录入和移除应用拥有的手动校园事项，供下一次写入日历时批量输出。
  * 输入／输出：输入用户填写的标题、日期、时分和三态；输出本机 RuleLedger 编辑请求。
  * 外部副作用：无；事项保存到应用私有规则资料库，不会立即写入日历。
  * 不负责：来源课程编辑、真实日期选择器、OAuth 或执行同步。
@@ -39,7 +39,7 @@ fun ManualEventsScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        InformationCard("手动校园事项", "可先连续录入多条事项；它们会和来源课程一起出现在下一次同步预览，当前不会写入日历。")
+        InformationCard("手动校园事项", "可先连续录入多条事项；它们会和课程一起在下次“写入日历”时处理，当前不会写入日历。")
         TextField(title, { title = it }, Modifier.fillMaxWidth(), label = "事项名称")
         TextField(date, { date = it }, Modifier.fillMaxWidth(), label = "日期（YYYY-MM-DD）")
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

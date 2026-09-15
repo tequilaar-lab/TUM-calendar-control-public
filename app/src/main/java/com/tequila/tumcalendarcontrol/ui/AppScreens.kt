@@ -35,7 +35,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
-import androidx.compose.material.icons.rounded.Refresh
 import com.tequila.tumcalendarcontrol.domain.Course
 import com.tequila.tumcalendarcontrol.domain.CourseLocalOverride
 import com.tequila.tumcalendarcontrol.domain.CourseMeetingTime
@@ -217,7 +216,7 @@ private fun SettingsScreen(state: CalendarControlState) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { InformationCard("同步工作流", "1 设置范围 · 2 读取并选择课程 · 3 设置三态 · 4 预览后确认。常规返回不会清除已选课程。") }
-        item { Button(onClick = state::openSourceRange, modifier = Modifier.fillMaxWidth()) { Text("iCal 来源与同步范围") } }
+        item { Button(onClick = state::openSourceRange, modifier = Modifier.fillMaxWidth()) { Text("读取课程与日期范围") } }
         item {
             val summary = state.privateSyncConfiguration.sourceOutputWindow?.let {
                 if (it.startsOn == null && it.endsOn == null) "当前不限时间；点按可使用日历选择范围。" else "当前已设置范围；点按可查看、修改或清除。"
@@ -226,37 +225,29 @@ private fun SettingsScreen(state: CalendarControlState) {
         }
         item {
             val courseSummary = when {
-                state.sourcePreview == null -> "尚未读取；先进入“iCal 来源与同步范围”主动读取。"
-                else -> "本次已读取 ${state.sourceCourses.size} 个来源项；已选择 ${state.selectedSourceCourseUids.size} 个。"
+                state.sourcePreview == null -> "尚未读取；先进入“读取课程与日期范围”。"
+                else -> "本次已读取 ${state.sourceCourses.size} 门课程；已选择 ${state.selectedSourceCourseUids.size} 门。"
             }
             InformationCard("已读取课程", courseSummary)
         }
-        item { Button(onClick = state::openSourceCourseSelector, modifier = Modifier.fillMaxWidth()) { Text("选择来源课程") } }
-        item { Button(onClick = state::openSyncConfiguration, modifier = Modifier.fillMaxWidth()) { Text("私有地址与 Google 高级设置") } }
+        item { Button(onClick = state::openSourceCourseSelector, modifier = Modifier.fillMaxWidth()) { Text("选择要管理的课程") } }
+        item { Button(onClick = state::openSyncConfiguration, modifier = Modifier.fillMaxWidth()) { Text("账户与连接设置") } }
         item { InformationCard("规则与范围", "来源课程默认蓝色；绿色必去、蓝色选择出席、灰色从指定日期起不去。") }
-        item { SourceStatusSelector(state) }
         item { Button(onClick = state::openManualEvents, modifier = Modifier.fillMaxWidth()) { Text("管理手动校园事项") } }
         item { Button(onClick = state::openBackgroundCheck, modifier = Modifier.fillMaxWidth()) { Text("后台 iCal 检查") } }
         item { Button(onClick = state::openRuleBackup, modifier = Modifier.fillMaxWidth()) { Text("规则备份与恢复") } }
-        item { Button(onClick = state::openSyncPreview, modifier = Modifier.fillMaxWidth()) { Text("查看离线同步预览") } }
         item { SyncDestinationSelector(state) }
-        item { InformationCard("写入边界", "仅管理本应用创建且带所有权标记的目标日历；不改动主日历、订阅或其他应用日程") }
+        item { InformationCard("写入范围", "只会管理本应用创建的日程；不会改动你的主日历、订阅日历或其他应用日程。") }
         if (state.syncDestinations.googleCalendarEnabled) {
             item { GoogleAuthorizationPanel(state) }
         }
-        item { Button(onClick = state::requestManagedSyncPreview, modifier = Modifier.fillMaxWidth()) { Text("生成受控同步预览") } }
+        item { Button(onClick = state::prepareCalendarWrite, modifier = Modifier.fillMaxWidth()) { Text("写入已设置的日程") } }
         if (state.ruleLedger.mappings.isNotEmpty()) {
-            item { Button(onClick = state::openMappedOutputRollback, modifier = Modifier.fillMaxWidth()) { Text("撤销已映射的应用输出") } }
+            item { Button(onClick = state::openMappedOutputRollback, modifier = Modifier.fillMaxWidth()) { Text("管理已写入的日程") } }
         }
         item { InformationCard("应用版本", "${BuildConfig.VERSION_NAME} · 构建号 ${BuildConfig.VERSION_CODE}") }
         item { ThemeModeSelector(state) }
         item { Spacer(Modifier.height(4.dp)) }
-        item {
-            Button(onClick = state::requestSync, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Rounded.Refresh, "刷新同步")
-                Text("刷新同步预览", modifier = Modifier.padding(start = 8.dp))
-            }
-        }
         state.feedback?.let { feedback ->
             item { Text(feedback, color = palette.onSurfaceVariant) }
         }

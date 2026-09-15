@@ -1,6 +1,6 @@
 /*
- * 职责：展示当前本机规则计算出的双目标差异，并提供用户确认的授权、执行与撤销入口。
- * 输入／输出：输入 CalendarControlState 的纯预览摘要；输出明确的用户点击请求。
+ * 职责：在写入前以简洁的日历影响摘要取得用户确认，并提供应用输出清除入口。
+ * 输入／输出：输入 CalendarControlState 的内部差异摘要；输出明确的用户确认请求。
  * 外部副作用：无；实际日历访问由根界面收到确认请求后在后台处理。
  * 不负责：读取 iCal、OAuth 细节、Calendar Provider 调用或显示真实日程正文。
  */
@@ -28,49 +28,49 @@ fun ManagedSyncPreviewScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("受控同步预览", "预览只比较本应用映射与当前候选；不会查询、创建或写入目标日历。")
+        InformationCard("确认写入日历", "这是写入前自动准备的确认信息。现在尚未改动任何日历。")
         if (preview == null) {
-            InformationCard("已有映射的安全撤销", "来源目录只存在于本次运行；重启后仍可仅凭应用私有映射撤销本应用创建的输出。此页不能执行新的写入。")
+            InformationCard("清除本应用写入的日程", "这里只会清除由本应用创建的日程，不会改动你的其他日历或手动日程。")
             if (state.ruleLedger.mappings.isNotEmpty()) {
                 Button(
                     onClick = state::requestManagedRollback,
                     enabled = !state.managedSyncInProgress,
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text(if (state.managedSyncInProgress) "正在撤销…" else "撤销本应用已映射的输出") }
-            } else InformationCard("没有可撤销的映射", "当前没有本应用已映射的输出事件。")
+                ) { Text(if (state.managedSyncInProgress) "正在清除…" else "清除本应用写入的日程") }
+            } else InformationCard("没有可清除的日程", "当前没有由本应用写入的日程。")
             state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
             return
         }
-        InformationCard("候选日程", "当前将输出 ${preview.desiredEventCount} 条候选。已选来源课程 ${state.managedSourceCandidateCount} 条；手动校园事项 ${state.managedManualCandidateCount} 条（不受 iCal 范围影响）。")
+        InformationCard("将要写入的日程", "共 ${preview.desiredEventCount} 条。课程日程 ${state.managedSourceCandidateCount} 条；校园事项 ${state.managedManualCandidateCount} 条。")
         preview.targetChanges.toSortedMap(compareBy(OutputTarget::name)).forEach { (target, changes) ->
             InformationCard(
                 target.label(),
-                "新增 ${changes.count { it.type == SyncChangeType.CREATE }} · 更新 ${changes.count { it.type == SyncChangeType.UPDATE }} · 移除 ${changes.count { it.type == SyncChangeType.REMOVE }} · 保持 ${changes.count { it.type == SyncChangeType.KEEP }}",
+                "新增 ${changes.count { it.type == SyncChangeType.CREATE }} 条 · 调整 ${changes.count { it.type == SyncChangeType.UPDATE }} 条 · 清除 ${changes.count { it.type == SyncChangeType.REMOVE }} 条本应用旧日程",
             )
         }
         if (state.syncDestinations.googleCalendarEnabled && !state.hasGoogleAuthorization) {
-            Button(onClick = state::requestGoogleAuthorization, modifier = Modifier.fillMaxWidth()) { Text("先连接 Google 日历") }
+            Button(onClick = state::requestGoogleAuthorization, modifier = Modifier.fillMaxWidth()) { Text("连接 Google 日历") }
         }
         Button(
             onClick = state::requestManagedSyncExecution,
             enabled = !state.managedSyncInProgress,
             modifier = Modifier.fillMaxWidth(),
-        ) { Text(if (state.managedSyncInProgress) "正在执行…" else "确认执行已预览的同步") }
+        ) { Text(if (state.managedSyncInProgress) "正在写入…" else "确认写入日历") }
         if (state.ruleLedger.mappings.isNotEmpty()) {
             Button(
                 onClick = state::requestManagedRollback,
                 enabled = !state.managedSyncInProgress,
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("撤销本应用已映射的输出") }
+            ) { Text("清除本应用写入的日程") }
         }
         state.ruleLedger.lastSummary?.let { summary ->
-            InformationCard("上次执行摘要", "新增 ${summary.createdCount} · 更新 ${summary.updatedCount} · 移除 ${summary.removedCount}" + (summary.failureSummary?.let { " · $it" } ?: ""))
+            InformationCard("上次写入结果", "新增 ${summary.createdCount} · 调整 ${summary.updatedCount} · 清除 ${summary.removedCount}" + (summary.failureSummary?.let { " · $it" } ?: ""))
         }
         state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
     }
 }
 
 private fun OutputTarget.label(): String = when (this) {
-    OutputTarget.LOCAL_CALENDAR -> "本机荣耀日历输出"
-    OutputTarget.GOOGLE_CALENDAR -> "Google 日历镜像输出"
+    OutputTarget.LOCAL_CALENDAR -> "本机日历"
+    OutputTarget.GOOGLE_CALENDAR -> "Google 日历"
 }
