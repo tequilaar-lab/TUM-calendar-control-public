@@ -41,15 +41,15 @@ internal class NavigationState {
     fun openDetail() { detailReturnScreen = contentScreen; open(AppScreen.DETAIL) }
     fun openCourseEdit() { courseEditReturnScreen = AppScreen.DETAIL; open(AppScreen.COURSE_EDIT) }
     fun openMore() { moreReturnScreen = contentScreen; screen = AppScreen.MORE }
-    fun openProfile() { profileReturnScreen = contentScreen; screen = AppScreen.PROFILE }
-    fun openSyncConfiguration() { syncConfigurationReturnScreen = contentScreen; screen = AppScreen.SYNC_CONFIGURATION }
+    fun openProfile() { profileReturnScreen = contentScreen; openChild(AppScreen.PROFILE) }
+    fun openSyncConfiguration() { syncConfigurationReturnScreen = contentScreen; openChild(AppScreen.SYNC_CONFIGURATION) }
     fun openSourceRange() { sourceRangeReturnScreen = contentScreen; direction = NavigationDirection.FORWARD; screen = AppScreen.SOURCE_RANGE }
-    fun openSyncPreview() { syncPreviewReturnScreen = contentScreen; screen = AppScreen.SYNC_PREVIEW }
-    fun openSourcePreview() { syncPreviewReturnScreen = contentScreen; screen = AppScreen.SOURCE_PREVIEW }
-    fun openExistingSourcePreview() { screen = AppScreen.SOURCE_PREVIEW }
-    fun openSourceAttendance() { sourceAttendanceReturnScreen = AppScreen.SOURCE_PREVIEW; screen = AppScreen.SOURCE_ATTENDANCE }
-    fun openManualEvents() { manualEventsReturnScreen = contentScreen; screen = AppScreen.MANUAL_EVENTS }
-    fun openManagedSyncPreview() { managedSyncPreviewReturnScreen = contentScreen; screen = AppScreen.MANAGED_SYNC_PREVIEW }
+    fun openSyncPreview() { syncPreviewReturnScreen = contentScreen; openChild(AppScreen.SYNC_PREVIEW) }
+    fun openSourcePreview() { syncPreviewReturnScreen = contentScreen; openChild(AppScreen.SOURCE_PREVIEW) }
+    fun openExistingSourcePreview() { openChild(AppScreen.SOURCE_PREVIEW) }
+    fun openSourceAttendance() { sourceAttendanceReturnScreen = AppScreen.SOURCE_PREVIEW; openChild(AppScreen.SOURCE_ATTENDANCE) }
+    fun openManualEvents() { manualEventsReturnScreen = contentScreen; openChild(AppScreen.MANUAL_EVENTS) }
+    fun openManagedSyncPreview() { managedSyncPreviewReturnScreen = contentScreen; openChild(AppScreen.MANAGED_SYNC_PREVIEW) }
     fun openMappedRollback() { managedSyncPreviewReturnScreen = screen; direction = NavigationDirection.FORWARD; screen = AppScreen.MANAGED_SYNC_PREVIEW }
     fun openBackgroundCheck() { backgroundCheckReturnScreen = contentScreen; direction = NavigationDirection.FORWARD; screen = AppScreen.BACKGROUND_CHECK }
     fun openRuleBackup() { ruleBackupReturnScreen = contentScreen; direction = NavigationDirection.FORWARD; screen = AppScreen.RULE_BACKUP }
@@ -92,5 +92,11 @@ internal class NavigationState {
         } else {
             NavigationDirection.FORWARD
         }
+    }
+
+    /** 子页面不受上一轮主标签滑动方向影响，始终从右侧进入。 */
+    private fun openChild(destination: AppScreen) {
+        direction = NavigationDirection.FORWARD
+        screen = destination
     }
 }

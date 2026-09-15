@@ -173,8 +173,12 @@ fun CalendarControlApp() {
                 outcome.onSuccess {
                     state.resolveManagedOperation(token, it.result, it.configuration)
                     if (it.requiresGoogleReauthorization && !googleToken.isNullOrBlank()) {
-                        googleAuthorizationCoordinator.clearRejectedAccessToken(googleToken)
                         state.invalidateGoogleAuthorizationAfterUnauthorized()
+                        googleAuthorizationCoordinator.clearRejectedAccessToken(googleToken) { cleared ->
+                            Handler(Looper.getMainLooper()).post {
+                                state.resolveRejectedGoogleTokenCacheClear(cleared)
+                            }
+                        }
                     }
                 }
                     .onFailure { state.failManagedOperation(token, "写入日历未完成；请检查权限或网络后重试") }

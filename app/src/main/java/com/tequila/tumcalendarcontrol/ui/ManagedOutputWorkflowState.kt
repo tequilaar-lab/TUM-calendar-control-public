@@ -87,6 +87,17 @@ internal class ManagedOutputWorkflowState {
         return googleAuthorizationDetail
     }
 
+    /** 缓存清理结果只更新同一轮失效授权；不能覆盖用户已经完成的新授权。 */
+    fun resolveRejectedGoogleTokenCacheClear(cleared: Boolean): String? {
+        if (googleAuthorizationStatus != GoogleAuthorizationStatus.FAILED || googleAccessToken != null) return null
+        googleAuthorizationDetail = if (cleared) {
+            "Google 授权已失效（HTTP 401）；旧令牌缓存已清除，请重新连接 Google 日历后再写入。"
+        } else {
+            "Google 授权已失效（HTTP 401）；旧令牌缓存清理未确认，请重新连接 Google 日历后再写入。"
+        }
+        return googleAuthorizationDetail
+    }
+
     fun consumeGoogleAuthorizationRequest() { googleAuthorizationRequested = false }
 
     fun beginSync(): Long? {

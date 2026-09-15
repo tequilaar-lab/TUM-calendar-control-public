@@ -190,8 +190,16 @@ private fun LazyListScope.courseListItems(courses: List<Course>, heading: String
     if (courses.isEmpty()) {
         item { InformationCard("暂无课程", "请先读取课程或检查筛选条件。") }
     } else {
-        items(courses, key = { it.id }) { course ->
-            CourseRow(course) { onCourseClick(course.id) }
+        CourseDisplayGroupModel.groups(courses).forEach { group ->
+            item(key = "course-group:${group.key}") {
+                InformationCard(
+                    title = group.displayTitle,
+                    body = if (group.courses.size == 1) "1 条课程记录" else "${group.courses.size} 条课程记录；点选下方时间查看或修改。",
+                )
+            }
+            items(group.courses, key = { it.id }) { course ->
+                CourseRow(course, onClick = { onCourseClick(course.id) }, condensed = true)
+            }
         }
     }
 }

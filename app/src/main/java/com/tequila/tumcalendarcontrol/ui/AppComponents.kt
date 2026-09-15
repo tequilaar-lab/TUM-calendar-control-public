@@ -37,7 +37,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-fun CourseRow(course: Course, onClick: () -> Unit) {
+fun CourseRow(course: Course, onClick: () -> Unit, condensed: Boolean = false) {
     val palette = LocalTumPalette.current
     Card(
         modifier = Modifier
@@ -54,9 +54,12 @@ fun CourseRow(course: Course, onClick: () -> Unit) {
             ) { Icon(Icons.Rounded.Star, "课程") }
             Spacer(Modifier.size(12.dp))
             Column(modifier = Modifier.padding(end = 8.dp)) {
-                Text("${course.displayTitle} · ${course.attendance.label}", style = MiuixTheme.textStyles.title3)
                 Text(
-                    "${course.displaySchedule} · ${course.displayLocation} · ${course.attendance.colorLabel}" +
+                    if (condensed) "${course.displaySchedule} · ${course.attendance.label}" else "${course.displayTitle} · ${course.attendance.label}",
+                    style = MiuixTheme.textStyles.title3,
+                )
+                Text(
+                    (if (condensed) "${course.displayLocation} · ${course.attendance.colorLabel}" else "${course.displaySchedule} · ${course.displayLocation} · ${course.attendance.colorLabel}") +
                         if (course.attendance == AttendanceState.STOP_ATTENDING) "；历史不改" else "",
                     color = palette.onSurfaceVariant,
                 )

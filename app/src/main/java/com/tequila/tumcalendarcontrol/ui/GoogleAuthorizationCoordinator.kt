@@ -67,10 +67,11 @@ class GoogleAuthorizationCoordinator(context: Context) {
     }
 
     /** 仅在 Calendar API 已明确返回 401 后清除 Play services 的本地令牌缓存；不会撤销授权。 */
-    fun clearRejectedAccessToken(accessToken: String) {
+    fun clearRejectedAccessToken(accessToken: String, onComplete: (Boolean) -> Unit) {
         val request = ClearTokenRequest.builder().setToken(accessToken).build()
         client.clearToken(request).addOnCompleteListener { result ->
             Log.i(GoogleAuthorizationLogTag, "stage=token_cache_cleared success=${result.isSuccessful}")
+            onComplete(result.isSuccessful)
         }
     }
 

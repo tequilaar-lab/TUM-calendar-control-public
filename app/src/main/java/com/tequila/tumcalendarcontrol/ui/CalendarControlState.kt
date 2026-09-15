@@ -523,6 +523,11 @@ class CalendarControlState(
         return summary
     }
 
+    /** 仅显示已脱敏的缓存清理结果；不保存令牌、账户或 Google 响应。 */
+    fun resolveRejectedGoogleTokenCacheClear(cleared: Boolean) {
+        outputWorkflow.resolveRejectedGoogleTokenCacheClear(cleared)?.let { feedback = it }
+    }
+
     fun consumeGoogleAuthorizationRequest() = outputWorkflow.consumeGoogleAuthorizationRequest()
 
     /** 执行请求只表达用户确认；界面层再在后台建立专用目标并调用网关。 */

@@ -27,6 +27,59 @@ class WorkflowStateTest {
     }
 
     @Test
+    fun `子页面始终从右侧进入且返回向右侧退出`() {
+        val navigation = NavigationState()
+
+        navigation.open(AppScreen.SETTINGS)
+        navigation.openSyncConfiguration()
+
+        assertEquals(NavigationDirection.FORWARD, navigation.direction)
+        assertTrue(navigation.handleBack())
+        assertEquals(AppScreen.SETTINGS, navigation.screen)
+        assertEquals(NavigationDirection.BACKWARD, navigation.direction)
+    }
+
+    @Test
+    fun `设置工作流的所有子页面入口不会继承主标签的旧方向`() {
+        val navigation = NavigationState()
+        navigation.open(AppScreen.SETTINGS)
+        val entries = listOf(
+            AppScreen.PROFILE to navigation::openProfile,
+            AppScreen.SYNC_CONFIGURATION to navigation::openSyncConfiguration,
+            AppScreen.SYNC_PREVIEW to navigation::openSyncPreview,
+            AppScreen.SOURCE_RANGE to navigation::openSourceRange,
+            AppScreen.MANUAL_EVENTS to navigation::openManualEvents,
+            AppScreen.MANAGED_SYNC_PREVIEW to navigation::openManagedSyncPreview,
+            AppScreen.BACKGROUND_CHECK to navigation::openBackgroundCheck,
+            AppScreen.RULE_BACKUP to navigation::openRuleBackup,
+        )
+
+        entries.forEach { (screen, open) ->
+            open()
+            assertEquals(screen, navigation.screen)
+            assertEquals(NavigationDirection.FORWARD, navigation.direction)
+            assertTrue(navigation.handleBack())
+            assertEquals(AppScreen.SETTINGS, navigation.screen)
+            assertEquals(NavigationDirection.BACKWARD, navigation.direction)
+        }
+    }
+
+    @Test
+    fun `课程详情和状态层级始终正向进入反向返回`() {
+        val navigation = NavigationState()
+
+        navigation.openDetail()
+        assertEquals(AppScreen.DETAIL, navigation.screen)
+        assertEquals(NavigationDirection.FORWARD, navigation.direction)
+        navigation.openCourseEdit()
+        assertEquals(AppScreen.COURSE_EDIT, navigation.screen)
+        assertEquals(NavigationDirection.FORWARD, navigation.direction)
+        assertTrue(navigation.handleBack())
+        assertEquals(AppScreen.DETAIL, navigation.screen)
+        assertEquals(NavigationDirection.BACKWARD, navigation.direction)
+    }
+
+    @Test
     fun `过期来源读取失败不会结束当前请求`() {
         val workflow = SourceReadWorkflowState()
         val request = workflow.requestDirectRead(hasSubscription = true) as SourceReadRequest.Requested

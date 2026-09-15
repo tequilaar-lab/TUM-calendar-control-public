@@ -258,6 +258,20 @@ class CalendarControlStateTest {
     }
 
     @Test
+    fun `失效令牌缓存清理结果仅更新仍失效的授权状态`() {
+        val state = CalendarControlState()
+        state.setSyncDestinationEnabled(SyncDestination.GOOGLE_CALENDAR, true)
+        state.requestGoogleAuthorization()
+        state.resolveGoogleAuthorization(GoogleAuthorizationOutcome.AccessToken("synthetic-access-token"))
+        state.invalidateGoogleAuthorizationAfterUnauthorized()
+
+        state.resolveRejectedGoogleTokenCacheClear(cleared = true)
+
+        assertTrue(state.googleAuthorizationDetail.contains("缓存已清除"))
+        assertFalse(state.hasGoogleAuthorization)
+    }
+
+    @Test
     fun `保存同步配置后返回设置且不隐式打开输出`() {
         val state = CalendarControlState()
 
