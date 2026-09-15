@@ -48,6 +48,9 @@ class SyncCandidateFactory(private val zoneId: ZoneId = ZoneId.of("Europe/Berlin
                 attendanceState = item.attendanceState,
             )
         }
-        return (sourceEvents + manual).sortedWith(compareBy<DesiredCalendarEvent> { it.startsAt }.thenBy { it.identity.sourceUid }.thenBy { it.identity.instanceKey })
+        // 同一 iCal 实例偶尔会被来源展开器交付两次；只按稳定来源身份折叠。
+        return (sourceEvents + manual)
+            .distinctBy(DesiredCalendarEvent::identity)
+            .sortedWith(compareBy<DesiredCalendarEvent> { it.startsAt }.thenBy { it.identity.sourceUid }.thenBy { it.identity.instanceKey })
     }
 }

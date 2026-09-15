@@ -36,6 +36,16 @@ class OwnedCalendarSyncExecutorTest {
         assertTrue(gateway.operations.isEmpty())
     }
 
+    @Test fun `映射缺失但隐藏身份已存在时更新旧事件而不再新建`() {
+        val gateway = FakeOwnedCalendarGateway(setOf("local"), mapOf(identity to listOf("recovered-local-event")))
+        val local = OwnedCalendarRef(OutputTarget.LOCAL_CALENDAR, "local", "tum-calendar-control")
+
+        val result = OwnedCalendarSyncExecutor().execute(local, listOf(event), emptyList(), gateway)
+
+        assertEquals(listOf("update:recovered-local-event"), gateway.operations)
+        assertEquals("recovered-local-event", result.mappings.single().targetEventId)
+    }
+
     @Test fun `撤销只删除映射事件 不触碰其他目标映射`() {
         val executor = OwnedCalendarSyncExecutor()
         val gateway = FakeOwnedCalendarGateway(setOf("local", "google"))

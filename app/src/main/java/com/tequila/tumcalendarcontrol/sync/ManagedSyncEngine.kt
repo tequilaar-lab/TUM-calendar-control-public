@@ -41,7 +41,7 @@ class ManagedSyncEngine(
         var currentMappings = mappings
         val results = bindings.map { binding ->
             val result = runCatching { executor.execute(binding.calendar, desired, currentMappings, binding.gateway) }
-                .getOrElse { TargetSyncResult(binding.calendar.target, currentMappings, emptyList(), "${binding.calendar.target.name} 同步失败；可检查权限或网络后重试") }
+                .getOrElse { error -> TargetSyncResult(binding.calendar.target, currentMappings, emptyList(), error.googleSafeSummary("${binding.calendar.target.name} 同步失败")) }
             if (result.failureSummary == null) currentMappings = result.mappings
             result
         }

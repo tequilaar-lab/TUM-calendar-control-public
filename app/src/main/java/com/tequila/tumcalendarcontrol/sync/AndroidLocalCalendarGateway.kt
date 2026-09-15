@@ -22,7 +22,7 @@ object AppOwnedCalendarContract {
     const val LOCAL_DISPLAY_NAME = "TUM 日历控制"
     private const val EVENT_DESCRIPTION = "由 TUM 日历控制创建。"
 
-    /** 日历描述只声明应用归属；同步身份仅保存在应用私有映射中。 */
+    /** 日历描述只声明应用归属；同步身份仅保存在不可见同步字段与应用私有映射中。 */
     fun eventDescription(): String = EVENT_DESCRIPTION
 }
 
@@ -91,13 +91,24 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
 
     override fun create(calendar: OwnedCalendarRef, event: DesiredCalendarEvent): String {
         check(verifyOwnership(calendar)) { "拒绝向非应用拥有的本机日历写入。" }
-        val uri = resolver.insert(CalendarContract.Events.CONTENT_URI, eventValues(calendar, event)) ?: error("本机事件未能创建")
+        val uri = resolver.insert(asSyncAdapter(CalendarContract.Events.CONTENT_URI), eventValues(calendar, event)) ?: error("本机事件未能创建")
         return ContentUris.parseId(uri).toString()
+    }
+
+    override fun findEventIdsByIdentity(calendar: OwnedCalendarRef, identity: ManagedEventIdentity): List<String> {
+        check(verifyOwnership(calendar)) { "拒绝读取非应用拥有的本机日历。" }
+        return resolver.query(
+            CalendarContract.Events.CONTENT_URI,
+            arrayOf(CalendarContract.Events._ID),
+            "${CalendarContract.Events.CALENDAR_ID}=? AND ${CalendarContract.Events.SYNC_DATA1}=?",
+            arrayOf(calendar.calendarId, identity.opaqueKey()),
+            null,
+        )?.use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.getLong(0).toString()) } }.orEmpty()
     }
 
     override fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent) {
         check(verifyOwnership(calendar)) { "拒绝向非应用拥有的本机日历更新。" }
-        check(resolver.update(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId.toLong()), eventValues(calendar, event), null, null) == 1) { "本机事件未能更新" }
+        check(resolver.update(ContentUris.withAppendedId(asSyncAdapter(CalendarContract.Events.CONTENT_URI), eventId.toLong()), eventValues(calendar, event), null, null) == 1) { "本机事件未能更新" }
     }
 
     override fun remove(calendar: OwnedCalendarRef, eventId: String) {
@@ -113,6 +124,7 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
         put(CalendarContract.Events.EVENT_TIMEZONE, ZoneId.of("Europe/Berlin").id)
         put(CalendarContract.Events.EVENT_LOCATION, event.location)
         put(CalendarContract.Events.DESCRIPTION, AppOwnedCalendarContract.eventDescription())
+        put(CalendarContract.Events.SYNC_DATA1, event.identity.opaqueKey())
         put(CalendarContract.Events.EVENT_COLOR, event.attendanceState.androidColor())
     }
 
@@ -121,4 +133,10 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
         AttendanceState.CHOOSE_TO_ATTEND -> 0xFF4285F4.toInt()
         AttendanceState.STOP_ATTENDING -> 0xFF9AA0A6.toInt()
     }
+
+    private fun asSyncAdapter(uri: Uri): Uri = uri.buildUpon()
+        .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
+        .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_NAME, AppOwnedCalendarContract.LOCAL_ACCOUNT_NAME)
+        .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE, CalendarContract.ACCOUNT_TYPE_LOCAL)
+        .build()
 }

@@ -67,6 +67,23 @@ class SyncCandidateFactoryTest {
     }
 
     @Test
+    fun `相同课次的来源重复只输出一次 不同课程同一时段仍分别输出`() {
+        val events = factory.build(
+            occurrences = listOf(
+                occurrence("uid-a", "same", "课程 A"),
+                occurrence("uid-a", "same", "课程 A"),
+                occurrence("uid-b", "other", "课程 B"),
+            ),
+            selectedSourceOccurrences = setOf(SourceOccurrenceIdentity("uid-a", "same"), SourceOccurrenceIdentity("uid-b", "other")),
+            rules = emptyList(),
+            manualEvents = emptyList(),
+        )
+
+        assertEquals(2, events.size)
+        assertEquals(setOf("uid-a", "uid-b"), events.map { it.identity.sourceUid }.toSet())
+    }
+
+    @Test
     fun `未选择来源时仅保留独立手动事项`() {
         val events = factory.build(
             occurrences = listOf(occurrence("uid-a", "key-a", "来源课程")),

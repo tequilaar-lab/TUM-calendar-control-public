@@ -41,6 +41,16 @@ class SyncDiffPlannerTest {
         assertEquals("local-1", changes.single().targetEventId)
     }
 
+    @Test
+    fun `上游重复同一身份在差异中也只产生一个新增`() {
+        val duplicate = desired(firstIdentity, "合成课程", AttendanceState.MUST_ATTEND)
+
+        val changes = planner.plan(listOf(duplicate, duplicate), emptyList())
+
+        assertEquals(1, changes.size)
+        assertEquals(SyncChangeType.CREATE, changes.single().type)
+    }
+
     private fun desired(
         identity: ManagedEventIdentity,
         title: String,

@@ -10,6 +10,7 @@ data class OwnedCalendarRef(val target: OutputTarget, val calendarId: String, va
 
 interface OwnedCalendarGateway {
     fun verifyOwnership(calendar: OwnedCalendarRef): Boolean
+    fun findEventIdsByIdentity(calendar: OwnedCalendarRef, identity: ManagedEventIdentity): List<String>
     fun create(calendar: OwnedCalendarRef, event: DesiredCalendarEvent): String
     fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent)
     fun remove(calendar: OwnedCalendarRef, eventId: String)
@@ -40,7 +41,10 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
             when (change.type) {
                 SyncChangeType.CREATE -> {
                     val event = desiredByIdentity.getValue(change.identity)
-                    val id = gateway.create(calendar, event)
+                    val recoveredIds = gateway.findEventIdsByIdentity(calendar, event.identity)
+                    check(recoveredIds.size <= 1) { "目标日历存在同一课次的重复项；请先执行重复项恢复预览" }
+                    val id = recoveredIds.singleOrNull()?.also { gateway.update(calendar, it, event) }
+                        ?: gateway.create(calendar, event)
                     next[change.identity] = StoredEventMapping(calendar.target, change.identity, id, planner.run { event.fingerprint() })
                 }
                 SyncChangeType.UPDATE -> {
@@ -71,10 +75,14 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
 }
 
 /** 仅供单元测试的内存网关；可记录写入，不代表任何真实 Calendar Provider。 */
-class FakeOwnedCalendarGateway(private val ownedCalendarIds: Set<String>) : OwnedCalendarGateway {
+class FakeOwnedCalendarGateway(
+    private val ownedCalendarIds: Set<String>,
+    private val recoveredIds: Map<ManagedEventIdentity, List<String>> = emptyMap(),
+) : OwnedCalendarGateway {
     val operations = mutableListOf<String>()
     private var nextId = 1
     override fun verifyOwnership(calendar: OwnedCalendarRef): Boolean = calendar.calendarId in ownedCalendarIds && calendar.ownershipMarker == "tum-calendar-control"
+    override fun findEventIdsByIdentity(calendar: OwnedCalendarRef, identity: ManagedEventIdentity): List<String> = recoveredIds[identity].orEmpty()
     override fun create(calendar: OwnedCalendarRef, event: DesiredCalendarEvent): String = "${calendar.target.name.lowercase()}-${nextId++}".also { operations += "create:$it" }
     override fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent) { operations += "update:$eventId" }
     override fun remove(calendar: OwnedCalendarRef, eventId: String) { operations += "remove:$eventId" }

@@ -8,8 +8,17 @@ package com.tequila.tumcalendarcontrol.sync
 
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import java.time.Instant
+import java.security.MessageDigest
 
 data class ManagedEventIdentity(val sourceUid: String, val instanceKey: String)
+
+/**
+ * 生成目标日历的不可见稳定课次键；不会把私有来源身份暴露到标题、地点或说明。
+ * 它只用于映射丢失后的恢复，主身份仍是 UID 与实例键的组合。
+ */
+fun ManagedEventIdentity.opaqueKey(): String = MessageDigest.getInstance("SHA-256")
+    .digest("$sourceUid\u0000$instanceKey".toByteArray(Charsets.UTF_8))
+    .joinToString("") { byte -> "%02x".format(byte) }
 
 data class DesiredCalendarEvent(
     val identity: ManagedEventIdentity,
@@ -40,7 +49,8 @@ class SyncDiffPlanner {
     fun plan(desired: List<DesiredCalendarEvent>, existing: List<ManagedEventMapping>): List<SyncChange> {
         val existingByIdentity = existing.associateBy(ManagedEventMapping::identity)
         val desiredByIdentity = desired.associateBy(DesiredCalendarEvent::identity)
-        val upserts = desired.sortedBy { it.startsAt }.map { event ->
+        // 第二道防线：上游即使漏过去重，同一身份也只能产生一个动作。
+        val upserts = desiredByIdentity.values.sortedBy { it.startsAt }.map { event ->
             val existingMapping = existingByIdentity[event.identity]
             when {
                 existingMapping == null -> SyncChange(SyncChangeType.CREATE, event.identity)
