@@ -77,7 +77,10 @@ class CalendarControlState(
     initialRuleLedger: RuleLedger = RuleLedger(),
     initialSourceCheckSettings: SourceCheckSettings = SourceCheckSettings(),
     initialSourceCheckStatus: SourceCheckStatus = SourceCheckStatus(),
+    initialCoursePresentations: Map<String, CoursePresentation> = emptyMap(),
 ) {
+    /** 仅保存 UID 对应的本机展示元数据；来源目录仍只在当前进程保存。 */
+    private val savedCoursePresentations = initialCoursePresentations
     var courses by mutableStateOf(initialCourses)
         private set
     var screen by mutableStateOf(AppScreen.OVERVIEW)
@@ -739,6 +742,7 @@ class CalendarControlState(
             occurrences = sourceOccurrences,
             rules = ruleLedger.rules,
             previousCourses = courses,
+            savedPresentations = savedCoursePresentations,
         )
     }
 

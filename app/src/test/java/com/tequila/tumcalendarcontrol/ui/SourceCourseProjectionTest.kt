@@ -62,6 +62,25 @@ class SourceCourseProjectionTest {
         assertEquals(AttendanceState.CHOOSE_TO_ATTEND, projected.single().attendance)
     }
 
+    @Test
+    fun `新进程读取来源时按 UID 恢复已保存的收藏和本机覆盖`() {
+        val projected = SourceCourseProjection.courses(
+            sourceCourses = listOf(sourceCourse()),
+            occurrences = listOf(occurrence()),
+            rules = emptyList(),
+            previousCourses = emptyList(),
+            savedPresentations = mapOf(
+                "uid-a" to CoursePresentation(
+                    isFavorite = true,
+                    localOverride = CourseLocalOverride(title = "重启后本机名称"),
+                ),
+            ),
+        )
+
+        assertTrue(projected.single().isFavorite)
+        assertEquals("重启后本机名称", projected.single().localOverride.title)
+    }
+
     private fun sourceCourse() = SourceCourse(
         sourceUid = "uid-a",
         title = "来源标题",

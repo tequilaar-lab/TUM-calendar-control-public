@@ -101,6 +101,7 @@ fun CalendarControlApp() {
             initialRuleLedger = ruleLedgerPreferences.load(),
             initialSourceCheckSettings = sourceCheckSettingsStore.loadSettings(),
             initialSourceCheckStatus = sourceCheckSettingsStore.loadStatus(),
+            initialCoursePresentations = courseOverridePreferences.loadPresentations(),
         )
     }
     var privateConfigurationInitialized by remember { mutableStateOf(false) }

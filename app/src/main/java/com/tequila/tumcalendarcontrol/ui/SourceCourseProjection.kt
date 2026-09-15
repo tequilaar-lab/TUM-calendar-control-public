@@ -27,6 +27,7 @@ internal object SourceCourseProjection {
         occurrences: List<SourceCalendarOccurrence>,
         rules: List<SyncRule>,
         previousCourses: List<Course>,
+        savedPresentations: Map<String, CoursePresentation> = emptyMap(),
     ): List<Course> {
         val previousByUid = previousCourses.associateBy(Course::id)
         val rulesByUid = rules.associateBy(SyncRule::sourceUid)
@@ -36,6 +37,9 @@ internal object SourceCourseProjection {
                 ?: occurrences.firstOrNull { it.sourceUid == source.sourceUid && !it.isCancelled }
                 ?: occurrences.firstOrNull { it.sourceUid == source.sourceUid }
             val previous = previousByUid[source.sourceUid]
+            val presentation = previous?.let { CoursePresentation(it.isFavorite, it.localOverride) }
+                ?: savedPresentations[source.sourceUid]
+                ?: CoursePresentation()
             Course(
                 id = source.sourceUid,
                 title = source.title,
@@ -44,11 +48,11 @@ internal object SourceCourseProjection {
                 attendance = occurrence?.let { item ->
                     rulesByUid[source.sourceUid]?.let { SyncRuleResolver.resolve(it, item, sourceZone) }
                 } ?: previous?.attendance ?: AttendanceState.CHOOSE_TO_ATTEND,
-                isFavorite = previous?.isFavorite ?: false,
+                isFavorite = presentation.isFavorite ?: false,
                 // iCal 本身没有可靠的 TUM 报名状态字段；课程显示不得因旧 Fixplatz 筛选而丢失。
                 hasFixedPlus = true,
                 sourceStatus = TumEventStatus.FIX,
-                localOverride = previous?.localOverride ?: com.tequila.tumcalendarcontrol.domain.CourseLocalOverride(),
+                localOverride = presentation.localOverride,
             )
         }
     }
