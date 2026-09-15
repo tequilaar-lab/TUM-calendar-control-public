@@ -197,6 +197,14 @@ private fun GoogleAuthorizationPanel(state: CalendarControlState) {
         }
         Text(label)
     }
+    if (state.hasGoogleAuthorization) {
+        InformationCard("Google 连接检查", state.googleConnectionCheckDetail)
+        Button(
+            onClick = state::requestGoogleConnectionCheck,
+            enabled = !state.googleConnectionCheckInProgress,
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text(if (state.googleConnectionCheckInProgress) "正在检查 Google 连接" else "检查 Google 连接（不写入）") }
+    }
 }
 
 /** 两个输出目标可独立启用；开关仅保存未来许可，不能在未配置时触发同步。 */

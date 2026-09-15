@@ -155,6 +155,16 @@ fun CalendarControlApp() {
             }
         }
     }
+    LaunchedEffect(state.googleConnectionCheckRequested) {
+        if (!state.googleConnectionCheckRequested) return@LaunchedEffect
+        val configuration = state.privateSyncConfiguration
+        val googleToken = state.currentGoogleAccessToken()
+        val connectionCheckToken = state.googleConnectionCheckToken
+        Thread {
+            val result = platformManagedSyncRunner.checkGoogleConnection(configuration, googleToken)
+            Handler(Looper.getMainLooper()).post { state.resolveGoogleConnectionCheck(connectionCheckToken, result.userSummary) }
+        }.start()
+    }
     LaunchedEffect(state.managedSyncRequested, state.managedRollbackRequested) {
         if (!state.managedSyncRequested && !state.managedRollbackRequested) return@LaunchedEffect
         val token = state.currentManagedOperationToken()

@@ -14,10 +14,34 @@ import java.time.ZoneId
 import javax.net.ssl.HttpsURLConnection
 
 private const val GOOGLE_API_BASE = "https://www.googleapis.com/calendar/v3"
-private const val GOOGLE_OWNERSHIP_DESCRIPTION = "Created and owned by TUM Calendar Control. marker=tum-calendar-control"
+internal const val GOOGLE_OWNERSHIP_DESCRIPTION = "Created and owned by TUM Calendar Control. marker=tum-calendar-control"
 private const val GOOGLE_EVENT_IDENTITY_KEY = "tumEventKey"
 
 data class GoogleRemoteCalendar(val id: String, val description: String?)
+
+/**
+ * 职责：为 Google Calendar 请求提供不含 URL、日历 ID 或令牌的稳定阶段标签。
+ * 输入／输出：网络适配器写入阶段；界面只显示中文阶段说明。
+ * 外部副作用：无。
+ * 不负责：决定是否发起请求、保存诊断或读取响应正文。
+ */
+enum class GoogleCalendarRequestStage(val label: String) {
+    CHECK_OWNED_CALENDAR("检查应用专用日历"),
+    CREATE_OWNED_CALENDAR("创建应用专用日历"),
+    SHOW_OWNED_CALENDAR("让应用专用日历显示在 Google 日历中"),
+    FIND_MANAGED_EVENTS("核对应用已写入的日程"),
+    CREATE_MANAGED_EVENT("写入新的应用日程"),
+    UPDATE_MANAGED_EVENT("更新应用已写入的日程"),
+    DELETE_MANAGED_EVENT("删除应用已写入的日程"),
+}
+
+/** 只从标准 WWW-Authenticate 头提取固定错误关键字；不读取或保存响应正文。 */
+enum class GoogleAuthorizationSignal(val label: String) {
+    INVALID_TOKEN("令牌无效"),
+    INSUFFICIENT_SCOPE("权限范围不足"),
+    INVALID_REQUEST("授权请求无效"),
+    UNSPECIFIED("Google 未提供更具体的授权原因"),
+}
 
 interface GoogleCalendarApi {
     fun getCalendar(calendarId: String): GoogleRemoteCalendar?
@@ -78,7 +102,7 @@ class GoogleCalendarRestApi(
     private val transport: GoogleCalendarHttpTransport = GoogleCalendarHttpTransport(),
 ) : GoogleCalendarApi {
     override fun getCalendar(calendarId: String): GoogleRemoteCalendar? {
-        val response = transport.execute("GET", "/calendars/${calendarId.encodePath()}", null, accessToken)
+        val response = transport.execute(GoogleCalendarRequestStage.CHECK_OWNED_CALENDAR, "GET", "/calendars/${calendarId.encodePath()}", null, accessToken)
         if (response.statusCode == HttpURLConnection.HTTP_NOT_FOUND) return null
         response.requireSuccess()
         val json = JSONObject(response.body)
@@ -86,7 +110,7 @@ class GoogleCalendarRestApi(
     }
 
     override fun createCalendar(summary: String, description: String): GoogleRemoteCalendar {
-        val response = transport.execute("POST", "/calendars", JSONObject().put("summary", summary).put("description", description).toString(), accessToken)
+        val response = transport.execute(GoogleCalendarRequestStage.CREATE_OWNED_CALENDAR, "POST", "/calendars", JSONObject().put("summary", summary).put("description", description).toString(), accessToken)
         response.requireSuccess()
         val json = JSONObject(response.body)
         return GoogleRemoteCalendar(json.getString("id"), json.optString("description").takeIf(String::isNotBlank))
@@ -94,6 +118,7 @@ class GoogleCalendarRestApi(
 
     override fun makeCalendarVisible(calendarId: String) {
         transport.execute(
+            GoogleCalendarRequestStage.SHOW_OWNED_CALENDAR,
             "PATCH",
             "/users/me/calendarList/${calendarId.encodePath()}",
             JSONObject().put("selected", true).toString(),
@@ -103,7 +128,7 @@ class GoogleCalendarRestApi(
 
     override fun findEventIdsByIdentity(calendarId: String, identityKey: String): List<String> {
         val encoded = java.net.URLEncoder.encode("$GOOGLE_EVENT_IDENTITY_KEY=$identityKey", Charsets.UTF_8.name())
-        val response = transport.execute("GET", "/calendars/${calendarId.encodePath()}/events?singleEvents=true&privateExtendedProperty=$encoded", null, accessToken)
+        val response = transport.execute(GoogleCalendarRequestStage.FIND_MANAGED_EVENTS, "GET", "/calendars/${calendarId.encodePath()}/events?singleEvents=true&privateExtendedProperty=$encoded", null, accessToken)
         response.requireSuccess()
         return JSONObject(response.body).optJSONArray("items")?.let { items ->
             buildList { for (index in 0 until items.length()) add(items.getJSONObject(index).getString("id")) }
@@ -111,19 +136,19 @@ class GoogleCalendarRestApi(
     }
 
     override fun createEvent(calendarId: String, event: DesiredCalendarEvent): String {
-        val response = transport.execute("POST", "/calendars/${calendarId.encodePath()}/events?sendUpdates=none", event.jsonBody(), accessToken)
+        val response = transport.execute(GoogleCalendarRequestStage.CREATE_MANAGED_EVENT, "POST", "/calendars/${calendarId.encodePath()}/events?sendUpdates=none", event.jsonBody(), accessToken)
         response.requireSuccess()
         return JSONObject(response.body).getString("id")
     }
 
     override fun updateEvent(calendarId: String, eventId: String, event: DesiredCalendarEvent) {
-        val response = transport.execute("PUT", "/calendars/${calendarId.encodePath()}/events/${eventId.encodePath()}?sendUpdates=none", event.jsonBody(), accessToken)
+        val response = transport.execute(GoogleCalendarRequestStage.UPDATE_MANAGED_EVENT, "PUT", "/calendars/${calendarId.encodePath()}/events/${eventId.encodePath()}?sendUpdates=none", event.jsonBody(), accessToken)
         if (response.statusCode == HttpURLConnection.HTTP_NOT_FOUND) throw ManagedEventMissingException()
         response.requireSuccess()
     }
 
     override fun deleteEvent(calendarId: String, eventId: String) {
-        transport.execute("DELETE", "/calendars/${calendarId.encodePath()}/events/${eventId.encodePath()}?sendUpdates=none", null, accessToken).requireSuccess()
+        transport.execute(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, "DELETE", "/calendars/${calendarId.encodePath()}/events/${eventId.encodePath()}?sendUpdates=none", null, accessToken).requireSuccess()
     }
 
     private fun DesiredCalendarEvent.jsonBody(): String = JSONObject().apply {
@@ -145,26 +170,35 @@ class GoogleCalendarRestApi(
     private fun String.encodePath(): String = java.net.URLEncoder.encode(this, Charsets.UTF_8.name())
 }
 
-data class GoogleHttpResponse(val statusCode: Int, val body: String) {
+data class GoogleHttpResponse(
+    val stage: GoogleCalendarRequestStage,
+    val statusCode: Int,
+    val body: String,
+    val authorizationSignal: GoogleAuthorizationSignal = GoogleAuthorizationSignal.UNSPECIFIED,
+) {
     fun requireSuccess(): GoogleHttpResponse {
-        if (statusCode !in 200..299) throw GoogleCalendarRequestException(statusCode)
+        if (statusCode !in 200..299) throw GoogleCalendarRequestException(stage, statusCode, authorizationSignal)
         return this
     }
 }
 
 /** 只携带状态码，避免 Google 响应正文、账户或令牌进入界面和日志。 */
-class GoogleCalendarRequestException(val statusCode: Int) : IllegalStateException("Google Calendar HTTP $statusCode")
+class GoogleCalendarRequestException(
+    val stage: GoogleCalendarRequestStage = GoogleCalendarRequestStage.CHECK_OWNED_CALENDAR,
+    val statusCode: Int,
+    val authorizationSignal: GoogleAuthorizationSignal = GoogleAuthorizationSignal.UNSPECIFIED,
+) : IllegalStateException("Google Calendar HTTP $statusCode")
 
 /** 只有 Google 明确拒绝访问令牌时才触发重新授权；403 等其他问题不清缓存。 */
 internal fun Throwable.targetFailureCode(): TargetFailureCode? =
     if (this is GoogleCalendarRequestException && statusCode == HttpURLConnection.HTTP_UNAUTHORIZED) TargetFailureCode.GOOGLE_AUTHORIZATION_EXPIRED else null
 
 internal fun Throwable.googleSafeSummary(prefix: String): String =
-    if (this is GoogleCalendarRequestException) "$prefix（HTTP $statusCode；请检查授权、Calendar API 与网络）" else "$prefix；请检查授权和网络后重试"
+    if (this is GoogleCalendarRequestException) "$prefix（${stage.label}时收到 HTTP $statusCode；${authorizationSignal.label}）" else "$prefix；请检查授权和网络后重试"
 
 /** 最小 HTTPS 传输实现；限制响应大小，且不将请求、令牌或响应原文写入日志。 */
 class GoogleCalendarHttpTransport(private val maxResponseBytes: Int = 512 * 1024) {
-    fun execute(method: String, path: String, body: String?, accessToken: String): GoogleHttpResponse {
+    fun execute(stage: GoogleCalendarRequestStage, method: String, path: String, body: String?, accessToken: String): GoogleHttpResponse {
         require(path.startsWith('/')) { "Google API 路径必须以 / 开头。" }
         val connection = (URL(GOOGLE_API_BASE + path).openConnection() as HttpsURLConnection).apply {
             requestMethod = method
@@ -179,11 +213,23 @@ class GoogleCalendarHttpTransport(private val maxResponseBytes: Int = 512 * 1024
             }
         }
         return try {
-            val stream = if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream
-            val bytes = stream?.use { it.readBytes().also { data -> require(data.size <= maxResponseBytes) { "Google 响应超过大小限制" } } } ?: ByteArray(0)
-            GoogleHttpResponse(connection.responseCode, bytes.toString(Charsets.UTF_8))
+            val statusCode = connection.responseCode
+            val bytes = if (statusCode in 200..299) connection.inputStream.use {
+                it.readBytes().also { data -> require(data.size <= maxResponseBytes) { "Google 响应超过大小限制" } }
+            } else {
+                ByteArray(0)
+            }
+            GoogleHttpResponse(stage, statusCode, bytes.toString(Charsets.UTF_8), connection.getHeaderField("WWW-Authenticate").toGoogleAuthorizationSignal())
         } finally {
             connection.disconnect()
         }
+    }
+
+    /** 头部仅识别 RFC 常见错误码，任何其他字段均丢弃。 */
+    private fun String?.toGoogleAuthorizationSignal(): GoogleAuthorizationSignal = when {
+        this?.contains("invalid_token", ignoreCase = true) == true -> GoogleAuthorizationSignal.INVALID_TOKEN
+        this?.contains("insufficient_scope", ignoreCase = true) == true -> GoogleAuthorizationSignal.INSUFFICIENT_SCOPE
+        this?.contains("invalid_request", ignoreCase = true) == true -> GoogleAuthorizationSignal.INVALID_REQUEST
+        else -> GoogleAuthorizationSignal.UNSPECIFIED
     }
 }

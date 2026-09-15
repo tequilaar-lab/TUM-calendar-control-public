@@ -46,7 +46,7 @@ class GoogleCalendarGatewayTest {
         val api = FakeGoogleCalendarApi(
             initialId = "owned",
             initialDescription = "Created and owned by TUM Calendar Control. marker=tum-calendar-control",
-            failure = GoogleCalendarRequestException(401),
+            failure = GoogleCalendarRequestException(statusCode = 401),
         )
 
         val resolution = GoogleCalendarTarget(api).ensure("owned", "合成日历") as CalendarTargetResolution.Failure

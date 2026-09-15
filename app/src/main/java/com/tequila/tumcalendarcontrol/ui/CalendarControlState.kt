@@ -177,6 +177,10 @@ class CalendarControlState(
     val hasGoogleAuthorization: Boolean get() = outputWorkflow.hasGoogleAuthorization
     val googleAuthorizationStatus: GoogleAuthorizationStatus get() = outputWorkflow.googleAuthorizationStatus
     val googleAuthorizationDetail: String get() = outputWorkflow.googleAuthorizationDetail
+    val googleConnectionCheckRequested: Boolean get() = outputWorkflow.googleConnectionCheckRequested
+    val googleConnectionCheckInProgress: Boolean get() = outputWorkflow.googleConnectionCheckInProgress
+    val googleConnectionCheckDetail: String get() = outputWorkflow.googleConnectionCheckDetail
+    val googleConnectionCheckToken: Long get() = outputWorkflow.googleConnectionCheckToken
     val localCalendarPermissionGranted: Boolean get() = outputWorkflow.localCalendarPermissionGranted
     /** 只读请求的单调编号；忽略超时后才返回的旧线程结果，避免覆盖新的用户操作。 */
     val sourceReadToken: Long get() = sourceWorkflow.readToken
@@ -514,6 +518,15 @@ class CalendarControlState(
 
     fun resolveGoogleAuthorization(outcome: GoogleAuthorizationOutcome) {
         feedback = outputWorkflow.resolveGoogleAuthorization(outcome)
+    }
+
+    /** 此入口仅表达用户的只读连接检查意图；根层会验证应用专用目标，绝不创建或写入。 */
+    fun requestGoogleConnectionCheck() {
+        outputWorkflow.requestGoogleConnectionCheck()?.let { feedback = it }
+    }
+
+    fun resolveGoogleConnectionCheck(token: Long, detail: String) {
+        if (outputWorkflow.resolveGoogleConnectionCheck(token, detail)) feedback = detail
     }
 
     /** 只由已结构化识别的 Google 401 调用；不触碰日历、映射或其他目标状态。 */

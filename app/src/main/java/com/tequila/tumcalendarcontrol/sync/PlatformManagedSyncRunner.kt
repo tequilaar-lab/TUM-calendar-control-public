@@ -19,6 +19,12 @@ data class PlatformManagedSyncOutcome(
 }
 
 class PlatformManagedSyncRunner(private val context: Context, private val engine: ManagedSyncEngine = ManagedSyncEngine()) {
+    /** 用户点按的只读诊断：只检查已保存的应用专用日历，绝不创建或写入。 */
+    fun checkGoogleConnection(configuration: PrivateSyncConfiguration, googleAccessToken: String?): GoogleConnectionCheckResult {
+        if (googleAccessToken.isNullOrBlank()) return GoogleConnectionCheckResult.Failed("尚未获得本次运行的 Google 授权；未发起连接检查。")
+        return GoogleConnectionChecker(GoogleCalendarRestApi(googleAccessToken)).check(configuration.googleCalendarId)
+    }
+
     fun execute(
         desired: List<DesiredCalendarEvent>,
         mappings: List<StoredEventMapping>,

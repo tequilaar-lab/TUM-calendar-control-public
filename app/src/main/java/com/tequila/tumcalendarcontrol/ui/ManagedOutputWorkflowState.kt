@@ -24,6 +24,15 @@ internal class ManagedOutputWorkflowState {
         private set
     var googleAuthorizationRequested by mutableStateOf(false)
         private set
+    var googleConnectionCheckRequested by mutableStateOf(false)
+        private set
+    var googleConnectionCheckInProgress by mutableStateOf(false)
+        private set
+    /** 只读检查也有独立编号，断开或重新授权后忽略旧网络线程的回调。 */
+    var googleConnectionCheckToken by mutableStateOf(0L)
+        private set
+    var googleConnectionCheckDetail by mutableStateOf("连接后可检查应用专用日历；检查不会创建日历或写入日程。")
+        private set
     private var googleAccessToken by mutableStateOf<String?>(null)
     var googleAuthorizationStatus by mutableStateOf(GoogleAuthorizationStatus.NOT_CONNECTED)
         private set
@@ -76,6 +85,29 @@ internal class ManagedOutputWorkflowState {
         googleAccessToken = null
         googleAuthorizationStatus = GoogleAuthorizationStatus.NOT_CONNECTED
         googleAuthorizationDetail = GoogleAuthorizationStatus.NOT_CONNECTED.defaultDetail
+        cancelGoogleConnectionCheck()
+    }
+
+    /** 只允许拥有当前运行短令牌时发起；具体网络检查由应用入口协调。 */
+    fun requestGoogleConnectionCheck(): String? {
+        if (googleAccessToken.isNullOrBlank()) {
+            googleConnectionCheckDetail = "请先连接 Google 日历，再执行只读连接检查。"
+            return googleConnectionCheckDetail
+        }
+        if (googleConnectionCheckInProgress) return null
+        googleConnectionCheckToken += 1
+        googleConnectionCheckRequested = true
+        googleConnectionCheckInProgress = true
+        googleConnectionCheckDetail = "正在检查 Google 连接；不会创建日历或写入日程。"
+        return null
+    }
+
+    fun resolveGoogleConnectionCheck(token: Long, detail: String): Boolean {
+        if (token != googleConnectionCheckToken || !googleConnectionCheckInProgress) return false
+        googleConnectionCheckRequested = false
+        googleConnectionCheckInProgress = false
+        googleConnectionCheckDetail = detail
+        return true
     }
 
     /** HTTP 401 已证明当前短令牌无效；清除内存引用，下一次操作必须经用户重新连接。 */
@@ -84,7 +116,15 @@ internal class ManagedOutputWorkflowState {
         googleAccessToken = null
         googleAuthorizationStatus = GoogleAuthorizationStatus.FAILED
         googleAuthorizationDetail = "Google 授权已失效（HTTP 401）；请重新连接 Google 日历后再写入。"
+        cancelGoogleConnectionCheck()
         return googleAuthorizationDetail
+    }
+
+    private fun cancelGoogleConnectionCheck() {
+        googleConnectionCheckToken += 1
+        googleConnectionCheckRequested = false
+        googleConnectionCheckInProgress = false
+        googleConnectionCheckDetail = "连接后可检查应用专用日历；检查不会创建日历或写入日程。"
     }
 
     /** 缓存清理结果只更新同一轮失效授权；不能覆盖用户已经完成的新授权。 */

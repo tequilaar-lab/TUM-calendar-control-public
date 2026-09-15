@@ -101,4 +101,21 @@ class WorkflowStateTest {
         assertFalse(workflow.inProgress)
         assertFalse(workflow.syncRequested)
     }
+
+    @Test
+    fun `Google 只读检查要求本次授权并忽略断开后的旧结果`() {
+        val workflow = ManagedOutputWorkflowState()
+
+        assertEquals("请先连接 Google 日历，再执行只读连接检查。", workflow.requestGoogleConnectionCheck())
+        workflow.resolveGoogleAuthorization(GoogleAuthorizationOutcome.AccessToken("synthetic-token"))
+        assertEquals(null, workflow.requestGoogleConnectionCheck())
+        val token = workflow.googleConnectionCheckToken
+        assertTrue(workflow.googleConnectionCheckInProgress)
+
+        workflow.disconnectGoogle()
+
+        assertFalse(workflow.resolveGoogleConnectionCheck(token, "过期结果"))
+        assertFalse(workflow.googleConnectionCheckInProgress)
+        assertTrue(workflow.googleConnectionCheckDetail.contains("不会创建日历"))
+    }
 }
