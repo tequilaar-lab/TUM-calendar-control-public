@@ -45,7 +45,7 @@ private val CourseDisplayTime = DateTimeFormatter.ofPattern("M月d日 HH:mm")
 private val CourseBrowserZone = ZoneId.of("Europe/Berlin")
 private val SourceSelectionBarShape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
 
-private enum class SourceBrowserMode(val label: String) { GROUPS("分组列表"), DATES("按日期查看") }
+private enum class SourceBrowserMode(val label: String) { GROUPS("分组列表"), DATES("按日期找课程") }
 
 @Composable
 fun SourceCourseSelectorScreen(state: CalendarControlState) {
@@ -62,8 +62,8 @@ fun SourceCourseSelectorScreen(state: CalendarControlState) {
     var mode by remember { mutableStateOf(SourceBrowserMode.GROUPS) }
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         InformationCard(
-            "选择要管理的课程",
-            "已读取 ${state.sourceCourses.size} 门课程。按课程名称或上课日期找到你想管理的课。",
+            "选择课程",
+            "本次读到 ${state.sourceCourses.size} 门课程。可按名称、地点或上课日期查找。",
         )
         TextField(
             value = state.sourceBrowserQuery,
@@ -137,11 +137,11 @@ private fun SourceGroupRow(state: CalendarControlState, group: SourceCourseDispl
                 Column(Modifier.weight(1f)) {
                     Text(group.displayTitle, style = MiuixTheme.textStyles.title3)
                     Text(
-                        "${group.sourceUidCount} 个课程项 · ${group.totalOccurrenceCount} 次课程 · 已选 ${group.selectedCount}",
+                        "${group.sourceUidCount} 门课程 · 共 ${group.totalOccurrenceCount} 次上课 · 已选 ${group.selectedCount}",
                         color = LocalTumPalette.current.onSurfaceVariant,
                     )
                     Text(
-                        "范围内有日程：${group.inOutputRangeCount} 个来源项",
+                        "所选时间内有日程：${group.inOutputRangeCount} 门课程",
                         color = LocalTumPalette.current.onSurfaceVariant,
                     )
                 }
@@ -168,7 +168,7 @@ internal fun SourceCourseChoiceRow(course: SourceCourse, selected: Boolean, onTo
         Column(Modifier.weight(1f).padding(start = 8.dp)) {
             Text(course.title, style = MiuixTheme.textStyles.body1)
             Text(
-                "共 ${course.occurrenceCount} 次课程 · 首次上课：${course.firstStart.toCourseText()}",
+                "共 ${course.occurrenceCount} 次上课 · 第一次：${course.firstStart.toCourseText()}",
                 color = LocalTumPalette.current.onSurfaceVariant,
             )
             if (course.location.isNotBlank()) Text("地点：${course.location}", color = LocalTumPalette.current.onSurfaceVariant)
@@ -198,11 +198,11 @@ private fun SourceSelectionBottomBar(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("已选择 $selectedCount 门课程", style = MiuixTheme.textStyles.title3)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = onClear, enabled = selectedCount > 0, modifier = Modifier.weight(1f)) { Text("清除") }
+                Button(onClick = onClear, enabled = selectedCount > 0, modifier = Modifier.weight(1f)) { Text("取消选择") }
                 Button(onClick = onAttendance, enabled = selectedCount > 0, modifier = Modifier.weight(1f)) { Text("设置出席与收藏") }
             }
             Button(onClick = onWrite, enabled = selectedCount > 0, modifier = Modifier.fillMaxWidth()) { Text("写入日历") }
-            Text("未设置时会按蓝色“选择出席”处理；写入前仍会请你确认影响数量。", color = palette.onSurfaceVariant)
+            Text("尚未设置的课程会按蓝色“选择出席”处理。接下来会显示将写入的数量；确认后才会写入。", color = palette.onSurfaceVariant)
         }
     }
 }

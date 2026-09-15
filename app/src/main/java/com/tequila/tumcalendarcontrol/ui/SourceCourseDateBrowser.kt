@@ -64,14 +64,14 @@ fun SourceCourseDateBrowser(state: CalendarControlState, outputWindow: SourceOut
         contentPadding = PaddingValues(bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item { InformationCard("按日期查看", "月格仅帮助定位课程；日期上的圆点表示该日有范围内来源日程，不改变课程 UID 身份。") }
+        item { InformationCard("按日期找课程", "带圆点的日期有可选择的课程。") }
         item { MonthNavigation(month, onPrevious = { month = month.minusMonths(1) }, onNext = { month = month.plusMonths(1) }) }
         item { SourceMonthGrid(month, byDate, chosenDate, onDateSelected = { chosenDate = it }) }
         if (selectedDay == null) {
-            item { InformationCard("选择一个日期", "点按带圆点的日期，查看并选择当天的来源课程。") }
+            item { InformationCard("选择日期", "点按带圆点的日期，查看并选择当天课程。") }
         } else {
-            item { Text("${selectedDay.monthValue}月${selectedDay.dayOfMonth}日 · ${coursesOnDate.size} 个来源课程", style = MiuixTheme.textStyles.title3) }
-            if (coursesOnDate.isEmpty()) item { InformationCard("当天没有范围内来源课程", "切换月份或选择其他带圆点的日期。") }
+            item { Text("${selectedDay.monthValue}月${selectedDay.dayOfMonth}日 · ${coursesOnDate.size} 门课程", style = MiuixTheme.textStyles.title3) }
+            if (coursesOnDate.isEmpty()) item { InformationCard("当天没有课程", "切换月份或选择其他带圆点的日期。") }
             items(coursesOnDate, key = SourceCourse::sourceUid) { course ->
                 Card(modifier = Modifier.fillMaxWidth(), insideMargin = PaddingValues(10.dp)) {
                     SourceCourseChoiceRow(

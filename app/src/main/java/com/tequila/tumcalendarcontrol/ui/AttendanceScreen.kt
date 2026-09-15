@@ -46,7 +46,7 @@ fun AttendanceScreen(state: CalendarControlState) {
             value = state.pendingEffectiveDate,
             onValueChange = { state.pendingEffectiveDate = it },
             modifier = Modifier.fillMaxWidth(),
-            label = "指定日期（YYYY-MM-DD；合成预览）",
+            label = "指定从这天起（YYYY-MM-DD）",
         )
         state.feedback?.let { message ->
             Text(message, color = LocalTumPalette.current.onSurfaceVariant)

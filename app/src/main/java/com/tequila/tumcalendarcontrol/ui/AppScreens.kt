@@ -82,7 +82,7 @@ fun AppScreenContent(state: CalendarControlState, screen: AppScreen) {
 private fun OverviewScreen(state: CalendarControlState) {
     CourseList(
         courses = state.displayedCourses,
-        heading = if (state.sourceCatalogLoaded) "已读取的来源课程" else "课程总览",
+        heading = if (state.sourceCatalogLoaded) "已读取的课程" else "课程总览",
         onCourseClick = state::openCourse,
     )
 }
@@ -96,7 +96,7 @@ private fun DetailScreen(state: CalendarControlState) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         InformationCard(course.displayTitle, "${course.displaySchedule} · ${course.displayLocation} · ${course.sourceStatus.label}")
-        InformationCard("本机字段覆盖", if (course.localOverride == CourseLocalOverride()) "尚未覆盖；当前显示来源字段" else "已覆盖；来源原始字段未被改写")
+        InformationCard("本机显示修改", if (course.localOverride == CourseLocalOverride()) "还没有修改；正在显示课程原来的信息" else "已修改本机显示；课程原来的信息没有改变")
         Button(onClick = state::openCourseEdit, modifier = Modifier.fillMaxWidth()) { Text("编辑名称、时间与地点") }
         InformationCard(
             "当前状态：${course.attendance.label}",
@@ -134,7 +134,7 @@ private fun CourseEditScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("编辑本机课程资料", "名称、地点留空会显示来源字段；时间用星期与小时／分钟填写，不需要输入冒号。")
+        InformationCard("编辑课程显示", "这里只修改本机显示。名称和地点留空会继续使用课程原来的信息；时间只需填星期、小时和分钟。")
         TextField(title, { title = it }, Modifier.fillMaxWidth(), label = "名称（当前来源：${course.title}）")
         TextField(location, { location = it }, Modifier.fillMaxWidth(), label = "地点（当前来源：${course.location}）")
         Text("上课日", style = MiuixTheme.textStyles.title3)
@@ -152,7 +152,7 @@ private fun CourseEditScreen(state: CalendarControlState) {
         Button(onClick = {
             val time = runCatching { CourseMeetingTime(weekday, startHour.toInt(), startMinute.toInt(), endHour.toInt(), endMinute.toInt()) }.getOrElse { validation = "请填写合法时间：小时 0–23、分钟 0–59，结束须晚于开始。"; return@Button }
             state.updateSelectedCourseOverride(CourseLocalOverride(title.ifBlank { null }, location = location.ifBlank { null }, meetingTime = time)); state.handleBack()
-        }, modifier = Modifier.fillMaxWidth()) { Text("仅保存本机课程资料") }
+        }, modifier = Modifier.fillMaxWidth()) { Text("保存课程显示") }
     }
 }
 
@@ -198,11 +198,11 @@ fun MoreScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("筛选显示", if (state.sourceCatalogLoaded) "正在显示已读取的完整来源课程目录" else "当前显示本机示例课程")
-        InformationCard("同步状态", "尚未连接任何真实日历；没有待写入的更改")
-        InformationCard("应用设置", "日历来源、颜色与显示偏好")
+        InformationCard("当前课程", if (state.sourceCatalogLoaded) "正在显示本次读取的课程" else "当前显示示例课程")
+        InformationCard("日历状态", "还没有连接日历，也没有等待写入的日程。")
+        InformationCard("应用设置", "课程、日历和外观设置")
         Button(onClick = { state.open(AppScreen.SETTINGS) }, modifier = Modifier.fillMaxWidth()) {
-            Text("打开设置与同步")
+            Text("打开设置")
         }
     }
 }
@@ -215,35 +215,35 @@ private fun SettingsScreen(state: CalendarControlState) {
         contentPadding = PaddingValues(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { InformationCard("同步工作流", "1 设置范围 · 2 读取并选择课程 · 3 设置三态 · 4 预览后确认。常规返回不会清除已选课程。") }
-        item { Button(onClick = state::openSourceRange, modifier = Modifier.fillMaxWidth()) { Text("读取课程与日期范围") } }
+        item { InformationCard("使用步骤", "1 选择时间 · 2 读取并选择课程 · 3 设置出席和收藏 · 4 确认写入。返回不会清空已选课程。") }
+        item { Button(onClick = state::openSourceRange, modifier = Modifier.fillMaxWidth()) { Text("读取课程") } }
         item {
             val summary = state.privateSyncConfiguration.sourceOutputWindow?.let {
                 if (it.startsOn == null && it.endsOn == null) "当前不限时间；点按可使用日历选择范围。" else "当前已设置范围；点按可查看、修改或清除。"
             } ?: "当前范围格式无效；请点按修正。"
-            InformationCard("范围摘要", summary)
+            InformationCard("读取时间", summary)
         }
         item {
             val courseSummary = when {
-                state.sourcePreview == null -> "尚未读取；先进入“读取课程与日期范围”。"
+                state.sourcePreview == null -> "还没有读取课程。先选择时间并读取课程。"
                 else -> "本次已读取 ${state.sourceCourses.size} 门课程；已选择 ${state.selectedSourceCourseUids.size} 门。"
             }
             InformationCard("已读取课程", courseSummary)
         }
-        item { Button(onClick = state::openSourceCourseSelector, modifier = Modifier.fillMaxWidth()) { Text("选择要管理的课程") } }
-        item { Button(onClick = state::openSyncConfiguration, modifier = Modifier.fillMaxWidth()) { Text("账户与连接设置") } }
-        item { InformationCard("规则与范围", "来源课程默认蓝色；绿色必去、蓝色选择出席、灰色从指定日期起不去。") }
-        item { Button(onClick = state::openManualEvents, modifier = Modifier.fillMaxWidth()) { Text("管理手动校园事项") } }
-        item { Button(onClick = state::openBackgroundCheck, modifier = Modifier.fillMaxWidth()) { Text("后台 iCal 检查") } }
-        item { Button(onClick = state::openRuleBackup, modifier = Modifier.fillMaxWidth()) { Text("规则备份与恢复") } }
+        item { Button(onClick = state::openSourceCourseSelector, modifier = Modifier.fillMaxWidth()) { Text("选择课程") } }
+        item { Button(onClick = state::openSyncConfiguration, modifier = Modifier.fillMaxWidth()) { Text("日历连接") } }
+        item { InformationCard("出席设置", "新课程默认蓝色“选择出席”；绿色为一定出席，灰色从指定日期起不去。") }
+        item { Button(onClick = state::openManualEvents, modifier = Modifier.fillMaxWidth()) { Text("添加校园事项") } }
+        item { Button(onClick = state::openBackgroundCheck, modifier = Modifier.fillMaxWidth()) { Text("检查课程更新") } }
+        item { Button(onClick = state::openRuleBackup, modifier = Modifier.fillMaxWidth()) { Text("备份课程设置") } }
         item { SyncDestinationSelector(state) }
-        item { InformationCard("写入范围", "只会管理本应用创建的日程；不会改动你的主日历、订阅日历或其他应用日程。") }
+        item { InformationCard("写入到哪里", "应用只会写入自己创建的日程。你的主日历、订阅日历和其他应用日程不会改变。") }
         if (state.syncDestinations.googleCalendarEnabled) {
             item { GoogleAuthorizationPanel(state) }
         }
-        item { Button(onClick = state::prepareCalendarWrite, modifier = Modifier.fillMaxWidth()) { Text("写入已设置的日程") } }
+        item { Button(onClick = state::prepareCalendarWrite, modifier = Modifier.fillMaxWidth()) { Text("写入日历") } }
         if (state.ruleLedger.mappings.isNotEmpty()) {
-            item { Button(onClick = state::openMappedOutputRollback, modifier = Modifier.fillMaxWidth()) { Text("管理已写入的日程") } }
+            item { Button(onClick = state::openMappedOutputRollback, modifier = Modifier.fillMaxWidth()) { Text("清除或查看已写入日程") } }
         }
         item { InformationCard("应用版本", "${BuildConfig.VERSION_NAME} · 构建号 ${BuildConfig.VERSION_CODE}") }
         item { ThemeModeSelector(state) }
@@ -257,11 +257,11 @@ private fun SettingsScreen(state: CalendarControlState) {
 @Composable
 private fun SourceStatusSelector(state: CalendarControlState) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("来源状态筛选", style = MiuixTheme.textStyles.title3)
+        Text("课程显示", style = MiuixTheme.textStyles.title3)
         if (state.sourceCatalogLoaded) {
-            Text("当前来源没有可可靠映射的 fix／geplant 状态字段；已读取课程不会被此筛选隐藏。", color = LocalTumPalette.current.onSurfaceVariant)
+            Text("本次读取的课程会全部显示，不会按学校状态隐藏。", color = LocalTumPalette.current.onSurfaceVariant)
         } else {
-            Text("仅控制尚未读取来源时的本机示例课程显示；不会影响私有 iCal 或任何日历。", color = LocalTumPalette.current.onSurfaceVariant)
+            Text("这里只控制示例课程显示，不会改变课程地址或任何日历。", color = LocalTumPalette.current.onSurfaceVariant)
             TumEventStatus.entries.forEach { status ->
                 Switch(checked = status in state.visibleSourceStatuses, onCheckedChange = { state.toggleSourceStatusVisible(status) })
                 Text(status.label, modifier = Modifier.padding(start = 8.dp))
@@ -279,10 +279,10 @@ private fun SyncPreviewScreen(state: CalendarControlState) {
         contentPadding = PaddingValues(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item { InformationCard("离线合成预览", "不会读取来源、申请权限或写入本机／Google 日历") }
+        item { InformationCard("示例日程结果", "这是示例数据，不会读取课程、申请权限或写入日历。") }
         item { InformationCard("变更汇总", "新增 ${preview.createCount} · 更新 ${preview.updateCount} · 移除 ${preview.removeCount} · 保持 ${preview.keepCount} · 跳过 ${preview.skipCount}") }
-        items(preview.changes) { change -> InformationCard(change.type.label, "合成身份：${change.identity.sourceUid}／${change.identity.instanceKey}") }
-        items(preview.skipped) { skipped -> InformationCard("跳过", "${skipped.reason}（${skipped.sourceUid ?: "无 UID"}）") }
+        items(preview.changes) { change -> InformationCard(change.type.label, "这条是示例数据，不会写入日历。") }
+        items(preview.skipped) { skipped -> InformationCard("不写入", "这条示例不会写入日历。") }
     }
 }
 
@@ -299,21 +299,21 @@ private fun SyncConfigurationScreen(state: CalendarControlState) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         InformationCard(
-            "私有订阅地址",
-            "当前：${current.maskedTumSubscription()}。地址不会回显；只有主动替换才会写入新值。",
+            "课程订阅地址",
+            "已保存：${current.maskedTumSubscription()}。为保护隐私，地址不会显示；只有重新填写后才会替换。",
         )
         if (replacingSubscription) PrivateAddressInput(
             value = replacementSubscriptionUrl,
             onValueChange = { replacementSubscriptionUrl = it },
-        ) else Button(onClick = { replacingSubscription = true }, modifier = Modifier.fillMaxWidth()) { Text("替换私有 iCal 地址") }
-        InformationCard("同步范围", "范围已移至独立的“iCal 来源与同步范围”页面；它使用日历选择，不再要求输入日期文本。")
-        InformationCard("Google 日历", "Google 授权不是账户或密码。正式同步时由系统选择账户，并只请求本应用创建日历的最小权限；令牌不会保存。")
-        InformationCard("授权配置", "Android OAuth 客户端须由开发者在 Google Cloud 按本应用包名与签名配置；不在本应用输入、保存或展示客户端标识。")
+        ) else Button(onClick = { replacingSubscription = true }, modifier = Modifier.fillMaxWidth()) { Text("更换课程订阅地址") }
+        InformationCard("读取时间", "在“选择读取时间”页面设置；使用日历选择，无需手动输入日期。")
+        InformationCard("连接 Google 日历", "系统会让你选择 Google 账户。应用只请求创建和管理自己日历所需的权限；不会保存登录信息。")
+        InformationCard("首次连接说明", "首次使用前，需要在 Google Cloud 为此应用完成一次配置。应用不会显示或保存客户端编号。")
         TextField(
             value = calendarName,
             onValueChange = { calendarName = it },
             modifier = Modifier.fillMaxWidth(),
-            label = "应用专用 Google 次级日历名称",
+            label = "Google 日历名称",
         )
         validationMessage?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
         Button(
@@ -332,7 +332,7 @@ private fun SyncConfigurationScreen(state: CalendarControlState) {
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("仅保存本机配置") }
+        ) { Text("保存到这台设备") }
     }
 }
 
@@ -355,8 +355,8 @@ private fun GoogleAuthorizationPanel(state: CalendarControlState) {
 @Composable
 private fun SyncDestinationSelector(state: CalendarControlState) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("同步目标", style = MiuixTheme.textStyles.title3)
-        Text("两个目标共用同一份 TUM 输入和出席规则，可分别开关。", color = LocalTumPalette.current.onSurfaceVariant)
+        Text("写入位置", style = MiuixTheme.textStyles.title3)
+        Text("课程和出席设置可分别写入本机日历和 Google 日历。", color = LocalTumPalette.current.onSurfaceVariant)
         SyncDestination.entries.forEach { destination ->
             val enabled = state.syncDestinations.isEnabled(destination)
             Card(
@@ -381,7 +381,7 @@ private fun SyncDestinationSelector(state: CalendarControlState) {
                 }
             }
         }
-        InformationCard("权限与写入", "本机开关开启时会请求读取／写入日历权限；同意后仍须先预览，再点按确认执行")
+        InformationCard("日历权限", "打开本机日历后，系统会请求日历权限。允许后仍要查看数量并确认写入。")
     }
 }
 
@@ -451,7 +451,7 @@ private fun CourseList(courses: List<Course>, heading: String, onCourseClick: (S
 private fun LazyListScope.courseListItems(courses: List<Course>, heading: String, onCourseClick: (String) -> Unit) {
     item { Text(heading, style = MiuixTheme.textStyles.title3) }
     if (courses.isEmpty()) {
-        item { InformationCard("暂无课程", "请先读取来源，或检查当前课程筛选条件。") }
+        item { InformationCard("暂无课程", "请先读取课程或检查筛选条件。") }
     } else {
         items(courses, key = { it.id }) { course ->
             CourseRow(course) { onCourseClick(course.id) }

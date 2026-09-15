@@ -46,7 +46,7 @@ fun PrivateAddressInput(value: String, onValueChange: (String) -> Unit, modifier
             onValueChange(updated)
         },
         modifier = modifier.fillMaxWidth(),
-        label = "新的 TUM 私有 iCal 地址",
+        label = "新的课程订阅地址",
         singleLine = true,
         visualTransformation = PrivateAddressVisualTransformation(showAddress, lastVisibleIndex),
     )

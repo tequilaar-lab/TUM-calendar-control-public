@@ -28,7 +28,7 @@ fun ManagedSyncPreviewScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("确认写入日历", "这是写入前自动准备的确认信息。现在尚未改动任何日历。")
+        InformationCard("确认写入日历", "下面是本次会写入的日程和影响数量。现在还没有改动任何日历。")
         if (preview == null) {
             InformationCard("清除本应用写入的日程", "这里只会清除由本应用创建的日程，不会改动你的其他日历或手动日程。")
             if (state.ruleLedger.mappings.isNotEmpty()) {
@@ -41,11 +41,11 @@ fun ManagedSyncPreviewScreen(state: CalendarControlState) {
             state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
             return
         }
-        InformationCard("将要写入的日程", "共 ${preview.desiredEventCount} 条。课程日程 ${state.managedSourceCandidateCount} 条；校园事项 ${state.managedManualCandidateCount} 条。")
+        InformationCard("本次将写入", "共 ${preview.desiredEventCount} 条日程：课程 ${state.managedSourceCandidateCount} 条，校园事项 ${state.managedManualCandidateCount} 条。")
         preview.targetChanges.toSortedMap(compareBy(OutputTarget::name)).forEach { (target, changes) ->
             InformationCard(
                 target.label(),
-                "新增 ${changes.count { it.type == SyncChangeType.CREATE }} 条 · 调整 ${changes.count { it.type == SyncChangeType.UPDATE }} 条 · 清除 ${changes.count { it.type == SyncChangeType.REMOVE }} 条本应用旧日程",
+                "新建 ${changes.count { it.type == SyncChangeType.CREATE }} 条 · 更新 ${changes.count { it.type == SyncChangeType.UPDATE }} 条 · 清除 ${changes.count { it.type == SyncChangeType.REMOVE }} 条本应用旧日程",
             )
         }
         if (state.syncDestinations.googleCalendarEnabled && !state.hasGoogleAuthorization) {
@@ -55,7 +55,7 @@ fun ManagedSyncPreviewScreen(state: CalendarControlState) {
             onClick = state::requestManagedSyncExecution,
             enabled = !state.managedSyncInProgress,
             modifier = Modifier.fillMaxWidth(),
-        ) { Text(if (state.managedSyncInProgress) "正在写入…" else "确认写入日历") }
+        ) { Text(if (state.managedSyncInProgress) "正在写入日历…" else "确认并写入日历") }
         if (state.ruleLedger.mappings.isNotEmpty()) {
             Button(
                 onClick = state::requestManagedRollback,
@@ -64,7 +64,7 @@ fun ManagedSyncPreviewScreen(state: CalendarControlState) {
             ) { Text("清除本应用写入的日程") }
         }
         state.ruleLedger.lastSummary?.let { summary ->
-            InformationCard("上次写入结果", "新增 ${summary.createdCount} · 调整 ${summary.updatedCount} · 清除 ${summary.removedCount}" + (summary.failureSummary?.let { " · $it" } ?: ""))
+            InformationCard("上次写入", "新建 ${summary.createdCount} · 更新 ${summary.updatedCount} · 清除 ${summary.removedCount}" + (summary.failureSummary?.let { " · $it" } ?: ""))
         }
         state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
     }

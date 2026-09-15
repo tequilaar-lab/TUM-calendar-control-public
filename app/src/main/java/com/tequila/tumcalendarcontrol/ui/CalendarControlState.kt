@@ -70,10 +70,10 @@ enum class SourceFavoriteAction(val label: String, val description: String) {
 
 /** 仅描述当前进程的 Google 授权结果；令牌绝不持久化，重启后必须重新授权。 */
 enum class GoogleAuthorizationStatus(val title: String, val defaultDetail: String) {
-    NOT_CONNECTED("Google 日历未连接", "尚未获得本次运行的授权；不会创建或写入 Google 日历。"),
-    AUTHORIZING("正在连接 Google 日历", "请在 Google 页面完成账户选择与授权，然后自动返回本应用。"),
-    AUTHORIZED("Google 日历已连接", "现在可以在写入确认页确认写入；尚未修改 Google 日历。"),
-    FAILED("Google 授权未完成", "没有获得令牌，因此没有访问或修改 Google 日历。可检查配置后重试。"),
+    NOT_CONNECTED("Google 日历未连接", "还没有完成本次授权；不会创建或写入 Google 日历。"),
+    AUTHORIZING("正在连接 Google 日历", "请在 Google 页面选择账户并允许访问，然后返回本应用。"),
+    AUTHORIZED("Google 日历已连接", "现在可以查看将写入的内容并确认写入；Google 日历尚未改变。"),
+    FAILED("未能连接 Google 日历", "没有完成授权，Google 日历没有改变。检查配置后重试。"),
 }
 
 class CalendarControlState(
@@ -242,7 +242,7 @@ class CalendarControlState(
     /** 仅应用私有覆盖；来源 title、schedule、location 永远保持不变。 */
     fun updateSelectedCourseOverride(override: CourseLocalOverride) {
         courses = courses.map { if (it.id == selectedCourseId) it.copy(localOverride = override) else it }
-        feedback = "已保存本机课程覆盖；不会回写 TUM 来源。"
+        feedback = "已保存课程显示修改；课程原来的信息没有改变。"
     }
 
     fun toggleSourceStatusVisible(status: TumEventStatus) {
@@ -282,7 +282,7 @@ class CalendarControlState(
         localCalendarPermissionRequestPending = false
         localCalendarPermissionGranted = granted
         syncDestinations = syncDestinations.withEnabled(SyncDestination.LOCAL_CALENDAR, granted)
-        feedback = if (granted) "已获本机日历写入许可；本轮仍不会创建或写入日历。" else "未获本机日历权限，已保持本机输出关闭。"
+        feedback = if (granted) "已允许访问本机日历；现在仍需查看数量并确认，才会写入。" else "没有获得本机日历权限；本机日历保持关闭。"
     }
 
     /** 启动时仅读取系统已授予状态，不申请权限也不改变用户的输出开关。 */
@@ -310,21 +310,21 @@ class CalendarControlState(
     /** 后台检查只在用户已经配置来源后才可开启；排程本身不会读取或写入日历。 */
     fun updateSourceCheck(enabled: Boolean, cadence: SourceCheckCadence = sourceCheckSettings.cadence) {
         if (enabled && !privateSyncConfiguration.hasTumSubscription) {
-            feedback = "请先保存私有 iCal 地址；未创建后台检查。"
+            feedback = "请先保存课程订阅地址；尚未开启更新检查。"
             return
         }
         val newlyEnabled = enabled && !sourceCheckSettings.enabled
         sourceCheckSettings = SourceCheckSettings(enabled, cadence)
         sourceCheckSchedulingRequested = true
         if (newlyEnabled) notificationPermissionRequestPending = true
-        feedback = if (enabled) "已设置只读后台检查；它不会自动写入任何日历。" else "已关闭后台 iCal 检查并取消后续任务。"
+        feedback = if (enabled) "已开启课程更新检查；它不会自动写入任何日历。" else "已关闭课程更新检查。"
     }
 
     fun consumeSourceCheckSchedulingRequest() { sourceCheckSchedulingRequested = false }
     fun consumeNotificationPermissionRequest() { notificationPermissionRequestPending = false }
     fun resolveNotificationPermission(granted: Boolean) {
         notificationPermissionRequestPending = false
-        if (!granted && sourceCheckSettings.enabled) feedback = "未授予通知权限；后台检查仍只在应用内记录状态。"
+        if (!granted && sourceCheckSettings.enabled) feedback = "未授予通知权限；更新检查仍会在应用内记录状态。"
     }
     fun refreshSourceCheckStatus(status: SourceCheckStatus) { sourceCheckStatus = status }
 
@@ -343,14 +343,14 @@ class CalendarControlState(
     /** SAF 写入只能由用户选择文件后触发；此处仅表达 UI 请求。 */
     fun requestRuleBackupExport() { ruleBackupExportRequested = true }
     fun consumeRuleBackupExportRequest() { ruleBackupExportRequested = false }
-    fun resolveRuleBackupExport(saved: Boolean) { feedback = if (saved) "规则备份已保存；其中不含私有地址、账户、令牌或日历映射。" else "未保存规则备份。" }
+    fun resolveRuleBackupExport(saved: Boolean) { feedback = if (saved) "课程设置已导出；不包含课程地址、账户或已写入日程。" else "没有导出课程设置。" }
 
     /** SAF 读取后的文本只留在内存解析为待确认草稿，未确认前不改动规则资料库。 */
     fun requestRuleBackupImport() { ruleBackupImportRequested = true }
     fun consumeRuleBackupImportRequest() { ruleBackupImportRequested = false }
     fun resolveRuleBackupImport(text: String?) {
         pendingRuleBackup = text?.let(RuleLedgerBackupCodec::decode)
-        feedback = if (pendingRuleBackup == null) "无法读取规则备份；本机规则没有改变。" else "已读取备份预览；确认后才替换规则与手动事项。"
+        feedback = if (pendingRuleBackup == null) "无法读取备份；本机课程设置没有改变。" else "已读取备份。确认后才会替换出席设置和校园事项。"
     }
     fun cancelRuleBackupImport() { pendingRuleBackup = null }
     fun confirmRuleBackupImport() {
@@ -358,7 +358,7 @@ class CalendarControlState(
         ruleLedger = ruleLedger.copy(rules = backup.rules, manualEvents = backup.manualEvents)
         refreshCoursesFromSource()
         pendingRuleBackup = null
-        feedback = "已替换本机规则与手动事项；没有同步、撤销或改动目标日历。"
+        feedback = "已恢复出席设置和校园事项；日历没有改变。"
     }
 
     /** 保存范围只写入加密本机配置；不会清除当前来源目录或选择。 */
@@ -367,7 +367,7 @@ class CalendarControlState(
         val problems = updated.validate()
         if (problems.isEmpty()) {
             privateSyncConfiguration = updated
-            feedback = "已保存同步范围；现有读取结果和课程选择保持不变。"
+            feedback = "已保存读取时间；当前课程列表和选择保持不变。"
         }
         return problems.map { it.message }
     }
@@ -385,7 +385,7 @@ class CalendarControlState(
     /** 已读课程目录可直接返回；无目录时只提示，不能暗中发起来源读取。 */
     fun openSourceCourseSelector() {
         if (sourcePreview == null) {
-            feedback = "尚未读取 iCal；请先在“iCal 来源与同步范围”中主动读取。"
+            feedback = "还没有读取课程。请先在“选择读取时间”中读取。"
             return
         }
         screen = AppScreen.SOURCE_PREVIEW
@@ -400,7 +400,7 @@ class CalendarControlState(
      */
     fun requestSourcePreview() {
         if (!privateSyncConfiguration.hasTumSubscription) {
-            feedback = "请先保存 HTTPS 私有 iCal 地址；当前未发起网络请求。"
+            feedback = "请先保存课程订阅地址；尚未读取课程。"
             return
         }
         if (sourceReadInProgress) return
@@ -409,7 +409,7 @@ class CalendarControlState(
         sourceReadToken += 1
         sourceReadInProgress = true
         sourceReadRequested = true
-        feedback = "正在只读读取私有 iCal；不会写入任何日历。"
+        feedback = "正在读取课程；不会写入任何日历。"
     }
 
     /** 后台读取完成后保留摘要与仅本次运行可见的课程目录；不保留 URL 或 ICS 原文。 */
@@ -435,7 +435,7 @@ class CalendarControlState(
             is IcalReadOnlyImportResult.Failure -> {
                 sourcePreview = null
                 sourcePreviewError = result.message
-                feedback = "私有 iCal 未导入：${result.message}。未写入任何日历。"
+                feedback = "未能读取课程：${result.message}。日历没有改变。"
             }
         }
     }
@@ -465,7 +465,7 @@ class CalendarControlState(
 
     fun openSourceAttendanceEditor(sourceUids: Set<String> = selectedSourceCourseUids) {
         if (sourceUids.isEmpty()) {
-            feedback = "请先选择至少一门来源课程。"
+            feedback = "请至少选择一门课程。"
             return
         }
         val firstState = sourceAttendanceFor(sourceUids.first())
@@ -482,7 +482,7 @@ class CalendarControlState(
     fun confirmSourceAttendance() {
         val selected = sourceCourses.filter { it.sourceUid in selectedSourceCourseUids }
         if (selected.isEmpty()) {
-            feedback = "来源课程目录已失效；请重新读取后再修改。"
+            feedback = "课程列表已过期；重新读取后再修改。"
             screen = sourceAttendanceReturnScreen
             return
         }
@@ -529,7 +529,7 @@ class CalendarControlState(
         courses = courses.map { course ->
             if (course.id == selectedCourseId) course.copy(attendance = pendingAttendance) else course
         }
-        feedback = "已在本地原型中更新“${selectedCourse.displayTitle}”的状态（${pendingAttendanceScope.label}）"
+        feedback = "已更新“${selectedCourse.displayTitle}”的出席方式（${pendingAttendanceScope.label}）。这只改动应用内示例。"
         open(AppScreen.DETAIL)
     }
 
@@ -558,7 +558,7 @@ class CalendarControlState(
     /** 已持久化的映射可在来源目录丢失后单独进入撤销页；该入口不生成候选或写入。 */
     fun openMappedOutputRollback() {
         if (ruleLedger.mappings.isEmpty()) {
-            feedback = "没有本应用写入过、可清除的日程。"
+            feedback = "没有本应用写入的日程可清除。"
             return
         }
         managedSyncPreview = null
@@ -570,19 +570,19 @@ class CalendarControlState(
     /** 基于当前进程来源和本机规则生成差异；不查询、创建或写入任何目标日历。 */
     fun requestManagedSyncPreview() {
         if (sourceOccurrences.isEmpty() && ruleLedger.manualEvents.isEmpty()) {
-            feedback = "请先读取课程并选择要管理的课程，或添加校园事项；当前没有可写入的日程。"
+            feedback = "先读取并选择课程，或添加校园事项，再写入日历。"
             return
         }
         val targets = enabledOutputTargets()
         if (targets.isEmpty()) {
-            feedback = "请先在设置中选择要写入本机日历或 Google 日历；当前不会写入任何日历。"
+            feedback = "请先在设置中选择本机日历或 Google 日历；日历没有改变。"
             return
         }
         managedDesiredEvents = SyncCandidateFactory().build(
             occurrences = sourceOccurrences,
             selectedSourceCourseUids = selectedSourceCourseUids,
             sourceOutputWindow = privateSyncConfiguration.sourceOutputWindow
-                ?: run { feedback = "读取日期范围无效；请先回到来源设置修正。"; return },
+                ?: run { feedback = "读取时间不正确；回到“选择读取时间”修改后重试。"; return },
             rules = ruleLedger.rules,
             manualEvents = ruleLedger.manualEvents,
         )
@@ -594,7 +594,7 @@ class CalendarControlState(
     /** Google 授权只由显式点按触发；令牌成功后仅存活在本进程。 */
     fun requestGoogleAuthorization() {
         if (!syncDestinations.googleCalendarEnabled) {
-            feedback = "请先开启 Google 日历镜像输出；当前未发起授权。"
+            feedback = "请先开启 Google 日历写入，再连接 Google 日历。"
             googleAuthorizationStatus = GoogleAuthorizationStatus.FAILED
             googleAuthorizationDetail = feedback.orEmpty()
             return
@@ -632,9 +632,9 @@ class CalendarControlState(
 
     /** 执行请求只表达用户确认；界面层再在后台建立专用目标并调用网关。 */
     fun requestManagedSyncExecution() {
-        if (managedSyncPreview == null) { feedback = "请先点击“写入日历”并确认将要写入的内容。"; return }
-        if (syncDestinations.localCalendarEnabled && !localCalendarPermissionGranted) { feedback = "本机日历尚未获得系统权限；未执行写入。"; return }
-        if (syncDestinations.googleCalendarEnabled && !hasGoogleAuthorization) { feedback = "请先完成 Google 授权；未执行写入。"; return }
+        if (managedSyncPreview == null) { feedback = "先点击“写入日历”，查看数量后再确认。"; return }
+        if (syncDestinations.localCalendarEnabled && !localCalendarPermissionGranted) { feedback = "本机日历没有获得系统权限；没有写入。"; return }
+        if (syncDestinations.googleCalendarEnabled && !hasGoogleAuthorization) { feedback = "请先连接 Google 日历；没有写入。"; return }
         if (managedSyncInProgress) return
         managedOperationToken += 1
         managedSyncInProgress = true
@@ -643,10 +643,10 @@ class CalendarControlState(
     }
 
     fun requestManagedRollback() {
-        if (ruleLedger.mappings.isEmpty()) { feedback = "没有本应用写入过、可清除的日程。"; return }
+        if (ruleLedger.mappings.isEmpty()) { feedback = "没有本应用写入的日程可清除。"; return }
         val targets = ruleLedger.mappings.map(StoredEventMapping::target).toSet()
-        if (OutputTarget.LOCAL_CALENDAR in targets && !localCalendarPermissionGranted) { feedback = "本机日历尚未获得系统权限；未执行撤销。"; return }
-        if (OutputTarget.GOOGLE_CALENDAR in targets && !hasGoogleAuthorization) { feedback = "请先完成 Google 授权；未执行撤销。"; return }
+        if (OutputTarget.LOCAL_CALENDAR in targets && !localCalendarPermissionGranted) { feedback = "本机日历没有获得系统权限；没有清除。"; return }
+        if (OutputTarget.GOOGLE_CALENDAR in targets && !hasGoogleAuthorization) { feedback = "请先连接 Google 日历；没有清除。"; return }
         if (managedSyncInProgress) return
         managedOperationToken += 1
         managedSyncInProgress = true
@@ -674,7 +674,7 @@ class CalendarControlState(
             lastSummary = SyncRunSummary(Instant.now(), result.createdCount, result.updatedCount, result.removedCount, 0, result.failureSummary),
         )
         privateSyncConfiguration = configuration
-        feedback = result.failureSummary ?: "日历已写入：新增 ${result.createdCount}、调整 ${result.updatedCount}、清除 ${result.removedCount}。"
+        feedback = result.failureSummary ?: "日历已更新：新建 ${result.createdCount}、更新 ${result.updatedCount}、清除 ${result.removedCount}。"
     }
 
     fun failManagedOperation(token: Long, summary: String) {
@@ -697,12 +697,12 @@ class CalendarControlState(
             ManualScheduleItem(UUID.randomUUID().toString(), title.trim().ifBlank { error("标题不能为空") }, start, end, attendance)
         }.getOrElse { feedback = "请填写有效的标题、YYYY-MM-DD 日期和小时／分钟；结束须晚于开始。"; return }
         ruleLedger = ruleLedger.copy(manualEvents = ManualScheduleEditor().upsert(ruleLedger.manualEvents, item))
-        feedback = "已保存校园事项；下次点“写入日历”时会与课程一起处理。"
+        feedback = "校园事项已保存到这台设备。下次写入日历时会和课程一起处理。"
     }
 
     fun removeManualEvent(itemId: String) {
         ruleLedger = ruleLedger.copy(manualEvents = ManualScheduleEditor().remove(ruleLedger.manualEvents, itemId))
-        feedback = "已从本机规则移除手动事项；尚未改动目标日历。"
+        feedback = "已从这台设备删除校园事项；日历没有改变。"
     }
 
     /** 处理应用内层级返回；只有主页面才交还给系统执行退出。 */

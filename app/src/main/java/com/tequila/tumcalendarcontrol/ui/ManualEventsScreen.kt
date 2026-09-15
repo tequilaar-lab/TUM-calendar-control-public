@@ -39,7 +39,7 @@ fun ManualEventsScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        InformationCard("手动校园事项", "可先连续录入多条事项；它们会和课程一起在下次“写入日历”时处理，当前不会写入日历。")
+        InformationCard("添加校园事项", "可先添加多条事项。它们会和课程一起在下次写入日历时处理；现在不会写入。")
         TextField(title, { title = it }, Modifier.fillMaxWidth(), label = "事项名称")
         TextField(date, { date = it }, Modifier.fillMaxWidth(), label = "日期（YYYY-MM-DD）")
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -59,10 +59,10 @@ fun ManualEventsScreen(state: CalendarControlState) {
                 if (state.feedback?.startsWith("已保存") == true) title = ""
             },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("仅保存本机事项") }
+        ) { Text("保存事项到这台设备") }
         state.ruleLedger.manualEvents.forEach { item ->
             InformationCard("${item.title} · ${item.attendanceState.label}", "${item.startsAt} 至 ${item.endsAt}")
-            Button(onClick = { state.removeManualEvent(item.id) }, modifier = Modifier.fillMaxWidth()) { Text("从本机事项移除") }
+            Button(onClick = { state.removeManualEvent(item.id) }, modifier = Modifier.fillMaxWidth()) { Text("删除此事项") }
         }
         state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
     }

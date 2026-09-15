@@ -35,8 +35,9 @@ fun SourceAttendanceScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("设置 ${state.selectedSourceCourseUids.size} 门课程", style = MiuixTheme.textStyles.title3)
-        Text("选择这批课的出席方式和收藏状态。新课程默认蓝色“选择出席”。", color = LocalTumPalette.current.onSurfaceVariant)
+        Text("为 ${state.selectedSourceCourseUids.size} 门课程设置出席和收藏", style = MiuixTheme.textStyles.title3)
+        Text("这一步只保存课程设置，还不会写入日历。新课程默认蓝色“选择出席”。", color = LocalTumPalette.current.onSurfaceVariant)
+        Text("出席方式", style = MiuixTheme.textStyles.title3)
         AttendanceState.entries.forEach { option -> SourceAttendanceOption(option, state) }
         Text("收藏", style = MiuixTheme.textStyles.title3)
         SourceFavoriteAction.entries.forEach { action -> SourceFavoriteActionOption(action, state) }
@@ -47,7 +48,7 @@ fun SourceAttendanceScreen(state: CalendarControlState) {
                 value = state.pendingSourceEffectiveDate,
                 onValueChange = { state.pendingSourceEffectiveDate = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = "指定日期（YYYY-MM-DD）",
+                label = "指定从这天起（YYYY-MM-DD）",
             )
         }
         state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
@@ -61,7 +62,7 @@ fun SourceAttendanceScreen(state: CalendarControlState) {
                 onClick = state::handleBack,
                 modifier = Modifier.width(112.dp),
             )
-            Button(onClick = state::confirmSourceAttendance, modifier = Modifier.weight(1f)) { Text("保存设置") }
+            Button(onClick = state::confirmSourceAttendance, modifier = Modifier.weight(1f)) { Text("保存出席和收藏") }
         }
     }
 }

@@ -52,7 +52,7 @@ fun SourceRangeScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("同步时间范围", "它决定哪些来源实例会进入后续预览和输出；不会改变订阅地址，也不会过滤手动校园事项。")
+        InformationCard("选择读取时间", "选择要读取的课程日程时间。留空会读取链接中可用的全部时间；不会改动课程地址或手动事项。")
         val context = LocalContext.current
         DateRangeField("开始日期", startDate, "不限", onClick = { showDatePicker(context, startDate, usesDarkTheme) { startDate = it } })
         DateRangeField("结束日期", endDate, "不限", onClick = { showDatePicker(context, endDate, usesDarkTheme) { endDate = it } })
@@ -70,7 +70,7 @@ fun SourceRangeScreen(state: CalendarControlState) {
                 validation = state.saveSourceOutputRange(startDate, endDate)
             },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("保存范围") }
+        ) { Text("保存时间范围") }
         validation.forEach { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
         ReadCoverageCard(state)
         if (state.sourceReloadConfirmationPending) {
@@ -80,9 +80,9 @@ fun SourceRangeScreen(state: CalendarControlState) {
                 onClick = state::requestSourceReadForCurrentRange,
                 enabled = !state.sourceReadInProgress,
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text(if (state.sourceReadInProgress) "正在只读读取 iCal…" else "按此范围读取 iCal") }
+            ) { Text(if (state.sourceReadInProgress) "正在读取课程…" else "读取课程") }
         }
-        InformationCard("读取完成后自动进入下一步", "会进入“选择课程”。设置出席与收藏后即可点“写入日历”；写入前会显示本机和 Google 将受影响的数量。")
+        InformationCard("下一步：选择课程", "读取后先选择要管理的课程，再设置出席和收藏。写入前会显示本机和 Google 日历将受影响的数量；确认后才会写入。")
     }
 }
 
@@ -91,11 +91,11 @@ fun SourceRangeScreen(state: CalendarControlState) {
 private fun SourceReloadConfirmationCard(state: CalendarControlState) {
     Card(modifier = Modifier.fillMaxWidth(), insideMargin = PaddingValues(14.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("重新读取会替换当前目录", style = MiuixTheme.textStyles.title3)
-            Text("当前已选择的课程将被清空。已保存的出席规则不变；是否继续？", color = LocalTumPalette.current.onSurfaceVariant)
+            Text("重新读取课程", style = MiuixTheme.textStyles.title3)
+            Text("会替换当前课程列表并清空本次选择。已保存的出席和收藏不变；是否继续？", color = LocalTumPalette.current.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 Button(onClick = { state.resolveSourceReloadConfirmation(false) }, modifier = Modifier.weight(1f)) { Text("取消") }
-                Button(onClick = { state.resolveSourceReloadConfirmation(true) }, modifier = Modifier.weight(1f)) { Text("继续只读读取") }
+                Button(onClick = { state.resolveSourceReloadConfirmation(true) }, modifier = Modifier.weight(1f)) { Text("重新读取") }
             }
         }
     }
@@ -112,7 +112,7 @@ private fun DateRangeField(label: String, value: String, emptyLabel: String, onC
                 Text(label, style = MiuixTheme.textStyles.body1)
                 Text(if (value.isBlank()) emptyLabel else value, color = LocalTumPalette.current.onSurfaceVariant)
             }
-            Text("选择")
+            Text("选择日期")
         }
     }
 }
@@ -125,17 +125,17 @@ private fun QuickRangeButtons(onFromToday: () -> Unit, onNextNinetyDays: () -> U
             Button(onClick = onFromToday, modifier = Modifier.weight(1f)) { Text("从今天起") }
             Button(onClick = onNextNinetyDays, modifier = Modifier.weight(1f)) { Text("未来 90 天") }
         }
-        Button(onClick = onClear, modifier = Modifier.fillMaxWidth()) { Text("清除范围（读取全部）") }
+        Button(onClick = onClear, modifier = Modifier.fillMaxWidth()) { Text("不限制时间（读取全部）") }
     }
 }
 
 @Composable
 private fun ReadCoverageCard(state: CalendarControlState) {
     val preview = state.sourcePreview
-    val coverage = if (preview == null) "尚未读取。它会在你主动读取后显示，不是可编辑范围。" else {
-        "${preview.firstManageableStart.toLocalDateText()} 至 ${preview.lastManageableEnd.toLocalDateText()}；共 ${preview.manageableOccurrenceCount} 条可管理实例。"
+    val coverage = if (preview == null) "还没有读取课程。读取后会在这里显示可用的时间。" else {
+        "${preview.firstManageableStart.toLocalDateText()} 至 ${preview.lastManageableEnd.toLocalDateText()}；共 ${preview.manageableOccurrenceCount} 条课程日程。"
     }
-    InformationCard("来源数据覆盖期（只读）", coverage)
+    InformationCard("已读取的课程时间", coverage)
 }
 
 private fun Instant?.toLocalDateText(): String = this?.atZone(BerlinZone)?.toLocalDate()?.format(DateText) ?: "无"

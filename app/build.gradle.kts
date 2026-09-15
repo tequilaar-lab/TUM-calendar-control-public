@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("io.github.takahirom.roborazzi")
 }
 
 android {
@@ -20,8 +21,8 @@ android {
         minSdk = 26
         targetSdk = 37
         // 每次可验收发布均递增构建号；完整记录见仓库根目录 VERSIONING.md。
-        versionCode = 33
-        versionName = "0.4.11"
+        versionCode = 35
+        versionName = "0.4.13"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -44,6 +45,10 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
     }
 
     packaging {
@@ -73,4 +78,10 @@ dependencies {
     implementation("androidx.work:work-runtime:2.11.2")
 
     testImplementation("junit:junit:4.13.2")
+    // 仅用于本机 Compose 截图回归；不连接设备、账户或日历。
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.74.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.74.0")
+    testImplementation("androidx.compose.ui:ui-test-junit4:1.7.8")
+    testImplementation("org.robolectric:robolectric:4.16")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.7.8")
 }

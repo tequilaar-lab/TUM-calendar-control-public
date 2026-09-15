@@ -91,7 +91,7 @@ class CalendarControlStateTest {
 
         state.updateSourceCheck(true)
         assertFalse(state.sourceCheckSettings.enabled)
-        assertTrue(state.feedback!!.contains("先保存私有 iCal 地址"))
+        assertTrue(state.feedback!!.contains("先保存课程订阅地址"))
 
         state.updatePrivateSyncConfiguration(PrivateSyncConfiguration(tumSubscriptionUrl = "https://synthetic.example.test/calendar"))
         state.updateSourceCheck(true, SourceCheckCadence.WEEKLY)
@@ -265,7 +265,7 @@ class CalendarControlStateTest {
 
         assertFalse(state.sourceReadRequested)
         assertFalse(state.sourceReadInProgress)
-        assertTrue(state.feedback!!.contains("未发起网络请求"))
+        assertTrue(state.feedback!!.contains("尚未读取课程"))
     }
 
     @Test
@@ -309,7 +309,7 @@ class CalendarControlStateTest {
         state.requestLocalCalendarOutput()
         state.resolveLocalCalendarPermission(true)
         assertTrue(state.syncDestinations.localCalendarEnabled)
-        assertTrue(state.feedback!!.contains("不会创建或写入"))
+        assertTrue(state.feedback!!.contains("仍需查看数量并确认"))
     }
 
     @Test
@@ -498,7 +498,7 @@ class CalendarControlStateTest {
         state.requestManagedSyncExecution()
 
         assertFalse(state.managedSyncRequested)
-        assertTrue(state.feedback!!.contains("尚未获得系统权限"))
+        assertTrue(state.feedback!!.contains("没有获得系统权限"))
     }
 
     private fun sourcePreview(): IcalReadOnlyPreview = IcalReadOnlyPreview(

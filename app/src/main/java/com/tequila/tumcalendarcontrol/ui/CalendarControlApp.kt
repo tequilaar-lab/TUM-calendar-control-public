@@ -217,6 +217,12 @@ fun CalendarControlApp() {
         }.start()
     }
     BackHandler(enabled = state.canHandleBack()) { state.handleBack() }
+    CalendarControlSurface(state)
+}
+
+/** 组合纯 Compose 外壳，供应用入口与合成截图测试共享；不初始化偏好或触发外部操作。 */
+@Composable
+internal fun CalendarControlSurface(state: CalendarControlState) {
     TumCalendarTheme(mode = state.themeMode) {
         Box(Modifier.fillMaxSize()) {
             CalendarControlScaffold(state)
@@ -440,7 +446,7 @@ private fun AppScreen.bottomNavigationIndex(): Int = when (this) {
 }
 
 private fun AppScreen.title(): String = when (this) {
-    AppScreen.OVERVIEW -> "TUM 日历控制"
+    AppScreen.OVERVIEW -> "TUM 日程控制"
     AppScreen.DETAIL -> "课程详情"
     AppScreen.ATTENDANCE -> "状态选择"
     AppScreen.COURSE_EDIT -> "编辑课程"
@@ -449,28 +455,28 @@ private fun AppScreen.title(): String = when (this) {
     AppScreen.MORE -> "更多操作"
     AppScreen.SETTINGS -> "设置与同步"
     AppScreen.PROFILE -> "个人资料"
-    AppScreen.SYNC_CONFIGURATION -> "账户与连接"
+    AppScreen.SYNC_CONFIGURATION -> "日历连接"
     AppScreen.SYNC_PREVIEW -> "离线示例"
-    AppScreen.SOURCE_RANGE -> "读取课程与日期范围"
+    AppScreen.SOURCE_RANGE -> "选择读取时间"
     AppScreen.SOURCE_PREVIEW -> "选择课程"
     AppScreen.SOURCE_ATTENDANCE -> "设置出席与收藏"
     AppScreen.MANUAL_EVENTS -> "手动校园事项"
     AppScreen.MANAGED_SYNC_PREVIEW -> "确认写入日历"
-    AppScreen.BACKGROUND_CHECK -> "后台 iCal 检查"
-    AppScreen.RULE_BACKUP -> "规则备份与恢复"
+    AppScreen.BACKGROUND_CHECK -> "检查课程更新"
+    AppScreen.RULE_BACKUP -> "备份课程设置"
 }
 
 private fun AppScreen.subtitle(): String? = when (this) {
-    AppScreen.OVERVIEW -> "读取 iCal 后显示来源课程"
+    AppScreen.OVERVIEW -> "读取课程后会显示在这里"
     AppScreen.SETTINGS -> "读取课程、设置写入位置与外观"
-    AppScreen.SYNC_CONFIGURATION -> "仅保存本机配置，不会联网"
+    AppScreen.SYNC_CONFIGURATION -> "保存到这台设备，不会联网"
     AppScreen.SYNC_PREVIEW -> "示例不会写入日历"
-    AppScreen.SOURCE_RANGE -> "先选择日期范围，再读取课程"
+    AppScreen.SOURCE_RANGE -> "选择时间后读取课程"
     AppScreen.SOURCE_PREVIEW -> "选择后设置出席与收藏"
-    AppScreen.SOURCE_ATTENDANCE -> "保存后可直接写入日历"
+    AppScreen.SOURCE_ATTENDANCE -> "保存后可返回课程列表写入日历"
     AppScreen.MANUAL_EVENTS -> "保存后可与课程一起写入日历"
     AppScreen.MANAGED_SYNC_PREVIEW -> "确认后才会修改所选日历"
-    AppScreen.BACKGROUND_CHECK -> "只读检查 · 不自动写入日历"
-    AppScreen.RULE_BACKUP -> "仅规则与手动事项 · 导入需确认"
+    AppScreen.BACKGROUND_CHECK -> "只检查课程变化，不会自动写入日历"
+    AppScreen.RULE_BACKUP -> "备份课程设置；恢复前需确认"
     else -> null
 }

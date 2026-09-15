@@ -32,7 +32,7 @@ fun BackgroundCheckScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("后台 iCal 检查", "默认关闭。开启后仅在网络可用时读取并比较脱敏摘要；不会创建、更新、删除或撤销任何日历事项。系统省电模式可能延后检查。")
+        InformationCard("检查课程更新", "默认关闭。开启后会在网络可用时检查课程是否变化，不会自动写入或删除日历。省电模式可能推迟检查。")
         InformationCard("当前频率", settings.cadence.label)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             SourceCheckCadence.entries.forEach { cadence ->
@@ -45,7 +45,7 @@ fun BackgroundCheckScreen(state: CalendarControlState) {
         Button(
             onClick = { state.updateSourceCheck(!settings.enabled) },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text(if (settings.enabled) "关闭后台检查" else "开启只读后台检查") }
+        ) { Text(if (settings.enabled) "关闭更新检查" else "开启更新检查") }
         InformationCard("最近检查", state.sourceCheckStatus.toUserSummary())
         InformationCard("通知与隐私", "检测到可能变化时只发送通用提醒，不包含课程名称、地点、链接或日程内容。拒绝通知权限不影响应用内状态查看。")
         state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp)) }
@@ -58,9 +58,9 @@ private fun SourceCheckStatus.toUserSummary(): String {
         SourceCheckResult.NEVER -> "尚未执行"
         SourceCheckResult.INITIAL -> "已建立首次只读摘要"
         SourceCheckResult.UNCHANGED -> "未发现变化"
-        SourceCheckResult.CHANGED -> "检测到可能变化；请打开应用手动读取并预览"
+        SourceCheckResult.CHANGED -> "发现课程可能变化。打开应用重新读取课程。"
         SourceCheckResult.FAILED -> "检查失败；系统会按策略稍后重试"
-        SourceCheckResult.NEEDS_CONFIGURATION -> "未配置私有 iCal，未读取"
+        SourceCheckResult.NEEDS_CONFIGURATION -> "还没有设置课程订阅地址"
     }
     return "$time · $resultText"
 }
