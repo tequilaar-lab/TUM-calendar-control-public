@@ -34,6 +34,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import com.tequila.tumcalendarcontrol.sync.SourceOutputDateWindow
 import java.time.ZoneId
 import top.yukonga.miuix.kmp.basic.Button
@@ -80,21 +84,23 @@ private fun ExpandedSourceCourseSelector(
 ) {
     Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(Modifier.weight(0.39f).fillMaxHeight()) {
+            var floatingHeight by remember { mutableStateOf(184.dp) }
+            val density = LocalDensity.current
             SourceSelectorControls(
                 state = state,
                 mode = mode,
                 onModeChange = onModeChange,
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp, 12.dp, 12.dp, 172.dp),
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp, 12.dp, 12.dp, floatingHeight + 12.dp),
             )
             SourceSelectionBottomBar(
                 selectedCount = state.selectedSourceOccurrences.size,
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(12.dp),
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().onSizeChanged { floatingHeight = with(density) { it.height.toDp() } }.padding(12.dp),
                 onClear = state::clearSourceCourseSelection,
                 onAttendance = state::openSourceAttendanceEditor,
                 onWrite = state::prepareCalendarWrite,
             )
         }
-        Box(Modifier.weight(0.61f).fillMaxHeight().padding(end = 12.dp)) {
+        Box(Modifier.weight(0.61f).fillMaxHeight().padding(end = 12.dp).testTag("source-list-viewport")) {
             SourceCourseSelectionList(state, outputWindow, groups, mode, Modifier.fillMaxSize())
         }
     }
@@ -109,14 +115,16 @@ private fun CompactSourceCourseSelector(
     mode: SourceBrowserMode,
     onModeChange: (SourceBrowserMode) -> Unit,
 ) {
+    var floatingHeight by remember { mutableStateOf(184.dp) }
+    val density = LocalDensity.current
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             SourceSelectorControls(state, mode, onModeChange, Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp))
-            SourceCourseSelectionList(state, outputWindow, groups, mode, Modifier.weight(1f).padding(horizontal = 12.dp))
+            SourceCourseSelectionList(state, outputWindow, groups, mode, Modifier.weight(1f).padding(horizontal = 12.dp), floatingHeight + 12.dp)
         }
         SourceSelectionBottomBar(
             selectedCount = state.selectedSourceOccurrences.size,
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().widthIn(max = 560.dp).padding(12.dp),
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().widthIn(max = 560.dp).onSizeChanged { floatingHeight = with(density) { it.height.toDp() } }.padding(12.dp),
             onClear = state::clearSourceCourseSelection,
             onAttendance = state::openSourceAttendanceEditor,
             onWrite = state::prepareCalendarWrite,
@@ -151,10 +159,11 @@ private fun SourceCourseSelectionList(
     groups: List<SourceCourseDisplayGroup>,
     mode: SourceBrowserMode,
     modifier: Modifier,
+    bottomClearance: Dp = 16.dp,
 ) {
     when (mode) {
-        SourceBrowserMode.GROUPS -> SourceGroupList(state, groups, modifier)
-        SourceBrowserMode.DATES -> SourceCourseDateBrowser(state, outputWindow, modifier)
+        SourceBrowserMode.GROUPS -> SourceGroupList(state, groups, modifier, bottomClearance)
+        SourceBrowserMode.DATES -> SourceCourseDateBrowser(state, outputWindow, modifier, bottomClearance)
     }
 }
 
@@ -182,11 +191,11 @@ private fun SourceModeRow(mode: SourceBrowserMode, onChange: (SourceBrowserMode)
 }
 
 @Composable
-private fun SourceGroupList(state: CalendarControlState, groups: List<SourceCourseDisplayGroup>, modifier: Modifier) {
+private fun SourceGroupList(state: CalendarControlState, groups: List<SourceCourseDisplayGroup>, modifier: Modifier, bottomClearance: Dp) {
     LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(10.dp),
-        contentPadding = PaddingValues(bottom = 184.dp),
+        contentPadding = PaddingValues(bottom = bottomClearance),
     ) {
         if (groups.isEmpty()) item { InformationCard("没有匹配课次", "尝试清除搜索或切换到“全部”。") }
         items(groups, key = { it.displayTitle + it.earliestStart }) { group -> SourceGroupRow(state, group) }

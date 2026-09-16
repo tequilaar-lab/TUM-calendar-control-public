@@ -43,7 +43,7 @@ private val BrowserZone = ZoneId.of("Europe/Berlin")
 private val MonthTitle = DateTimeFormatter.ofPattern("yyyy年M月")
 
 @Composable
-fun SourceCourseDateBrowser(state: CalendarControlState, outputWindow: SourceOutputDateWindow, modifier: Modifier = Modifier) {
+fun SourceCourseDateBrowser(state: CalendarControlState, outputWindow: SourceOutputDateWindow, modifier: Modifier = Modifier, bottomClearance: androidx.compose.ui.unit.Dp = 16.dp) {
     val visibleOccurrences = state.currentSourceOccurrences.filter {
         !it.isCancelled && outputWindow.includes(it.startsAt, it.endsAt, BrowserZone)
     }
@@ -57,7 +57,7 @@ fun SourceCourseDateBrowser(state: CalendarControlState, outputWindow: SourceOut
     val occurrencesOnDate = selectedDay?.let(byDate::get).orEmpty()
     LazyColumn(
         modifier = modifier,
-        contentPadding = PaddingValues(bottom = 16.dp),
+        contentPadding = PaddingValues(bottom = bottomClearance),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item { InformationCard("按日期找课次", "带圆点的日期有可选择的具体上课时间。") }

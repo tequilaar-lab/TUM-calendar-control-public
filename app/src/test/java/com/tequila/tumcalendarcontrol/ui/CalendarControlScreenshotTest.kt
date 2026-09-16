@@ -12,6 +12,12 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.test.onNodeWithTag
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyImportResult
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyPreview
@@ -72,7 +78,51 @@ class CalendarControlScreenshotTest {
     @Config(sdk = [36], qualifiers = "w840dp-h892dp-420dpi")
     fun `展开态课程选择 左侧控制浮块与右侧课次列表独立`() {
         render(loadedSourceState())
+        val root = composeRule.onRoot().fetchSemanticsNode().boundsInRoot
+        val list = composeRule.onNodeWithTag("source-list-viewport").fetchSemanticsNode().boundsInRoot
+        org.junit.Assert.assertTrue("列表应延伸到窗口底部安全区，不为左侧浮块整页裁短", list.bottom > root.bottom - root.height * 0.04f)
         capture("source_courses_selector_wide_840x892")
+    }
+
+    @Test
+    @Config(sdk = [36], qualifiers = "w840dp-h892dp-420dpi")
+    fun `深蓝配色与右侧展开目录`() {
+        val state = CalendarControlState().also { it.themeMode = ThemeMode.DARK; it.darkPaletteStyle = DarkPaletteStyle.DEEP_BLUE }
+        render(state)
+        composeRule.onAllNodes(androidx.compose.ui.test.hasContentDescription("展开课程目录"))[0].performClick()
+        capture("overview_deep_blue_directory_840x892")
+    }
+
+    @Test
+    @Config(sdk = [36], qualifiers = "w412dp-h892dp-420dpi")
+    fun `浅色暖米白配色`() {
+        val state = CalendarControlState().also { it.themeMode = ThemeMode.LIGHT; it.lightPaletteStyle = LightPaletteStyle.WARM_WHITE }
+        render(state)
+        capture("overview_warm_white_412x892")
+    }
+
+    @Test
+    @Config(sdk = [36], qualifiers = "w412dp-h892dp-420dpi")
+    fun `外观颜色选择可滚动到达`() {
+        val state = CalendarControlState().also { it.open(AppScreen.SETTINGS) }
+        render(state)
+        composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText("深蓝"))
+        composeRule.onNodeWithTag("settings-list").performTouchInput { swipeUp() }
+        capture("appearance_choices_412x892")
+    }
+
+    @Test
+    @Config(sdk = [36], qualifiers = "w412dp-h892dp-420dpi")
+    fun `长列表在不透明浮块后延伸而非被整条裁断`() {
+        val template = com.tequila.tumcalendarcontrol.domain.SampleCourses.all().first()
+        val state = CalendarControlState(initialCourses = (1..30).map { template.copy(id = "synthetic-$it", title = "合成课程 ${it.toString().padStart(2, '0')}") })
+        render(state)
+        capture("overview_floating_overlay_long_412x892")
+        composeRule.onNodeWithTag("course-browser-list").performScrollToNode(hasText("合成课程 30"))
+        composeRule.onNodeWithTag("course-browser-list").performTouchInput { swipeUp() }
+        val lastCourse = composeRule.onNodeWithText("合成课程 30").fetchSemanticsNode().boundsInRoot
+        val navigation = composeRule.onNodeWithTag("floating-navigation").fetchSemanticsNode().boundsInRoot
+        org.junit.Assert.assertTrue("末条课程应能滚至浮块上方：$lastCourse / $navigation", lastCourse.bottom < navigation.top)
     }
 
     @Test

@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -33,6 +34,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.runtime.Composable
@@ -212,8 +214,8 @@ private fun AdaptiveCourseBrowser(
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val listContent: @Composable (Modifier) -> Unit = { modifier ->
             LazyColumn(
-                modifier = modifier,
-                contentPadding = PaddingValues(bottom = 24.dp),
+                modifier = modifier.testTag("course-browser-list"),
+                contentPadding = PaddingValues(bottom = FloatingNavigationContentClearance),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 leadingItems()
@@ -260,7 +262,7 @@ private fun CourseBrowserSupportPane(
     onTeachingTypeExpandedChange: (String) -> Unit,
 ) {
     Column(
-        modifier = modifier.verticalScroll(rememberScrollState()),
+        modifier = modifier.verticalScroll(rememberScrollState()).padding(bottom = FloatingNavigationContentClearance),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         InformationCard("课程目录", "左侧是完整列表；这里是同一份“课程名 → 类型 → 课次”索引，可独立滚动和展开。")
@@ -393,6 +395,8 @@ private fun CourseTeachingTypeCard(typeGroup: CourseTeachingTypeGroup, expanded:
     }
 }
 
+internal fun directoryArrowRotation(expanded: Boolean): Float = if (expanded) 90f else 0f
+
 /** 宽屏右列用紧凑树形索引复用左列的展开状态，不复制或改变任一课程数据。 */
 @Composable
 private fun CourseDirectoryGroup(
@@ -403,13 +407,13 @@ private fun CourseDirectoryGroup(
     onTeachingTypeExpandedChange: (String) -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val arrowRotation by animateFloatAsState(if (expanded) -90f else 0f, label = "宽屏课程目录箭头")
+    val arrowRotation by animateFloatAsState(directoryArrowRotation(expanded), label = "宽屏课程目录箭头")
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth().clickable(interactionSource, indication = null) { onGroupExpandedChange(group.key) }.padding(8.dp),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         ) {
-            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, null, modifier = Modifier.rotate(arrowRotation))
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, if (expanded) "收起课程目录" else "展开课程目录", modifier = Modifier.rotate(arrowRotation))
             Text(group.displayTitle, modifier = Modifier.padding(start = 8.dp).weight(1f), style = MiuixTheme.textStyles.body2)
             Text("${group.courses.size}", color = LocalTumPalette.current.onSurfaceVariant)
         }
@@ -421,7 +425,8 @@ private fun CourseDirectoryGroup(
                         modifier = Modifier.fillMaxWidth().clickable(interactionSource, indication = null) { onTeachingTypeExpandedChange(typeGroup.key) }.padding(6.dp),
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                     ) {
-                        Text(if (typeExpanded) "⌄" else "‹", color = LocalTumPalette.current.onSurfaceVariant)
+                        val typeRotation by animateFloatAsState(directoryArrowRotation(typeExpanded), label = "目录类型箭头")
+                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, if (typeExpanded) "收起教学类型" else "展开教学类型", modifier = Modifier.rotate(typeRotation))
                         Text(typeGroup.label, modifier = Modifier.padding(start = 8.dp).weight(1f))
                         Text("${typeGroup.courses.size}", color = LocalTumPalette.current.onSurfaceVariant)
                     }

@@ -6,6 +6,8 @@
  */
 package com.tequila.tumcalendarcontrol.ui
 
+import androidx.compose.ui.platform.testTag
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
@@ -46,8 +48,8 @@ import top.yukonga.miuix.kmp.basic.TopAppBar
 
 private val FixedTopBarHeight = 136.dp
 private val FloatingNavigationShape = RoundedCornerShape(30.dp)
-/** 浮块本体含上下留白的高度；系统导航区由 WindowInsets 另行精确补足。 */
-private val FloatingNavigationContentClearance = 76.dp
+/** 仅用于滚动内容末尾，不能作为外层视口 padding；系统安全区另行处理。 */
+internal val FloatingNavigationContentClearance = 100.dp
 
 /** 主页面外壳不保留无实际功能的更多操作入口。 */
 @Composable
@@ -100,9 +102,8 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    // 资料页也保留相同高度，避免浮块出现／消失触发 AnimatedContent 纵向重测量。
-                    .padding(bottom = FloatingNavigationContentClearance),
+                    // 页面视口始终完整；浮块避让仅放在滚动内容末尾，不裁短整页。
+                    .fillMaxSize(),
             ) {
                 AnimatedContent(
                     targetState = contentScreen,
@@ -166,9 +167,10 @@ private fun AppBottomNavigation(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
+            .testTag("floating-navigation")
             .shadow(12.dp, FloatingNavigationShape)
             .clip(FloatingNavigationShape)
-            .background(palette.surface.copy(alpha = 0.78f))
+            .background(palette.surfaceContainer)
             .border(1.dp, palette.outline.copy(alpha = 0.35f), FloatingNavigationShape)
             .padding(horizontal = 6.dp, vertical = 4.dp),
     ) {

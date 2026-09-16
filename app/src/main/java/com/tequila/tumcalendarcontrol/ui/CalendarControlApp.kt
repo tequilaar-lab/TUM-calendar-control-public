@@ -42,6 +42,7 @@ fun CalendarControlApp() {
     val context = LocalContext.current
     val session = androidx.lifecycle.ViewModelProvider(context as androidx.activity.ComponentActivity)[CalendarSessionModel::class.java]
     val profilePreferences = remember(context) { ProfilePreferences(context) }
+    val appearancePreferences = remember(context) { AppearancePreferences(context) }
     val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
     val privateSyncConfigurationStore = remember(context) { PrivateSyncConfigurationStore(context) }
     val ruleLedgerPreferences = remember(context) { RuleLedgerPreferences(context) }
@@ -57,6 +58,7 @@ fun CalendarControlApp() {
         session.state ?: CalendarControlState(
             initialCourses = if (sourceSnapshotPreferences.hasStoredData) emptyList() else courseOverridePreferences.applyTo(SampleCourses.all()),
             initialProfile = profilePreferences.load(),
+            initialAppearance = appearancePreferences.load(),
             initialSyncDestinations = syncDestinationPreferences.load(),
             initialPrivateSyncConfiguration = privateSyncConfigurationStore.load(),
             initialRuleLedger = ruleLedgerPreferences.load(),
@@ -99,6 +101,7 @@ fun CalendarControlApp() {
         googleAuthorizationCoordinator.resolveResult(result.resultCode, result.data, state::resolveGoogleAuthorization)
     }
     LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
+    LaunchedEffect(state.appearanceSettings) { appearancePreferences.save(state.appearanceSettings) }
     LaunchedEffect(state.syncDestinations) { syncDestinationPreferences.save(state.syncDestinations) }
     LaunchedEffect(state.privateSyncConfiguration) {
         if (privateConfigurationInitialized) runCatching { privateSyncConfigurationStore.save(state.privateSyncConfiguration) }
@@ -233,7 +236,7 @@ fun CalendarControlApp() {
 /** 组合纯 Compose 外壳，供应用入口与合成截图测试共享；不初始化偏好或触发外部操作。 */
 @Composable
 internal fun CalendarControlSurface(state: CalendarControlState) {
-    TumCalendarTheme(mode = state.themeMode) {
+    TumCalendarTheme(mode = state.themeMode, lightStyle = state.lightPaletteStyle, darkStyle = state.darkPaletteStyle) {
         CalendarControlChrome(state)
     }
 }

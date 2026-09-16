@@ -64,6 +64,25 @@ object TumPalettes {
         gray = Color(0xFFB8C0CC),
     )
 }
+/** 保持历史深蓝原值；三种出席语义色不随外观改变。 */
+val DeepBluePalette = TumPalettes.dark.copy(
+    primary = Color(0xFFA8C8FF), primaryContainer = Color(0xFF004A85),
+    secondary = Color(0xFFB7C8E1), secondaryContainer = Color(0xFF344A63),
+    surface = Color(0xFF10151C), surfaceContainer = Color(0xFF1A212B), surfaceHighest = Color(0xFF27313E),
+    onSurface = Color(0xFFE1E7EF), onSurfaceVariant = Color(0xFFC4CBD5), outline = Color(0xFF8E99A8),
+)
+val WarmWhitePalette = TumPalettes.light.copy(
+    surface = Color(0xFFFFFBF4), surfaceContainer = Color(0xFFF5EFE4), surfaceHighest = Color(0xFFEAE2D5),
+    onSurface = Color(0xFF25231F), onSurfaceVariant = Color(0xFF585249), outline = Color(0xFF81786A),
+)
+
+fun appearancePalette(isDark: Boolean, light: LightPaletteStyle, dark: DarkPaletteStyle): TumPalette =
+    if (isDark) {
+        if (dark == DarkPaletteStyle.DEEP_BLUE) DeepBluePalette else TumPalettes.dark
+    } else {
+        if (light == LightPaletteStyle.WARM_WHITE) WarmWhitePalette else TumPalettes.light
+    }
+
 val LocalTumPalette = staticCompositionLocalOf { TumPalettes.light }
 
 /** 将本机保存的主题偏好解析为实际明暗值，供 Compose 与平台日期弹窗共用。 */
@@ -74,9 +93,9 @@ fun ThemeMode.usesDarkTheme(systemIsDark: Boolean): Boolean = when (this) {
 }
 
 @Composable
-fun TumCalendarTheme(mode: ThemeMode, content: @Composable () -> Unit) {
+fun TumCalendarTheme(mode: ThemeMode, lightStyle: LightPaletteStyle = LightPaletteStyle.COOL_WHITE, darkStyle: DarkPaletteStyle = DarkPaletteStyle.NEUTRAL_BLACK, content: @Composable () -> Unit) {
     val usesDarkTheme = mode.usesDarkTheme(isSystemInDarkTheme())
-    val palette = if (usesDarkTheme) TumPalettes.dark else TumPalettes.light
+    val palette = appearancePalette(usesDarkTheme, lightStyle, darkStyle)
     val colors = (if (usesDarkTheme) darkColorScheme() else lightColorScheme()).copy(
         primary = palette.primary,
         primaryVariant = palette.primaryContainer,

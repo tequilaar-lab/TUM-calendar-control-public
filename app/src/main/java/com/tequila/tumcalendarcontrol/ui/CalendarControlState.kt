@@ -90,6 +90,7 @@ class CalendarControlState(
     initialSourceCheckStatus: SourceCheckStatus = SourceCheckStatus(),
     initialCoursePresentations: Map<String, CoursePresentation> = emptyMap(),
     initialSourceSnapshots: SavedSourceSnapshots = SavedSourceSnapshots(),
+    initialAppearance: AppearanceSettings = AppearanceSettings(),
 ) {
     /** 仅保存 UID 对应的本机展示元数据；不替代来源快照中的实例级身份。 */
     private val savedCoursePresentations = initialCoursePresentations.toMutableMap()
@@ -123,7 +124,10 @@ class CalendarControlState(
     var localCalendarPermissionRequestPending by mutableStateOf(false)
         private set
     var feedback by mutableStateOf<String?>(null)
-    var themeMode by mutableStateOf(ThemeMode.SYSTEM)
+    var themeMode by mutableStateOf(initialAppearance.mode)
+    var lightPaletteStyle by mutableStateOf(initialAppearance.light)
+    var darkPaletteStyle by mutableStateOf(initialAppearance.dark)
+    val appearanceSettings: AppearanceSettings get() = AppearanceSettings(themeMode, lightPaletteStyle, darkPaletteStyle)
     var syncDestinations by mutableStateOf(initialSyncDestinations)
         private set
     var pendingSyncDestinationChange by mutableStateOf<PendingSyncDestinationChange?>(null)

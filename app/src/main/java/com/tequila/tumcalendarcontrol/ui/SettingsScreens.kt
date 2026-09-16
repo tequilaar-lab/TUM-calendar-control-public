@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.testTag
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -85,8 +86,8 @@ internal fun SettingsScreen(state: CalendarControlState) {
 @Composable
 private fun SettingsList(state: CalendarControlState, palette: TumPalette, modifier: Modifier) {
     LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(bottom = 24.dp),
+        modifier = modifier.testTag("settings-list"),
+        contentPadding = PaddingValues(bottom = FloatingNavigationContentClearance),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { InformationCard("使用步骤", "1 选择时间 · 2 读取并选择课程 · 3 设置出席和收藏 · 4 确认写入。返回不会清空已选课程。") }
@@ -122,6 +123,7 @@ private fun SettingsList(state: CalendarControlState, palette: TumPalette, modif
         }
         item { InformationCard("应用版本", "${BuildConfig.VERSION_NAME} · 构建号 ${BuildConfig.VERSION_CODE}") }
         item { ThemeModeSelector(state) }
+        item { AppearancePaletteSelector(state) }
         item { Spacer(Modifier.height(4.dp)) }
         state.feedback?.let { feedback -> item { Text(feedback, color = palette.onSurfaceVariant) } }
     }
@@ -135,7 +137,7 @@ private fun SettingsWideSupportPane(state: CalendarControlState, modifier: Modif
         if (state.syncDestinations.googleCalendarEnabled) add("Google 日历镜像")
     }.joinToString("、").ifBlank { "尚未启用输出" }
     Column(
-        modifier = modifier.verticalScroll(rememberScrollState()),
+        modifier = modifier.verticalScroll(rememberScrollState()).padding(bottom = FloatingNavigationContentClearance),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         InformationCard("当前设置", "展开屏把操作放在左侧，右侧显示同步与安全说明。")
@@ -408,7 +410,7 @@ private fun ThemeModeSelector(state: CalendarControlState) {
                     Column(modifier = Modifier.padding(start = 8.dp)) {
                         Text(mode.label, style = MiuixTheme.textStyles.body1)
                         Text(
-                            if (mode == ThemeMode.SYSTEM) "仅跟随系统明暗，不使用壁纸取色" else "本次运行内立即生效",
+                            if (mode == ThemeMode.SYSTEM) "随系统切换明暗，使用下方各自选择的配色" else "立即生效，并自动保存",
                             color = LocalTumPalette.current.onSurfaceVariant,
                         )
                     }
