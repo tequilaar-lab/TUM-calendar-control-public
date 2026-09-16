@@ -43,6 +43,7 @@ fun CalendarControlApp() {
     val session = androidx.lifecycle.ViewModelProvider(context as androidx.activity.ComponentActivity)[CalendarSessionModel::class.java]
     val profilePreferences = remember(context) { ProfilePreferences(context) }
     val appearancePreferences = remember(context) { AppearancePreferences(context) }
+    val courseTypeNamesPreferences = remember(context) { CourseTypeNamesPreferences(context) }
     val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
     val privateSyncConfigurationStore = remember(context) { PrivateSyncConfigurationStore(context) }
     val ruleLedgerPreferences = remember(context) { RuleLedgerPreferences(context) }
@@ -66,7 +67,7 @@ fun CalendarControlApp() {
             initialSourceCheckStatus = sourceCheckSettingsStore.loadStatus(),
             initialCoursePresentations = courseOverridePreferences.loadPresentations(),
             initialSourceSnapshots = initialSourceSnapshots,
-        ).also { session.state = it }
+        ).also { it.courseTypeNames = courseTypeNamesPreferences.load(); session.state = it }
     }
     var privateConfigurationInitialized by remember { mutableStateOf(false) }
     val localCalendarPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
@@ -102,6 +103,7 @@ fun CalendarControlApp() {
     }
     LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
     LaunchedEffect(state.appearanceSettings) { appearancePreferences.save(state.appearanceSettings) }
+    LaunchedEffect(state.courseTypeNames) { courseTypeNamesPreferences.save(state.courseTypeNames) }
     LaunchedEffect(state.syncDestinations) { syncDestinationPreferences.save(state.syncDestinations) }
     LaunchedEffect(state.privateSyncConfiguration) {
         if (privateConfigurationInitialized) runCatching { privateSyncConfigurationStore.save(state.privateSyncConfiguration) }
@@ -237,6 +239,9 @@ fun CalendarControlApp() {
 @Composable
 internal fun CalendarControlSurface(state: CalendarControlState) {
     TumCalendarTheme(mode = state.themeMode, lightStyle = state.lightPaletteStyle, darkStyle = state.darkPaletteStyle) {
-        CalendarControlChrome(state)
+        androidx.compose.runtime.CompositionLocalProvider(LocalCourseTypeNames provides CourseTypeNames(state.courseTypeNames) { key, value ->
+            if (value == null) state.courseTypeNames = state.courseTypeNames - key
+            else if (validCourseTypeName(value)) state.courseTypeNames = state.courseTypeNames + (key to value.trim())
+        }) { CalendarControlChrome(state) }
     }
 }

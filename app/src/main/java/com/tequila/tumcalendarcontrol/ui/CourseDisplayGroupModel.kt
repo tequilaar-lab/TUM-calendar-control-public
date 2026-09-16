@@ -29,7 +29,7 @@ internal data class CourseTeachingTypeGroup(
 
 internal object CourseDisplayGroupModel {
     /** 空白与大小写差异不会拆散同一视觉课程名；排序仅改善浏览，不参与任何业务规则。 */
-    fun groups(courses: List<Course>): List<CourseDisplayGroup> = courses
+    fun groups(courses: List<Course>, typeNames: Map<String, String> = emptyMap()): List<CourseDisplayGroup> = courses
         .map { course -> course to parseTitle(course.displayTitle) }
         .groupBy { (_, parsed) -> normalizedKey(parsed.courseName) }
         .map { (key, members) ->
@@ -39,7 +39,7 @@ internal object CourseDisplayGroupModel {
                 .map { (type, typeMembers) ->
                     CourseTeachingTypeGroup(
                         key = "$key:${normalizedKey(type.key)}",
-                        label = type.label,
+                        label = typeNames["$key:${normalizedKey(type.key)}"] ?: type.label,
                         courses = typeMembers.map { it.first }.sortedWith(compareBy<Course> { it.startsAt }.thenBy { it.id }),
                     )
                 }
@@ -68,7 +68,13 @@ internal object CourseDisplayGroupModel {
         if (grouped != null) {
             return ParsedCourseTitle(title.substring(0, grouped.range.first).cleanName(), TeachingType(grouped.groupValues[1].uppercase(Locale.ROOT)))
         }
-        return ParsedCourseTitle(title, TitleRules.OTHER_TYPE)
+        // 仅在原标准类型无法识别时回退；完整词匹配不会把 Praktikumsbericht 误判成 PR。
+        val inferred = when {
+            TitleRules.VI_TOKEN.containsMatchIn(title) -> TeachingType("VI")
+            TitleRules.PRACTICAL_TOKEN.containsMatchIn(title) -> TeachingType("PR")
+            else -> TitleRules.OTHER_TYPE
+        }
+        return ParsedCourseTitle(title, inferred)
     }
 
     private fun recognizedType(bracketContent: String): TeachingType? = TitleRules.TYPE_TOKEN.find(bracketContent)
@@ -82,7 +88,9 @@ internal object CourseDisplayGroupModel {
 
     private object TitleRules {
         val OTHER_TYPE = TeachingType("其他课次")
-        private const val TYPE_NAMES = "VO|UE|PR|SE|TU|EX|KO|VL|ÜB|VÜ"
+        private const val TYPE_NAMES = "VO|UE|PR|SE|TU|EX|KO|VL|VI|ÜB|VÜ"
+        val VI_TOKEN = Regex("(?i)(?<![\\p{L}\\p{N}])VI(?![\\p{L}\\p{N}])")
+        val PRACTICAL_TOKEN = Regex("(?i)(?<![\\p{L}\\p{N}])(?:Projektpraktikum|Praktikum)(?![\\p{L}\\p{N}])")
         val TYPE_TOKEN = Regex("(?i)(?<![A-ZÄÖÜ])($TYPE_NAMES)(?![A-ZÄÖÜ])")
         val BRACKET_SUFFIX = Regex("\\s*[\\(\\[]([^\\)\\]]+)[\\)\\]]\\s*$")
         val TYPE_SUFFIX = Regex("(?i)(?:\\s|[,;:/\\-–—])+($TYPE_NAMES)\\s*$")

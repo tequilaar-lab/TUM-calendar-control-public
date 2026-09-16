@@ -73,6 +73,14 @@ fun SourceRangeScreen(state: CalendarControlState) {
         ) { Text("保存时间范围") }
         validation.forEach { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
         ReadCoverageCard(state)
+        if (state.sourcePreview != null) {
+            Button(
+                onClick = { validation = state.continueWithSavedCourses(startDate, endDate) },
+                enabled = !state.sourceReadInProgress,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("使用已保存课程 · 下一步") }
+            Text("使用${state.sourceSnapshotLabel}，按上方时间范围筛选，不重新联网读取。超出已保存数据的课次需要重新读取。", color = LocalTumPalette.current.onSurfaceVariant)
+        }
         if (state.sourceReloadConfirmationPending) {
             SourceReloadConfirmationCard(state)
         } else {

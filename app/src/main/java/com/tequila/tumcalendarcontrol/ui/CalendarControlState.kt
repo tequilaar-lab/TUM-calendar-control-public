@@ -125,6 +125,13 @@ class CalendarControlState(
         private set
     var feedback by mutableStateOf<String?>(null)
     var themeMode by mutableStateOf(initialAppearance.mode)
+    var courseTypeNames by mutableStateOf<Map<String, String>>(emptyMap())
+    var individualAttendanceMode by mutableStateOf(false)
+    var individualAttendanceDrafts by mutableStateOf<Map<String, IndividualAttendanceDraft>>(emptyMap())
+    val individualAttendanceGroups: List<IndividualAttendanceGroup> get() = sourceWorkflow.occurrences
+        .filter { it.identity in selectedSourceOccurrences }
+        .groupBy { CourseDisplayGroupModel.titleGroupingKey(it.title) }
+        .map { (key, items) -> IndividualAttendanceGroup(key, items.first().title, items.map { it.identity }.toSet()) }
     var lightPaletteStyle by mutableStateOf(initialAppearance.light)
     var darkPaletteStyle by mutableStateOf(initialAppearance.dark)
     val appearanceSettings: AppearanceSettings get() = AppearanceSettings(themeMode, lightPaletteStyle, darkPaletteStyle)
@@ -441,6 +448,18 @@ class CalendarControlState(
     }
 
     /** 已读课程目录可直接返回；无目录时只提示，不能暗中发起来源读取。 */
+    fun continueWithSavedCourses(start: String, end: String): List<String> {
+        if (sourceReadInProgress) return listOf("正在读取课程，请稍候。")
+        if (sourcePreview == null) return listOf("还没有保存的课程，请先读取。")
+        val errors = saveSourceOutputRange(start, end)
+        if (errors.isEmpty()) {
+            resolveSourceReloadConfirmation(false)
+            openSourceCourseSelector()
+        }
+        return errors
+    }
+
+    /** 打开已有目录，不发起读取或清空选择。 */
     fun openSourceCourseSelector() {
         if (sourceWorkflow.preview == null) {
             feedback = "还没有读取课程。请先在“选择读取时间”中读取。"
@@ -517,12 +536,15 @@ class CalendarControlState(
             return
         }
         val firstState = sourceAttendanceFor(selection.first().sourceUid)
+        individualAttendanceMode = false
+        individualAttendanceDrafts = emptyMap()
         sourceWorkflow.prepareAttendanceEditor(selection, firstState)
         navigation.openSourceAttendance()
     }
 
     /** 将 UI 范围转换为 UID 规则；“仅本次”严格使用选中的原始实例键。 */
     fun confirmSourceAttendance() {
+        if (individualAttendanceMode) { confirmIndividualSourceAttendance(); return }
         val result = sourceWorkflow.applyAttendanceRules(ruleLedger)
         if (result is SourceAttendanceRuleResult.Invalid) {
             feedback = result.message
@@ -540,6 +562,31 @@ class CalendarControlState(
         }
         rememberPresentations()
         feedback = "已保存 ${selectedSourceOccurrences.size} 个课次的出席方式${if (result.favoriteAction == SourceFavoriteAction.KEEP) "" else "与收藏设置"}；尚未写入日历。"
+        navigation.handleBack()
+    }
+
+    /** 全部验证成功后一次提交；不因后续某组日期错误留下半份规则。 */
+    private fun confirmIndividualSourceAttendance() {
+        val groups = individualAttendanceGroups
+        if (groups.isEmpty()) { feedback = "请先选择课次。"; return }
+        var nextLedger = ruleLedger
+        val results = mutableListOf<SourceAttendanceRuleResult.Applied>()
+        for (group in groups) {
+            val draft = individualAttendanceDrafts[group.key] ?: IndividualAttendanceDraft()
+            val result = sourceWorkflow.applyAttendanceRules(nextLedger, group.selection, draft.attendance, draft.favorite)
+            if (result is SourceAttendanceRuleResult.Invalid) { feedback = result.message; return }
+            result as SourceAttendanceRuleResult.Applied
+            nextLedger = result.rules
+            results += result
+        }
+        ruleLedger = nextLedger
+        invalidateWritePreview()
+        refreshCoursesFromSource()
+        results.filter { it.favoriteAction != SourceFavoriteAction.KEEP }.forEach { result ->
+            courses = courses.map { course -> if (course.id in result.sourceUids) course.copy(isFavorite = result.favoriteAction == SourceFavoriteAction.ADD) else course }
+        }
+        rememberPresentations()
+        feedback = "已保存 ${groups.size} 门课程的分别设置；尚未写入日历。"
         navigation.handleBack()
     }
 

@@ -180,21 +180,27 @@ internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = 
     }
 
     /** 将课次选择转换为稳定 UID 规则；“仅本次”严格保留每项的原始实例键。 */
-    fun applyAttendanceRules(currentLedger: RuleLedger): SourceAttendanceRuleResult {
-        val selected = occurrences.filter { it.identity in selectedOccurrences }
+    fun applyAttendanceRules(
+        currentLedger: RuleLedger,
+        selection: Set<SourceOccurrenceIdentity> = selectedOccurrences,
+        attendance: AttendanceState? = pendingAttendance,
+        favoriteAction: SourceFavoriteAction = pendingFavoriteAction,
+    ): SourceAttendanceRuleResult {
+        val selected = occurrences.filter { it.identity in selection }
         if (selected.isEmpty()) return SourceAttendanceRuleResult.Invalid("课次列表已过期；重新读取后再修改。")
         val sourceUids = selected.map(SourceCalendarOccurrence::sourceUid).toSet()
+        if (attendance == null) return SourceAttendanceRuleResult.Applied(currentLedger, sourceUids, favoriteAction)
         val command = when (pendingAttendanceScope) {
-            AttendanceEditScope.ALL_OCCURRENCES -> RuleEditCommand.WholeCourse(sourceUids, pendingAttendance)
-            AttendanceEditScope.CURRENT_AND_FUTURE -> RuleEditCommand.FromOccurrence(selected.groupBy { it.sourceUid }.mapValues { (_, items) -> items.minOf { it.startsAt } }, pendingAttendance)
+            AttendanceEditScope.ALL_OCCURRENCES -> RuleEditCommand.WholeCourse(sourceUids, attendance)
+            AttendanceEditScope.CURRENT_AND_FUTURE -> RuleEditCommand.FromOccurrence(selected.groupBy { it.sourceUid }.mapValues { (_, items) -> items.minOf { it.startsAt } }, attendance)
             AttendanceEditScope.SPECIFIED_AND_FUTURE -> AttendanceEffectiveDateParser.parseOrNull(pendingEffectiveDate)
-                ?.let { RuleEditCommand.FromDate(sourceUids, it, pendingAttendance) }
+                ?.let { RuleEditCommand.FromDate(sourceUids, it, attendance) }
                 ?: return SourceAttendanceRuleResult.Invalid("请输入 YYYY-MM-DD 格式的指定日期。")
             AttendanceEditScope.ONLY_THIS_OCCURRENCE -> RuleEditCommand.InstancesBySource(
                 sourceUids = sourceUids,
                 instanceKeysBySourceUid = selected.groupBy(SourceCalendarOccurrence::sourceUid)
                     .mapValues { (_, items) -> items.map(SourceCalendarOccurrence::instanceKey).toSet() },
-                state = pendingAttendance,
+                state = attendance,
             )
         }
         val existing = currentLedger.rules.associateBy(SyncRule::sourceUid)
@@ -204,7 +210,7 @@ internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = 
         return SourceAttendanceRuleResult.Applied(
             rules = currentLedger.copy(rules = RuleLedgerEditor.apply(currentLedger.rules.filterNot { it.sourceUid in sourceUids } + ensuredRules, command)),
             sourceUids = sourceUids,
-            favoriteAction = pendingFavoriteAction,
+            favoriteAction = favoriteAction,
         )
     }
 }

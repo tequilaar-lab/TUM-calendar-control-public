@@ -37,10 +37,16 @@ fun SourceAttendanceScreen(state: CalendarControlState) {
     ) {
         Text("为 ${state.selectedSourceOccurrences.size} 个课次设置出席和收藏", style = MiuixTheme.textStyles.title3)
         Text("“仅本次”只改已选课次；其他范围按所属课程生效。此步骤还不会写入日历。", color = LocalTumPalette.current.onSurfaceVariant)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = { state.individualAttendanceMode = false }, modifier = Modifier.weight(1f)) { Text(if (!state.individualAttendanceMode) "✓ 统一设置" else "统一设置") }
+            Button(onClick = { state.individualAttendanceMode = true }, modifier = Modifier.weight(1f)) { Text(if (state.individualAttendanceMode) "✓ 按课程分别设置" else "按课程分别设置") }
+        }
+        if (state.individualAttendanceMode) IndividualSourceAttendance(state) else {
         Text("出席方式", style = MiuixTheme.textStyles.title3)
         AttendanceState.entries.forEach { option -> SourceAttendanceOption(option, state) }
         Text("收藏", style = MiuixTheme.textStyles.title3)
         SourceFavoriteAction.entries.forEach { action -> SourceFavoriteActionOption(action, state) }
+        }
         Text("生效范围", style = MiuixTheme.textStyles.title3)
         AttendanceEditScope.entries.forEach { scope -> SourceAttendanceScopeOption(scope, state) }
         if (state.pendingSourceAttendanceScope == AttendanceEditScope.SPECIFIED_AND_FUTURE) {

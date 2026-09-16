@@ -18,6 +18,8 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performTextReplacement
+import org.junit.Assert.*
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyImportResult
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyPreview
@@ -155,6 +157,50 @@ class CalendarControlScreenshotTest {
     private fun render(state: CalendarControlState) {
         composeRule.setContent { CalendarControlSurface(state) }
         composeRule.waitForIdle()
+    }
+
+    @Test
+    @Config(sdk = [36], qualifiers = "w412dp-h892dp-420dpi")
+    fun `已有课程的时间页可直接继续而不重新读取`() {
+        val state = loadedSourceState()
+        state.openSourceRange()
+        render(state)
+        composeRule.onNodeWithText("使用已保存课程 · 下一步").performScrollTo()
+        capture("source_range_cached_next_412x892")
+        composeRule.onNodeWithText("使用已保存课程 · 下一步").performClick()
+        assertEquals(AppScreen.SOURCE_PREVIEW, state.screen)
+        assertFalse(state.sourceReadRequested)
+    }
+
+    @Test
+    @Config(sdk = [36], qualifiers = "w412dp-h892dp-420dpi")
+    fun `分别设置可切换且取消不保存`() {
+        val state = loadedSourceState()
+        state.openSourceAttendanceEditor(state.currentSourceOccurrences.map { it.identity }.toSet())
+        render(state)
+        composeRule.onNodeWithText("按课程分别设置").performClick()
+        composeRule.onAllNodes(hasText("单独设置"))[0].performClick()
+        capture("attendance_individual_412x892")
+        composeRule.onNodeWithText("统一设置").performClick()
+        assertFalse(state.individualAttendanceMode)
+        assertTrue(state.ruleLedger.rules.isEmpty())
+    }
+
+    @Test
+    @Config(sdk = [36], qualifiers = "w412dp-h892dp-420dpi")
+    fun `子类型可改名且取消不保存`() {
+        val state = CalendarControlState()
+        render(state)
+        composeRule.onNodeWithText("课程 A").performClick()
+        composeRule.onNodeWithText("改名").performClick()
+        composeRule.onNode(androidx.compose.ui.test.isDialog()).captureRoboImage("src/test/screenshots/course_type_rename_412x892.png")
+        composeRule.onAllNodes(androidx.compose.ui.test.hasSetTextAction())[0].performTextReplacement("自定义类型")
+        composeRule.onNodeWithText("取消").performClick()
+        assertTrue(state.courseTypeNames.isEmpty())
+        composeRule.onNodeWithText("改名").performClick()
+        composeRule.onAllNodes(androidx.compose.ui.test.hasSetTextAction())[0].performTextReplacement("自定义类型")
+        composeRule.onNodeWithText("保存名称").performClick()
+        assertEquals(listOf("自定义类型"), state.courseTypeNames.values.toList())
     }
 
     /** 仅渲染日期选择组件，以稳定审查月格本身，不受来源选择页固定操作栏高度影响。 */

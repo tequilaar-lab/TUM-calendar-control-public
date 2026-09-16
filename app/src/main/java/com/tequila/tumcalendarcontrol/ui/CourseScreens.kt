@@ -210,7 +210,8 @@ private fun AdaptiveCourseBrowser(
 ) {
     var expandedGroupKeys by androidx.compose.runtime.saveable.rememberSaveable(browserStateKey) { mutableStateOf<Set<String>>(emptySet()) }
     var expandedTeachingTypeKeys by androidx.compose.runtime.saveable.rememberSaveable(browserStateKey) { mutableStateOf<Set<String>>(emptySet()) }
-    val groups = remember(courses) { CourseDisplayGroupModel.groups(courses) }
+    val typeNames = LocalCourseTypeNames.current.names
+    val groups = remember(courses, typeNames) { CourseDisplayGroupModel.groups(courses, typeNames) }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val listContent: @Composable (Modifier) -> Unit = { modifier ->
             LazyColumn(
@@ -386,6 +387,7 @@ private fun CourseTeachingTypeCard(typeGroup: CourseTeachingTypeGroup, expanded:
                 Text(typeGroup.label, style = MiuixTheme.textStyles.body2)
                 Text("${typeGroup.courses.size} 个课次", color = LocalTumPalette.current.onSurfaceVariant)
             }
+            CourseTypeRenameButton(typeGroup)
             Icon(
                 Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
                 if (expanded) "收起${typeGroup.label}" else "展开${typeGroup.label}",
