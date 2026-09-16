@@ -23,6 +23,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.runtime.Composable
@@ -40,6 +42,7 @@ import com.tequila.tumcalendarcontrol.domain.displayLocation
 import com.tequila.tumcalendarcontrol.domain.displaySchedule
 import com.tequila.tumcalendarcontrol.domain.displayTitle
 import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
@@ -50,6 +53,7 @@ internal fun OverviewScreen(state: CalendarControlState) {
     CourseList(
         courses = state.displayedCourses,
         heading = if (state.sourceCatalogLoaded) "已读取的课程" else "课程总览",
+        browserStateKey = "overview",
         onCourseClick = state::openCourse,
     )
 }
@@ -145,6 +149,7 @@ internal fun SearchScreen(state: CalendarControlState) {
     AdaptiveCourseBrowser(
         courses = state.searchedCourses,
         heading = if (state.searchQuery.isBlank()) "可搜索的课程" else "搜索结果",
+        browserStateKey = "search",
         onCourseClick = state::openCourse,
         leadingItems = {
             item {
@@ -164,14 +169,15 @@ internal fun FavoritesScreen(state: CalendarControlState) {
     AdaptiveCourseBrowser(
         courses = state.favoriteCourses,
         heading = "收藏列表",
+        browserStateKey = "favorites",
         onCourseClick = state::openCourse,
         leadingItems = { item { InformationCard("已收藏课程", "收藏只影响显示，不改变出席状态") } },
     )
 }
 
 @Composable
-private fun CourseList(courses: List<Course>, heading: String, onCourseClick: (String) -> Unit) {
-    AdaptiveCourseBrowser(courses, heading, onCourseClick)
+private fun CourseList(courses: List<Course>, heading: String, browserStateKey: String, onCourseClick: (String) -> Unit) {
+    AdaptiveCourseBrowser(courses, heading, browserStateKey, onCourseClick)
 }
 
 /** 展开屏以列表＋辅助面板利用额外宽度；窄屏保持单一可滚动课程列表。 */
@@ -179,9 +185,11 @@ private fun CourseList(courses: List<Course>, heading: String, onCourseClick: (S
 private fun AdaptiveCourseBrowser(
     courses: List<Course>,
     heading: String,
+    browserStateKey: String,
     onCourseClick: (String) -> Unit,
     leadingItems: LazyListScope.() -> Unit = {},
 ) {
+    var expandedGroupKeys by remember(browserStateKey) { mutableStateOf<Set<String>>(emptySet()) }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val listContent: @Composable (Modifier) -> Unit = { modifier ->
             LazyColumn(
@@ -190,7 +198,15 @@ private fun AdaptiveCourseBrowser(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 leadingItems()
-                courseListItems(courses, heading, onCourseClick)
+                courseListItems(
+                    courses = courses,
+                    heading = heading,
+                    expandedGroupKeys = expandedGroupKeys,
+                    onCourseClick = onCourseClick,
+                    onGroupExpandedChange = { key ->
+                        expandedGroupKeys = expandedGroupKeys.toggleCourseDisplayGroup(key)
+                    },
+                )
             }
         }
         if (maxWidth < 720.dp) {
@@ -217,21 +233,53 @@ private fun CourseBrowserSupportPane(courses: List<Course>, modifier: Modifier) 
 }
 
 /** 让总览、搜索和收藏共用同一批列表项，避免在可滚动页面中嵌套 LazyColumn。 */
-private fun LazyListScope.courseListItems(courses: List<Course>, heading: String, onCourseClick: (String) -> Unit) {
+private fun LazyListScope.courseListItems(
+    courses: List<Course>,
+    heading: String,
+    expandedGroupKeys: Set<String>,
+    onCourseClick: (String) -> Unit,
+    onGroupExpandedChange: (String) -> Unit,
+) {
     item { Text(heading, style = MiuixTheme.textStyles.title3) }
     if (courses.isEmpty()) {
         item { InformationCard("暂无课程", "请先读取课程或检查筛选条件。") }
     } else {
         CourseDisplayGroupModel.groups(courses).forEach { group ->
             item(key = "course-group:${group.key}") {
-                InformationCard(
-                    title = group.displayTitle,
-                    body = if (group.courses.size == 1) "1 条课程记录" else "${group.courses.size} 条课程记录；点选下方时间查看或修改。",
+                CourseGroupCard(
+                    group = group,
+                    expanded = group.key in expandedGroupKeys,
+                    onClick = { onGroupExpandedChange(group.key) },
                 )
             }
-            items(group.courses, key = { it.id }) { course ->
-                CourseRow(course, onClick = { onCourseClick(course.id) }, condensed = true)
+            if (group.key in expandedGroupKeys) {
+                items(group.courses, key = { course -> "course-row:${group.key}:${course.id}" }) { course ->
+                    CourseRow(course, onClick = { onCourseClick(course.id) }, condensed = true)
+                }
             }
+        }
+    }
+}
+
+/** 同名课程先折叠为一个浏览卡片；展开只改变当前页面状态，不会合并课程身份。 */
+@Composable
+private fun CourseGroupCard(group: CourseDisplayGroup, expanded: Boolean, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        insideMargin = PaddingValues(14.dp),
+    ) {
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(group.displayTitle, style = MiuixTheme.textStyles.body1)
+                Text(
+                    if (expanded) "${group.courses.size} 个课次已展开；点按可收起。" else "${group.courses.size} 个课次；点按查看日期、时间和地点。",
+                    color = LocalTumPalette.current.onSurfaceVariant,
+                )
+            }
+            Icon(
+                if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                if (expanded) "收起课程" else "展开课程",
+            )
         }
     }
 }

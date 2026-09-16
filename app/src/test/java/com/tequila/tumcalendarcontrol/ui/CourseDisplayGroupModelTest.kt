@@ -26,6 +26,16 @@ class CourseDisplayGroupModelTest {
         assertEquals(listOf("a", "b"), groups.first { it.displayTitle.contains("VHDL", ignoreCase = true) }.courses.map(Course::id))
     }
 
+    @Test
+    fun `展开一个课程组不会改变其它课程组`() {
+        val initiallyExpanded = setOf("course-a")
+
+        val expanded = initiallyExpanded.toggleCourseDisplayGroup("course-b")
+
+        assertEquals(setOf("course-a", "course-b"), expanded)
+        assertEquals(setOf("course-b"), expanded.toggleCourseDisplayGroup("course-a"))
+    }
+
     private fun course(id: String, title: String, schedule: String = "周一 10:00–12:00", location: String = "合成地点") = Course(
         id = id,
         title = title,

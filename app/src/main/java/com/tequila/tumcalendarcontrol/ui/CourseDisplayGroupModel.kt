@@ -33,3 +33,7 @@ internal object CourseDisplayGroupModel {
     private fun normalizedKey(title: String): String =
         title.trim().replace(Regex("\\s+"), " ").lowercase(Locale.ROOT).ifBlank { "(untitled)" }
 }
+
+/** 展开状态只保存视觉组键；切换一个组不会改变其它组或课程成员。 */
+internal fun Set<String>.toggleCourseDisplayGroup(key: String): Set<String> =
+    if (key in this) this - key else this + key
