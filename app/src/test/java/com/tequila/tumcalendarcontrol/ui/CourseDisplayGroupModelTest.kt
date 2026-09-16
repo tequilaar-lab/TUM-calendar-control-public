@@ -36,6 +36,32 @@ class CourseDisplayGroupModelTest {
         assertEquals(setOf("course-b"), expanded.toggleCourseDisplayGroup("course-a"))
     }
 
+    @Test
+    fun `同一课程的 VO UE PR 进入二级类型目录而不合并 UID`() {
+        val groups = CourseDisplayGroupModel.groups(
+            listOf(
+                course("vo", "Messsystem- und Sensortechnik (VO)"),
+                course("ue", "Messsystem- und Sensortechnik (UE)"),
+                course("pr", "Messsystem- und Sensortechnik (PR)"),
+                course("other", "Messsystem- und Sensortechnik"),
+            ),
+        )
+
+        val group = groups.single()
+        assertEquals("Messsystem- und Sensortechnik", group.displayTitle)
+        assertEquals(listOf("PR", "UE", "VO", "其他课次"), group.teachingTypes.map { it.label })
+        assertEquals(listOf("vo"), group.teachingTypes.single { it.label == "VO" }.courses.map(Course::id))
+        assertEquals(listOf("other"), group.teachingTypes.single { it.label == "其他课次" }.courses.map(Course::id))
+    }
+
+    @Test
+    fun `二级类型展开状态不会影响顶层课程状态`() {
+        val expandedTypes = setOf("mess:vo").toggleCourseTeachingTypeGroup("mess:ue")
+
+        assertEquals(setOf("mess:vo", "mess:ue"), expandedTypes)
+        assertEquals(setOf("mess:ue"), expandedTypes.toggleCourseTeachingTypeGroup("mess:vo"))
+    }
+
     private fun course(id: String, title: String, schedule: String = "周一 10:00–12:00", location: String = "合成地点") = Course(
         id = id,
         title = title,

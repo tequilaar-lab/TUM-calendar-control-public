@@ -99,10 +99,13 @@ private fun SettingsList(state: CalendarControlState, palette: TumPalette, modif
         }
         item {
             val courseSummary = when {
-                state.sourcePreview == null -> "还没有读取课程。先选择时间并读取课程。"
-                else -> "本次已读取 ${state.sourceCourses.size} 个来源课程；已选择 ${state.selectedSourceOccurrences.size} 个具体课次。"
+                !state.sourceCatalogLoaded -> "还没有读取课程。先选择时间并读取课程。"
+                else -> "当前使用${state.sourceSnapshotLabel}：${state.sourceCourses.size} 门课程；已选择 ${state.selectedSourceOccurrences.size} 个具体课次。"
             }
             InformationCard("已读取课程", courseSummary)
+        }
+        if (state.sourceCatalogLoaded) {
+            item { SourceSnapshotSelectionCard(state) }
         }
         item { Button(onClick = state::openSourceCourseSelector, modifier = Modifier.fillMaxWidth()) { Text("选择课程") } }
         item { Button(onClick = state::openSyncConfiguration, modifier = Modifier.fillMaxWidth()) { Text("日历连接") } }
@@ -138,7 +141,7 @@ private fun SettingsWideSupportPane(state: CalendarControlState, modifier: Modif
         InformationCard("当前设置", "展开屏把操作放在左侧，右侧显示同步与安全说明。")
         InformationCard(
             "已读课程",
-            if (state.sourceCatalogLoaded) "已读取 ${state.sourceCourses.size} 门课程、选择 ${state.selectedSourceOccurrences.size} 个具体课次。" else "尚未读取课程。",
+            if (state.sourceCatalogLoaded) "当前使用${state.sourceSnapshotLabel}：${state.sourceCourses.size} 门课程、选择 ${state.selectedSourceOccurrences.size} 个具体课次。" else "尚未读取课程。",
         )
         InformationCard("写入位置", targets)
         InformationCard("保护方式", "普通写入只新增或更新本次选择。清理旧日程要在左侧单独进入，并再次确认。")
@@ -150,12 +153,38 @@ private fun SourceStatusSelector(state: CalendarControlState) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("课程显示", style = MiuixTheme.textStyles.title3)
         if (state.sourceCatalogLoaded) {
-            Text("本次读取的课程会全部显示，不会按学校状态隐藏。", color = LocalTumPalette.current.onSurfaceVariant)
+            Text("${state.sourceSnapshotLabel}会全部显示，不会按学校状态隐藏。", color = LocalTumPalette.current.onSurfaceVariant)
         } else {
             Text("这里只控制示例课程显示，不会改变课程地址或任何日历。", color = LocalTumPalette.current.onSurfaceVariant)
             TumEventStatus.entries.forEach { status ->
                 Switch(checked = status in state.visibleSourceStatuses, onCheckedChange = { state.toggleSourceStatusVisible(status) })
                 Text(status.label, modifier = Modifier.padding(start = 8.dp))
+            }
+        }
+    }
+}
+
+/** 用户明确决定浏览／预览使用哪个成功读取版本；切换本身既不联网也不改日历。 */
+@Composable
+private fun SourceSnapshotSelectionCard(state: CalendarControlState) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        InformationCard(
+            "课程数据版本",
+            "可以直接使用${state.sourceSnapshotLabel}继续选择和查看写入内容。需要更新时，回到“读取课程”获取最新数据；读取失败不会丢失这里的课程。",
+        )
+        if (state.hasPreviousSourceSnapshot) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = { state.selectSourceSnapshot(SourceSnapshotSlot.LATEST) },
+                    modifier = Modifier.weight(1f),
+                ) { Text(if (state.activeSourceSnapshotSlot == SourceSnapshotSlot.LATEST) "✓ 使用最新读取" else "使用最新读取") }
+                Button(
+                    onClick = { state.selectSourceSnapshot(SourceSnapshotSlot.PREVIOUS) },
+                    modifier = Modifier.weight(1f),
+                ) { Text(if (state.activeSourceSnapshotSlot == SourceSnapshotSlot.PREVIOUS) "✓ 使用较早数据" else "使用较早数据") }
+            }
+            state.sourceSnapshotDifference?.let { difference ->
+                InformationCard("读取更新", difference.summary())
             }
         }
     }

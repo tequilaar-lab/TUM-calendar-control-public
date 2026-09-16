@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -47,6 +46,7 @@ import top.yukonga.miuix.kmp.basic.TopAppBar
 
 private val FixedTopBarHeight = 136.dp
 private val FloatingNavigationShape = RoundedCornerShape(30.dp)
+/** 浮块本体含上下留白的高度；系统导航区由 WindowInsets 另行精确补足。 */
 private val FloatingNavigationContentClearance = 76.dp
 
 /** 主页面外壳不保留无实际功能的更多操作入口。 */
@@ -92,6 +92,7 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                         start = 16.dp,
                         top = innerPadding.calculateTopPadding() + 16.dp,
                         end = 16.dp,
+                        // Scaffold 已提供系统导航区；浮块不再重复叠加 navigationBarsPadding。
                         bottom = innerPadding.calculateBottomPadding() + 8.dp,
                     ),
                 ),
@@ -99,7 +100,8 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = if (showsFloatingNavigation) FloatingNavigationContentClearance else 0.dp),
+                    // 资料页也保留相同高度，避免浮块出现／消失触发 AnimatedContent 纵向重测量。
+                    .padding(bottom = FloatingNavigationContentClearance),
             ) {
                 AnimatedContent(
                     targetState = contentScreen,
@@ -162,7 +164,6 @@ private fun AppBottomNavigation(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .shadow(12.dp, FloatingNavigationShape)
             .clip(FloatingNavigationShape)

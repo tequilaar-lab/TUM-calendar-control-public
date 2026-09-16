@@ -47,6 +47,8 @@ fun CalendarControlApp() {
     val sourceCheckSettingsStore = remember(context) { SourceCheckSettingsStore(context) }
     val periodicSourceCheckScheduler = remember(context) { PeriodicSourceCheckScheduler(context) }
     val courseOverridePreferences = remember(context) { CourseOverridePreferences(context) }
+    val sourceSnapshotPreferences = remember(context) { SourceSnapshotPreferences(context) }
+    val initialSourceSnapshots = remember(context) { sourceSnapshotPreferences.load() }
     val readOnlyIcalImportService = remember { ReadOnlyIcalImportService() }
     val sourceReadCoordinator = remember { SourceReadCoordinator(readOnlyIcalImportService::preview, SourceReadDeadlineMillis) }
     val googleAuthorizationCoordinator = remember(context) { GoogleAuthorizationCoordinator(context) }
@@ -61,6 +63,7 @@ fun CalendarControlApp() {
             initialSourceCheckSettings = sourceCheckSettingsStore.loadSettings(),
             initialSourceCheckStatus = sourceCheckSettingsStore.loadStatus(),
             initialCoursePresentations = courseOverridePreferences.loadPresentations(),
+            initialSourceSnapshots = initialSourceSnapshots,
         )
     }
     var privateConfigurationInitialized by remember { mutableStateOf(false) }
@@ -104,6 +107,7 @@ fun CalendarControlApp() {
     LaunchedEffect(state.ruleLedger) { ruleLedgerPreferences.save(state.ruleLedger) }
     LaunchedEffect(state.sourceCheckSettings) { sourceCheckSettingsStore.saveSettings(state.sourceCheckSettings) }
     LaunchedEffect(state.courses) { courseOverridePreferences.save(state.courses) }
+    LaunchedEffect(state.savedSourceSnapshots) { sourceSnapshotPreferences.save(state.savedSourceSnapshots) }
     LaunchedEffect(Unit) {
         state.refreshLocalCalendarPermission(
             ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED &&

@@ -198,6 +198,8 @@ private fun AdaptiveCourseBrowser(
     leadingItems: LazyListScope.() -> Unit = {},
 ) {
     var expandedGroupKeys by remember(browserStateKey) { mutableStateOf<Set<String>>(emptySet()) }
+    var expandedTeachingTypeKeys by remember(browserStateKey) { mutableStateOf<Set<String>>(emptySet()) }
+    val groups = remember(courses) { CourseDisplayGroupModel.groups(courses) }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val listContent: @Composable (Modifier) -> Unit = { modifier ->
             LazyColumn(
@@ -207,12 +209,16 @@ private fun AdaptiveCourseBrowser(
             ) {
                 leadingItems()
                 courseListItems(
-                    courses = courses,
+                    groups = groups,
                     heading = heading,
                     expandedGroupKeys = expandedGroupKeys,
+                    expandedTeachingTypeKeys = expandedTeachingTypeKeys,
                     onCourseClick = onCourseClick,
                     onGroupExpandedChange = { key ->
                         expandedGroupKeys = expandedGroupKeys.toggleCourseDisplayGroup(key)
+                    },
+                    onTeachingTypeExpandedChange = { key ->
+                        expandedTeachingTypeKeys = expandedTeachingTypeKeys.toggleCourseTeachingTypeGroup(key)
                     },
                 )
             }
@@ -222,37 +228,61 @@ private fun AdaptiveCourseBrowser(
         } else {
             Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 listContent(Modifier.weight(0.62f).fillMaxHeight())
-                CourseBrowserSupportPane(courses, Modifier.weight(0.38f).fillMaxHeight())
+                CourseBrowserSupportPane(
+                    groups = groups,
+                    modifier = Modifier.weight(0.38f).fillMaxHeight(),
+                    expandedGroupKeys = expandedGroupKeys,
+                    expandedTeachingTypeKeys = expandedTeachingTypeKeys,
+                    onGroupExpandedChange = { key -> expandedGroupKeys = expandedGroupKeys.toggleCourseDisplayGroup(key) },
+                    onTeachingTypeExpandedChange = { key -> expandedTeachingTypeKeys = expandedTeachingTypeKeys.toggleCourseTeachingTypeGroup(key) },
+                )
             }
         }
     }
 }
 
 @Composable
-private fun CourseBrowserSupportPane(courses: List<Course>, modifier: Modifier) {
+private fun CourseBrowserSupportPane(
+    groups: List<CourseDisplayGroup>,
+    modifier: Modifier,
+    expandedGroupKeys: Set<String>,
+    expandedTeachingTypeKeys: Set<String>,
+    onGroupExpandedChange: (String) -> Unit,
+    onTeachingTypeExpandedChange: (String) -> Unit,
+) {
     Column(
         modifier = modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("课程浏览", "展开屏会把课程列表保持在左侧，右侧保留当前浏览说明，避免横向拉宽内容。")
-        InformationCard("当前结果", "共 ${courses.size} 条课程记录；同名课程会归在一起，但每个日期、时间和地点仍可单独打开。")
-        InformationCard("安全说明", "课程名称只用于显示分组。写入、更新和清理始终使用来源 UID 与具体课次身份。")
+        InformationCard("课程目录", "左侧是完整列表；这里是同一份“课程名 → 类型 → 课次”索引，可独立滚动和展开。")
+        groups.forEach { group ->
+            CourseDirectoryGroup(
+                group = group,
+                expanded = group.key in expandedGroupKeys,
+                expandedTeachingTypeKeys = expandedTeachingTypeKeys,
+                onGroupExpandedChange = onGroupExpandedChange,
+                onTeachingTypeExpandedChange = onTeachingTypeExpandedChange,
+            )
+        }
+        InformationCard("安全说明", "课程名称和类型只用于浏览分组。写入、更新和清理始终使用来源 UID 与具体课次身份。")
     }
 }
 
 /** 让总览、搜索和收藏共用同一批列表项，避免在可滚动页面中嵌套 LazyColumn。 */
 private fun LazyListScope.courseListItems(
-    courses: List<Course>,
+    groups: List<CourseDisplayGroup>,
     heading: String,
     expandedGroupKeys: Set<String>,
+    expandedTeachingTypeKeys: Set<String>,
     onCourseClick: (String) -> Unit,
     onGroupExpandedChange: (String) -> Unit,
+    onTeachingTypeExpandedChange: (String) -> Unit,
 ) {
     item { Text(heading, style = MiuixTheme.textStyles.title3) }
-    if (courses.isEmpty()) {
+    if (groups.isEmpty()) {
         item { InformationCard("暂无课程", "请先读取课程或检查筛选条件。") }
     } else {
-        CourseDisplayGroupModel.groups(courses).forEach { group ->
+        groups.forEach { group ->
             item(key = "course-group:${group.key}") {
                 CourseGroupCard(
                     group = group,
@@ -267,8 +297,26 @@ private fun LazyListScope.courseListItems(
                     exit = shrinkVertically(animationSpec = tween(220)) + fadeOut(animationSpec = tween(140)),
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        group.courses.forEach { course ->
-                            CourseRow(course, onClick = { onCourseClick(course.id) }, condensed = true)
+                        group.teachingTypes.forEach { typeGroup ->
+                            CourseTeachingTypeCard(
+                                typeGroup = typeGroup,
+                                expanded = typeGroup.key in expandedTeachingTypeKeys,
+                                onClick = { onTeachingTypeExpandedChange(typeGroup.key) },
+                            )
+                            AnimatedVisibility(
+                                visible = typeGroup.key in expandedTeachingTypeKeys,
+                                enter = expandVertically(animationSpec = tween(230)) + fadeIn(animationSpec = tween(160)),
+                                exit = shrinkVertically(animationSpec = tween(200)) + fadeOut(animationSpec = tween(130)),
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(start = 18.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                                ) {
+                                    typeGroup.courses.forEach { course ->
+                                        CourseRow(course, onClick = { onCourseClick(course.id) }, condensed = true)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -277,11 +325,12 @@ private fun LazyListScope.courseListItems(
     }
 }
 
-/** 同名课程先折叠为一个浏览卡片；展开只改变当前页面状态，不会合并课程身份。 */
+/** 同名同课程基础名先折叠为浏览卡片；展开只改变当前页面状态，不会合并课程身份。 */
 @Composable
 private fun CourseGroupCard(group: CourseDisplayGroup, expanded: Boolean, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
-    val arrowRotation by animateFloatAsState(if (expanded) 90f else 0f, label = "课程组箭头旋转")
+    // 左箭头顺时针旋转会朝上；逆时针 90° 才是使用者预期的向下展开指示。
+    val arrowRotation by animateFloatAsState(if (expanded) -90f else 0f, label = "课程组箭头旋转")
     Card(
         modifier = Modifier.fillMaxWidth().clickable(
             interactionSource = interactionSource,
@@ -294,7 +343,7 @@ private fun CourseGroupCard(group: CourseDisplayGroup, expanded: Boolean, onClic
             Column(Modifier.weight(1f)) {
                 Text(group.displayTitle, style = MiuixTheme.textStyles.body1)
                 Text(
-                    if (expanded) "${group.courses.size} 个课次已展开；点按可收起。" else "${group.courses.size} 个课次；点按查看日期、时间和地点。",
+                    if (expanded) "${group.teachingTypeCount} 种教学类型、${group.courses.size} 个课次已展开；点按可收起。" else "${group.teachingTypeCount} 种教学类型、${group.courses.size} 个课次；点按查看。",
                     color = LocalTumPalette.current.onSurfaceVariant,
                 )
             }
@@ -303,6 +352,79 @@ private fun CourseGroupCard(group: CourseDisplayGroup, expanded: Boolean, onClic
                 if (expanded) "收起课程" else "展开课程",
                 modifier = Modifier.rotate(arrowRotation),
             )
+        }
+    }
+}
+
+/** 第二层仅显示可识别的教学类型；其展开才显露可独立操作的具体课次。 */
+@Composable
+private fun CourseTeachingTypeCard(typeGroup: CourseTeachingTypeGroup, expanded: Boolean, onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val arrowRotation by animateFloatAsState(if (expanded) -90f else 0f, label = "教学类型箭头旋转")
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(start = 14.dp).clickable(
+            interactionSource = interactionSource,
+            indication = null,
+            onClick = onClick,
+        ),
+        insideMargin = PaddingValues(12.dp),
+    ) {
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Text("└", color = LocalTumPalette.current.onSurfaceVariant, modifier = Modifier.padding(end = 8.dp))
+            Column(Modifier.weight(1f)) {
+                Text(typeGroup.label, style = MiuixTheme.textStyles.body2)
+                Text("${typeGroup.courses.size} 个课次", color = LocalTumPalette.current.onSurfaceVariant)
+            }
+            Icon(
+                Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
+                if (expanded) "收起${typeGroup.label}" else "展开${typeGroup.label}",
+                modifier = Modifier.rotate(arrowRotation),
+            )
+        }
+    }
+}
+
+/** 宽屏右列用紧凑树形索引复用左列的展开状态，不复制或改变任一课程数据。 */
+@Composable
+private fun CourseDirectoryGroup(
+    group: CourseDisplayGroup,
+    expanded: Boolean,
+    expandedTeachingTypeKeys: Set<String>,
+    onGroupExpandedChange: (String) -> Unit,
+    onTeachingTypeExpandedChange: (String) -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val arrowRotation by animateFloatAsState(if (expanded) -90f else 0f, label = "宽屏课程目录箭头")
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable(interactionSource, indication = null) { onGroupExpandedChange(group.key) }.padding(8.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        ) {
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, null, modifier = Modifier.rotate(arrowRotation))
+            Text(group.displayTitle, modifier = Modifier.padding(start = 8.dp).weight(1f), style = MiuixTheme.textStyles.body2)
+            Text("${group.courses.size}", color = LocalTumPalette.current.onSurfaceVariant)
+        }
+        AnimatedVisibility(visible = expanded, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+            Column(modifier = Modifier.padding(start = 24.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                group.teachingTypes.forEach { typeGroup ->
+                    val typeExpanded = typeGroup.key in expandedTeachingTypeKeys
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clickable(interactionSource, indication = null) { onTeachingTypeExpandedChange(typeGroup.key) }.padding(6.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    ) {
+                        Text(if (typeExpanded) "⌄" else "‹", color = LocalTumPalette.current.onSurfaceVariant)
+                        Text(typeGroup.label, modifier = Modifier.padding(start = 8.dp).weight(1f))
+                        Text("${typeGroup.courses.size}", color = LocalTumPalette.current.onSurfaceVariant)
+                    }
+                    AnimatedVisibility(visible = typeExpanded, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                        Column(modifier = Modifier.padding(start = 22.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            typeGroup.courses.forEach { course ->
+                                Text("• ${course.displaySchedule}", color = LocalTumPalette.current.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

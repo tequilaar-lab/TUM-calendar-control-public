@@ -16,9 +16,9 @@ data class IcalReadOnlyPreview(
     val skippedByReason: Map<IcalSkipReason, Int>,
     val firstManageableStart: Instant?,
     val lastManageableEnd: Instant?,
-    /** 仅交给内存 UI 显示；不得由偏好、日志或审计文档持久化。 */
+    /** 默认交给内存 UI；用户明确保留时，应用私有快照可保存目录字段以供新旧版本切换，绝不保存原始 ICS、地址、日志或审计文档。 */
     val courses: List<SourceCourse>,
-    /** 仅在当前进程用于生成同步候选；不得进入偏好、日志、计划或 Git。 */
+    /** 用于生成同步候选；用户明确保留时，应用私有快照可保存 UID、实例键和显示字段，绝不进入日志、计划或 Git。 */
     val occurrences: List<SourceCalendarOccurrence> = emptyList(),
 )
 

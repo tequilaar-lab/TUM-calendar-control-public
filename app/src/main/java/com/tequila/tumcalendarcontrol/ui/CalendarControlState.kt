@@ -88,14 +88,28 @@ class CalendarControlState(
     initialSourceCheckSettings: SourceCheckSettings = SourceCheckSettings(),
     initialSourceCheckStatus: SourceCheckStatus = SourceCheckStatus(),
     initialCoursePresentations: Map<String, CoursePresentation> = emptyMap(),
+    initialSourceSnapshots: SavedSourceSnapshots = SavedSourceSnapshots(),
 ) {
-    /** 仅保存 UID 对应的本机展示元数据；来源目录仍只在当前进程保存。 */
+    /** 仅保存 UID 对应的本机展示元数据；不替代来源快照中的实例级身份。 */
     private val savedCoursePresentations = initialCoursePresentations
+    private val sourceWorkflow = SourceReadWorkflowState(initialSourceSnapshots)
+    /** 已保存快照只恢复浏览和用户明确选择后的预览来源；不自动发起网络读取或日历写入。 */
     var courses by mutableStateOf(initialCourses)
         private set
+    init {
+        if (sourceWorkflow.catalogLoaded) {
+            courses = SourceCourseProjection.courses(
+                sourceCourses = sourceWorkflow.courses,
+                occurrences = sourceWorkflow.occurrences,
+                rules = initialRuleLedger.rules,
+                previousCourses = emptyList(),
+                savedPresentations = savedCoursePresentations,
+            )
+        }
+    }
     private val navigation = NavigationState()
     val screen: AppScreen get() = navigation.screen
-    var selectedCourseId by mutableStateOf(initialCourses.first().id)
+    var selectedCourseId by mutableStateOf(courses.firstOrNull()?.id.orEmpty())
         private set
     var searchQuery by mutableStateOf("")
     var profile by mutableStateOf(initialProfile)
@@ -131,19 +145,26 @@ class CalendarControlState(
     var pendingRuleBackup by mutableStateOf<RuleLedgerBackup?>(null)
         private set
     val offlinePreview: SyncPreview = OfflinePreviewSamples.preview()
-    private val sourceWorkflow = SourceReadWorkflowState()
     private val outputWorkflow = ManagedOutputWorkflowState()
     val sourceReadRequested: Boolean get() = sourceWorkflow.readRequested
     val sourceReadInProgress: Boolean get() = sourceWorkflow.readInProgress
     val sourcePreview: IcalReadOnlyPreview? get() = sourceWorkflow.preview
     val sourcePreviewError: String? get() = sourceWorkflow.previewError
-    /** 真实来源资料仅在当前进程内保存，重新读取或退出后由用户源重新生成。 */
+    /** 来源课程目录来自活动快照；活动快照可为本次读取或用户选择的上次成功读取。 */
     val sourceCourses: List<SourceCourse> get() = sourceWorkflow.courses
-    /** 成功读取过来源后，主标签页应只显示来源投影，不能退回合成示例。 */
+    /** 成功读取过来源或恢复有效快照后，主标签页应显示来源投影，不能退回合成示例。 */
     val sourceCatalogLoaded: Boolean get() = sourceWorkflow.catalogLoaded
-    /** 真正来源实例只在当前进程用于预览／同步候选，退出或重新读取时丢弃。 */
-    /** 只暴露本次运行实例给浏览器；调用者不得用它写入或持久化来源内容。 */
+    /** 活动快照的实例只在用户明确进入预览后作为候选；同步身份始终是 UID＋原始实例键。 */
     val currentSourceOccurrences: List<SourceCalendarOccurrence> get() = sourceWorkflow.occurrences
+    /** 仅供应用入口原子写回私有快照；没有地址、令牌或任一目标日历资料。 */
+    val savedSourceSnapshots: SavedSourceSnapshots get() = sourceWorkflow.savedSnapshots
+    val activeSourceSnapshotSlot: SourceSnapshotSlot get() = sourceWorkflow.activeSnapshotSlot
+    val hasPreviousSourceSnapshot: Boolean get() = sourceWorkflow.hasPreviousSnapshot
+    val sourceSnapshotDifference: SourceSnapshotDifference? get() = sourceWorkflow.activeSnapshotDifference
+    val sourceSnapshotLabel: String get() = when (activeSourceSnapshotSlot) {
+        SourceSnapshotSlot.LATEST -> if (sourceWorkflow.activeSnapshotWasReadInThisRun) "刚刚读取的课程" else "上次成功读取的课程"
+        SourceSnapshotSlot.PREVIOUS -> "较早一次读取的课程"
+    }
     /** 当前勾选的是具体课次；规则与收藏在需要时才从中聚合所属课程 UID。 */
     val selectedSourceOccurrences: Set<SourceOccurrenceIdentity> get() = sourceWorkflow.selectedOccurrences
     var sourceBrowserQuery: String
@@ -411,6 +432,17 @@ class CalendarControlState(
             is SourceReadResolution.Failure -> feedback = "未能读取课程：${resolution.message}。日历没有改变。"
             SourceReadResolution.Ignored -> Unit
         }
+    }
+
+    /** 切换保存快照只重新投影本机课程目录；不会联网、改规则或接触任何日历。 */
+    fun selectSourceSnapshot(slot: SourceSnapshotSlot) {
+        if (!sourceWorkflow.selectSnapshot(slot)) {
+            feedback = "没有可使用的较早课程数据。"
+            return
+        }
+        refreshCoursesFromSource()
+        selectedCourseId = courses.firstOrNull()?.id.orEmpty()
+        feedback = "已使用${sourceSnapshotLabel}；查看写入内容后再确认，日历尚未改变。"
     }
 
     /** 课程目录的多选保留精确课次身份；来源标题、地点与正文不进入规则资料库。 */

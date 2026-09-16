@@ -86,13 +86,13 @@ fun SourceRangeScreen(state: CalendarControlState) {
     }
 }
 
-/** 重读确认仅控制当前进程的目录替换；继续仍是只读 iCal 请求，不是日历同步。 */
+/** 重读确认只保存新的只读课程版本；旧版本保留一个可供用户切换，继续不是日历同步。 */
 @Composable
 private fun SourceReloadConfirmationCard(state: CalendarControlState) {
     Card(modifier = Modifier.fillMaxWidth(), insideMargin = PaddingValues(14.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("重新读取课程", style = MiuixTheme.textStyles.title3)
-            Text("会替换当前课程列表并清空本次选择。已保存的出席和收藏不变；是否继续？", color = LocalTumPalette.current.onSurfaceVariant)
+            Text("会保存为最新课程版本并清空本次选择；较早一次成功读取会保留，之后可自行切换。已保存的出席和收藏不变；是否继续？", color = LocalTumPalette.current.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 Button(onClick = { state.resolveSourceReloadConfirmation(false) }, modifier = Modifier.weight(1f)) { Text("取消") }
                 Button(onClick = { state.resolveSourceReloadConfirmation(true) }, modifier = Modifier.weight(1f)) { Text("重新读取") }

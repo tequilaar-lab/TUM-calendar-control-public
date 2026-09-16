@@ -1,8 +1,8 @@
 /*
  * 职责：保存私有来源的只读请求、当前运行目录与课程选择状态。
  * 输入／输出：接收读取结果、精确课次选择及浏览条件；输出 UI 可观察的只读目录状态和请求令牌。
- * 外部副作用：无；不持久化地址、不解析网络响应、不访问网络、权限或日历。
- * 不负责：课程投影、出席规则写入、输出候选、账户连接或日历写入。
+ * 外部副作用：无；不持久化地址、不访问网络、权限或日历。
+ * 不负责：偏好编码、课程投影、出席规则写入、输出候选、账户连接或日历写入。
  */
 package com.tequila.tumcalendarcontrol.ui
 
@@ -45,20 +45,28 @@ internal sealed interface SourceAttendanceRuleResult {
     ) : SourceAttendanceRuleResult
 }
 
-internal class SourceReadWorkflowState {
+internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = SavedSourceSnapshots()) {
+    /** 快照内容由上层应用私有偏好恢复；状态机只负责选择与本次读取后的轮换。 */
+    private var snapshots by mutableStateOf(
+        initialSnapshots.let { snapshots ->
+            if (snapshots.active == null && snapshots.previous != null) snapshots.select(SourceSnapshotSlot.PREVIOUS) else snapshots
+        },
+    )
     var readRequested by mutableStateOf(false)
         private set
     var readInProgress by mutableStateOf(false)
         private set
-    var preview by mutableStateOf<IcalReadOnlyPreview?>(null)
+    /** 仅标记本进程刚完成过的读取；重启后“最新”仍是保存的最近成功版本。 */
+    private var freshReadCompletedInThisRun by mutableStateOf(false)
+    var preview by mutableStateOf(snapshots.active?.toPreview())
         private set
     var previewError by mutableStateOf<String?>(null)
         private set
-    var courses by mutableStateOf<List<SourceCourse>>(emptyList())
+    var courses by mutableStateOf(preview?.courses.orEmpty())
         private set
-    var catalogLoaded by mutableStateOf(false)
+    var catalogLoaded by mutableStateOf(preview != null)
         private set
-    var occurrences by mutableStateOf<List<SourceCalendarOccurrence>>(emptyList())
+    var occurrences by mutableStateOf(preview?.occurrences.orEmpty())
         private set
     /** 选择只在本次运行存在；每一项都精确指向一个 UID + 原始实例键。 */
     var selectedOccurrences by mutableStateOf<Set<SourceOccurrenceIdentity>>(emptySet())
@@ -73,6 +81,15 @@ internal class SourceReadWorkflowState {
     var pendingFavoriteAction by mutableStateOf(SourceFavoriteAction.KEEP)
     var readToken by mutableStateOf(0L)
         private set
+
+    /** 仅供应用入口写回私有偏好；不会暴露订阅地址或 Google／本机日历资料。 */
+    val savedSnapshots: SavedSourceSnapshots get() = snapshots
+    val activeSnapshotSlot: SourceSnapshotSlot get() = snapshots.activeSlot
+    val hasPreviousSnapshot: Boolean get() = snapshots.previous != null
+    val activeSnapshotWasReadInThisRun: Boolean get() =
+        freshReadCompletedInThisRun && snapshots.activeSlot == SourceSnapshotSlot.LATEST
+    val activeSnapshotDifference: SourceSnapshotDifference? get() = snapshots.latest
+        ?.let { latest -> snapshots.previous?.let { previous -> SourceSnapshotDifferenceModel.compare(previous, latest) } }
 
     /** 有旧目录时要求用户确认；无旧目录时直接建立只读请求。 */
     fun requestRead(hasSubscription: Boolean): SourceReadRequest = when {
@@ -113,11 +130,9 @@ internal class SourceReadWorkflowState {
         readInProgress = false
         return when (result) {
             is IcalReadOnlyImportResult.Success -> {
-                preview = result.preview
-                courses = result.preview.courses
-                occurrences = result.preview.occurrences
-                catalogLoaded = true
-                selectedOccurrences = emptySet()
+                snapshots = snapshots.storeFresh(SavedSourceSnapshot.from(result.preview))
+                freshReadCompletedInThisRun = true
+                bindActiveSnapshot(clearSelection = true)
                 browserQuery = ""
                 browserFilter = SourceCourseFilter.ALL
                 previewError = null
@@ -129,6 +144,23 @@ internal class SourceReadWorkflowState {
                 SourceReadResolution.Failure(result.message)
             }
         }
+    }
+
+    /** 用户只能在已保存的两个成功读取版本间切换；切换不读取来源也不执行写入。 */
+    fun selectSnapshot(slot: SourceSnapshotSlot): Boolean {
+        if (slot == SourceSnapshotSlot.PREVIOUS && snapshots.previous == null) return false
+        snapshots = snapshots.select(slot)
+        bindActiveSnapshot(clearSelection = true)
+        previewError = null
+        return true
+    }
+
+    private fun bindActiveSnapshot(clearSelection: Boolean) {
+        preview = snapshots.active?.toPreview()
+        courses = preview?.courses.orEmpty()
+        occurrences = preview?.occurrences.orEmpty()
+        catalogLoaded = preview != null
+        if (clearSelection) selectedOccurrences = emptySet()
     }
 
     fun toggleSelection(identity: SourceOccurrenceIdentity) {
