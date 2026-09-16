@@ -348,13 +348,19 @@ class CalendarControlState(
     }
 
     /** 申请权限不是写入：只有系统同意后才保存未来本机输出许可。 */
-    fun requestLocalCalendarOutput() { localCalendarPermissionRequestPending = true }
+    private var permissionForCurrentWriteOnly = false
+    fun requestLocalCalendarOutput() { permissionForCurrentWriteOnly = false; localCalendarPermissionRequestPending = true }
+
+    fun requestCurrentWriteLocalPermission() { permissionForCurrentWriteOnly = true; localCalendarPermissionRequestPending = true }
 
     fun resolveLocalCalendarPermission(granted: Boolean) {
         localCalendarPermissionRequestPending = false
         outputWorkflow.localCalendarPermissionGranted = granted
-        syncDestinations = syncDestinations.withEnabled(SyncDestination.LOCAL_CALENDAR, granted)
-        invalidateWritePreview()
+        if (!permissionForCurrentWriteOnly) {
+            syncDestinations = syncDestinations.withEnabled(SyncDestination.LOCAL_CALENDAR, granted)
+            invalidateWritePreview()
+        }
+        permissionForCurrentWriteOnly = false
         feedback = if (granted) "已允许访问本机日历；现在仍需查看数量并确认，才会写入。" else "没有获得本机日历权限；本机日历保持关闭。"
     }
 
@@ -439,6 +445,16 @@ class CalendarControlState(
             SourceReadRequest.Ignored, SourceReadRequest.NeedsReloadConfirmation, is SourceReadRequest.Requested -> Unit
         }
     }
+
+    /** 日期草稿验证成功后才发起读取，保证屏幕所见即实际读取范围。 */
+    fun requestSourceReadForRange(start: String, end: String): List<String> {
+        if (sourceReadInProgress) return listOf("正在读取课程，请稍候。")
+        val errors = saveSourceOutputRange(start, end)
+        if (errors.isEmpty()) requestSourceReadForCurrentRange()
+        return errors
+    }
+
+    val sourceAttendanceAffectedCount: Int? get() = sourceWorkflow.attendanceScopeCount()
 
     fun resolveSourceReloadConfirmation(accepted: Boolean) {
         when (val request = sourceWorkflow.resolveReloadConfirmation(accepted, privateSyncConfiguration.hasTumSubscription)) {
@@ -535,7 +551,8 @@ class CalendarControlState(
             feedback = "请至少选择一个课次。"
             return
         }
-        val firstState = sourceAttendanceFor(selection.first().sourceUid)
+        val firstState = courses.firstOrNull { it.id == selection.first().sourceUid && it.instanceKey == selection.first().instanceKey }?.attendance
+            ?: sourceAttendanceFor(selection.first().sourceUid)
         individualAttendanceMode = false
         individualAttendanceDrafts = emptyMap()
         sourceWorkflow.prepareAttendanceEditor(selection, firstState)
@@ -553,6 +570,7 @@ class CalendarControlState(
         }
         result as SourceAttendanceRuleResult.Applied
         ruleLedger = result.rules
+        sourceWorkflow.includeInSelection(result.affectedOccurrences)
         invalidateWritePreview()
         refreshCoursesFromSource()
         if (result.favoriteAction != SourceFavoriteAction.KEEP) {
@@ -580,6 +598,7 @@ class CalendarControlState(
             results += result
         }
         ruleLedger = nextLedger
+        sourceWorkflow.includeInSelection(results.flatMap { it.affectedOccurrences }.toSet())
         invalidateWritePreview()
         refreshCoursesFromSource()
         results.filter { it.favoriteAction != SourceFavoriteAction.KEEP }.forEach { result ->
@@ -591,6 +610,21 @@ class CalendarControlState(
     }
 
     fun confirmAttendance() {
+        if (sourceCatalogLoaded && selectedCourse.instanceKey != null) {
+            val result = sourceWorkflow.applyAttendanceRules(
+                ruleLedger, setOf(SourceOccurrenceIdentity(selectedCourseId, selectedCourse.instanceKey!!)),
+                pendingAttendance, SourceFavoriteAction.KEEP, pendingAttendanceScope, pendingEffectiveDate,
+            )
+            if (result is SourceAttendanceRuleResult.Invalid) { feedback = result.message; return }
+            result as SourceAttendanceRuleResult.Applied
+            ruleLedger = result.rules
+            sourceWorkflow.includeInSelection(result.affectedOccurrences)
+            refreshCoursesFromSource()
+            invalidateWritePreview()
+            feedback = "已更新 ${result.affectedOccurrences.size} 个已保存课次并加入待写入选择；确认写入后才会更新日历。"
+            open(AppScreen.DETAIL)
+            return
+        }
         val command = attendanceCommand() ?: return
         val selectedRule = ruleLedger.rules.firstOrNull { it.sourceUid == selectedCourseId }
             ?: SyncRule(selectedCourseId, hasConfirmedFixplatz = selectedCourse.hasFixedPlus, defaultState = selectedCourse.attendance)
@@ -649,10 +683,6 @@ class CalendarControlState(
             return
         }
         val targets = enabledOutputTargets()
-        if (targets.isEmpty()) {
-            feedback = "请先在设置中选择本机日历或 Google 日历；日历没有改变。"
-            return
-        }
         managedDesiredEvents = SyncCandidateFactory().build(
             occurrences = currentSourceOccurrences,
             selectedSourceOccurrences = selectedSourceOccurrences,
@@ -668,7 +698,7 @@ class CalendarControlState(
 
     /** Google 授权只由显式点按触发；令牌成功后仅存活在本进程。 */
     fun requestGoogleAuthorization() {
-        val rejection = outputWorkflow.requestGoogleAuthorization(syncDestinations.googleCalendarEnabled)
+        val rejection = outputWorkflow.requestGoogleAuthorization(syncDestinations.googleCalendarEnabled || OutputTarget.GOOGLE_CALENDAR in currentWriteTargets)
         if (rejection != null) {
             feedback = rejection
             return
@@ -708,14 +738,24 @@ class CalendarControlState(
         if (managedSyncInProgress) return
         if (cleanupCatalogReadTargets.isNotEmpty()) { feedback = "请等待日程核对结束。"; return }
         if (managedSyncPreview == null) { feedback = "先点击“写入日历”，查看数量后再确认。"; return }
-        if (syncDestinations.localCalendarEnabled && !localCalendarPermissionGranted) { feedback = "本机日历没有获得系统权限；没有写入。"; return }
-        if (syncDestinations.googleCalendarEnabled && !hasGoogleAuthorization) { feedback = "请先连接 Google 日历；没有写入。"; return }
+        if (currentWriteTargets.isEmpty()) { feedback = "请勾选本次要写入的日历。"; return }
+        if (OutputTarget.LOCAL_CALENDAR in currentWriteTargets && !localCalendarPermissionGranted) { feedback = "本机日历没有获得系统权限；没有写入。"; return }
+        if (OutputTarget.GOOGLE_CALENDAR in currentWriteTargets && !hasGoogleAuthorization) { feedback = "请先连接 Google 日历；没有写入。"; return }
         confirmedWriteTargets = managedSyncPreview!!.targetChanges.keys
         if (outputWorkflow.beginSync() != null) feedback = "正在写入日历…"
     }
 
     val readyWriteTargets: Set<OutputTarget> get() = managedSyncPreview?.targetChanges?.keys.orEmpty().filterTo(mutableSetOf()) {
         if (it == OutputTarget.LOCAL_CALENDAR) localCalendarPermissionGranted else hasGoogleAuthorization
+    }
+
+    val currentWriteTargets: Set<OutputTarget> get() = managedSyncPreview?.targetChanges?.keys.orEmpty()
+
+    /** 本次勾选只重算确认信息，不改变默认设置或发出网络请求。 */
+    fun toggleCurrentWriteTarget(target: OutputTarget) {
+        if (managedSyncInProgress || managedSyncPreview == null) return
+        val targets = if (target in currentWriteTargets) currentWriteTargets - target else currentWriteTargets + target
+        managedSyncPreview = ManagedSyncEngine().preview(managedDesiredEvents, ruleLedger.mappings, targets)
     }
 
     /** 用户明确点“仅写入已就绪日历”，不悄悄缩小普通确认的目标。 */

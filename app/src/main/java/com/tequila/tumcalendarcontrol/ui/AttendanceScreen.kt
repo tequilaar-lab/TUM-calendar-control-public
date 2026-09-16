@@ -37,6 +37,7 @@ fun AttendanceScreen(state: CalendarControlState) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text("为“${state.selectedCourse.title}”选择状态", style = MiuixTheme.textStyles.title3)
+        Text("范围按已保存的完整原始课名、类型和组别匹配。保存后加入待写入选择；写入仍受日期范围限制，学校来源和日历尚不改变。")
         AttendanceOption(AttendanceState.MUST_ATTEND, state)
         AttendanceOption(AttendanceState.CHOOSE_TO_ATTEND, state)
         AttendanceOption(AttendanceState.STOP_ATTENDING, state)

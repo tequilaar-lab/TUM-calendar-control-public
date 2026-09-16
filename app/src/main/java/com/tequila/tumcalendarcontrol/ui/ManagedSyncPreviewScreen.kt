@@ -35,6 +35,7 @@ fun ManagedSyncPreviewScreen(state: CalendarControlState) {
             return
         }
         InformationCard("本次将写入", "共 ${preview.desiredEventCount} 条日程：课程 ${state.managedSourceCandidateCount} 条，校园事项 ${state.managedManualCandidateCount} 条。")
+        WriteTargetSelector(state)
         if (state.sourceCatalogLoaded) InformationCard("使用的课程数据", "${state.sourceSnapshotLabel} · 保存于 ${state.sourceSnapshotSavedAt}。不需要重新读取；需要新版时可返回设置更新。")
         preview.targetChanges.toSortedMap(compareBy(OutputTarget::name)).forEach { (target, changes) ->
             InformationCard(
@@ -42,8 +43,11 @@ fun ManagedSyncPreviewScreen(state: CalendarControlState) {
                 "预计新建 ${changes.count { it.type == SyncChangeType.CREATE }} 条 · 核对并更新 ${changes.count { it.type != SyncChangeType.CREATE }} 条。${if (target in state.readyWriteTargets) "已就绪" else "尚未授权"}。未选中的旧课程会保留。",
             )
         }
-        if (state.syncDestinations.googleCalendarEnabled && !state.hasGoogleAuthorization) {
+        if (OutputTarget.GOOGLE_CALENDAR in state.currentWriteTargets && !state.hasGoogleAuthorization) {
             Button(onClick = state::requestGoogleAuthorization, modifier = Modifier.fillMaxWidth()) { Text("连接 Google 日历") }
+        }
+        if (OutputTarget.LOCAL_CALENDAR in state.currentWriteTargets && !state.localCalendarPermissionGranted) {
+            Button(onClick = state::requestCurrentWriteLocalPermission, modifier = Modifier.fillMaxWidth()) { Text("允许访问本机日历") }
         }
         if (state.readyWriteTargets.isNotEmpty() && state.readyWriteTargets != preview.targetChanges.keys) {
             Button(onClick = state::requestReadyManagedSyncExecution, enabled = !state.managedSyncInProgress, modifier = Modifier.fillMaxWidth()) {

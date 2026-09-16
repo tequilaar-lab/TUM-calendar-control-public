@@ -85,7 +85,7 @@ fun SourceRangeScreen(state: CalendarControlState) {
             SourceReloadConfirmationCard(state)
         } else {
             Button(
-                onClick = state::requestSourceReadForCurrentRange,
+                onClick = { validation = state.requestSourceReadForRange(startDate, endDate) },
                 enabled = !state.sourceReadInProgress,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(if (state.sourceReadInProgress) "正在读取课程…" else "读取课程") }

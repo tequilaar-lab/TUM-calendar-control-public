@@ -59,7 +59,8 @@ class PreinstallFixRegressionTest {
         state.pendingAttendanceScope = AttendanceEditScope.ONLY_THIS_OCCURRENCE
         state.confirmAttendance()
         assertTrue(state.ruleLedger.rules.single().instanceOverrides.containsKey("instance-a"))
-        state.toggleSourceOccurrenceSelection(item().identity)
+        // 1.0.0 保存范围后直接加入待写入集合，不应再反向切换为取消选择。
+        assertTrue(item().identity in state.selectedSourceOccurrences)
         state.prepareCalendarWrite()
         assertEquals(AttendanceState.MUST_ATTEND, state.currentDesiredEvents().single().attendanceState)
     }

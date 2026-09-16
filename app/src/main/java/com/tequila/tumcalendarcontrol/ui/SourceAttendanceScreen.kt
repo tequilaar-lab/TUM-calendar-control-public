@@ -36,7 +36,7 @@ fun SourceAttendanceScreen(state: CalendarControlState) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text("为 ${state.selectedSourceOccurrences.size} 个课次设置出席和收藏", style = MiuixTheme.textStyles.title3)
-        Text("“仅本次”只改已选课次；其他范围按所属课程生效。此步骤还不会写入日历。", color = LocalTumPalette.current.onSurfaceVariant)
+        Text("“只改本次”只改勾选课次；其他范围包含已保存数据中原始课名、类型和组别相同的课次，不合并不同类型。保存后加入待写入选择；写入仍受时间范围限制，尚未写日历。", color = LocalTumPalette.current.onSurfaceVariant)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = { state.individualAttendanceMode = false }, modifier = Modifier.weight(1f)) { Text(if (!state.individualAttendanceMode) "✓ 统一设置" else "统一设置") }
             Button(onClick = { state.individualAttendanceMode = true }, modifier = Modifier.weight(1f)) { Text(if (state.individualAttendanceMode) "✓ 按课程分别设置" else "按课程分别设置") }
@@ -58,6 +58,7 @@ fun SourceAttendanceScreen(state: CalendarControlState) {
             )
         }
         state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
+        Text("所选范围覆盖 ${state.sourceAttendanceAffectedCount?.toString() ?: "待填写有效日期"} 个已保存课次；分别设置中保持原样的课程不会扩大选择。收藏按涉及的来源课程生效。", color = LocalTumPalette.current.onSurfaceVariant)
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,

@@ -56,7 +56,7 @@ fun ManualEventsScreen(state: CalendarControlState) {
         Button(
             onClick = {
                 state.addManualEvent(title, date, startHour, startMinute, endHour, endMinute, attendance)
-                if (state.feedback?.startsWith("已保存") == true) title = ""
+                if (state.feedback?.startsWith("校园事项已保存") == true) title = ""
             },
             modifier = Modifier.fillMaxWidth(),
         ) { Text("保存事项到这台设备") }

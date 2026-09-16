@@ -42,6 +42,7 @@ internal sealed interface SourceAttendanceRuleResult {
         val rules: RuleLedger,
         val sourceUids: Set<String>,
         val favoriteAction: SourceFavoriteAction,
+        val affectedOccurrences: Set<SourceOccurrenceIdentity> = emptySet(),
     ) : SourceAttendanceRuleResult
 }
 
@@ -168,6 +169,10 @@ internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = 
     fun selectAllOccurrences() { selectedOccurrences = occurrences.filterNot(SourceCalendarOccurrence::isCancelled).map(SourceCalendarOccurrence::identity).toSet() }
     fun clearSelection() { selectedOccurrences = emptySet() }
 
+    fun includeInSelection(identities: Set<SourceOccurrenceIdentity>) { selectedOccurrences = selectedOccurrences + identities }
+
+    fun attendanceScopeCount(): Int? = SourceAttendanceScope.resolve(occurrences, selectedOccurrences, pendingAttendanceScope, pendingEffectiveDate)?.size
+
     /** 打开批量出席编辑器前重置表单，避免上次范围和收藏动作泄漏到下一批。 */
     fun prepareAttendanceEditor(selection: Set<SourceOccurrenceIdentity>, firstState: AttendanceState): Boolean {
         if (selection.isEmpty()) return false
@@ -185,15 +190,19 @@ internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = 
         selection: Set<SourceOccurrenceIdentity> = selectedOccurrences,
         attendance: AttendanceState? = pendingAttendance,
         favoriteAction: SourceFavoriteAction = pendingFavoriteAction,
+        scope: AttendanceEditScope = pendingAttendanceScope,
+        effectiveDate: String = pendingEffectiveDate,
     ): SourceAttendanceRuleResult {
-        val selected = occurrences.filter { it.identity in selection }
+        val selected = if (attendance == null) occurrences.filter { it.identity in selection } else
+            SourceAttendanceScope.resolve(occurrences, selection, scope, effectiveDate)
+                ?: return SourceAttendanceRuleResult.Invalid("请输入 YYYY-MM-DD 格式的指定日期。")
         if (selected.isEmpty()) return SourceAttendanceRuleResult.Invalid("课次列表已过期；重新读取后再修改。")
         val sourceUids = selected.map(SourceCalendarOccurrence::sourceUid).toSet()
         if (attendance == null) return SourceAttendanceRuleResult.Applied(currentLedger, sourceUids, favoriteAction)
-        val command = when (pendingAttendanceScope) {
+        val command = when (scope) {
             AttendanceEditScope.ALL_OCCURRENCES -> RuleEditCommand.WholeCourse(sourceUids, attendance)
             AttendanceEditScope.CURRENT_AND_FUTURE -> RuleEditCommand.FromOccurrence(selected.groupBy { it.sourceUid }.mapValues { (_, items) -> items.minOf { it.startsAt } }, attendance)
-            AttendanceEditScope.SPECIFIED_AND_FUTURE -> AttendanceEffectiveDateParser.parseOrNull(pendingEffectiveDate)
+            AttendanceEditScope.SPECIFIED_AND_FUTURE -> AttendanceEffectiveDateParser.parseOrNull(effectiveDate)
                 ?.let { RuleEditCommand.FromDate(sourceUids, it, attendance) }
                 ?: return SourceAttendanceRuleResult.Invalid("请输入 YYYY-MM-DD 格式的指定日期。")
             AttendanceEditScope.ONLY_THIS_OCCURRENCE -> RuleEditCommand.InstancesBySource(
@@ -208,9 +217,13 @@ internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = 
             existing[sourceUid] ?: SyncRule(sourceUid, hasConfirmedFixplatz = true, defaultState = AttendanceState.CHOOSE_TO_ATTEND)
         }
         return SourceAttendanceRuleResult.Applied(
-            rules = currentLedger.copy(rules = RuleLedgerEditor.apply(currentLedger.rules.filterNot { it.sourceUid in sourceUids } + ensuredRules, command)),
+            rules = currentLedger.copy(rules = RuleLedgerEditor.apply(
+                RuleLedgerEditor.apply(currentLedger.rules.filterNot { it.sourceUid in sourceUids } + ensuredRules, command),
+                RuleEditCommand.InstancesBySource(sourceUids, selected.groupBy { it.sourceUid }.mapValues { (_, items) -> items.map { it.instanceKey }.toSet() }, attendance),
+            )),
             sourceUids = sourceUids,
             favoriteAction = favoriteAction,
+            affectedOccurrences = selected.map { it.identity }.toSet(),
         )
     }
 }
