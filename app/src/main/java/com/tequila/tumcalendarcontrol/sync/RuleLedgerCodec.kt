@@ -28,7 +28,7 @@ object RuleLedgerCodec {
         ledger.mappings.sortedWith(compareBy(StoredEventMapping::target, { it.identity.sourceUid }, { it.identity.instanceKey })).forEach { mapping ->
             add(listOf("p", mapping.target.name, pack(mapping.identity.sourceUid), pack(mapping.identity.instanceKey), pack(mapping.targetEventId), pack(mapping.fingerprint)).joinToString("|"))
         }
-        ledger.lastSummary?.let { summary -> add(listOf("s", summary.completedAt, summary.createdCount, summary.updatedCount, summary.removedCount, summary.skippedCount, pack(summary.failureSummary.orEmpty())).joinToString("|")) }
+        ledger.lastSummary?.let { summary -> add(listOf("s", summary.completedAt, summary.createdCount, summary.updatedCount, summary.removedCount, summary.skippedCount, pack(summary.failureSummary.orEmpty()), pack(summary.detailSummary.orEmpty())).joinToString("|")) }
     }.joinToString("\n")
 
     fun decode(text: String?): RuleLedger = decodeOrNull(text) ?: RuleLedger()
@@ -49,7 +49,15 @@ object RuleLedgerCodec {
                 "i" -> { val uid = unpack(fields[1]); rules[uid] = rules.getValue(uid).copy(instanceOverrides = rules.getValue(uid).instanceOverrides + (unpack(fields[2]) to AttendanceState.valueOf(fields[3]))) }
                 "m" -> manualEvents += ManualScheduleItem(unpack(fields[1]), unpack(fields[2]), Instant.parse(fields[3]), Instant.parse(fields[4]), AttendanceState.valueOf(fields[5]))
                 "p" -> mappings += StoredEventMapping(OutputTarget.valueOf(fields[1]), ManagedEventIdentity(unpack(fields[2]), unpack(fields[3])), unpack(fields[4]), unpack(fields[5]))
-                "s" -> summary = SyncRunSummary(Instant.parse(fields[1]), fields[2].toInt(), fields[3].toInt(), fields[4].toInt(), fields[5].toInt(), unpack(fields[6]).ifBlank { null })
+                "s" -> summary = SyncRunSummary(
+                    Instant.parse(fields[1]),
+                    fields[2].toInt(),
+                    fields[3].toInt(),
+                    fields[4].toInt(),
+                    fields[5].toInt(),
+                    unpack(fields[6]).ifBlank { null },
+                    fields.getOrNull(7)?.let(::unpack)?.ifBlank { null },
+                )
                 else -> error("未知资料库记录")
             }
         }

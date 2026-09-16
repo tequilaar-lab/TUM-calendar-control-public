@@ -13,7 +13,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [36])
 class GoogleCalendarGatewayTest {
     @Test
     fun `缓存的带标记日历复用 无标记目标拒绝`() {
@@ -55,14 +60,23 @@ class GoogleCalendarGatewayTest {
     }
 
     @Test
-    fun `删除已不存在的应用事件视为完成 其他阶段和 401 仍失败`() {
+    fun `删除结果区分本次删除与此前已不存在`() {
         fun response(stage: GoogleCalendarRequestStage, status: Int) = GoogleHttpResponse(stage, status, "")
 
-        assertTrue(response(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, HttpURLConnection.HTTP_NO_CONTENT).isCompletedManagedEventRemoval())
-        assertTrue(response(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, HttpURLConnection.HTTP_NOT_FOUND).isCompletedManagedEventRemoval())
-        assertTrue(response(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, HttpURLConnection.HTTP_GONE).isCompletedManagedEventRemoval())
-        assertFalse(response(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, HttpURLConnection.HTTP_UNAUTHORIZED).isCompletedManagedEventRemoval())
-        assertFalse(response(GoogleCalendarRequestStage.CREATE_MANAGED_EVENT, HttpURLConnection.HTTP_GONE).isCompletedManagedEventRemoval())
+        assertEquals(ManagedEventRemovalOutcome.REMOVED_NOW, response(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, HttpURLConnection.HTTP_NO_CONTENT).toManagedEventRemovalOutcome())
+        assertEquals(ManagedEventRemovalOutcome.ALREADY_ABSENT, response(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, HttpURLConnection.HTTP_NOT_FOUND).toManagedEventRemovalOutcome())
+        assertEquals(ManagedEventRemovalOutcome.ALREADY_ABSENT, response(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, HttpURLConnection.HTTP_GONE).toManagedEventRemovalOutcome())
+        assertTrue(runCatching { response(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, HttpURLConnection.HTTP_UNAUTHORIZED).toManagedEventRemovalOutcome() }.isFailure)
+        assertTrue(runCatching { response(GoogleCalendarRequestStage.CREATE_MANAGED_EVENT, HttpURLConnection.HTTP_GONE).toManagedEventRemovalOutcome() }.isFailure)
+    }
+
+    @Test
+    fun `全量应用标记页只解析标记 ID 并保留下一页令牌`() {
+        val page = """{"items":[{"id":"owned","extendedProperties":{"private":{"tumEventKey":"opaque"}}},{"id":"other"}],"nextPageToken":"synthetic-next"}""".parseGoogleManagedEventPage()
+
+        assertEquals(listOf("owned"), page.eventIds)
+        assertEquals("synthetic-next", page.nextPageToken)
+        assertTrue(googleManagedEventsPath("calendar/id", page.nextPageToken).contains("pageToken=synthetic-next"))
     }
 
     private class FakeGoogleCalendarApi(
@@ -85,6 +99,6 @@ class GoogleCalendarGatewayTest {
         override fun findAllManagedEventIds(calendarId: String): List<String> = emptyList()
         override fun createEvent(calendarId: String, event: DesiredCalendarEvent): String { check(calendars.containsKey(calendarId)); createdEvents += 1; return "event-$createdEvents" }
         override fun updateEvent(calendarId: String, eventId: String, event: DesiredCalendarEvent) = Unit
-        override fun deleteEvent(calendarId: String, eventId: String) = Unit
+        override fun deleteEvent(calendarId: String, eventId: String) = ManagedEventRemovalOutcome.REMOVED_NOW
     }
 }

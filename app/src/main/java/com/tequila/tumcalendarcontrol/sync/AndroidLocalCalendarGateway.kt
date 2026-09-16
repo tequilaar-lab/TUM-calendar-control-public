@@ -134,10 +134,11 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
         check(updated == 1) { "本机事件未能更新" }
     }
 
-    override fun remove(calendar: OwnedCalendarRef, eventId: String) {
+    override fun remove(calendar: OwnedCalendarRef, eventId: String): ManagedEventRemovalOutcome {
         check(verifyOwnership(calendar)) { "拒绝从非应用拥有的本机日历删除。" }
         val removed = resolver.delete(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId.toLong()), null, null)
         check(removed in 0..1) { "本机事件未能删除" }
+        return if (removed == 1) ManagedEventRemovalOutcome.REMOVED_NOW else ManagedEventRemovalOutcome.ALREADY_ABSENT
     }
 
     private fun eventValues(calendar: OwnedCalendarRef, event: DesiredCalendarEvent) = ContentValues().apply {

@@ -18,8 +18,23 @@ interface OwnedCalendarGateway {
     fun findAllManagedEventIds(calendar: OwnedCalendarRef): List<String>
     fun create(calendar: OwnedCalendarRef, event: DesiredCalendarEvent): String
     fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent)
-    fun remove(calendar: OwnedCalendarRef, eventId: String)
+    /** 删除结果只描述本次请求，不泄露事件正文或 ID 给 UI／资料库。 */
+    fun remove(calendar: OwnedCalendarRef, eventId: String): ManagedEventRemovalOutcome
 }
+
+/** 404／410 代表目标此前已不存在，不能伪装成本次真的删除。 */
+enum class ManagedEventRemovalOutcome { REMOVED_NOW, ALREADY_ABSENT }
+
+/** 每个目标独立的脱敏清理证据；remaining 为 null 表示删除后复核本身失败。 */
+data class ManagedCleanupSummary(
+    val mappedCandidateCount: Int,
+    val recoveredCandidateCount: Int,
+    val requestedCount: Int,
+    val removedNowCount: Int,
+    val alreadyAbsentCount: Int,
+    val failedCount: Int,
+    val remainingManagedCount: Int?,
+)
 
 /** 脱敏失败分类供协调层做安全恢复；不保存 HTTP 响应、令牌或账户信息。 */
 enum class TargetFailureCode {
@@ -34,6 +49,8 @@ data class TargetSyncResult(
     val failureCode: TargetFailureCode? = null,
     /** 旧版映射已丢失、但仍保有应用标记的事件已被显式清除；不保存其正文或身份。 */
     val recoveredRemovalCount: Int = 0,
+    /** 仅独立清理路径填充；按目标保存计数，不包含事件 ID 或日程正文。 */
+    val cleanupSummary: ManagedCleanupSummary? = null,
 )
 
 /** 清理必须由用户单独选择；常规写入绝不创建这个范围。 */
@@ -109,16 +126,61 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
         }
         val mappedIds = selectedMappings.map(StoredEventMapping::targetEventId)
         val idsToRemove = (mappedIds + recoveredIds).distinct()
-        idsToRemove.forEach { gateway.remove(calendar, it) }
-        val changes = selectedMappings.map { SyncChange(SyncChangeType.REMOVE, it.identity, it.targetEventId) }
-        val retainedMappings = targetMappings - selectedMappings.toSet()
+        var removedNowCount = 0
+        var alreadyAbsentCount = 0
+        val failedIds = mutableSetOf<String>()
+        idsToRemove.forEach { id ->
+            when (runCatching { gateway.remove(calendar, id) }.getOrElse { failedIds += id; null }) {
+                ManagedEventRemovalOutcome.REMOVED_NOW -> removedNowCount += 1
+                ManagedEventRemovalOutcome.ALREADY_ABSENT -> alreadyAbsentCount += 1
+                null -> Unit
+            }
+        }
+        val remainingIds = runCatching {
+            when (scope) {
+                ManagedEventCleanupScope.AllManagedEvents -> gateway.findAllManagedEventIds(calendar)
+                is ManagedEventCleanupScope.SelectedIdentities -> scope.identities.flatMap { gateway.findEventIdsByIdentity(calendar, it) }
+            }.toSet()
+        }.getOrNull()
+        val completedMappedIds = mappedIds.filter { id ->
+            id !in failedIds && (remainingIds == null || id !in remainingIds)
+        }.toSet()
+        val changes = selectedMappings
+            .filter { it.targetEventId in completedMappedIds }
+            .map { SyncChange(SyncChangeType.REMOVE, it.identity, it.targetEventId) }
+        val retainedMappings = targetMappings.filterNot { mapping ->
+            mapping in selectedMappings && mapping.targetEventId in completedMappedIds
+        }
+        val summary = ManagedCleanupSummary(
+            mappedCandidateCount = mappedIds.size,
+            recoveredCandidateCount = recoveredIds.toSet().count { it !in mappedIds },
+            requestedCount = idsToRemove.size,
+            removedNowCount = removedNowCount,
+            alreadyAbsentCount = alreadyAbsentCount,
+            failedCount = failedIds.size,
+            remainingManagedCount = remainingIds?.size,
+        )
+        val verificationFailed = remainingIds == null
+        val failureSummary = when {
+            failedIds.isNotEmpty() -> "${calendar.target.safeLabel()} 清理未完成：${failedIds.size} 条删除失败。"
+            verificationFailed -> "${calendar.target.safeLabel()} 删除后核对未完成；请稍后只读检查。"
+            remainingIds.isNotEmpty() -> "${calendar.target.safeLabel()} 清理后仍有 ${remainingIds.size} 条应用日程。"
+            else -> null
+        }
         return TargetSyncResult(
             target = calendar.target,
             mappings = otherMappings + retainedMappings,
             changes = changes,
-            recoveredRemovalCount = idsToRemove.count { it !in mappedIds },
+            failureSummary = failureSummary,
+            recoveredRemovalCount = recoveredIds.toSet().count { it !in mappedIds && it !in failedIds && (remainingIds == null || it !in remainingIds) },
+            cleanupSummary = summary,
         )
     }
+}
+
+private fun OutputTarget.safeLabel(): String = when (this) {
+    OutputTarget.LOCAL_CALENDAR -> "本机日历"
+    OutputTarget.GOOGLE_CALENDAR -> "Google 日历"
 }
 
 /** 仅供单元测试的内存网关；可记录写入，不代表任何真实 Calendar Provider。 */
@@ -126,13 +188,27 @@ class FakeOwnedCalendarGateway(
     private val ownedCalendarIds: Set<String>,
     private val recoveredIds: Map<ManagedEventIdentity, List<String>> = emptyMap(),
     private val allManagedIds: List<String> = emptyList(),
+    private val removalOutcomes: Map<String, ManagedEventRemovalOutcome> = emptyMap(),
+    private val failedRemovalIds: Set<String> = emptySet(),
+    private val retainedAfterRemovalIds: Set<String> = emptySet(),
 ) : OwnedCalendarGateway {
     val operations = mutableListOf<String>()
     private var nextId = 1
+    private val currentManagedIds = allManagedIds.toMutableSet()
+    private val currentRecoveredIds = recoveredIds.mapValues { (_, ids) -> ids.toMutableSet() }.toMutableMap()
     override fun verifyOwnership(calendar: OwnedCalendarRef): Boolean = calendar.calendarId in ownedCalendarIds && calendar.ownershipMarker == "tum-calendar-control"
-    override fun findEventIdsByIdentity(calendar: OwnedCalendarRef, identity: ManagedEventIdentity): List<String> = recoveredIds[identity].orEmpty()
-    override fun findAllManagedEventIds(calendar: OwnedCalendarRef): List<String> = allManagedIds
+    override fun findEventIdsByIdentity(calendar: OwnedCalendarRef, identity: ManagedEventIdentity): List<String> = currentRecoveredIds[identity].orEmpty().toList()
+    override fun findAllManagedEventIds(calendar: OwnedCalendarRef): List<String> = currentManagedIds.toList()
     override fun create(calendar: OwnedCalendarRef, event: DesiredCalendarEvent): String = "${calendar.target.name.lowercase()}-${nextId++}".also { operations += "create:$it" }
     override fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent) { operations += "update:$eventId" }
-    override fun remove(calendar: OwnedCalendarRef, eventId: String) { operations += "remove:$eventId" }
+    override fun remove(calendar: OwnedCalendarRef, eventId: String): ManagedEventRemovalOutcome {
+        operations += "remove:$eventId"
+        check(eventId !in failedRemovalIds) { "合成删除失败" }
+        val outcome = removalOutcomes[eventId] ?: ManagedEventRemovalOutcome.REMOVED_NOW
+        if (outcome == ManagedEventRemovalOutcome.REMOVED_NOW && eventId !in retainedAfterRemovalIds) {
+            currentManagedIds.remove(eventId)
+            currentRecoveredIds.values.forEach { ids -> ids.remove(eventId) }
+        }
+        return outcome
+    }
 }

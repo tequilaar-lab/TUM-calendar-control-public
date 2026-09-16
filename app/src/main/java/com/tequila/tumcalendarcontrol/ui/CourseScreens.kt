@@ -6,7 +6,15 @@
  */
 package com.tequila.tumcalendarcontrol.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -23,8 +31,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.ExpandLess
-import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.runtime.Composable
@@ -33,6 +40,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.domain.Course
 import com.tequila.tumcalendarcontrol.domain.CourseLocalOverride
@@ -252,9 +260,17 @@ private fun LazyListScope.courseListItems(
                     onClick = { onGroupExpandedChange(group.key) },
                 )
             }
-            if (group.key in expandedGroupKeys) {
-                items(group.courses, key = { course -> "course-row:${group.key}:${course.id}" }) { course ->
-                    CourseRow(course, onClick = { onCourseClick(course.id) }, condensed = true)
+            item(key = "course-group-rows:${group.key}") {
+                AnimatedVisibility(
+                    visible = group.key in expandedGroupKeys,
+                    enter = expandVertically(animationSpec = tween(260)) + fadeIn(animationSpec = tween(180)),
+                    exit = shrinkVertically(animationSpec = tween(220)) + fadeOut(animationSpec = tween(140)),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        group.courses.forEach { course ->
+                            CourseRow(course, onClick = { onCourseClick(course.id) }, condensed = true)
+                        }
+                    }
                 }
             }
         }
@@ -264,8 +280,14 @@ private fun LazyListScope.courseListItems(
 /** 同名课程先折叠为一个浏览卡片；展开只改变当前页面状态，不会合并课程身份。 */
 @Composable
 private fun CourseGroupCard(group: CourseDisplayGroup, expanded: Boolean, onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val arrowRotation by animateFloatAsState(if (expanded) 90f else 0f, label = "课程组箭头旋转")
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().clickable(
+            interactionSource = interactionSource,
+            indication = null,
+            onClick = onClick,
+        ),
         insideMargin = PaddingValues(14.dp),
     ) {
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -277,8 +299,9 @@ private fun CourseGroupCard(group: CourseDisplayGroup, expanded: Boolean, onClic
                 )
             }
             Icon(
-                if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
                 if (expanded) "收起课程" else "展开课程",
+                modifier = Modifier.rotate(arrowRotation),
             )
         }
     }

@@ -19,8 +19,25 @@ data class ManagedSyncResult(
 ) {
     val createdCount: Int get() = targetResults.sumOf { result -> result.changes.count { it.type == SyncChangeType.CREATE } }
     val updatedCount: Int get() = targetResults.sumOf { result -> result.changes.count { it.type == SyncChangeType.UPDATE } }
-    val removedCount: Int get() = targetResults.sumOf { result -> result.changes.count { it.type == SyncChangeType.REMOVE } + result.recoveredRemovalCount }
+    /** 仅统计目标明确报告“本次删除成功”的次数；404／410 不计入本次删除。 */
+    val removedCount: Int get() = targetResults.sumOf { result ->
+        result.cleanupSummary?.removedNowCount ?: result.changes.count { it.type == SyncChangeType.REMOVE }
+    }
     val failureSummary: String? get() = targetResults.mapNotNull(TargetSyncResult::failureSummary).takeIf(List<String>::isNotEmpty)?.joinToString("；")
+    val cleanupDetailSummary: String? get() = targetResults
+        .mapNotNull { result -> result.cleanupSummary?.toUserSummary(result.target) }
+        .takeIf(List<String>::isNotEmpty)
+        ?.joinToString("；")
+}
+
+/** 面向使用者只展示按目标的完成情况；不包含映射、标记、事件 ID 或日程正文。 */
+private fun ManagedCleanupSummary.toUserSummary(target: OutputTarget): String {
+    val label = when (target) {
+        OutputTarget.LOCAL_CALENDAR -> "本机日历"
+        OutputTarget.GOOGLE_CALENDAR -> "Google 日历"
+    }
+    val remaining = remainingManagedCount?.let { "删除后复核剩余 $it 个" } ?: "删除后复核未完成"
+    return "$label：本次请求清理 $requestedCount 个应用日程，已删除 $removedNowCount 个，之前已不存在 $alreadyAbsentCount 个，$remaining"
 }
 
 class ManagedSyncEngine(
@@ -66,7 +83,8 @@ class ManagedSyncEngine(
         val results = bindings.map { binding ->
             val result = runCatching { executor.rollback(binding.calendar, currentMappings, binding.gateway, scope) }
                 .getOrElse { TargetSyncResult(binding.calendar.target, currentMappings, emptyList(), "${binding.calendar.target.name} 撤销失败；未丢失本机映射") }
-            if (result.failureSummary == null) currentMappings = result.mappings
+            // 清理可部分完成：已由网关确认删除的映射应保存，失败／仍存在的映射会由执行器保留。
+            currentMappings = result.mappings
             result
         }
         return ManagedSyncResult(currentMappings, results)

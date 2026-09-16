@@ -624,10 +624,21 @@ class CalendarControlState(
         if (!outputWorkflow.finishOperation(token)) return
         ruleLedger = ruleLedger.copy(
             mappings = result.mappings,
-            lastSummary = SyncRunSummary(Instant.now(), result.createdCount, result.updatedCount, result.removedCount, 0, result.failureSummary),
+            lastSummary = SyncRunSummary(
+                Instant.now(),
+                result.createdCount,
+                result.updatedCount,
+                result.removedCount,
+                0,
+                result.failureSummary,
+                result.cleanupDetailSummary,
+            ),
         )
         privateSyncConfiguration = configuration
-        feedback = result.failureSummary ?: "日历已更新：新建 ${result.createdCount}、更新 ${result.updatedCount}、清除 ${result.removedCount}。"
+        feedback = listOfNotNull(result.cleanupDetailSummary, result.failureSummary)
+            .takeIf(List<String>::isNotEmpty)
+            ?.joinToString("；")
+            ?: "日历已更新：新建 ${result.createdCount}、更新 ${result.updatedCount}、清除 ${result.removedCount}。"
     }
 
     fun failManagedOperation(token: Long, summary: String) {

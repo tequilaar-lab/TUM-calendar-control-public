@@ -54,7 +54,7 @@ class RuleLedgerEditorTest {
             rules = listOf(firstCourse.copy(instanceOverrides = mapOf("k|中文" to AttendanceState.MUST_ATTEND))),
             manualEvents = listOf(ManualScheduleItem("manual-1", "合成 | 事项", Instant.parse("2026-10-01T08:00:00Z"), Instant.parse("2026-10-01T09:00:00Z"), AttendanceState.CHOOSE_TO_ATTEND)),
             mappings = listOf(StoredEventMapping(OutputTarget.LOCAL_CALENDAR, ManagedEventIdentity("synthetic-a", "k|中文"), "event-1", "fingerprint")),
-            lastSummary = SyncRunSummary(Instant.parse("2026-10-01T10:00:00Z"), 1, 2, 3, 4, "仅合成失败摘要"),
+            lastSummary = SyncRunSummary(Instant.parse("2026-10-01T10:00:00Z"), 1, 2, 3, 4, "仅合成失败摘要", "Google 日历：已删除 3 条，复核剩余 0 条"),
         )
         assertEquals(ledger, RuleLedgerCodec.decode(RuleLedgerCodec.encode(ledger)))
         assertEquals(RuleLedger(), RuleLedgerCodec.decode("not-a-ledger"))

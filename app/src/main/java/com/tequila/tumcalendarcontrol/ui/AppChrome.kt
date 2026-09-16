@@ -37,6 +37,7 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -46,6 +47,7 @@ import top.yukonga.miuix.kmp.basic.TopAppBar
 
 private val FixedTopBarHeight = 136.dp
 private val FloatingNavigationShape = RoundedCornerShape(30.dp)
+private val FloatingNavigationContentClearance = 76.dp
 
 /** 主页面外壳不保留无实际功能的更多操作入口。 */
 @Composable
@@ -56,6 +58,7 @@ internal fun CalendarControlChrome(state: CalendarControlState) {
 @Composable
 private fun CalendarControlScaffold(state: CalendarControlState) {
     val contentScreen = state.contentScreen
+    val showsFloatingNavigation = contentScreen.usesBottomNavigation()
     Scaffold(
         topBar = {
             FixedAppTopBar(
@@ -78,11 +81,8 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                 actions = {},
             )
         },
-        bottomBar = {
-            if (contentScreen.usesBottomNavigation()) {
-                AppBottomNavigation(state, contentScreen)
-            }
-        },
+        // 底栏叠放在内容之上，避免 Scaffold 为它铺设整条深色背景，也避免资料页返回时改变内容高度。
+        bottomBar = {},
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -96,19 +96,33 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                     ),
                 ),
         ) {
-            AnimatedContent(
-                targetState = contentScreen,
-                transitionSpec = {
-                    when (state.navigationDirection) {
-                        NavigationDirection.FORWARD -> (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 3 } + fadeOut())
-                        NavigationDirection.BACKWARD -> (slideInHorizontally { -it / 3 } + fadeIn()) togetherWith (slideOutHorizontally { it } + fadeOut())
-                        NavigationDirection.PROFILE_ENTER -> (slideInHorizontally { -it } + fadeIn()) togetherWith (slideOutHorizontally { it / 3 } + fadeOut())
-                        NavigationDirection.PROFILE_EXIT -> (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 3 } + fadeOut())
-                    }
-                },
-                label = "主页面切换",
-            ) { screen ->
-                AppScreenContent(state, screen)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = if (showsFloatingNavigation) FloatingNavigationContentClearance else 0.dp),
+            ) {
+                AnimatedContent(
+                    targetState = contentScreen,
+                    transitionSpec = {
+                        when (state.navigationDirection) {
+                            NavigationDirection.FORWARD -> (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 3 } + fadeOut())
+                            NavigationDirection.BACKWARD -> (slideInHorizontally { -it / 3 } + fadeIn()) togetherWith (slideOutHorizontally { it } + fadeOut())
+                            NavigationDirection.PROFILE_ENTER -> (slideInHorizontally { -it } + fadeIn()) togetherWith (slideOutHorizontally { it / 3 } + fadeOut())
+                            // 资料页向左退出，进入前的主页面完整地从右侧进入；不再因底栏出现而纵向重排。
+                            NavigationDirection.PROFILE_EXIT -> (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 3 } + fadeOut())
+                        }
+                    },
+                    label = "主页面切换",
+                ) { screen ->
+                    AppScreenContent(state, screen)
+                }
+            }
+            if (showsFloatingNavigation) {
+                AppBottomNavigation(
+                    state = state,
+                    selectedScreen = contentScreen,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
             }
         }
     }
@@ -142,16 +156,17 @@ private fun FixedAppTopBar(
 private fun AppBottomNavigation(
     state: CalendarControlState,
     selectedScreen: AppScreen,
+    modifier: Modifier = Modifier,
 ) {
     val palette = LocalTumPalette.current
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .shadow(12.dp, FloatingNavigationShape)
             .clip(FloatingNavigationShape)
-            .background(palette.surfaceContainer.copy(alpha = 0.88f))
+            .background(palette.surface.copy(alpha = 0.78f))
             .border(1.dp, palette.outline.copy(alpha = 0.35f), FloatingNavigationShape)
             .padding(horizontal = 6.dp, vertical = 4.dp),
     ) {

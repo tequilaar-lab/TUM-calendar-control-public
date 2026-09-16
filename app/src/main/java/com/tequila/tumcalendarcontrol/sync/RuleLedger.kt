@@ -43,4 +43,6 @@ data class SyncRunSummary(
     val removedCount: Int,
     val skippedCount: Int,
     val failureSummary: String? = null,
+    /** 脱敏的按目标结果，例如“Google 已删除 N 条、复核剩余 0 条”。 */
+    val detailSummary: String? = null,
 )

@@ -41,4 +41,28 @@ class ManagedSyncEngineTest {
         val rollback = ManagedSyncEngine().rollback(result.mappings, listOf(TargetBinding(OwnedCalendarRef(OutputTarget.LOCAL_CALENDAR, "local", "tum-calendar-control"), gateway)))
         assertTrue(rollback.mappings.isEmpty())
     }
+
+    @Test
+    fun `全量清理按本机和 Google 分开复核而不混淆摘要`() {
+        val localGateway = FakeOwnedCalendarGateway(setOf("local"), allManagedIds = listOf("local-mapped", "local-orphan"))
+        val googleGateway = FakeOwnedCalendarGateway(setOf("google"), allManagedIds = listOf("google-mapped", "google-orphan"))
+        val localIdentity = ManagedEventIdentity("local-uid", "local-instance")
+        val googleIdentity = ManagedEventIdentity("google-uid", "google-instance")
+        val result = ManagedSyncEngine().rollback(
+            mappings = listOf(
+                StoredEventMapping(OutputTarget.LOCAL_CALENDAR, localIdentity, "local-mapped", "old"),
+                StoredEventMapping(OutputTarget.GOOGLE_CALENDAR, googleIdentity, "google-mapped", "old"),
+            ),
+            bindings = listOf(
+                TargetBinding(OwnedCalendarRef(OutputTarget.LOCAL_CALENDAR, "local", "tum-calendar-control"), localGateway),
+                TargetBinding(OwnedCalendarRef(OutputTarget.GOOGLE_CALENDAR, "google", "tum-calendar-control"), googleGateway),
+            ),
+        )
+
+        assertEquals(4, result.removedCount)
+        assertEquals(0, result.targetResults.single { it.target == OutputTarget.LOCAL_CALENDAR }.cleanupSummary!!.remainingManagedCount)
+        assertEquals(0, result.targetResults.single { it.target == OutputTarget.GOOGLE_CALENDAR }.cleanupSummary!!.remainingManagedCount)
+        assertTrue(result.cleanupDetailSummary!!.contains("本机日历：本次请求清理 2 个应用日程，已删除 2 个"))
+        assertTrue(result.cleanupDetailSummary!!.contains("Google 日历：本次请求清理 2 个应用日程，已删除 2 个"))
+    }
 }

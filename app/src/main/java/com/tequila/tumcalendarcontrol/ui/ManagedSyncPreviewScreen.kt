@@ -50,7 +50,11 @@ fun ManagedSyncPreviewScreen(state: CalendarControlState) {
             modifier = Modifier.fillMaxWidth(),
         ) { Text(if (state.managedSyncInProgress) "正在写入日历…" else "确认并写入日历") }
         state.ruleLedger.lastSummary?.let { summary ->
-            InformationCard("上次写入", "新建 ${summary.createdCount} · 更新 ${summary.updatedCount} · 清除 ${summary.removedCount}" + (summary.failureSummary?.let { " · $it" } ?: ""))
+            InformationCard(
+                "上次写入",
+                (summary.detailSummary ?: "新建 ${summary.createdCount} · 更新 ${summary.updatedCount} · 清除 ${summary.removedCount}") +
+                    (summary.failureSummary?.let { " · $it" } ?: ""),
+            )
         }
         state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
     }

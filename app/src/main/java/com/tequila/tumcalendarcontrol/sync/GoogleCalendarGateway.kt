@@ -50,7 +50,7 @@ interface GoogleCalendarApi {
     fun findAllManagedEventIds(calendarId: String): List<String>
     fun createEvent(calendarId: String, event: DesiredCalendarEvent): String
     fun updateEvent(calendarId: String, eventId: String, event: DesiredCalendarEvent)
-    fun deleteEvent(calendarId: String, eventId: String)
+    fun deleteEvent(calendarId: String, eventId: String): ManagedEventRemovalOutcome
 }
 
 /** 目标 ID 只接受先前创建且带固定标记的次级日历；失效时才创建新的专用日历，不修改侧栏显示设置。 */
@@ -105,9 +105,9 @@ class GoogleCalendarGateway(private val api: GoogleCalendarApi) : OwnedCalendarG
         api.updateEvent(calendar.calendarId, eventId, event)
     }
 
-    override fun remove(calendar: OwnedCalendarRef, eventId: String) {
+    override fun remove(calendar: OwnedCalendarRef, eventId: String): ManagedEventRemovalOutcome {
         check(verifyOwnership(calendar)) { "拒绝从非应用拥有的 Google 日历删除。" }
-        api.deleteEvent(calendar.calendarId, eventId)
+        return api.deleteEvent(calendar.calendarId, eventId)
     }
 }
 
@@ -142,24 +142,24 @@ class GoogleCalendarRestApi(
 
     /** 全量清理只解析事件 ID 与不可见应用标记；日历正文不会进入日志、资料库或 UI。 */
     override fun findAllManagedEventIds(calendarId: String): List<String> {
-        val response = transport.execute(
-            GoogleCalendarRequestStage.FIND_ALL_MANAGED_EVENTS,
-            "GET",
-            "/calendars/${calendarId.encodePath()}/events?singleEvents=true&showDeleted=false&maxResults=2500",
-            null,
-            accessToken,
-        )
-        response.requireSuccess()
-        return JSONObject(response.body).optJSONArray("items")?.let { items ->
-            buildList {
-                for (index in 0 until items.length()) {
-                    val item = items.getJSONObject(index)
-                    if (item.optJSONObject("extendedProperties")?.optJSONObject("private")?.has(GOOGLE_EVENT_IDENTITY_KEY) == true) {
-                        add(item.getString("id"))
-                    }
-                }
+        var pageToken: String? = null
+        val ids = linkedSetOf<String>()
+        val visitedPageTokens = mutableSetOf<String>()
+        do {
+            pageToken?.let { token ->
+                check(visitedPageTokens.add(token)) { "Google 日历分页令牌重复，已停止清理前核对。" }
             }
-        }.orEmpty()
+            val page = transport.execute(
+                GoogleCalendarRequestStage.FIND_ALL_MANAGED_EVENTS,
+                "GET",
+                googleManagedEventsPath(calendarId, pageToken),
+                null,
+                accessToken,
+            ).requireSuccess().body.parseGoogleManagedEventPage()
+            ids += page.eventIds
+            pageToken = page.nextPageToken
+        } while (pageToken != null)
+        return ids.toList()
     }
 
     override fun createEvent(calendarId: String, event: DesiredCalendarEvent): String {
@@ -174,9 +174,9 @@ class GoogleCalendarRestApi(
         response.requireSuccess()
     }
 
-    override fun deleteEvent(calendarId: String, eventId: String) {
+    override fun deleteEvent(calendarId: String, eventId: String): ManagedEventRemovalOutcome {
         val response = transport.execute(GoogleCalendarRequestStage.DELETE_MANAGED_EVENT, "DELETE", "/calendars/${calendarId.encodePath()}/events/${eventId.encodePath()}?sendUpdates=none", null, accessToken)
-        if (!response.isCompletedManagedEventRemoval()) response.requireSuccess()
+        return response.toManagedEventRemovalOutcome()
     }
 
     private fun DesiredCalendarEvent.jsonBody(): String = JSONObject().apply {
@@ -198,6 +198,29 @@ class GoogleCalendarRestApi(
     private fun String.encodePath(): String = java.net.URLEncoder.encode(this, Charsets.UTF_8.name())
 }
 
+/** 全量读取仅在应用专用目标内分页；不会解析标题、地点、描述或日程时间。 */
+internal fun googleManagedEventsPath(calendarId: String, pageToken: String?): String = buildString {
+    append("/calendars/${java.net.URLEncoder.encode(calendarId, Charsets.UTF_8.name())}/events?singleEvents=true&showDeleted=false&maxResults=2500")
+    pageToken?.let { append("&pageToken=${java.net.URLEncoder.encode(it, Charsets.UTF_8.name())}") }
+}
+
+internal data class GoogleManagedEventPage(val eventIds: List<String>, val nextPageToken: String?)
+
+internal fun String.parseGoogleManagedEventPage(): GoogleManagedEventPage {
+    val json = JSONObject(this)
+    val ids = json.optJSONArray("items")?.let { items ->
+        buildList {
+            for (index in 0 until items.length()) {
+                val item = items.getJSONObject(index)
+                if (item.optJSONObject("extendedProperties")?.optJSONObject("private")?.has(GOOGLE_EVENT_IDENTITY_KEY) == true) {
+                    add(item.getString("id"))
+                }
+            }
+        }
+    }.orEmpty()
+    return GoogleManagedEventPage(ids, json.optString("nextPageToken").takeIf(String::isNotBlank))
+}
+
 data class GoogleHttpResponse(
     val stage: GoogleCalendarRequestStage,
     val statusCode: Int,
@@ -211,9 +234,17 @@ data class GoogleHttpResponse(
 }
 
 /** 仅对应用已映射事件的删除：404／410 表示目标本已不存在，清理目标已经达成。 */
-internal fun GoogleHttpResponse.isCompletedManagedEventRemoval(): Boolean =
-    stage == GoogleCalendarRequestStage.DELETE_MANAGED_EVENT &&
-        (statusCode in 200..299 || statusCode == HttpURLConnection.HTTP_NOT_FOUND || statusCode == HttpURLConnection.HTTP_GONE)
+internal fun GoogleHttpResponse.toManagedEventRemovalOutcome(): ManagedEventRemovalOutcome {
+    require(stage == GoogleCalendarRequestStage.DELETE_MANAGED_EVENT) { "删除结果只能来自删除请求" }
+    return when {
+        statusCode in 200..299 -> ManagedEventRemovalOutcome.REMOVED_NOW
+        statusCode == HttpURLConnection.HTTP_NOT_FOUND || statusCode == HttpURLConnection.HTTP_GONE -> ManagedEventRemovalOutcome.ALREADY_ABSENT
+        else -> {
+            requireSuccess()
+            error("不可达")
+        }
+    }
+}
 
 /** 只携带状态码，避免 Google 响应正文、账户或令牌进入界面和日志。 */
 class GoogleCalendarRequestException(

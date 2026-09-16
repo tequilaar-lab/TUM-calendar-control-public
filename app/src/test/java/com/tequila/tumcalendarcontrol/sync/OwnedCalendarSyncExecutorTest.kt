@@ -89,6 +89,65 @@ class OwnedCalendarSyncExecutorTest {
         assertEquals(listOf("remove:mapped", "remove:orphaned"), gateway.operations)
     }
 
+    @Test fun `全量清理会把资料库映射与恢复发现的旧日程一起计数`() {
+        val mappings = (1..3).map { index ->
+            StoredEventMapping(
+                OutputTarget.LOCAL_CALENDAR,
+                ManagedEventIdentity("synthetic-$index", "instance-$index"),
+                "mapped-$index",
+                "旧指纹",
+            )
+        }
+        val gateway = FakeOwnedCalendarGateway(
+            ownedCalendarIds = setOf("local"),
+            allManagedIds = mappings.map(StoredEventMapping::targetEventId) + listOf("legacy-1", "legacy-2", "legacy-3"),
+        )
+        val local = OwnedCalendarRef(OutputTarget.LOCAL_CALENDAR, "local", "tum-calendar-control")
+
+        val result = OwnedCalendarSyncExecutor().rollback(local, mappings, gateway)
+
+        assertEquals(6, result.cleanupSummary!!.requestedCount)
+        assertEquals(6, result.cleanupSummary.removedNowCount)
+        assertEquals(0, result.cleanupSummary.remainingManagedCount)
+        assertEquals(3, result.recoveredRemovalCount)
+    }
+
+    @Test fun `清理按目标事件计数 并在复核仍存在时保留映射`() {
+        val gateway = FakeOwnedCalendarGateway(
+            ownedCalendarIds = setOf("local"),
+            allManagedIds = listOf("mapped", "orphaned"),
+            retainedAfterRemovalIds = setOf("mapped"),
+        )
+        val local = OwnedCalendarRef(OutputTarget.LOCAL_CALENDAR, "local", "tum-calendar-control")
+        val mappings = listOf(StoredEventMapping(OutputTarget.LOCAL_CALENDAR, identity, "mapped", "旧指纹"))
+
+        val result = OwnedCalendarSyncExecutor().rollback(local, mappings, gateway)
+
+        assertEquals(listOf("mapped"), result.mappings.map(StoredEventMapping::targetEventId))
+        assertEquals(emptyList<SyncChange>(), result.changes)
+        assertEquals(
+            ManagedCleanupSummary(1, 1, 2, 2, 0, 0, 1),
+            result.cleanupSummary,
+        )
+        assertTrue(result.failureSummary!!.contains("仍有 1 条"))
+    }
+
+    @Test fun `此前已不存在不算作本次删除 但可安全移除旧映射`() {
+        val gateway = FakeOwnedCalendarGateway(
+            ownedCalendarIds = setOf("local"),
+            removalOutcomes = mapOf("missing" to ManagedEventRemovalOutcome.ALREADY_ABSENT),
+        )
+        val local = OwnedCalendarRef(OutputTarget.LOCAL_CALENDAR, "local", "tum-calendar-control")
+        val mappings = listOf(StoredEventMapping(OutputTarget.LOCAL_CALENDAR, identity, "missing", "旧指纹"))
+
+        val result = OwnedCalendarSyncExecutor().rollback(local, mappings, gateway)
+
+        assertTrue(result.mappings.isEmpty())
+        assertEquals(0, result.cleanupSummary!!.removedNowCount)
+        assertEquals(1, result.cleanupSummary.alreadyAbsentCount)
+        assertEquals(0, result.cleanupSummary.remainingManagedCount)
+    }
+
     @Test fun `按精确身份清理不会误删同名或同时段的另一门课程`() {
         val otherIdentity = ManagedEventIdentity("another-synthetic", "2026-10-01T08:00:00Z")
         val gateway = FakeOwnedCalendarGateway(setOf("local"), mapOf(identity to listOf("first"), otherIdentity to listOf("other")))
