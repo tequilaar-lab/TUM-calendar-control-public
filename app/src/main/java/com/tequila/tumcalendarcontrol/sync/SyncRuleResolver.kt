@@ -19,6 +19,7 @@ data class SyncRule(
     /** 日期生效的规则时间线支持绿／蓝／灰；晚于默认规则、早于单实例例外。 */
     val futureStateOverrides: Map<LocalDate, AttendanceState> = emptyMap(),
     val instanceOverrides: Map<String, AttendanceState> = emptyMap(),
+    val futureInstantOverrides: Map<java.time.Instant, AttendanceState> = emptyMap(),
 )
 
 object SyncRuleResolver {
@@ -28,8 +29,8 @@ object SyncRuleResolver {
         if (occurrence.isCancelled) return null
         rule.instanceOverrides[occurrence.instanceKey]?.let { return it }
         val date = occurrence.startsAt.atZone(zoneId).toLocalDate()
-        rule.futureStateOverrides
-            .filterKeys { !it.isAfter(date) }
+        (rule.futureStateOverrides.mapKeys { it.key.atStartOfDay(zoneId).toInstant() } + rule.futureInstantOverrides)
+            .filterKeys { !it.isAfter(occurrence.startsAt) }
             .maxByOrNull { it.key }
             ?.value
             ?.let { return it }

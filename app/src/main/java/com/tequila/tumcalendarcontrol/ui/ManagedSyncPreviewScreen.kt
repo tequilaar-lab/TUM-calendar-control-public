@@ -28,21 +28,27 @@ fun ManagedSyncPreviewScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("确认写入日历", "下面是本次会写入的日程和影响数量。现在还没有改动任何日历。")
+        InformationCard("确认写入日历", "以下为本机记录估算；确认后会核对目标日历，补写已缺失的日程。现在还没有改动任何日历。")
         if (preview == null) {
             InformationCard("没有待写入内容", "请返回设置页重新选择课程后再写入。清理已写入日程在设置页单独管理。")
             state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
             return
         }
         InformationCard("本次将写入", "共 ${preview.desiredEventCount} 条日程：课程 ${state.managedSourceCandidateCount} 条，校园事项 ${state.managedManualCandidateCount} 条。")
+        if (state.sourceCatalogLoaded) InformationCard("使用的课程数据", "${state.sourceSnapshotLabel} · 保存于 ${state.sourceSnapshotSavedAt}。不需要重新读取；需要新版时可返回设置更新。")
         preview.targetChanges.toSortedMap(compareBy(OutputTarget::name)).forEach { (target, changes) ->
             InformationCard(
                 target.label(),
-                "新建 ${changes.count { it.type == SyncChangeType.CREATE }} 条 · 更新 ${changes.count { it.type == SyncChangeType.UPDATE }} 条。未选中的旧课程会保留；清理请在设置中单独进行。",
+                "预计新建 ${changes.count { it.type == SyncChangeType.CREATE }} 条 · 核对并更新 ${changes.count { it.type != SyncChangeType.CREATE }} 条。${if (target in state.readyWriteTargets) "已就绪" else "尚未授权"}。未选中的旧课程会保留。",
             )
         }
         if (state.syncDestinations.googleCalendarEnabled && !state.hasGoogleAuthorization) {
             Button(onClick = state::requestGoogleAuthorization, modifier = Modifier.fillMaxWidth()) { Text("连接 Google 日历") }
+        }
+        if (state.readyWriteTargets.isNotEmpty() && state.readyWriteTargets != preview.targetChanges.keys) {
+            Button(onClick = state::requestReadyManagedSyncExecution, enabled = !state.managedSyncInProgress, modifier = Modifier.fillMaxWidth()) {
+                Text("仅写入${state.readyWriteTargets.joinToString("、") { it.label() }}")
+            }
         }
         Button(
             onClick = state::requestManagedSyncExecution,

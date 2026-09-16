@@ -52,7 +52,7 @@ fun SourceRangeScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("选择读取时间", "选择要读取的课程日程时间。留空会读取链接中可用的全部时间；不会改动课程地址或手动事项。")
+        InformationCard("选择读取时间", "按所选日期读取，最多五年。两端留空读取过去 120 天至未来 180 天；只填一端读取相邻约 300 天。无限重复课程无法无限展开。保存范围不会重新读取，已有课程仍可使用。")
         val context = LocalContext.current
         DateRangeField("开始日期", startDate, "不限", onClick = { showDatePicker(context, startDate, usesDarkTheme) { startDate = it } })
         DateRangeField("结束日期", endDate, "不限", onClick = { showDatePicker(context, endDate, usesDarkTheme) { endDate = it } })
@@ -125,7 +125,7 @@ private fun QuickRangeButtons(onFromToday: () -> Unit, onNextNinetyDays: () -> U
             Button(onClick = onFromToday, modifier = Modifier.weight(1f)) { Text("从今天起") }
             Button(onClick = onNextNinetyDays, modifier = Modifier.weight(1f)) { Text("未来 90 天") }
         }
-        Button(onClick = onClear, modifier = Modifier.fillMaxWidth()) { Text("不限制时间（读取全部）") }
+        Button(onClick = onClear, modifier = Modifier.fillMaxWidth()) { Text("恢复默认读取范围") }
     }
 }
 

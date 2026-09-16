@@ -40,6 +40,7 @@ private const val SourceReadLogTag = "TumSourceRead"
 @Composable
 fun CalendarControlApp() {
     val context = LocalContext.current
+    val session = androidx.lifecycle.ViewModelProvider(context as androidx.activity.ComponentActivity)[CalendarSessionModel::class.java]
     val profilePreferences = remember(context) { ProfilePreferences(context) }
     val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
     val privateSyncConfigurationStore = remember(context) { PrivateSyncConfigurationStore(context) }
@@ -50,12 +51,11 @@ fun CalendarControlApp() {
     val sourceSnapshotPreferences = remember(context) { SourceSnapshotPreferences(context) }
     val initialSourceSnapshots = remember(context) { sourceSnapshotPreferences.load() }
     val readOnlyIcalImportService = remember { ReadOnlyIcalImportService() }
-    val sourceReadCoordinator = remember { SourceReadCoordinator(readOnlyIcalImportService::preview, SourceReadDeadlineMillis) }
     val googleAuthorizationCoordinator = remember(context) { GoogleAuthorizationCoordinator(context) }
-    val platformManagedSyncRunner = remember(context) { PlatformManagedSyncRunner(context) }
+    val platformManagedSyncRunner = remember(context) { PlatformManagedSyncRunner(context.applicationContext) }
     val state = remember {
-        CalendarControlState(
-            initialCourses = courseOverridePreferences.applyTo(SampleCourses.all()),
+        session.state ?: CalendarControlState(
+            initialCourses = if (sourceSnapshotPreferences.hasStoredData) emptyList() else courseOverridePreferences.applyTo(SampleCourses.all()),
             initialProfile = profilePreferences.load(),
             initialSyncDestinations = syncDestinationPreferences.load(),
             initialPrivateSyncConfiguration = privateSyncConfigurationStore.load(),
@@ -64,7 +64,7 @@ fun CalendarControlApp() {
             initialSourceCheckStatus = sourceCheckSettingsStore.loadStatus(),
             initialCoursePresentations = courseOverridePreferences.loadPresentations(),
             initialSourceSnapshots = initialSourceSnapshots,
-        )
+        ).also { session.state = it }
     }
     var privateConfigurationInitialized by remember { mutableStateOf(false) }
     val localCalendarPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
@@ -101,7 +101,8 @@ fun CalendarControlApp() {
     LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
     LaunchedEffect(state.syncDestinations) { syncDestinationPreferences.save(state.syncDestinations) }
     LaunchedEffect(state.privateSyncConfiguration) {
-        if (privateConfigurationInitialized) privateSyncConfigurationStore.save(state.privateSyncConfiguration)
+        if (privateConfigurationInitialized) runCatching { privateSyncConfigurationStore.save(state.privateSyncConfiguration) }
+            .onFailure { state.feedback = "配置未能保存，请检查本机存储后重试；当前配置仅在本次运行有效。" }
         else privateConfigurationInitialized = true
     }
     LaunchedEffect(state.ruleLedger) { ruleLedgerPreferences.save(state.ruleLedger) }
@@ -109,6 +110,7 @@ fun CalendarControlApp() {
     LaunchedEffect(state.courses) { courseOverridePreferences.save(state.courses) }
     LaunchedEffect(state.savedSourceSnapshots) { sourceSnapshotPreferences.save(state.savedSourceSnapshots) }
     LaunchedEffect(Unit) {
+        sourceSnapshotPreferences.recoveryNotice?.let { state.feedback = it }
         state.refreshLocalCalendarPermission(
             ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED &&
                 ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_CALENDAR) == PackageManager.PERMISSION_GRANTED,
@@ -143,11 +145,18 @@ fun CalendarControlApp() {
         if (!state.sourceReadInProgress || !state.sourceReadRequested) return@LaunchedEffect
         val privateUrl = state.privateSyncConfiguration.tumSubscriptionUrl
         val requestToken = state.sourceReadToken
+        if (!session.claim("source", requestToken)) return@LaunchedEffect
+        val window = state.privateSyncConfiguration.sourceOutputWindow ?: return@LaunchedEffect
+        val sourceReadCoordinator = SourceReadCoordinator({ url -> readOnlyIcalImportService.preview(url, window) }, SourceReadDeadlineMillis)
         val mainHandler = Handler(Looper.getMainLooper())
         Log.i(SourceReadLogTag, "stage=started token=$requestToken")
         sourceReadCoordinator.start(privateUrl) { completion ->
             Log.i(SourceReadLogTag, "stage=${completion.stage} token=$requestToken elapsedMs=${completion.elapsedMillis}")
-            mainHandler.post { state.resolveSourcePreview(requestToken, completion.result) }
+            mainHandler.post {
+                state.resolveSourcePreview(requestToken, completion.result)
+                sourceSnapshotPreferences.save(state.savedSourceSnapshots)
+            }
+            sourceReadCoordinator.close()
         }
     }
     LaunchedEffect(state.googleAuthorizationRequested) {
@@ -164,6 +173,7 @@ fun CalendarControlApp() {
         val configuration = state.privateSyncConfiguration
         val googleToken = state.currentGoogleAccessToken()
         val connectionCheckToken = state.googleConnectionCheckToken
+        if (!session.claim("connection", connectionCheckToken)) return@LaunchedEffect
         Thread {
             val result = platformManagedSyncRunner.checkGoogleConnection(configuration, googleToken)
             Handler(Looper.getMainLooper()).post { state.resolveGoogleConnectionCheck(connectionCheckToken, result.userSummary) }
@@ -172,6 +182,7 @@ fun CalendarControlApp() {
     LaunchedEffect(state.managedSyncRequested, state.managedRollbackRequested) {
         if (!state.managedSyncRequested && !state.managedRollbackRequested) return@LaunchedEffect
         val token = state.currentManagedOperationToken()
+        if (!session.claim("write", token)) return@LaunchedEffect
         val rollback = state.managedRollbackRequested
         val configuration = state.privateSyncConfiguration
         val targets = state.currentManagedTargets()
@@ -186,6 +197,9 @@ fun CalendarControlApp() {
             Handler(Looper.getMainLooper()).post {
                 outcome.onSuccess {
                     state.resolveManagedOperation(token, it.result, it.configuration)
+                    ruleLedgerPreferences.save(state.ruleLedger)
+                    runCatching { privateSyncConfigurationStore.save(state.privateSyncConfiguration) }
+                        .onFailure { state.feedback = "日历执行结果已返回，但配置保存失败；请先核对已写入日程。" }
                     if (it.requiresGoogleReauthorization && !googleToken.isNullOrBlank()) {
                         state.invalidateGoogleAuthorizationAfterUnauthorized()
                         googleAuthorizationCoordinator.clearRejectedAccessToken(googleToken) { cleared ->
@@ -197,6 +211,19 @@ fun CalendarControlApp() {
                 }
                     .onFailure { state.failManagedOperation(token, "写入日历未完成；请检查权限或网络后重试") }
             }
+        }.start()
+    }
+    LaunchedEffect(state.cleanupCatalogReadToken) {
+        if (state.cleanupCatalogReadTargets.isEmpty()) return@LaunchedEffect
+        val token = state.cleanupCatalogReadToken
+        if (!session.claim("cleanup-read", token)) return@LaunchedEffect
+        val targets = state.cleanupCatalogReadTargets
+        val mappings = state.ruleLedger.mappings
+        val configuration = state.privateSyncConfiguration
+        val accessToken = state.currentGoogleAccessToken()
+        Thread {
+            val result = runCatching { platformManagedSyncRunner.readCleanupCatalog(mappings, targets, configuration, accessToken) }.getOrNull()
+            Handler(Looper.getMainLooper()).post { state.resolveCleanupCatalogRead(token, result) }
         }.start()
     }
     BackHandler(enabled = state.canHandleBack()) { state.handleBack() }

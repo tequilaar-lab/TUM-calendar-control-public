@@ -51,7 +51,7 @@ data class SavedSourceSnapshots(
     val activeSlot: SourceSnapshotSlot = SourceSnapshotSlot.LATEST,
 ) {
     val active: SavedSourceSnapshot? get() = when (activeSlot) {
-        SourceSnapshotSlot.LATEST -> latest
+        SourceSnapshotSlot.LATEST -> latest ?: previous
         SourceSnapshotSlot.PREVIOUS -> previous ?: latest
     }
 
@@ -70,11 +70,27 @@ data class SavedSourceSnapshots(
 /** 私有偏好只保存 Base64 编码字段；字段编码防止课程内容成为 SharedPreferences 键的一部分。 */
 internal class SourceSnapshotPreferences(context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+    private var loaded: SavedSourceSnapshots? = null
+    val hasStoredData: Boolean get() = preferences.contains(KEY)
+    var recoveryNotice: String? = null
+        private set
 
-    fun load(): SavedSourceSnapshots = SourceSnapshotCodec.decode(preferences.getString(KEY, null))
+    fun load(): SavedSourceSnapshots {
+        val raw = preferences.getString(KEY, null)
+        val decoded = SourceSnapshotCodec.decode(raw)
+        if (raw != null && SourceSnapshotCodec.encode(decoded) != raw) {
+            // 不覆盖唯一可恢复副本；损坏/旧格式仅留在同一私有偏好中。
+            preferences.edit().putString("recovery_original", raw).apply()
+            recoveryNotice = if (decoded.active == null) "保存的课程暂时无法恢复，原记录已保留。请重新读取课程；已写入日历未改变。" else "部分课程缓存无法恢复，已保留原记录并使用可恢复版本。"
+        }
+        loaded = decoded
+        return decoded
+    }
 
     fun save(snapshots: SavedSourceSnapshots) {
+        if (snapshots == loaded) return
         preferences.edit().putString(KEY, SourceSnapshotCodec.encode(snapshots)).apply()
+        loaded = snapshots
     }
 
     private companion object {
@@ -104,9 +120,9 @@ internal object SourceSnapshotCodec {
         require(rows.firstOrNull()?.firstOrNull() == VERSION)
         val active = rows.firstOrNull { it.getOrNull(1) == ACTIVE }?.getOrNull(2)
             ?.let(SourceSnapshotSlot::valueOf) ?: SourceSnapshotSlot.LATEST
-        val latest = decodeSnapshot(rows, LATEST)
-        val previous = decodeSnapshot(rows, PREVIOUS)
-        SavedSourceSnapshots(latest, previous, active).select(active)
+        val latest = runCatching { decodeSnapshot(rows, LATEST) }.getOrNull()
+        val previous = runCatching { decodeSnapshot(rows, PREVIOUS) }.getOrNull()
+        SavedSourceSnapshots(latest, previous, if (latest == null && previous != null) SourceSnapshotSlot.PREVIOUS else active)
     }.getOrElse { SavedSourceSnapshots() }
 
     private fun encodeSnapshot(slot: String, snapshot: SavedSourceSnapshot): List<String> = buildList {
@@ -139,7 +155,7 @@ internal object SourceSnapshotCodec {
                 startsAt = Instant.ofEpochMilli(row.requireField(6).toLong()),
                 endsAt = Instant.ofEpochMilli(row.requireField(7).toLong()),
                 isCancelled = row.requireField(8) == "1",
-                location = decodeField(row.requireField(9)),
+                location = decodeField(row.getOrNull(9) ?: error("快照字段缺失")),
             )
         }
         return SavedSourceSnapshot(

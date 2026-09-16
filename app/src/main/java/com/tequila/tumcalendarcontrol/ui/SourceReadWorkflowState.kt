@@ -116,7 +116,6 @@ internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = 
 
     /** 调用方已完成配置校验时建立新请求；不因已有目录要求再次确认。 */
     fun beginRead(): SourceReadRequest.Requested {
-        preview = null
         previewError = null
         readToken += 1
         readInProgress = true
@@ -139,7 +138,6 @@ internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = 
                 SourceReadResolution.Success(result.preview)
             }
             is IcalReadOnlyImportResult.Failure -> {
-                preview = null
                 previewError = result.message
                 SourceReadResolution.Failure(result.message)
             }
@@ -188,7 +186,7 @@ internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = 
         val sourceUids = selected.map(SourceCalendarOccurrence::sourceUid).toSet()
         val command = when (pendingAttendanceScope) {
             AttendanceEditScope.ALL_OCCURRENCES -> RuleEditCommand.WholeCourse(sourceUids, pendingAttendance)
-            AttendanceEditScope.CURRENT_AND_FUTURE -> RuleEditCommand.FromDate(sourceUids, java.time.LocalDate.now(), pendingAttendance)
+            AttendanceEditScope.CURRENT_AND_FUTURE -> RuleEditCommand.FromOccurrence(selected.groupBy { it.sourceUid }.mapValues { (_, items) -> items.minOf { it.startsAt } }, pendingAttendance)
             AttendanceEditScope.SPECIFIED_AND_FUTURE -> AttendanceEffectiveDateParser.parseOrNull(pendingEffectiveDate)
                 ?.let { RuleEditCommand.FromDate(sourceUids, it, pendingAttendance) }
                 ?: return SourceAttendanceRuleResult.Invalid("请输入 YYYY-MM-DD 格式的指定日期。")

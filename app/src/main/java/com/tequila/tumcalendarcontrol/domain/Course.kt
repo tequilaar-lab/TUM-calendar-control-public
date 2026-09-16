@@ -16,7 +16,13 @@ data class Course(
     val hasFixedPlus: Boolean = true,
     val sourceStatus: TumEventStatus = TumEventStatus.FIX,
     val localOverride: CourseLocalOverride = CourseLocalOverride(),
+    /** 浏览行独立于课程 UID；单次操作必须携带来源原始实例键。 */
+    val instanceKey: String? = null,
+    val startsAt: java.time.Instant? = null,
+    val endsAt: java.time.Instant? = null,
 )
+
+val Course.browseKey: String get() = "$id\u0000${instanceKey.orEmpty()}"
 
 /** 来源状态只用于显示筛选；它不能替代用户确认的 Fixplatz 输出资格。 */
 enum class TumEventStatus(val label: String) {
@@ -51,5 +57,10 @@ enum class CourseWeekday(val label: String) { MONDAY("周一"), TUESDAY("周二"
 private fun Int.twoDigits(): String = toString().padStart(2, '0')
 
 val Course.displayTitle: String get() = localOverride.title ?: title
-val Course.displaySchedule: String get() = localOverride.meetingTime?.display() ?: localOverride.schedule ?: schedule
+val Course.displaySchedule: String get() {
+    val meeting = localOverride.meetingTime ?: return localOverride.schedule ?: schedule
+    val originalDate = startsAt?.atZone(java.time.ZoneId.of("Europe/Berlin"))?.toLocalDate() ?: return meeting.display()
+    val editedDate = originalDate.plusDays((meeting.weekday.ordinal + 1 - originalDate.dayOfWeek.value).toLong())
+    return "$editedDate ${meeting.display()}"
+}
 val Course.displayLocation: String get() = localOverride.location ?: location

@@ -109,10 +109,10 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
         return resolver.query(
             CalendarContract.Events.CONTENT_URI,
             arrayOf(CalendarContract.Events._ID),
-            "${CalendarContract.Events.CALENDAR_ID}=? AND ${CalendarContract.Events.SYNC_DATA1}=?",
+            "${CalendarContract.Events.CALENDAR_ID}=? AND ${CalendarContract.Events.DELETED}=0 AND ${CalendarContract.Events.SYNC_DATA1}=?",
             arrayOf(calendar.calendarId, identity.opaqueKey()),
             null,
-        )?.use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.getLong(0).toString()) } }.orEmpty()
+        )?.use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.getLong(0).toString()) } } ?: error("无法核对本机日程；未继续创建")
     }
 
     /** 只用于用户明确选择“清除全部”；查询仅返回应用同步字段，不读取标题、地点或时间。 */
@@ -121,22 +121,38 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
         return resolver.query(
             CalendarContract.Events.CONTENT_URI,
             arrayOf(CalendarContract.Events._ID),
-            "${CalendarContract.Events.CALENDAR_ID}=? AND ${CalendarContract.Events.SYNC_DATA1} IS NOT NULL AND ${CalendarContract.Events.DESCRIPTION}=?",
+            "${CalendarContract.Events.CALENDAR_ID}=? AND ${CalendarContract.Events.DELETED}=0 AND ${CalendarContract.Events.SYNC_DATA1} IS NOT NULL AND ${CalendarContract.Events.DESCRIPTION}=?",
             arrayOf(calendar.calendarId, AppOwnedCalendarContract.eventDescription()),
             null,
-        )?.use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.getLong(0).toString()) } }.orEmpty()
+        )?.use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.getLong(0).toString()) } } ?: error("无法核对本机日程；未继续清理")
     }
 
     override fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent) {
         check(verifyOwnership(calendar)) { "拒绝向非应用拥有的本机日历更新。" }
-        val updated = resolver.update(ContentUris.withAppendedId(asSyncAdapter(CalendarContract.Events.CONTENT_URI), eventId.toLong()), eventValues(calendar, event), null, null)
+        val updated = resolver.update(asSyncAdapter(CalendarContract.Events.CONTENT_URI), eventValues(calendar, event),
+            "${CalendarContract.Events._ID}=? AND ${CalendarContract.Events.CALENDAR_ID}=? AND ${CalendarContract.Events.DELETED}=0 AND ${CalendarContract.Events.SYNC_DATA1}=?",
+            arrayOf(eventId, calendar.calendarId, event.identity.opaqueKey()))
         if (updated == 0) throw ManagedEventMissingException()
         check(updated == 1) { "本机事件未能更新" }
     }
 
+    override fun readEvent(calendar: OwnedCalendarRef, eventId: String, identity: ManagedEventIdentity): DesiredCalendarEvent? {
+        check(verifyOwnership(calendar))
+        return resolver.query(CalendarContract.Events.CONTENT_URI,
+            arrayOf(CalendarContract.Events.TITLE, CalendarContract.Events.DTSTART, CalendarContract.Events.DTEND, CalendarContract.Events.EVENT_LOCATION, CalendarContract.Events.EVENT_COLOR),
+            "${CalendarContract.Events._ID}=? AND ${CalendarContract.Events.CALENDAR_ID}=? AND ${CalendarContract.Events.DELETED}=0 AND ${CalendarContract.Events.SYNC_DATA1}=?",
+            arrayOf(eventId, calendar.calendarId, identity.opaqueKey()), null)?.use { cursor ->
+            if (!cursor.moveToFirst()) throw ManagedEventMissingException()
+            val state = AttendanceState.entries.firstOrNull { it.androidColor() == cursor.getInt(4) } ?: return@use null
+            DesiredCalendarEvent(identity, cursor.getString(0).orEmpty(), java.time.Instant.ofEpochMilli(cursor.getLong(1)), java.time.Instant.ofEpochMilli(cursor.getLong(2)), state, cursor.getString(3).orEmpty())
+        }
+    }
+
     override fun remove(calendar: OwnedCalendarRef, eventId: String): ManagedEventRemovalOutcome {
         check(verifyOwnership(calendar)) { "拒绝从非应用拥有的本机日历删除。" }
-        val removed = resolver.delete(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId.toLong()), null, null)
+        val removed = resolver.delete(asSyncAdapter(CalendarContract.Events.CONTENT_URI),
+            "${CalendarContract.Events._ID}=? AND ${CalendarContract.Events.CALENDAR_ID}=? AND ${CalendarContract.Events.SYNC_DATA1} IS NOT NULL AND ${CalendarContract.Events.DESCRIPTION}=?",
+            arrayOf(eventId, calendar.calendarId, AppOwnedCalendarContract.eventDescription()))
         check(removed in 0..1) { "本机事件未能删除" }
         return if (removed == 1) ManagedEventRemovalOutcome.REMOVED_NOW else ManagedEventRemovalOutcome.ALREADY_ABSENT
     }

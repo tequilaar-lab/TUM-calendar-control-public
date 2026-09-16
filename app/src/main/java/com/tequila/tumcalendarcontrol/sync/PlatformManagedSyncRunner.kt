@@ -19,6 +19,23 @@ data class PlatformManagedSyncOutcome(
 }
 
 class PlatformManagedSyncRunner(private val context: Context, private val engine: ManagedSyncEngine = ManagedSyncEngine()) {
+    /** 用户在清理页请求只读核对；绝不 ensure 创建目标，也不清除原映射。 */
+    fun readCleanupCatalog(mappings: List<StoredEventMapping>, targets: Set<OutputTarget>, configuration: PrivateSyncConfiguration, googleAccessToken: String?): CleanupCatalogReadResult {
+        val bindings = buildList {
+            if (OutputTarget.LOCAL_CALENDAR in targets) {
+                val resolution = AndroidLocalCalendarTarget(context.contentResolver).resolveExisting(configuration.localCalendarId)
+                if (resolution is CalendarTargetResolution.Success) add(TargetBinding(resolution.calendar, AndroidLocalCalendarGateway(context.contentResolver)))
+            }
+            if (OutputTarget.GOOGLE_CALENDAR in targets && !googleAccessToken.isNullOrBlank()) {
+                val api = GoogleCalendarRestApi(googleAccessToken)
+                val resolution = GoogleCalendarTarget(api).resolveExisting(configuration.googleCalendarId)
+                if (resolution is CalendarTargetResolution.Success) add(TargetBinding(resolution.calendar, GoogleCalendarGateway(api)))
+            }
+        }
+        val result = ManagedCleanupCatalog.read(mappings, bindings)
+        val unavailable = mappings.count { it.target in targets && bindings.none { binding -> binding.calendar.target == it.target } }
+        return result.copy(failedCount = result.failedCount + unavailable)
+    }
     /** 用户点按的只读诊断：只检查已保存的应用专用日历，绝不创建或写入。 */
     fun checkGoogleConnection(configuration: PrivateSyncConfiguration, googleAccessToken: String?): GoogleConnectionCheckResult {
         if (googleAccessToken.isNullOrBlank()) return GoogleConnectionCheckResult.Failed("尚未获得本次运行的 Google 授权；未发起连接检查。")
@@ -90,7 +107,10 @@ class PlatformManagedSyncRunner(private val context: Context, private val engine
                 }
             }
         }
-        val completed = if (rollback) engine.rollback(mappings, bindings, cleanupScope) else engine.execute(desired, mappings, bindings)
+        // 先保存已验证目标，再写事件；进程退出后仍能找到同一个专用日历。
+        val configurationStore = PrivateSyncConfigurationStore(context)
+        configurationStore.save(configurationStore.load().copy(localCalendarId = nextConfiguration.localCalendarId, googleCalendarId = nextConfiguration.googleCalendarId))
+        val completed = if (rollback) engine.rollback(mappings, bindings, cleanupScope) else engine.execute(desired, mappings, bindings, RuleLedgerPreferences(context)::checkpointMappings)
         return PlatformManagedSyncOutcome(
             result = completed.copy(targetResults = completed.targetResults + failures),
             configuration = nextConfiguration,

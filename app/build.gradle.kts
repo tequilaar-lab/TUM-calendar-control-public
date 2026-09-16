@@ -25,8 +25,8 @@ android {
         minSdk = 26
         targetSdk = 37
         // 每次可验收发布均递增构建号；完整记录见仓库根目录 VERSIONING.md。
-        versionCode = 50
-        versionName = "0.5.0"
+        versionCode = 51
+        versionName = "0.5.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

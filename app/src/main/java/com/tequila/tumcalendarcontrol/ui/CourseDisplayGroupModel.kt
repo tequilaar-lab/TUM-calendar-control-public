@@ -40,7 +40,7 @@ internal object CourseDisplayGroupModel {
                     CourseTeachingTypeGroup(
                         key = "$key:${normalizedKey(type.key)}",
                         label = type.label,
-                        courses = typeMembers.map { it.first }.sortedBy(Course::id),
+                        courses = typeMembers.map { it.first }.sortedWith(compareBy<Course> { it.startsAt }.thenBy { it.id }),
                     )
                 }
                 .sortedWith(compareBy<CourseTeachingTypeGroup> { it.label == TitleRules.OTHER_TYPE.label }.thenBy(CourseTeachingTypeGroup::label))
@@ -64,6 +64,10 @@ internal object CourseDisplayGroupModel {
             val type = TeachingType(suffix.groupValues[1].uppercase(Locale.ROOT))
             return ParsedCourseTitle(title.removeRange(suffix.range).cleanName(), type)
         }
+        val grouped = TitleRules.TYPE_BEFORE_GROUP.find(title)
+        if (grouped != null) {
+            return ParsedCourseTitle(title.substring(0, grouped.range.first).cleanName(), TeachingType(grouped.groupValues[1].uppercase(Locale.ROOT)))
+        }
         return ParsedCourseTitle(title, TitleRules.OTHER_TYPE)
     }
 
@@ -82,6 +86,7 @@ internal object CourseDisplayGroupModel {
         val TYPE_TOKEN = Regex("(?i)(?<![A-ZÄÖÜ])($TYPE_NAMES)(?![A-ZÄÖÜ])")
         val BRACKET_SUFFIX = Regex("\\s*[\\(\\[]([^\\)\\]]+)[\\)\\]]\\s*$")
         val TYPE_SUFFIX = Regex("(?i)(?:\\s|[,;:/\\-–—])+($TYPE_NAMES)\\s*$")
+        val TYPE_BEFORE_GROUP = Regex("(?i)\\s+($TYPE_NAMES)\\s*,\\s*(?:Standardgruppe|Gruppe\\b.*|Group\\b.*)$")
     }
 }
 

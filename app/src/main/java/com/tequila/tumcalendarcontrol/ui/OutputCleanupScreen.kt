@@ -43,8 +43,8 @@ private val CleanupBerlinZone = ZoneId.of("Europe/Berlin")
 
 private enum class OutputCleanupMode(val label: String, val description: String) {
     ALL("全部应用日程", "清除应用专用日历中仍带有本应用标记的所有日程。"),
-    COURSES("按课程", "只清除你从本次已读课程中选定的课程。"),
-    DATES("按日期范围", "只清除本次已读课程中落在所选日期范围内的课次。"),
+    COURSES("按课程", "只清除选中课程的应用日程。"),
+    DATES("按日期范围", "只清除所选日期范围内的应用日程。"),
 }
 
 private data class CleanupCourseGroup(
@@ -61,11 +61,13 @@ internal fun OutputCleanupScreen(state: CalendarControlState) {
     var endDate by remember { mutableStateOf<LocalDate?>(null) }
     var pendingScope by remember { mutableStateOf<ManagedEventCleanupScope?>(null) }
     var localMessage by remember { mutableStateOf<String?>(null) }
-    val sourceLoaded = state.sourceCatalogLoaded
-    val courseGroups = cleanupCourseGroups(state.currentSourceOccurrences)
     val context = LocalContext.current
     val darkTheme = state.themeMode.usesDarkTheme(isSystemInDarkTheme())
     val targets = state.managedOutputTargetsForCleanup
+    var selectedTargets by remember(targets) { mutableStateOf(targets) }
+    val catalogue = state.cleanupOccurrencesForTargets(selectedTargets)
+    val sourceLoaded = catalogue.isNotEmpty()
+    val courseGroups = cleanupCourseGroups(catalogue)
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 28.dp),
@@ -75,7 +77,16 @@ internal fun OutputCleanupScreen(state: CalendarControlState) {
             "清理已写入日程",
             "这是独立的删除操作。普通“写入日历”只新增或更新本次选择，不会清除以前写入的课程。",
         )
-        InformationCard("将影响的位置", targets.cleanupTargetLabel())
+        InformationCard("选择清理位置", "仅清理勾选的日历；另一端的日程不会改变。")
+        targets.forEach { target ->
+            Button(onClick = { selectedTargets = if (target in selectedTargets) selectedTargets - target else selectedTargets + target }, modifier = Modifier.fillMaxWidth()) {
+                Text("${if (target in selectedTargets) "✓ " else ""}${setOf(target).cleanupTargetLabel()}")
+            }
+        }
+        Button(onClick = { state.requestCleanupCatalogRead(selectedTargets) }, enabled = !state.managedSyncInProgress && state.cleanupCatalogReadTargets.isEmpty(), modifier = Modifier.fillMaxWidth()) {
+            Text(if (state.cleanupCatalogReadTargets.isEmpty()) "核对已写入日程（不删除）" else "正在核对日程…")
+        }
+        InformationCard("找不到以前的课程？", "点击上方核对，可从所选日历补齐旧版写入记录的课程和日期。只核对应用自己的记录，不读取其他日历。")
         OutputCleanupMode.entries.forEach { choice ->
             CleanupModeRow(mode = choice, selected = mode == choice) {
                 mode = choice
@@ -89,9 +100,9 @@ internal fun OutputCleanupScreen(state: CalendarControlState) {
             )
             OutputCleanupMode.COURSES -> {
                 if (!sourceLoaded) {
-                    InformationCard("需要先读取课程", "请先回到设置中的“读取课程”，再按课程精确清理。你仍可选择“全部应用日程”。")
+                    InformationCard("还没有可识别的课程", "先点击“核对已写入日程”。若旧版连写入记录也已丢失，可单独选择“全部应用日程”并确认清理。")
                 } else {
-                    InformationCard("选择课程", "课程名称仅用于浏览分组；实际清理始终按来源 UID 与具体课次身份执行。")
+                    InformationCard("选择课程", "只清理选中的课程，不影响同时段的其他课程。")
                     courseGroups.forEach { group ->
                         val selected = group.sourceUids.all { it in selectedSourceUids }
                         Card(
@@ -103,7 +114,7 @@ internal fun OutputCleanupScreen(state: CalendarControlState) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.weight(1f)) {
                                     Text(group.label, style = MiuixTheme.textStyles.body1)
-                                    Text("本次已读 ${group.occurrenceCount} 个课次", color = LocalTumPalette.current.onSurfaceVariant)
+                                    Text("可识别 ${group.occurrenceCount} 个课次", color = LocalTumPalette.current.onSurfaceVariant)
                                 }
                                 Text(
                                     if (selected) "已选择" else "选择",
@@ -120,9 +131,9 @@ internal fun OutputCleanupScreen(state: CalendarControlState) {
             }
             OutputCleanupMode.DATES -> {
                 if (!sourceLoaded) {
-                    InformationCard("需要先读取课程", "请先读取课程，应用才能将日期范围转换为具体课次。你仍可选择“全部应用日程”。")
+                    InformationCard("还没有可识别的日期", "先点击“核对已写入日程”，再按日期选择。日历不会因核对而改变。")
                 } else {
-                    InformationCard("选择日期范围", "开始或结束可单独设置；留空的一端不限制。只会影响本次已读课程中落在范围内的具体课次。")
+                    InformationCard("选择日期范围", "开始或结束可单独设置，留空的一端不限制。按已写入的时间选择，也包括已从课程列表移除的记录。")
                     CleanupDateField("开始日期", startDate) {
                         showCleanupDatePicker(context, startDate, darkTheme) { startDate = it }
                     }
@@ -135,8 +146,8 @@ internal fun OutputCleanupScreen(state: CalendarControlState) {
         }
         val selectedCount = when (mode) {
             OutputCleanupMode.ALL -> null
-            OutputCleanupMode.COURSES -> state.cleanupIdentities(selectedSourceUids, null, null).size
-            OutputCleanupMode.DATES -> state.cleanupIdentities(emptySet(), startDate, endDate).size
+            OutputCleanupMode.COURSES -> state.cleanupIdentities(selectedSourceUids, null, null, selectedTargets).size
+            OutputCleanupMode.DATES -> state.cleanupIdentities(null, startDate, endDate, selectedTargets).size
         }
         if (selectedCount != null) InformationCard("准备清理", "当前匹配 $selectedCount 个具体课次；此处尚未修改任何日历。")
         localMessage?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
@@ -144,8 +155,8 @@ internal fun OutputCleanupScreen(state: CalendarControlState) {
             onClick = {
                 val scope = when (mode) {
                     OutputCleanupMode.ALL -> ManagedEventCleanupScope.AllManagedEvents
-                    OutputCleanupMode.COURSES -> ManagedEventCleanupScope.SelectedIdentities(state.cleanupIdentities(selectedSourceUids, null, null))
-                    OutputCleanupMode.DATES -> ManagedEventCleanupScope.SelectedIdentities(state.cleanupIdentities(emptySet(), startDate, endDate))
+                    OutputCleanupMode.COURSES -> state.selectedCleanupScope(selectedSourceUids, null, null, selectedTargets)
+                    OutputCleanupMode.DATES -> state.selectedCleanupScope(null, startDate, endDate, selectedTargets)
                 }
                 if (scope is ManagedEventCleanupScope.SelectedIdentities && scope.identities.isEmpty()) {
                     localMessage = "请先选择至少一门课程，或设置能匹配课次的日期范围。"
@@ -153,7 +164,7 @@ internal fun OutputCleanupScreen(state: CalendarControlState) {
                     pendingScope = scope
                 }
             },
-            enabled = !state.managedSyncInProgress,
+            enabled = !state.managedSyncInProgress && state.cleanupCatalogReadTargets.isEmpty() && selectedTargets.isNotEmpty() && (selectedCount == null || selectedCount > 0) && (startDate == null || endDate == null || startDate!! <= endDate!!),
             modifier = Modifier.fillMaxWidth(),
         ) { Text("下一步：确认清理") }
         state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
@@ -164,11 +175,11 @@ internal fun OutputCleanupScreen(state: CalendarControlState) {
                 ManagedEventCleanupScope.AllManagedEvents -> "将清理全部应用日程。"
                 is ManagedEventCleanupScope.SelectedIdentities -> "将清理所选范围内的 ${scope.identities.size} 个具体课次。"
             },
-            targets = targets.cleanupTargetLabel(),
+            targets = selectedTargets.cleanupTargetLabel(),
             onDismiss = { pendingScope = null },
             onConfirm = {
                 pendingScope = null
-                state.requestManagedRollback(scope)
+                state.requestManagedRollback(scope, selectedTargets)
             },
         )
     }
@@ -220,7 +231,6 @@ private fun CleanupConfirmationDialog(summary: String, targets: String, onDismis
 
 private fun cleanupCourseGroups(occurrences: List<SourceCalendarOccurrence>): List<CleanupCourseGroup> = occurrences
     .asSequence()
-    .filterNot(SourceCalendarOccurrence::isCancelled)
     .groupBy { it.title.trim().replace(Regex("\\s+"), " ").ifBlank { "未命名课程" } }
     .map { (label, members) -> CleanupCourseGroup(label, members.map(SourceCalendarOccurrence::sourceUid).toSet(), members.size) }
     .sortedBy(CleanupCourseGroup::label)

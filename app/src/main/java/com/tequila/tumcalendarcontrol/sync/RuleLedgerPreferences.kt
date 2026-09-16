@@ -12,5 +12,9 @@ class RuleLedgerPreferences(context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
     fun load(): RuleLedger = RuleLedgerCodec.decode(preferences.getString(KEY_DATA, null))
     fun save(ledger: RuleLedger) { preferences.edit().putString(KEY_DATA, RuleLedgerCodec.encode(ledger)).apply() }
+    /** 后台逐项检查点同步落盘：应用被终止时不丢失此前已经完成的外部写入身份。 */
+    fun checkpointMappings(mappings: List<StoredEventMapping>) {
+        check(preferences.edit().putString(KEY_DATA, RuleLedgerCodec.encode(load().copy(mappings = mappings))).commit()) { "应用写入记录未能保存" }
+    }
     private companion object { const val FILE_NAME = "rule_ledger"; const val KEY_DATA = "serialized_ledger" }
 }

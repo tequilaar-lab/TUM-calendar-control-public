@@ -21,12 +21,14 @@ object RuleLedgerCodec {
             add(listOf("r", pack(rule.sourceUid), rule.hasConfirmedFixplatz, rule.defaultState.name, rule.stopAttendingFrom ?: "").joinToString("|"))
             rule.futureStateOverrides.toSortedMap().forEach { (date, state) -> add(listOf("f", pack(rule.sourceUid), date, state.name).joinToString("|")) }
             rule.instanceOverrides.toSortedMap().forEach { (key, state) -> add(listOf("i", pack(rule.sourceUid), pack(key), state.name).joinToString("|")) }
+            rule.futureInstantOverrides.toSortedMap().forEach { (time, state) -> add(listOf("t", pack(rule.sourceUid), time, state.name).joinToString("|")) }
         }
         ledger.manualEvents.sortedBy(ManualScheduleItem::id).forEach { event ->
             add(listOf("m", pack(event.id), pack(event.title), event.startsAt, event.endsAt, event.attendanceState.name).joinToString("|"))
         }
         ledger.mappings.sortedWith(compareBy(StoredEventMapping::target, { it.identity.sourceUid }, { it.identity.instanceKey })).forEach { mapping ->
-            add(listOf("p", mapping.target.name, pack(mapping.identity.sourceUid), pack(mapping.identity.instanceKey), pack(mapping.targetEventId), pack(mapping.fingerprint)).joinToString("|"))
+            val event = mapping.writtenEvent
+            add(listOf("p", mapping.target.name, pack(mapping.identity.sourceUid), pack(mapping.identity.instanceKey), pack(mapping.targetEventId), pack(mapping.fingerprint), pack(mapping.calendarId.orEmpty()), pack(event?.title.orEmpty()), event?.startsAt ?: "", event?.endsAt ?: "", event?.attendanceState?.name ?: "", pack(event?.location.orEmpty())).joinToString("|"))
         }
         ledger.lastSummary?.let { summary -> add(listOf("s", summary.completedAt, summary.createdCount, summary.updatedCount, summary.removedCount, summary.skippedCount, pack(summary.failureSummary.orEmpty()), pack(summary.detailSummary.orEmpty())).joinToString("|")) }
     }.joinToString("\n")
@@ -47,8 +49,13 @@ object RuleLedgerCodec {
                 "r" -> rules[unpack(fields[1])] = SyncRule(unpack(fields[1]), fields[2].toBooleanStrict(), AttendanceState.valueOf(fields[3]), fields[4].ifBlank { null }?.let(LocalDate::parse))
                 "f" -> { val uid = unpack(fields[1]); rules[uid] = rules.getValue(uid).copy(futureStateOverrides = rules.getValue(uid).futureStateOverrides + (LocalDate.parse(fields[2]) to AttendanceState.valueOf(fields[3]))) }
                 "i" -> { val uid = unpack(fields[1]); rules[uid] = rules.getValue(uid).copy(instanceOverrides = rules.getValue(uid).instanceOverrides + (unpack(fields[2]) to AttendanceState.valueOf(fields[3]))) }
+                "t" -> { val uid = unpack(fields[1]); rules[uid] = rules.getValue(uid).copy(futureInstantOverrides = rules.getValue(uid).futureInstantOverrides + (Instant.parse(fields[2]) to AttendanceState.valueOf(fields[3]))) }
                 "m" -> manualEvents += ManualScheduleItem(unpack(fields[1]), unpack(fields[2]), Instant.parse(fields[3]), Instant.parse(fields[4]), AttendanceState.valueOf(fields[5]))
-                "p" -> mappings += StoredEventMapping(OutputTarget.valueOf(fields[1]), ManagedEventIdentity(unpack(fields[2]), unpack(fields[3])), unpack(fields[4]), unpack(fields[5]))
+                "p" -> {
+                    val identity = ManagedEventIdentity(unpack(fields[2]), unpack(fields[3]))
+                    val event = if (!fields.getOrNull(8).isNullOrBlank()) DesiredCalendarEvent(identity, unpack(fields[7]), Instant.parse(fields[8]), Instant.parse(fields[9]), AttendanceState.valueOf(fields[10]), unpack(fields[11])) else null
+                    mappings += StoredEventMapping(OutputTarget.valueOf(fields[1]), identity, unpack(fields[4]), unpack(fields[5]), fields.getOrNull(6)?.let(::unpack)?.ifBlank { null }, event)
+                }
                 "s" -> summary = SyncRunSummary(
                     Instant.parse(fields[1]),
                     fields[2].toInt(),

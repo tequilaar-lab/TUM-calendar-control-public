@@ -16,7 +16,7 @@ class OwnedCalendarSyncExecutorTest {
     private val identity = ManagedEventIdentity("synthetic", "2026-10-01T08:00:00Z")
     private val event = DesiredCalendarEvent(identity, "合成课程", Instant.parse(identity.instanceKey), Instant.parse(identity.instanceKey).plusSeconds(3600), AttendanceState.MUST_ATTEND)
 
-    @Test fun `两个拥有目标各自创建且重复运行保持不变`() {
+    @Test fun `两个拥有目标各自创建且重复运行核对更新不重复创建`() {
         val executor = OwnedCalendarSyncExecutor()
         val gateway = FakeOwnedCalendarGateway(setOf("local", "google"))
         val local = OwnedCalendarRef(OutputTarget.LOCAL_CALENDAR, "local", "tum-calendar-control")

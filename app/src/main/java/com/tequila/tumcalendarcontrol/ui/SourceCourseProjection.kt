@@ -8,7 +8,6 @@ package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import com.tequila.tumcalendarcontrol.domain.Course
-import com.tequila.tumcalendarcontrol.domain.CourseMeetingTime
 import com.tequila.tumcalendarcontrol.domain.CourseWeekday
 import com.tequila.tumcalendarcontrol.domain.TumEventStatus
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
@@ -31,28 +30,28 @@ internal object SourceCourseProjection {
     ): List<Course> {
         val previousByUid = previousCourses.associateBy(Course::id)
         val rulesByUid = rules.associateBy(SyncRule::sourceUid)
-        val occurrencesByKey = occurrences.associateBy { "${it.sourceUid}|${it.instanceKey}" }
-        return sourceCourses.map { source ->
-            val occurrence = occurrencesByKey["${source.sourceUid}|${source.representativeInstanceKey}"]
-                ?: occurrences.firstOrNull { it.sourceUid == source.sourceUid && !it.isCancelled }
-                ?: occurrences.firstOrNull { it.sourceUid == source.sourceUid }
+        return occurrences.sortedBy { it.startsAt }.map { occurrence ->
+            val source = sourceCourses.first { it.sourceUid == occurrence.sourceUid }
             val previous = previousByUid[source.sourceUid]
             val presentation = previous?.let { CoursePresentation(it.isFavorite, it.localOverride) }
                 ?: savedPresentations[source.sourceUid]
                 ?: CoursePresentation()
             Course(
                 id = source.sourceUid,
-                title = source.title,
-                schedule = occurrence?.toDisplaySchedule() ?: source.firstStart.toFallbackSchedule(),
-                location = source.location,
-                attendance = occurrence?.let { item ->
+                title = occurrence.title,
+                schedule = occurrence.toDisplaySchedule(),
+                location = occurrence.location,
+                attendance = occurrence.let { item ->
                     rulesByUid[source.sourceUid]?.let { SyncRuleResolver.resolve(it, item, sourceZone) }
                 } ?: previous?.attendance ?: AttendanceState.CHOOSE_TO_ATTEND,
                 isFavorite = presentation.isFavorite ?: false,
                 // iCal 本身没有可靠的 TUM 报名状态字段；课程显示不得因旧 Fixplatz 筛选而丢失。
                 hasFixedPlus = true,
-                sourceStatus = TumEventStatus.FIX,
+                sourceStatus = if (occurrence.isCancelled) TumEventStatus.CANCELLED else TumEventStatus.FIX,
                 localOverride = presentation.localOverride,
+                instanceKey = occurrence.instanceKey,
+                startsAt = occurrence.startsAt,
+                endsAt = occurrence.endsAt,
             )
         }
     }
@@ -60,18 +59,9 @@ internal object SourceCourseProjection {
     private fun SourceCalendarOccurrence.toDisplaySchedule(): String {
         val start = startsAt.atZone(sourceZone)
         val end = endsAt.atZone(sourceZone)
-        return CourseMeetingTime(
-            weekday = start.dayOfWeek.toCourseWeekday(),
-            startHour = start.hour,
-            startMinute = start.minute,
-            endHour = end.hour,
-            endMinute = end.minute,
-        ).display()
-    }
-
-    private fun java.time.Instant.toFallbackSchedule(): String {
-        val start = atZone(sourceZone)
-        return "${start.dayOfWeek.toCourseWeekday().label} ${start.hour.toString().padStart(2, '0')}:${start.minute.toString().padStart(2, '0')}"
+        val timeFormat = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+        val endDate = if (start.toLocalDate() == end.toLocalDate()) "" else "${end.toLocalDate()} "
+        return "${start.toLocalDate()} ${start.dayOfWeek.toCourseWeekday().label} ${start.format(timeFormat)}–$endDate${end.format(timeFormat)}"
     }
 
     private fun DayOfWeek.toCourseWeekday(): CourseWeekday = when (this) {

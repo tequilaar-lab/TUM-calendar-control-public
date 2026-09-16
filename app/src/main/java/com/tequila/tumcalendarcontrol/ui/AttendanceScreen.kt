@@ -59,11 +59,11 @@ fun AttendanceScreen(state: CalendarControlState) {
             TextButton(
                 text = "取消",
                 onClick = { state.open(AppScreen.DETAIL) },
-                modifier = Modifier.width(112.dp),
+                modifier = Modifier.weight(1f),
             )
             Button(
                 onClick = state::confirmAttendance,
-                modifier = Modifier.width(220.dp),
+                modifier = Modifier.weight(2f),
             ) { Text("确认") }
         }
     }

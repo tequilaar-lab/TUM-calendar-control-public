@@ -5,6 +5,7 @@
  * 不负责：页面路由、出席规则编辑、设置／输出页面或 Android 外部协调。
  */
 package com.tequila.tumcalendarcontrol.ui
+import com.tequila.tumcalendarcontrol.domain.browseKey
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -103,21 +104,28 @@ internal fun CourseEditScreen(state: CalendarControlState) {
     val course = state.selectedCourse
     var title by remember(course.localOverride) { mutableStateOf(course.localOverride.title.orEmpty()) }
     var location by remember(course.localOverride) { mutableStateOf(course.localOverride.location.orEmpty()) }
-    var weekday by remember(course.localOverride) { mutableStateOf(course.localOverride.meetingTime?.weekday ?: CourseWeekday.MONDAY) }
-    var startHour by remember(course.localOverride) { mutableStateOf(course.localOverride.meetingTime?.startHour?.toString() ?: "10") }
-    var startMinute by remember(course.localOverride) { mutableStateOf(course.localOverride.meetingTime?.startMinute?.toString() ?: "0") }
-    var endHour by remember(course.localOverride) { mutableStateOf(course.localOverride.meetingTime?.endHour?.toString() ?: "12") }
-    var endMinute by remember(course.localOverride) { mutableStateOf(course.localOverride.meetingTime?.endMinute?.toString() ?: "0") }
+    val sourceStart = course.startsAt?.atZone(java.time.ZoneId.of("Europe/Berlin"))
+    val sourceEnd = course.endsAt?.atZone(java.time.ZoneId.of("Europe/Berlin"))
+    val seedWeekday = course.localOverride.meetingTime?.weekday ?: sourceStart?.let { CourseWeekday.entries[it.dayOfWeek.value - 1] } ?: CourseWeekday.MONDAY
+    val seedStartHour = (course.localOverride.meetingTime?.startHour ?: sourceStart?.hour ?: 10).toString()
+    val seedStartMinute = (course.localOverride.meetingTime?.startMinute ?: sourceStart?.minute ?: 0).toString()
+    val seedEndHour = (course.localOverride.meetingTime?.endHour ?: sourceEnd?.hour ?: 12).toString()
+    val seedEndMinute = (course.localOverride.meetingTime?.endMinute ?: sourceEnd?.minute ?: 0).toString()
+    var weekday by remember(course) { mutableStateOf(seedWeekday) }
+    var startHour by remember(course) { mutableStateOf(seedStartHour) }
+    var startMinute by remember(course) { mutableStateOf(seedStartMinute) }
+    var endHour by remember(course) { mutableStateOf(seedEndHour) }
+    var endMinute by remember(course) { mutableStateOf(seedEndMinute) }
     var validation by remember { mutableStateOf<String?>(null) }
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("编辑课程显示", "这里只修改本机显示。名称和地点留空会继续使用课程原来的信息；时间只需填星期、小时和分钟。")
+        InformationCard("编辑这门课程", "修改适用于这门课的所有课次，下次确认写入时更新日历，不修改学校来源。名称和地点留空沿用来源；未改动时间则保留各课次原时间。修改星期会移动到同一周。")
         TextField(title, { title = it }, Modifier.fillMaxWidth(), label = "名称（当前来源：${course.title}）")
         TextField(location, { location = it }, Modifier.fillMaxWidth(), label = "地点（当前来源：${course.location}）")
         Text("上课日", style = MiuixTheme.textStyles.title3)
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             CourseWeekday.entries.forEach { day ->
                 Text(
                     day.label,
@@ -136,7 +144,8 @@ internal fun CourseEditScreen(state: CalendarControlState) {
         validation?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
         Button(
             onClick = {
-                val time = runCatching {
+                val timeChanged = weekday != seedWeekday || startHour != seedStartHour || startMinute != seedStartMinute || endHour != seedEndHour || endMinute != seedEndMinute
+                val time = if (!timeChanged) course.localOverride.meetingTime else runCatching {
                     CourseMeetingTime(weekday, startHour.toInt(), startMinute.toInt(), endHour.toInt(), endMinute.toInt())
                 }.getOrElse {
                     validation = "请填写合法时间：小时 0–23、分钟 0–59，结束须晚于开始。"
@@ -148,7 +157,7 @@ internal fun CourseEditScreen(state: CalendarControlState) {
                 state.handleBack()
             },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("保存课程显示") }
+        ) { Text("保存课程修改") }
     }
 }
 
@@ -197,8 +206,8 @@ private fun AdaptiveCourseBrowser(
     onCourseClick: (String) -> Unit,
     leadingItems: LazyListScope.() -> Unit = {},
 ) {
-    var expandedGroupKeys by remember(browserStateKey) { mutableStateOf<Set<String>>(emptySet()) }
-    var expandedTeachingTypeKeys by remember(browserStateKey) { mutableStateOf<Set<String>>(emptySet()) }
+    var expandedGroupKeys by androidx.compose.runtime.saveable.rememberSaveable(browserStateKey) { mutableStateOf<Set<String>>(emptySet()) }
+    var expandedTeachingTypeKeys by androidx.compose.runtime.saveable.rememberSaveable(browserStateKey) { mutableStateOf<Set<String>>(emptySet()) }
     val groups = remember(courses) { CourseDisplayGroupModel.groups(courses) }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val listContent: @Composable (Modifier) -> Unit = { modifier ->
@@ -313,7 +322,7 @@ private fun LazyListScope.courseListItems(
                                     verticalArrangement = Arrangement.spacedBy(10.dp),
                                 ) {
                                     typeGroup.courses.forEach { course ->
-                                        CourseRow(course, onClick = { onCourseClick(course.id) }, condensed = true)
+                                        CourseRow(course, onClick = { onCourseClick(course.browseKey) }, condensed = true)
                                     }
                                 }
                             }

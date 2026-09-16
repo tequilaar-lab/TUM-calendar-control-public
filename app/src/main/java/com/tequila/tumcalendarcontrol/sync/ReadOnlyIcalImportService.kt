@@ -33,17 +33,20 @@ class ReadOnlyIcalImportService(
     private val clock: Clock = Clock.systemUTC(),
 ) {
     /** 只展开历史 120 天到未来 180 天，避免无限 RRULE 占用资源。 */
-    fun preview(url: String): IcalReadOnlyImportResult {
+    fun preview(url: String): IcalReadOnlyImportResult = preview(url, SourceOutputDateWindow())
+
+    fun preview(url: String, window: SourceOutputDateWindow): IcalReadOnlyImportResult {
+        val bounds = sourceReadBounds(window, clock.instant())
+            ?: return IcalReadOnlyImportResult.Failure("读取范围最多五年；请缩小开始和结束日期后重试。")
         val text = when (val fetched = fetcher.fetch(url)) {
             is IcalFetchResult.Success -> fetched.text
             is IcalFetchResult.Failure -> return IcalReadOnlyImportResult.Failure(fetched.reason)
         }
-        val now = clock.instant()
         val parsed = runCatching {
             parser.parse(
                 icsText = text,
-                windowStart = now.minus(120, ChronoUnit.DAYS),
-                windowEnd = now.plus(180, ChronoUnit.DAYS),
+                windowStart = bounds.first,
+                windowEnd = bounds.second,
             )
         }.getOrElse { return IcalReadOnlyImportResult.Failure("来源内容无法作为 iCal 日历解析") }
         val occurrences = parsed.occurrences
@@ -60,4 +63,14 @@ class ReadOnlyIcalImportService(
             ),
         )
     }
+}
+
+/** 无限重复规则必须有界；用户明确选择的日期优先，空端按相邻日期补齐默认窗口。 */
+internal fun sourceReadBounds(window: SourceOutputDateWindow, now: Instant): Pair<Instant, Instant>? {
+    val zone = java.time.ZoneId.of("Europe/Berlin")
+    val start = window.startsOn?.atStartOfDay(zone)?.toInstant()
+        ?: window.endsOn?.minusDays(300)?.atStartOfDay(zone)?.toInstant() ?: now.minus(120, ChronoUnit.DAYS)
+    val end = window.endsOn?.plusDays(1)?.atStartOfDay(zone)?.toInstant()
+        ?: window.startsOn?.plusDays(300)?.atStartOfDay(zone)?.toInstant() ?: now.plus(180, ChronoUnit.DAYS)
+    return (start to end).takeIf { end.isAfter(start) && java.time.Duration.between(start, end).toDays() <= 1830 }
 }

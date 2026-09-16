@@ -51,6 +51,8 @@ interface GoogleCalendarApi {
     fun createEvent(calendarId: String, event: DesiredCalendarEvent): String
     fun updateEvent(calendarId: String, eventId: String, event: DesiredCalendarEvent)
     fun deleteEvent(calendarId: String, eventId: String): ManagedEventRemovalOutcome
+    fun readEventFingerprint(calendarId: String, eventId: String, identity: ManagedEventIdentity): String? = null
+    fun readManagedEvent(calendarId: String, eventId: String, identity: ManagedEventIdentity): DesiredCalendarEvent? = null
 }
 
 /** 目标 ID 只接受先前创建且带固定标记的次级日历；失效时才创建新的专用日历，不修改侧栏显示设置。 */
@@ -81,6 +83,14 @@ class GoogleCalendarTarget(private val api: GoogleCalendarApi) {
 
 /** 每次事件操作前验证专用日历的固定所有权标记，拒绝主日历和未标记日历。 */
 class GoogleCalendarGateway(private val api: GoogleCalendarApi) : OwnedCalendarGateway {
+    override fun readEvent(calendar: OwnedCalendarRef, eventId: String, identity: ManagedEventIdentity): DesiredCalendarEvent? {
+        check(verifyOwnership(calendar))
+        return api.readManagedEvent(calendar.calendarId, eventId, identity)
+    }
+    override fun readFingerprint(calendar: OwnedCalendarRef, eventId: String, identity: ManagedEventIdentity): String? {
+        check(verifyOwnership(calendar))
+        return api.readEventFingerprint(calendar.calendarId, eventId, identity)
+    }
     override fun verifyOwnership(calendar: OwnedCalendarRef): Boolean = calendar.target == OutputTarget.GOOGLE_CALENDAR &&
         calendar.ownershipMarker == AppOwnedCalendarContract.OWNERSHIP_MARKER &&
         api.getCalendar(calendar.calendarId)?.description == GOOGLE_OWNERSHIP_DESCRIPTION
@@ -116,6 +126,17 @@ class GoogleCalendarRestApi(
     private val accessToken: String,
     private val transport: GoogleCalendarHttpTransport = GoogleCalendarHttpTransport(),
 ) : GoogleCalendarApi {
+    override fun readEventFingerprint(calendarId: String, eventId: String, identity: ManagedEventIdentity): String? {
+        return readManagedEvent(calendarId, eventId, identity)?.let { SyncDiffPlanner().run { it.fingerprint() } }
+    }
+
+    override fun readManagedEvent(calendarId: String, eventId: String, identity: ManagedEventIdentity): DesiredCalendarEvent? {
+        val response = transport.execute(GoogleCalendarRequestStage.FIND_MANAGED_EVENTS, "GET",
+            "/calendars/${calendarId.encodePath()}/events/${eventId.encodePath()}?fields=status,summary,location,start,end,colorId,extendedProperties", null, accessToken)
+        if (response.statusCode == 404 || response.statusCode == 410) throw ManagedEventMissingException()
+        response.requireSuccess()
+        return googleManagedEvent(response.body, identity)
+    }
     override fun getCalendar(calendarId: String): GoogleRemoteCalendar? {
         val response = transport.execute(GoogleCalendarRequestStage.CHECK_OWNED_CALENDAR, "GET", "/calendars/${calendarId.encodePath()}", null, accessToken)
         if (response.statusCode == HttpURLConnection.HTTP_NOT_FOUND) return null
@@ -198,9 +219,29 @@ class GoogleCalendarRestApi(
     private fun String.encodePath(): String = java.net.URLEncoder.encode(this, Charsets.UTF_8.name())
 }
 
+/** 只比较显式应用标记的真实字段；未知颜色／全天格式不得被判为“保持不变”。 */
+internal fun googleEventFingerprint(body: String, identity: ManagedEventIdentity): String? {
+    return googleManagedEvent(body, identity)?.let { SyncDiffPlanner().run { it.fingerprint() } }
+}
+
+private fun googleManagedEvent(body: String, identity: ManagedEventIdentity): DesiredCalendarEvent? {
+    val event = JSONObject(body)
+    if (event.optString("status") == "cancelled") throw ManagedEventMissingException()
+    check(event.optJSONObject("extendedProperties")?.optJSONObject("private")?.optString(GOOGLE_EVENT_IDENTITY_KEY) == identity.opaqueKey()) { "目标事件已不属于该课次，拒绝覆盖" }
+    val state = when (event.optString("colorId")) {
+        "10" -> AttendanceState.MUST_ATTEND
+        "9" -> AttendanceState.CHOOSE_TO_ATTEND
+        "8" -> AttendanceState.STOP_ATTENDING
+        else -> return null
+    }
+    val start = event.optJSONObject("start")?.optString("dateTime")?.takeIf(String::isNotBlank) ?: return null
+    val end = event.optJSONObject("end")?.optString("dateTime")?.takeIf(String::isNotBlank) ?: return null
+    return DesiredCalendarEvent(identity, event.optString("summary"), java.time.OffsetDateTime.parse(start).toInstant(), java.time.OffsetDateTime.parse(end).toInstant(), state, event.optString("location"))
+}
+
 /** 全量读取仅在应用专用目标内分页；不会解析标题、地点、描述或日程时间。 */
 internal fun googleManagedEventsPath(calendarId: String, pageToken: String?): String = buildString {
-    append("/calendars/${java.net.URLEncoder.encode(calendarId, Charsets.UTF_8.name())}/events?singleEvents=true&showDeleted=false&maxResults=2500")
+    append("/calendars/${java.net.URLEncoder.encode(calendarId, Charsets.UTF_8.name())}/events?singleEvents=true&showDeleted=false&maxResults=250&fields=nextPageToken,items(id,extendedProperties)")
     pageToken?.let { append("&pageToken=${java.net.URLEncoder.encode(it, Charsets.UTF_8.name())}") }
 }
 
@@ -279,7 +320,15 @@ class GoogleCalendarHttpTransport(private val maxResponseBytes: Int = 512 * 1024
         return try {
             val statusCode = connection.responseCode
             val bytes = if (statusCode in 200..299) connection.inputStream.use {
-                it.readBytes().also { data -> require(data.size <= maxResponseBytes) { "Google 响应超过大小限制" } }
+                val buffer = java.io.ByteArrayOutputStream()
+                val chunk = ByteArray(8192)
+                while (true) {
+                    val count = it.read(chunk)
+                    if (count < 0) break
+                    require(buffer.size() + count <= maxResponseBytes) { "Google 响应超过大小限制" }
+                    buffer.write(chunk, 0, count)
+                }
+                buffer.toByteArray()
             } else {
                 ByteArray(0)
             }

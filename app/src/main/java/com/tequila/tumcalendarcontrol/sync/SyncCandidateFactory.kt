@@ -20,6 +20,7 @@ class SyncCandidateFactory(private val zoneId: ZoneId = ZoneId.of("Europe/Berlin
         sourceOutputWindow: SourceOutputDateWindow = SourceOutputDateWindow(),
         rules: List<SyncRule>,
         manualEvents: List<ManualScheduleItem>,
+        overrides: Map<String, com.tequila.tumcalendarcontrol.domain.CourseLocalOverride> = emptyMap(),
     ): List<DesiredCalendarEvent> {
         val rulesByUid = rules.associateBy(SyncRule::sourceUid)
         val sourceEvents = occurrences.asSequence()
@@ -29,13 +30,19 @@ class SyncCandidateFactory(private val zoneId: ZoneId = ZoneId.of("Europe/Berlin
             val rule = rulesByUid[occurrence.sourceUid]
                 ?: SyncRule(occurrence.sourceUid, hasConfirmedFixplatz = true, defaultState = AttendanceState.CHOOSE_TO_ATTEND)
             SyncRuleResolver.resolve(rule, occurrence, zoneId)?.let { state ->
+                val override = overrides[occurrence.sourceUid]
+                val meeting = override?.meetingTime
+                val originalDay = occurrence.startsAt.atZone(zoneId).toLocalDate()
+                val newDay = meeting?.let { originalDay.plusDays((it.weekday.ordinal + 1 - originalDay.dayOfWeek.value).toLong()) }
+                val start = meeting?.let { newDay!!.atTime(it.startHour, it.startMinute).atZone(zoneId).toInstant() } ?: occurrence.startsAt
+                val end = meeting?.let { newDay!!.atTime(it.endHour, it.endMinute).atZone(zoneId).toInstant() } ?: occurrence.endsAt
                 DesiredCalendarEvent(
                     identity = ManagedEventIdentity(occurrence.sourceUid, occurrence.instanceKey),
-                    title = occurrence.title,
-                    startsAt = occurrence.startsAt,
-                    endsAt = occurrence.endsAt,
+                    title = override?.title ?: occurrence.title,
+                    startsAt = start,
+                    endsAt = end,
                     attendanceState = state,
-                    location = occurrence.location,
+                    location = override?.location ?: occurrence.location,
                 )
             }
         }.toList()

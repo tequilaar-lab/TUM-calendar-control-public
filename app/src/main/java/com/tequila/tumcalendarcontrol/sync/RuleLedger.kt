@@ -33,6 +33,9 @@ data class StoredEventMapping(
     val identity: ManagedEventIdentity,
     val targetEventId: String,
     val fingerprint: String,
+    val calendarId: String? = null,
+    /** 仅存应用私有资料库，供来源消失后按课程／日期清理；不导出备份。 */
+    val writtenEvent: DesiredCalendarEvent? = null,
 )
 
 /** 失败信息只能是可显示的脱敏摘要，不能存放响应、账户或令牌。 */

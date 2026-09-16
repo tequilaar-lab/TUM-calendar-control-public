@@ -57,7 +57,7 @@ class CalendarControlScreenshotTest {
         val state = CalendarControlState().also { it.openSourceRange() }
 
         render(state)
-        composeRule.onNodeWithText("下一步：选择课程").performScrollTo()
+        composeRule.onNodeWithText("读取后先选择要管理的课程，再设置出席和收藏。写入前会显示本机和 Google 日历将受影响的数量；确认后才会写入。").performScrollTo()
         capture("source_range_bottom_reachable_412x892")
     }
 

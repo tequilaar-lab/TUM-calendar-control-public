@@ -24,6 +24,11 @@ data class ManagedSyncResult(
         result.cleanupSummary?.removedNowCount ?: result.changes.count { it.type == SyncChangeType.REMOVE }
     }
     val failureSummary: String? get() = targetResults.mapNotNull(TargetSyncResult::failureSummary).takeIf(List<String>::isNotEmpty)?.joinToString("；")
+    val writeDetailSummary: String get() = targetResults.joinToString("；") { result ->
+        val label = if (result.target == OutputTarget.LOCAL_CALENDAR) "本机日历" else "Google 日历"
+        "$label：新建 ${result.changes.count { it.type == SyncChangeType.CREATE }}，更新 ${result.changes.count { it.type == SyncChangeType.UPDATE }}，已核对未变 ${result.changes.count { it.type == SyncChangeType.KEEP }}，失败 ${result.failedCount}" +
+            if (result.restoredMissingCount > 0) "；发现 ${result.restoredMissingCount} 条日程在目标中缺失，已补写" else ""
+    }
     val cleanupDetailSummary: String? get() = targetResults
         .mapNotNull { result -> result.cleanupSummary?.toUserSummary(result.target) }
         .takeIf(List<String>::isNotEmpty)
@@ -54,10 +59,10 @@ class ManagedSyncEngine(
         )
 
     /** 某个目标失败时保留已成功目标的映射，并继续尝试其他独立目标。 */
-    fun execute(desired: List<DesiredCalendarEvent>, mappings: List<StoredEventMapping>, bindings: List<TargetBinding>): ManagedSyncResult {
+    fun execute(desired: List<DesiredCalendarEvent>, mappings: List<StoredEventMapping>, bindings: List<TargetBinding>, onCheckpoint: (List<StoredEventMapping>) -> Unit = {}): ManagedSyncResult {
         var currentMappings = mappings
         val results = bindings.map { binding ->
-            val result = runCatching { executor.execute(binding.calendar, desired, currentMappings, binding.gateway) }
+            val result = runCatching { executor.execute(binding.calendar, desired, currentMappings, binding.gateway, onCheckpoint) }
                 .getOrElse { error ->
                     TargetSyncResult(
                         target = binding.calendar.target,
@@ -65,9 +70,10 @@ class ManagedSyncEngine(
                         changes = emptyList(),
                         failureSummary = error.googleSafeSummary("${binding.calendar.target.name} 同步失败"),
                         failureCode = error.targetFailureCode(),
+                        failedCount = desired.size,
                     )
                 }
-            if (result.failureSummary == null) currentMappings = result.mappings
+            currentMappings = result.mappings
             result
         }
         return ManagedSyncResult(currentMappings, results)

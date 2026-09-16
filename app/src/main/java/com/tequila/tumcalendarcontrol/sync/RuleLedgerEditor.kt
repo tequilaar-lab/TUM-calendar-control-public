@@ -30,6 +30,14 @@ sealed interface RuleEditCommand {
         override val state: AttendanceState,
     ) : RuleEditCommand
 
+    /** 每门课的“本次”有自己的开始时刻；不影响同日更早课次。 */
+    data class FromOccurrence(
+        val startsBySource: Map<String, java.time.Instant>,
+        override val state: AttendanceState,
+    ) : RuleEditCommand {
+        override val sourceUids: Set<String> get() = startsBySource.keys
+    }
+
     /** 多选“仅本次”按 UID 各自携带实例键，绝不把 A 课实例误应用给 B 课。 */
     data class InstancesBySource(
         override val sourceUids: Set<String>,
@@ -47,9 +55,13 @@ object RuleLedgerEditor {
                 stopAttendingFrom = null,
                 futureStateOverrides = emptyMap(),
                 instanceOverrides = emptyMap(),
+                futureInstantOverrides = emptyMap(),
             )
             is RuleEditCommand.FromDate -> rule.copy(
                 futureStateOverrides = rule.futureStateOverrides + (command.effectiveFrom to command.state),
+            )
+            is RuleEditCommand.FromOccurrence -> rule.copy(
+                futureInstantOverrides = rule.futureInstantOverrides + (command.startsBySource.getValue(rule.sourceUid) to command.state),
             )
             is RuleEditCommand.Instances -> rule.copy(
                 instanceOverrides = rule.instanceOverrides + command.instanceKeys.associateWith { command.state },

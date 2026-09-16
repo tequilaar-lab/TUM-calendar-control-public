@@ -57,6 +57,7 @@ internal fun CalendarControlChrome(state: CalendarControlState) {
 
 @Composable
 private fun CalendarControlScaffold(state: CalendarControlState) {
+    val savedPages = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     val contentScreen = state.contentScreen
     val showsFloatingNavigation = contentScreen.usesBottomNavigation()
     Scaffold(
@@ -116,7 +117,7 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                     },
                     label = "主页面切换",
                 ) { screen ->
-                    AppScreenContent(state, screen)
+                    savedPages.SaveableStateProvider(screen.name) { AppScreenContent(state, screen) }
                 }
             }
             if (showsFloatingNavigation) {
