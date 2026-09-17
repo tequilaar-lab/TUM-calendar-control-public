@@ -47,7 +47,7 @@ internal object SourceCourseProjection {
                 isFavorite = presentation.isFavorite ?: false,
                 // iCal 本身没有可靠的 TUM 报名状态字段；课程显示不得因旧 Fixplatz 筛选而丢失。
                 hasFixedPlus = true,
-                sourceStatus = if (occurrence.isCancelled) TumEventStatus.CANCELLED else TumEventStatus.FIX,
+                sourceStatus = if (occurrence.isCancelled) TumEventStatus.CANCELLED else TumEventStatus.UNKNOWN,
                 localOverride = presentation.localOverride,
                 instanceKey = occurrence.instanceKey,
                 startsAt = occurrence.startsAt,

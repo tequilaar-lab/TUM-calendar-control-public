@@ -13,7 +13,8 @@ import java.time.LocalDate
 import java.util.Base64
 
 object RuleLedgerCodec {
-    private const val VERSION = "v1"
+    private const val VERSION = "v2"
+    private val SUPPORTED_VERSIONS = setOf("v1", VERSION)
 
     fun encode(ledger: RuleLedger): String = buildList {
         add(VERSION)
@@ -22,6 +23,11 @@ object RuleLedgerCodec {
             rule.futureStateOverrides.toSortedMap().forEach { (date, state) -> add(listOf("f", pack(rule.sourceUid), date, state.name).joinToString("|")) }
             rule.instanceOverrides.toSortedMap().forEach { (key, state) -> add(listOf("i", pack(rule.sourceUid), pack(key), state.name).joinToString("|")) }
             rule.futureInstantOverrides.toSortedMap().forEach { (time, state) -> add(listOf("t", pack(rule.sourceUid), time, state.name).joinToString("|")) }
+        }
+        ledger.groupRules.sortedBy(GroupAttendanceRule::groupKey).forEach { rule ->
+            add(listOf("g", rule.groupKey, rule.defaultState?.name.orEmpty()).joinToString("|"))
+            rule.futureStateOverrides.toSortedMap().forEach { (date, state) -> add(listOf("gf", rule.groupKey, date, state.name).joinToString("|")) }
+            rule.futureInstantOverrides.toSortedMap().forEach { (time, state) -> add(listOf("gt", rule.groupKey, time, state.name).joinToString("|")) }
         }
         ledger.manualEvents.sortedBy(ManualScheduleItem::id).forEach { event ->
             add(listOf("m", pack(event.id), pack(event.title), event.startsAt, event.endsAt, event.attendanceState.name).joinToString("|"))
@@ -38,8 +44,9 @@ object RuleLedgerCodec {
     /** 供备份导入区分“合法空资料库”和“无法解析文件”；偏好恢复仍使用安全空默认值。 */
     fun decodeOrNull(text: String?): RuleLedger? = runCatching {
         val lines = text?.lineSequence()?.filter(String::isNotBlank)?.toList().orEmpty()
-        require(lines.firstOrNull() == VERSION)
+        require(lines.firstOrNull() in SUPPORTED_VERSIONS)
         val rules = linkedMapOf<String, SyncRule>()
+        val groupRules = linkedMapOf<String, GroupAttendanceRule>()
         val manualEvents = mutableListOf<ManualScheduleItem>()
         val mappings = mutableListOf<StoredEventMapping>()
         var summary: SyncRunSummary? = null
@@ -50,6 +57,9 @@ object RuleLedgerCodec {
                 "f" -> { val uid = unpack(fields[1]); rules[uid] = rules.getValue(uid).copy(futureStateOverrides = rules.getValue(uid).futureStateOverrides + (LocalDate.parse(fields[2]) to AttendanceState.valueOf(fields[3]))) }
                 "i" -> { val uid = unpack(fields[1]); rules[uid] = rules.getValue(uid).copy(instanceOverrides = rules.getValue(uid).instanceOverrides + (unpack(fields[2]) to AttendanceState.valueOf(fields[3]))) }
                 "t" -> { val uid = unpack(fields[1]); rules[uid] = rules.getValue(uid).copy(futureInstantOverrides = rules.getValue(uid).futureInstantOverrides + (Instant.parse(fields[2]) to AttendanceState.valueOf(fields[3]))) }
+                "g" -> groupRules[fields[1]] = GroupAttendanceRule(fields[1], fields.getOrNull(2)?.ifBlank { null }?.let(AttendanceState::valueOf))
+                "gf" -> { val key = fields[1]; groupRules[key] = groupRules.getValue(key).copy(futureStateOverrides = groupRules.getValue(key).futureStateOverrides + (LocalDate.parse(fields[2]) to AttendanceState.valueOf(fields[3]))) }
+                "gt" -> { val key = fields[1]; groupRules[key] = groupRules.getValue(key).copy(futureInstantOverrides = groupRules.getValue(key).futureInstantOverrides + (Instant.parse(fields[2]) to AttendanceState.valueOf(fields[3]))) }
                 "m" -> manualEvents += ManualScheduleItem(unpack(fields[1]), unpack(fields[2]), Instant.parse(fields[3]), Instant.parse(fields[4]), AttendanceState.valueOf(fields[5]))
                 "p" -> {
                     val identity = ManagedEventIdentity(unpack(fields[2]), unpack(fields[3]))
@@ -68,7 +78,7 @@ object RuleLedgerCodec {
                 else -> error("未知资料库记录")
             }
         }
-        RuleLedger(rules.values.toList(), manualEvents, mappings, summary)
+        RuleLedger(rules.values.toList(), manualEvents, mappings, summary, groupRules.values.toList())
     }.getOrNull()
 
     private fun pack(value: String): String = Base64.getUrlEncoder().withoutPadding().encodeToString(value.toByteArray(StandardCharsets.UTF_8))

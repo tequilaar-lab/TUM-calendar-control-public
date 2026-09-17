@@ -42,6 +42,9 @@ import com.tequila.tumcalendarcontrol.sync.ManagedEventCleanupScope
 import com.tequila.tumcalendarcontrol.sync.ManagedEventIdentity
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerBackup
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerBackupCodec
+import com.tequila.tumcalendarcontrol.sync.GroupAttendanceRuleEditor
+import com.tequila.tumcalendarcontrol.sync.GroupAttendanceRuleResolver
+import com.tequila.tumcalendarcontrol.sync.GoogleConnectionCheckResult
 import com.tequila.tumcalendarcontrol.sync.SourceCheckSettings
 import com.tequila.tumcalendarcontrol.sync.SourceCheckStatus
 import com.tequila.tumcalendarcontrol.sync.SourceCheckCadence
@@ -76,7 +79,7 @@ enum class SourceFavoriteAction(val label: String, val description: String) {
 enum class GoogleAuthorizationStatus(val title: String, val defaultDetail: String) {
     NOT_CONNECTED("Google 日历未连接", "还没有完成本次授权；不会创建或写入 Google 日历。"),
     AUTHORIZING("正在连接 Google 日历", "请在 Google 页面选择账户并允许访问，然后返回本应用。"),
-    AUTHORIZED("Google 日历已连接", "现在可以查看将写入的内容并确认写入；Google 日历尚未改变。"),
+    AUTHORIZED("已获本次 Google 授权", "授权令牌已取得；可继续执行只读连接检查或查看写入内容，Google 日历尚未改变。"),
     FAILED("未能连接 Google 日历", "没有完成授权，Google 日历没有改变。检查配置后重试。"),
 }
 
@@ -91,6 +94,7 @@ class CalendarControlState(
     initialCoursePresentations: Map<String, CoursePresentation> = emptyMap(),
     initialSourceSnapshots: SavedSourceSnapshots = SavedSourceSnapshots(),
     initialAppearance: AppearanceSettings = AppearanceSettings(),
+    private val userDataPersistence: UserDataPersistence = UserDataPersistence.InMemory,
 ) {
     /** 仅保存 UID 对应的本机展示元数据；不替代来源快照中的实例级身份。 */
     private val savedCoursePresentations = initialCoursePresentations.toMutableMap()
@@ -103,7 +107,7 @@ class CalendarControlState(
             courses = SourceCourseProjection.courses(
                 sourceCourses = sourceWorkflow.courses,
                 occurrences = sourceWorkflow.occurrences,
-                rules = initialRuleLedger.rules,
+                rules = GroupAttendanceRuleResolver.materialize(initialRuleLedger, sourceWorkflow.occurrences),
                 previousCourses = emptyList(),
                 savedPresentations = savedCoursePresentations,
             )
@@ -140,9 +144,17 @@ class CalendarControlState(
         searchQuery = memory.search
         sourceWorkflow.browserQuery = memory.sourceSearch
         sourceWorkflow.browserFilter = runCatching { SourceCourseFilter.valueOf(memory.sourceFilter) }.getOrDefault(SourceCourseFilter.ALL)
+        visibleSourceStatuses = memory.visibleSourceStatuses.mapNotNullTo(mutableSetOf()) { runCatching { TumEventStatus.valueOf(it) }.getOrNull() }
+            .ifEmpty { TumEventStatus.entries.toMutableSet() }
         sourceWorkflow.includeInSelection(memory.selection.intersect(currentSourceOccurrences.map { it.identity }.toSet()))
     }
-    val persistedPageMemory: PageMemory get() = pageMemory.copy(selection = selectedSourceOccurrences, search = searchQuery, sourceSearch = sourceBrowserQuery, sourceFilter = sourceBrowserFilter.name)
+    val persistedPageMemory: PageMemory get() = pageMemory.copy(
+        selection = selectedSourceOccurrences,
+        search = searchQuery,
+        sourceSearch = sourceBrowserQuery,
+        sourceFilter = sourceBrowserFilter.name,
+        visibleSourceStatuses = visibleSourceStatuses.map(TumEventStatus::name).toSet(),
+    )
     fun currentSelectionSummary(selection: Set<SourceOccurrenceIdentity>): String {
         val items = courses.filter { SourceOccurrenceIdentity(it.id, it.instanceKey.orEmpty()) in selection }
         val states = items.map { it.attendance }.distinct()
@@ -152,6 +164,28 @@ class CalendarControlState(
     private fun rememberAttendanceOptions() {
         pageMemory = pageMemory.copy(individual = individualAttendanceMode, scope = pendingSourceAttendanceScope, date = pendingSourceEffectiveDate)
     }
+
+    /** 用户数据先同步落盘再进入可观察状态；失败时不留下半份规则或收藏。 */
+    private fun commitUserData(nextLedger: RuleLedger = ruleLedger, nextCourses: List<Course> = courses): Boolean {
+        val committedLedger = userDataPersistence.commit(nextLedger, nextCourses)
+        if (committedLedger == null) {
+            feedback = "未能保存课程设置；原有出席、收藏和本机修改保持不变。"
+            return false
+        }
+        ruleLedger = committedLedger
+        courses = nextCourses
+        rememberPresentations()
+        return true
+    }
+
+    private fun projectedCourses(ledger: RuleLedger, previous: List<Course> = courses): List<Course> =
+        if (!sourceCatalogLoaded) previous else SourceCourseProjection.courses(
+            sourceCourses = sourceCourses,
+            occurrences = currentSourceOccurrences,
+            rules = GroupAttendanceRuleResolver.materialize(ledger, currentSourceOccurrences),
+            previousCourses = previous,
+            savedPresentations = savedCoursePresentations,
+        )
     val individualAttendanceGroups: List<IndividualAttendanceGroup> get() = sourceWorkflow.occurrences
         .filter { it.identity in selectedSourceOccurrences }
         .groupBy { CourseDisplayGroupModel.titleGroupingKey(it.title) }
@@ -218,10 +252,10 @@ class CalendarControlState(
         set(value) { sourceWorkflow.pendingAttendance = value; sourceEditorChanged = true; sourceAttendanceChanged = true; sourceStateChosen = true }
     var pendingSourceAttendanceScope: AttendanceEditScope
         get() = sourceWorkflow.pendingAttendanceScope
-        set(value) { sourceWorkflow.pendingAttendanceScope = value; sourceEditorChanged = true; sourceAttendanceChanged = true }
+        set(value) { sourceWorkflow.pendingAttendanceScope = value; sourceEditorChanged = true }
     var pendingSourceEffectiveDate: String
         get() = sourceWorkflow.pendingEffectiveDate
-        set(value) { sourceWorkflow.pendingEffectiveDate = value; sourceEditorChanged = true; sourceAttendanceChanged = true }
+        set(value) { sourceWorkflow.pendingEffectiveDate = value; sourceEditorChanged = true }
     var pendingSourceFavoriteAction: SourceFavoriteAction
         get() = sourceWorkflow.pendingFavoriteAction
         set(value) { sourceWorkflow.pendingFavoriteAction = value; sourceEditorChanged = true }
@@ -262,6 +296,16 @@ class CalendarControlState(
     /** 预览分项仅按应用生成身份前缀统计，不暴露来源标题或正文。 */
     val managedSourceCandidateCount: Int get() = managedDesiredEvents.count { !it.identity.sourceUid.startsWith("manual:") }
     val managedManualCandidateCount: Int get() = managedDesiredEvents.count { it.identity.sourceUid.startsWith("manual:") }
+    /** 来源明确取消且应用此前写过的课次；正常增量写入不会把“未选”误当删除。 */
+    val managedCancelledMappedCount: Int get() {
+        val cancelled = currentSourceOccurrences.filter(SourceCalendarOccurrence::isCancelled)
+            .map { ManagedEventIdentity(it.sourceUid, it.instanceKey) }
+            .toSet()
+        val targets = managedSyncPreview?.targetChanges?.keys ?: enabledOutputTargets()
+        return ruleLedger.mappings.filter { it.identity in cancelled && it.target in targets }
+            .distinctBy { it.identity to it.target }
+            .size
+    }
     val managedSyncRequested: Boolean get() = outputWorkflow.syncRequested
     val managedRollbackRequested: Boolean get() = outputWorkflow.rollbackRequested
     val managedSyncInProgress: Boolean get() = outputWorkflow.inProgress
@@ -272,6 +316,7 @@ class CalendarControlState(
     val googleConnectionCheckRequested: Boolean get() = outputWorkflow.googleConnectionCheckRequested
     val googleConnectionCheckInProgress: Boolean get() = outputWorkflow.googleConnectionCheckInProgress
     val googleConnectionCheckDetail: String get() = outputWorkflow.googleConnectionCheckDetail
+    val googleConnectionVerification: GoogleConnectionVerification get() = outputWorkflow.googleConnectionVerification
     val googleConnectionCheckToken: Long get() = outputWorkflow.googleConnectionCheckToken
     val localCalendarPermissionGranted: Boolean get() = outputWorkflow.localCalendarPermissionGranted
     /** 只读请求的单调编号；忽略超时后才返回的旧线程结果，避免覆盖新的用户操作。 */
@@ -325,8 +370,8 @@ class CalendarControlState(
 
     /** 仅应用私有覆盖；来源 title、schedule、location 永远保持不变。 */
     fun updateSelectedCourseOverride(override: CourseLocalOverride) {
-        courses = courses.map { if (it.id == selectedCourseId) it.copy(localOverride = override) else it }
-        rememberPresentations()
+        val nextCourses = courses.map { if (it.id == selectedCourseId) it.copy(localOverride = override) else it }
+        if (!commitUserData(nextCourses = nextCourses)) return
         invalidateWritePreview()
         feedback = "已保存这门课的修改；下次确认写入时生效，学校来源不变。"
     }
@@ -432,21 +477,22 @@ class CalendarControlState(
     /** SAF 写入只能由用户选择文件后触发；此处仅表达 UI 请求。 */
     fun requestRuleBackupExport() { ruleBackupExportRequested = true }
     fun consumeRuleBackupExportRequest() { ruleBackupExportRequested = false }
-    fun resolveRuleBackupExport(saved: Boolean) { feedback = if (saved) "课程设置已导出；不包含课程地址、账户或已写入日程。" else "没有导出课程设置。" }
+    fun resolveRuleBackupExport(saved: Boolean) { feedback = if (saved) "出席规则与校园事项已导出；不包含收藏、显示改名、课程地址、账户或已写入日程。" else "没有导出。" }
 
     /** SAF 读取后的文本只留在内存解析为待确认草稿，未确认前不改动规则资料库。 */
     fun requestRuleBackupImport() { ruleBackupImportRequested = true }
     fun consumeRuleBackupImportRequest() { ruleBackupImportRequested = false }
     fun resolveRuleBackupImport(text: String?) {
         pendingRuleBackup = text?.let(RuleLedgerBackupCodec::decode)
-        feedback = if (pendingRuleBackup == null) "无法读取备份；本机课程设置没有改变。" else "已读取备份。确认后才会替换出席设置和校园事项。"
+        feedback = if (pendingRuleBackup == null) "无法读取备份；本机规则没有改变。" else "已读取备份。确认后才会替换出席规则和校园事项；收藏与显示改名不变。"
     }
     fun cancelRuleBackupImport() { pendingRuleBackup = null }
     fun confirmRuleBackupImport() {
         val backup = pendingRuleBackup ?: return
-        ruleLedger = ruleLedger.copy(rules = backup.rules, manualEvents = backup.manualEvents)
+        val nextLedger = ruleLedger.copy(rules = backup.rules, manualEvents = backup.manualEvents, groupRules = backup.groupRules)
+        val nextCourses = projectedCourses(nextLedger)
+        if (!commitUserData(nextLedger, nextCourses)) return
         invalidateWritePreview()
-        refreshCoursesFromSource()
         pendingRuleBackup = null
         feedback = "已恢复出席设置和校园事项；日历没有改变。"
     }
@@ -532,6 +578,11 @@ class CalendarControlState(
                 refreshCoursesFromSource()
                 selectedCourseId = courses.firstOrNull()?.id ?: ""
                 navigation.openSourcePreview()
+                feedback = if (sourceWorkflow.lastSelectionRemovedCount > 0) {
+                    "已保留仍存在的选择；${sourceWorkflow.lastSelectionRemovedCount} 个已不存在或已取消的课次已从选择中移除。"
+                } else {
+                    "课程已更新；原有选择中仍存在的课次已保留。"
+                }
             }
             is SourceReadResolution.Failure -> feedback = "未能读取课程：${resolution.message}。日历没有改变。"
             SourceReadResolution.Ignored -> Unit
@@ -548,7 +599,7 @@ class CalendarControlState(
         refreshCoursesFromSource()
         invalidateWritePreview()
         selectedCourseId = courses.firstOrNull()?.id.orEmpty()
-        feedback = "已使用${sourceSnapshotLabel}；查看写入内容后再确认，日历尚未改变。"
+        feedback = "已使用${sourceSnapshotLabel}；仍存在的选择已保留${if (sourceWorkflow.lastSelectionRemovedCount > 0) "，并移除 ${sourceWorkflow.lastSelectionRemovedCount} 个已不存在课次" else ""}。日历尚未改变。"
     }
 
     /** 课程目录的多选保留精确课次身份；来源标题、地点与正文不进入规则资料库。 */
@@ -566,7 +617,8 @@ class CalendarControlState(
     fun updateSourceBrowserFilter(filter: SourceCourseFilter) { sourceBrowserFilter = filter }
 
     /** 新来源课次无规则时默认蓝色；用户可按单课次或多选打开同一三态编辑器。 */
-    fun sourceAttendanceFor(sourceUid: String): AttendanceState = ruleLedger.rules
+    fun sourceAttendanceFor(sourceUid: String): AttendanceState = GroupAttendanceRuleResolver
+        .materialize(ruleLedger, currentSourceOccurrences)
         .firstOrNull { it.sourceUid == sourceUid }
         ?.defaultState
         ?: AttendanceState.CHOOSE_TO_ATTEND
@@ -618,16 +670,15 @@ class CalendarControlState(
             return
         }
         result as SourceAttendanceRuleResult.Applied
-        ruleLedger = result.rules
-        sourceWorkflow.includeInSelection(result.affectedOccurrences)
-        invalidateWritePreview()
-        refreshCoursesFromSource()
+        var nextCourses = projectedCourses(result.rules)
         if (result.favoriteAction != SourceFavoriteAction.KEEP) {
-            courses = courses.map { course ->
+            nextCourses = nextCourses.map { course ->
                 if (course.id in result.sourceUids) course.copy(isFavorite = result.favoriteAction == SourceFavoriteAction.ADD) else course
             }
         }
-        rememberPresentations()
+        if (!commitUserData(result.rules, nextCourses)) return
+        sourceWorkflow.includeInSelection(result.affectedOccurrences)
+        invalidateWritePreview()
         rememberAttendanceOptions()
         feedback = "已保存 ${selectedSourceOccurrences.size} 个课次的出席方式${if (result.favoriteAction == SourceFavoriteAction.KEEP) "" else "与收藏设置"}；尚未写入日历。"
         navigation.handleBack()
@@ -651,14 +702,13 @@ class CalendarControlState(
             nextLedger = result.rules
             results += result
         }
-        ruleLedger = nextLedger
+        var nextCourses = projectedCourses(nextLedger)
+        results.filter { it.favoriteAction != SourceFavoriteAction.KEEP }.forEach { result ->
+            nextCourses = nextCourses.map { course -> if (course.id in result.sourceUids) course.copy(isFavorite = result.favoriteAction == SourceFavoriteAction.ADD) else course }
+        }
+        if (!commitUserData(nextLedger, nextCourses)) return
         sourceWorkflow.includeInSelection(results.flatMap { it.affectedOccurrences }.toSet())
         invalidateWritePreview()
-        refreshCoursesFromSource()
-        results.filter { it.favoriteAction != SourceFavoriteAction.KEEP }.forEach { result ->
-            courses = courses.map { course -> if (course.id in result.sourceUids) course.copy(isFavorite = result.favoriteAction == SourceFavoriteAction.ADD) else course }
-        }
-        rememberPresentations()
         rememberAttendanceOptions()
         feedback = "已保存 ${groups.size} 门课程的分别设置；尚未写入日历。"
         navigation.handleBack()
@@ -677,10 +727,10 @@ class CalendarControlState(
             )
             if (result is SourceAttendanceRuleResult.Invalid) { feedback = result.message; return }
             result as SourceAttendanceRuleResult.Applied
-            ruleLedger = result.rules
+            val nextCourses = projectedCourses(result.rules)
+            if (!commitUserData(result.rules, nextCourses)) return
             pageMemory = pageMemory.copy(scope = pendingAttendanceScope, date = pendingEffectiveDate)
             sourceWorkflow.includeInSelection(result.affectedOccurrences)
-            refreshCoursesFromSource()
             invalidateWritePreview()
             feedback = "已更新 ${result.affectedOccurrences.size} 个已保存课次并加入待写入选择；确认写入后才会更新日历。"
             open(AppScreen.DETAIL)
@@ -689,11 +739,12 @@ class CalendarControlState(
         val command = attendanceCommand() ?: return
         val selectedRule = ruleLedger.rules.firstOrNull { it.sourceUid == selectedCourseId }
             ?: SyncRule(selectedCourseId, hasConfirmedFixplatz = selectedCourse.hasFixedPlus, defaultState = selectedCourse.attendance)
-        ruleLedger = ruleLedger.copy(rules = RuleLedgerEditor.apply(
+        val nextLedger = ruleLedger.copy(rules = RuleLedgerEditor.apply(
             ruleLedger.rules.filterNot { it.sourceUid == selectedCourseId } + selectedRule,
             command,
         ))
-        if (sourceCatalogLoaded) refreshCoursesFromSource() else courses = courses.map { if (it.id == selectedCourseId) it.copy(attendance = pendingAttendance) else it }
+        val nextCourses = if (sourceCatalogLoaded) projectedCourses(nextLedger) else courses.map { if (it.id == selectedCourseId) it.copy(attendance = pendingAttendance) else it }
+        if (!commitUserData(nextLedger, nextCourses)) return
         invalidateWritePreview()
         feedback = "已更新“${selectedCourse.displayTitle}”的出席方式（${pendingAttendanceScope.label}）；确认写入后才会更新日历。"
         open(AppScreen.DETAIL)
@@ -713,10 +764,10 @@ class CalendarControlState(
     }
 
     fun toggleFavorite(courseId: String) {
-        courses = courses.map { course ->
+        val nextCourses = courses.map { course ->
             if (course.id == courseId) course.copy(isFavorite = !course.isFavorite) else course
         }
-        rememberPresentations()
+        commitUserData(nextCourses = nextCourses)
     }
 
     fun requestSync() {
@@ -749,7 +800,7 @@ class CalendarControlState(
             selectedSourceOccurrences = selectedSourceOccurrences,
             sourceOutputWindow = privateSyncConfiguration.sourceOutputWindow
                 ?: run { feedback = "读取时间不正确；回到“选择读取时间”修改后重试。"; return },
-            rules = ruleLedger.rules,
+            rules = GroupAttendanceRuleResolver.materialize(ruleLedger, currentSourceOccurrences),
             manualEvents = ruleLedger.manualEvents,
             overrides = courses.associate { it.id to it.localOverride },
         )
@@ -776,8 +827,8 @@ class CalendarControlState(
         outputWorkflow.requestGoogleConnectionCheck()?.let { feedback = it }
     }
 
-    fun resolveGoogleConnectionCheck(token: Long, detail: String) {
-        if (outputWorkflow.resolveGoogleConnectionCheck(token, detail)) feedback = detail
+    fun resolveGoogleConnectionCheck(token: Long, result: GoogleConnectionCheckResult) {
+        if (outputWorkflow.resolveGoogleConnectionCheck(token, result)) feedback = result.userSummary
     }
 
     /** 只由已结构化识别的 Google 401 调用；不触碰日历、映射或其他目标状态。 */
@@ -933,13 +984,15 @@ class CalendarControlState(
             require(end.isAfter(start))
             ManualScheduleItem(UUID.randomUUID().toString(), title.trim().ifBlank { error("标题不能为空") }, start, end, attendance)
         }.getOrElse { feedback = "请填写有效的标题、YYYY-MM-DD 日期和小时／分钟；结束须晚于开始。"; return }
-        ruleLedger = ruleLedger.copy(manualEvents = ManualScheduleEditor().upsert(ruleLedger.manualEvents, item))
+        val nextLedger = ruleLedger.copy(manualEvents = ManualScheduleEditor().upsert(ruleLedger.manualEvents, item))
+        if (!commitUserData(nextLedger)) return
         invalidateWritePreview()
         feedback = "校园事项已保存到这台设备。下次写入日历时会和课程一起处理。"
     }
 
     fun removeManualEvent(itemId: String) {
-        ruleLedger = ruleLedger.copy(manualEvents = ManualScheduleEditor().remove(ruleLedger.manualEvents, itemId))
+        val nextLedger = ruleLedger.copy(manualEvents = ManualScheduleEditor().remove(ruleLedger.manualEvents, itemId))
+        if (!commitUserData(nextLedger)) return
         invalidateWritePreview()
         feedback = "已从这台设备删除校园事项；日历没有改变。"
     }
@@ -968,7 +1021,7 @@ class CalendarControlState(
         courses = SourceCourseProjection.courses(
             sourceCourses = sourceCourses,
             occurrences = currentSourceOccurrences,
-            rules = ruleLedger.rules,
+            rules = GroupAttendanceRuleResolver.materialize(ruleLedger, currentSourceOccurrences),
             previousCourses = courses,
             savedPresentations = savedCoursePresentations,
         )

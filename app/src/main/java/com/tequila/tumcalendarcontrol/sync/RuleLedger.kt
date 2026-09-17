@@ -14,6 +14,8 @@ data class RuleLedger(
     val manualEvents: List<ManualScheduleItem> = emptyList(),
     val mappings: List<StoredEventMapping> = emptyList(),
     val lastSummary: SyncRunSummary? = null,
+    /** 只含完整来源标题的不可逆组键与三态时间线；不包含标题正文。 */
+    val groupRules: List<GroupAttendanceRule> = emptyList(),
 )
 
 /** 手动校园事项拥有应用生成的稳定 ID，不与来源 UID 混淆。 */

@@ -48,9 +48,14 @@ fun CalendarControlApp() {
     val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
     val privateSyncConfigurationStore = remember(context) { PrivateSyncConfigurationStore(context) }
     val ruleLedgerPreferences = remember(context) { RuleLedgerPreferences(context) }
+    val courseOverridePreferences = remember(context) { CourseOverridePreferences(context) }
+    val userDataPersistence = remember(ruleLedgerPreferences, courseOverridePreferences) {
+        UserDataPersistence { ledger, courses ->
+            ruleLedgerPreferences.saveBusinessState(ledger) { courseOverridePreferences.save(courses) }
+        }
+    }
     val sourceCheckSettingsStore = remember(context) { SourceCheckSettingsStore(context) }
     val periodicSourceCheckScheduler = remember(context) { PeriodicSourceCheckScheduler(context) }
-    val courseOverridePreferences = remember(context) { CourseOverridePreferences(context) }
     val sourceSnapshotPreferences = remember(context) { SourceSnapshotPreferences(context) }
     val initialSourceSnapshots = remember(context) { sourceSnapshotPreferences.load() }
     val readOnlyIcalImportService = remember { ReadOnlyIcalImportService() }
@@ -68,6 +73,7 @@ fun CalendarControlApp() {
             initialSourceCheckStatus = sourceCheckSettingsStore.loadStatus(),
             initialCoursePresentations = courseOverridePreferences.loadPresentations(),
             initialSourceSnapshots = initialSourceSnapshots,
+            userDataPersistence = userDataPersistence,
         ).also { it.courseTypeNames = courseTypeNamesPreferences.load(); it.restorePageMemory(pageMemoryPreferences.load()); session.state = it }
     }
     var privateConfigurationInitialized by remember { mutableStateOf(false) }
@@ -115,9 +121,7 @@ fun CalendarControlApp() {
             .onFailure { state.feedback = "配置未能保存，请检查本机存储后重试；当前配置仅在本次运行有效。" }
         else privateConfigurationInitialized = true
     }
-    LaunchedEffect(state.ruleLedger) { ruleLedgerPreferences.save(state.ruleLedger) }
     LaunchedEffect(state.sourceCheckSettings) { sourceCheckSettingsStore.saveSettings(state.sourceCheckSettings) }
-    LaunchedEffect(state.courses) { courseOverridePreferences.save(state.courses) }
     LaunchedEffect(state.savedSourceSnapshots) { sourceSnapshotPreferences.save(state.savedSourceSnapshots) }
     LaunchedEffect(Unit) {
         sourceSnapshotPreferences.recoveryNotice?.let { state.feedback = it }
@@ -125,6 +129,9 @@ fun CalendarControlApp() {
             ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED &&
                 ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_CALENDAR) == PackageManager.PERMISSION_GRANTED,
         )
+    }
+    LaunchedEffect(state.screen) {
+        if (state.screen == AppScreen.BACKGROUND_CHECK) state.refreshSourceCheckStatus(sourceCheckSettingsStore.loadStatus())
     }
     LaunchedEffect(state.localCalendarPermissionRequestPending) {
         if (state.localCalendarPermissionRequestPending) localCalendarPermissionLauncher.launch(
@@ -186,7 +193,7 @@ fun CalendarControlApp() {
         if (!session.claim("connection", connectionCheckToken)) return@LaunchedEffect
         Thread {
             val result = platformManagedSyncRunner.checkGoogleConnection(configuration, googleToken)
-            Handler(Looper.getMainLooper()).post { state.resolveGoogleConnectionCheck(connectionCheckToken, result.userSummary) }
+            Handler(Looper.getMainLooper()).post { state.resolveGoogleConnectionCheck(connectionCheckToken, result) }
         }.start()
     }
     LaunchedEffect(state.managedSyncRequested, state.managedRollbackRequested) {
@@ -207,7 +214,9 @@ fun CalendarControlApp() {
             Handler(Looper.getMainLooper()).post {
                 outcome.onSuccess {
                     state.resolveManagedOperation(token, it.result, it.configuration)
-                    ruleLedgerPreferences.save(state.ruleLedger)
+                    if (!ruleLedgerPreferences.save(state.ruleLedger)) {
+                        state.feedback = "日历操作已返回，但本机同步记录保存失败；请先核对目标日历再重试。"
+                    }
                     runCatching { privateSyncConfigurationStore.save(state.privateSyncConfiguration) }
                         .onFailure { state.feedback = "日历执行结果已返回，但配置保存失败；请先核对已写入日程。" }
                     if (it.requiresGoogleReauthorization && !googleToken.isNullOrBlank()) {
@@ -233,7 +242,12 @@ fun CalendarControlApp() {
         val accessToken = state.currentGoogleAccessToken()
         Thread {
             val result = runCatching { platformManagedSyncRunner.readCleanupCatalog(mappings, targets, configuration, accessToken) }.getOrNull()
-            Handler(Looper.getMainLooper()).post { state.resolveCleanupCatalogRead(token, result) }
+            Handler(Looper.getMainLooper()).post {
+                state.resolveCleanupCatalogRead(token, result)
+                if (result != null && !ruleLedgerPreferences.save(state.ruleLedger)) {
+                    state.feedback = "核对结果已返回，但本机记录保存失败；没有删除任何日程。"
+                }
+            }
         }.start()
     }
     BackHandler(enabled = state.canHandleBack()) { state.handleBack() }

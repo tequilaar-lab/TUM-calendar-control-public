@@ -26,7 +26,7 @@ val Course.browseKey: String get() = "$id\u0000${instanceKey.orEmpty()}"
 
 /** 来源状态只用于显示筛选；它不能替代用户确认的 Fixplatz 输出资格。 */
 enum class TumEventStatus(val label: String) {
-    FIX("fix"), PLANNED("geplant"), MOVED("verschoben"), CANCELLED("abgesagt"), REJECTED("abgelehnt"), DELETED("gelöscht"),
+    UNKNOWN("来源未说明"), FIX("fix"), PLANNED("geplant"), MOVED("verschoben"), CANCELLED("abgesagt"), REJECTED("abgelehnt"), DELETED("gelöscht"),
 }
 
 /** 本机覆盖不改写来源字段，未来来源刷新可继续保留原始数据。 */

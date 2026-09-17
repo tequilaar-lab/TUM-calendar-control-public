@@ -11,6 +11,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.tequila.tumcalendarcontrol.sync.DesiredCalendarEvent
 import com.tequila.tumcalendarcontrol.sync.ManagedSyncPreview
+import com.tequila.tumcalendarcontrol.sync.GoogleConnectionCheckResult
+
+enum class GoogleConnectionVerification {
+    NOT_CHECKED, CHECKING, VERIFIED, ACTION_REQUIRED, FAILED,
+}
 
 /** 输出动作由调用者先完成前置检查，状态机只负责一次运行中的请求与令牌。 */
 internal class ManagedOutputWorkflowState {
@@ -33,6 +38,8 @@ internal class ManagedOutputWorkflowState {
         private set
     var googleConnectionCheckDetail by mutableStateOf("连接后可检查应用专用日历；检查不会创建日历或写入日程。")
         private set
+    var googleConnectionVerification by mutableStateOf(GoogleConnectionVerification.NOT_CHECKED)
+        private set
     private var googleAccessToken by mutableStateOf<String?>(null)
     var googleAuthorizationStatus by mutableStateOf(GoogleAuthorizationStatus.NOT_CONNECTED)
         private set
@@ -53,6 +60,7 @@ internal class ManagedOutputWorkflowState {
             return googleAuthorizationDetail
         }
         googleAccessToken = null
+        googleConnectionVerification = GoogleConnectionVerification.NOT_CHECKED
         googleAuthorizationRequested = true
         googleAuthorizationStatus = GoogleAuthorizationStatus.AUTHORIZING
         googleAuthorizationDetail = GoogleAuthorizationStatus.AUTHORIZING.defaultDetail
@@ -66,9 +74,11 @@ internal class ManagedOutputWorkflowState {
                 googleAccessToken = outcome.value
                 googleAuthorizationStatus = GoogleAuthorizationStatus.AUTHORIZED
                 googleAuthorizationDetail = GoogleAuthorizationStatus.AUTHORIZED.defaultDetail
+                googleConnectionVerification = GoogleConnectionVerification.NOT_CHECKED
             }
             is GoogleAuthorizationOutcome.Failure -> {
                 googleAccessToken = null
+                googleConnectionVerification = GoogleConnectionVerification.NOT_CHECKED
                 googleAuthorizationStatus = GoogleAuthorizationStatus.FAILED
                 googleAuthorizationDetail = outcome.summary
             }
@@ -99,14 +109,23 @@ internal class ManagedOutputWorkflowState {
         googleConnectionCheckRequested = true
         googleConnectionCheckInProgress = true
         googleConnectionCheckDetail = "正在检查 Google 连接；不会创建日历或写入日程。"
+        googleConnectionVerification = GoogleConnectionVerification.CHECKING
         return null
     }
 
-    fun resolveGoogleConnectionCheck(token: Long, detail: String): Boolean {
+    fun resolveGoogleConnectionCheck(token: Long, result: GoogleConnectionCheckResult): Boolean {
         if (token != googleConnectionCheckToken || !googleConnectionCheckInProgress) return false
         googleConnectionCheckRequested = false
         googleConnectionCheckInProgress = false
-        googleConnectionCheckDetail = detail
+        googleConnectionCheckDetail = result.userSummary
+        googleConnectionVerification = when (result) {
+            GoogleConnectionCheckResult.Available -> GoogleConnectionVerification.VERIFIED
+            GoogleConnectionCheckResult.NoManagedCalendar,
+            GoogleConnectionCheckResult.Missing,
+            GoogleConnectionCheckResult.OwnershipUnverified,
+            -> GoogleConnectionVerification.ACTION_REQUIRED
+            is GoogleConnectionCheckResult.Failed -> GoogleConnectionVerification.FAILED
+        }
         return true
     }
 
@@ -116,6 +135,7 @@ internal class ManagedOutputWorkflowState {
         googleAccessToken = null
         googleAuthorizationStatus = GoogleAuthorizationStatus.FAILED
         googleAuthorizationDetail = "Google 授权已失效（HTTP 401）；请重新连接 Google 日历后再写入。"
+        googleConnectionVerification = GoogleConnectionVerification.FAILED
         cancelGoogleConnectionCheck()
         return googleAuthorizationDetail
     }
@@ -125,6 +145,7 @@ internal class ManagedOutputWorkflowState {
         googleConnectionCheckRequested = false
         googleConnectionCheckInProgress = false
         googleConnectionCheckDetail = "连接后可检查应用专用日历；检查不会创建日历或写入日程。"
+        googleConnectionVerification = GoogleConnectionVerification.NOT_CHECKED
     }
 
     /** 缓存清理结果只更新同一轮失效授权；不能覆盖用户已经完成的新授权。 */

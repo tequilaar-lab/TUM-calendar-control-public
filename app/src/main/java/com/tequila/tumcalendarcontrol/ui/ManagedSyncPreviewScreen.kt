@@ -35,6 +35,13 @@ fun ManagedSyncPreviewScreen(state: CalendarControlState) {
             return
         }
         InformationCard("本次将写入", "共 ${preview.desiredEventCount} 条日程：课程 ${state.managedSourceCandidateCount} 条，校园事项 ${state.managedManualCandidateCount} 条。")
+        if (state.managedCancelledMappedCount > 0) {
+            InformationCard(
+                "发现来源已取消的旧日程",
+                "有 ${state.managedCancelledMappedCount} 条按目标计数的既有日程已被学校来源取消。普通写入不会把未选课程当作删除，因此本次不会自动清除；请在“清理已写入日程”中核对并确认。",
+            )
+            Button(onClick = state::openOutputCleanup, modifier = Modifier.fillMaxWidth()) { Text("核对并清理已取消日程") }
+        }
         WriteTargetSelector(state)
         if (state.sourceCatalogLoaded) InformationCard("使用的课程数据", "${state.sourceSnapshotLabel} · 保存于 ${state.sourceSnapshotSavedAt}。不需要重新读取；需要新版时可返回设置更新。")
         preview.targetChanges.toSortedMap(compareBy(OutputTarget::name)).forEach { (target, changes) ->

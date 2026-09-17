@@ -24,6 +24,7 @@ data class PageMemory(
     val search: String = "",
     val sourceSearch: String = "",
     val sourceFilter: String = "ALL",
+    val visibleSourceStatuses: Set<String> = emptySet(),
 )
 
 class PageMemoryPreferences(context: Context) {
@@ -37,7 +38,7 @@ class PageMemoryPreferences(context: Context) {
         }.toSet() }.orEmpty()
         PageMemory(json.optBoolean("individual"), runCatching { AttendanceEditScope.valueOf(json.optString("scope")) }.getOrDefault(AttendanceEditScope.ALL_OCCURRENCES), json.optString("date"), selection,
             json.optString("cleanupMode", "COURSES"), strings("cleanupCourses"), strings("cleanupTargets"), json.optString("cleanupStart"), json.optString("cleanupEnd"),
-            json.optString("search"), json.optString("sourceSearch"), json.optString("sourceFilter", "ALL"))
+            json.optString("search"), json.optString("sourceSearch"), json.optString("sourceFilter", "ALL"), strings("visibleSourceStatuses"))
     }.getOrDefault(PageMemory())
 
     fun save(memory: PageMemory) {
@@ -46,6 +47,7 @@ class PageMemoryPreferences(context: Context) {
             .put("cleanupMode", memory.cleanupMode).put("cleanupCourses", JSONArray(memory.cleanupCourses.toList()))
             .put("cleanupTargets", JSONArray(memory.cleanupTargets.toList())).put("cleanupStart", memory.cleanupStart).put("cleanupEnd", memory.cleanupEnd)
             .put("search", memory.search).put("sourceSearch", memory.sourceSearch).put("sourceFilter", memory.sourceFilter)
+            .put("visibleSourceStatuses", JSONArray(memory.visibleSourceStatuses.toList()))
         check(preferences.edit().putString("data", json.toString()).commit()) { "页面选择未能保存" }
     }
 }

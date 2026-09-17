@@ -29,8 +29,7 @@ class CourseOverridePreferences(context: Context) {
         .toSet()
         .associateWith(::presentationFor)
 
-    fun save(courses: List<Course>) {
-        preferences.edit().also { editor ->
+    fun save(courses: List<Course>): Boolean = preferences.edit().also { editor ->
             courses.forEach { course ->
                 editor.putBoolean(key(course.id, "favorite"), course.isFavorite)
                 editor.putString(key(course.id, "title"), course.localOverride.title)
@@ -44,8 +43,7 @@ class CourseOverridePreferences(context: Context) {
                     editor.putInt(key(course.id, "end_minute"), time.endMinute)
                 } ?: removeMeetingTime(editor, course.id)
             }
-        }.apply()
-    }
+        }.commit()
 
     private fun presentationFor(courseId: String): CoursePresentation = CoursePresentation(
         isFavorite = preferences.takeIf { it.contains(key(courseId, "favorite")) }

@@ -25,7 +25,6 @@ class SyncCandidateFactory(private val zoneId: ZoneId = ZoneId.of("Europe/Berlin
         val rulesByUid = rules.associateBy(SyncRule::sourceUid)
         val sourceEvents = occurrences.asSequence()
             .filter { it.identity in selectedSourceOccurrences }
-            .filter { sourceOutputWindow.includes(it.startsAt, it.endsAt, zoneId) }
             .mapNotNull { occurrence ->
             val rule = rulesByUid[occurrence.sourceUid]
                 ?: SyncRule(occurrence.sourceUid, hasConfirmedFixplatz = true, defaultState = AttendanceState.CHOOSE_TO_ATTEND)
@@ -36,6 +35,7 @@ class SyncCandidateFactory(private val zoneId: ZoneId = ZoneId.of("Europe/Berlin
                 val newDay = meeting?.let { originalDay.plusDays((it.weekday.ordinal + 1 - originalDay.dayOfWeek.value).toLong()) }
                 val start = meeting?.let { newDay!!.atTime(it.startHour, it.startMinute).atZone(zoneId).toInstant() } ?: occurrence.startsAt
                 val end = meeting?.let { newDay!!.atTime(it.endHour, it.endMinute).atZone(zoneId).toInstant() } ?: occurrence.endsAt
+                if (!sourceOutputWindow.includes(start, end, zoneId)) return@let null
                 DesiredCalendarEvent(
                     identity = ManagedEventIdentity(occurrence.sourceUid, occurrence.instanceKey),
                     title = override?.title ?: occurrence.title,

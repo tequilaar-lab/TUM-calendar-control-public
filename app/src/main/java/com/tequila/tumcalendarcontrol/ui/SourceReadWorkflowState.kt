@@ -19,6 +19,7 @@ import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyPreview
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
 import com.tequila.tumcalendarcontrol.sync.SourceCourse
 import com.tequila.tumcalendarcontrol.sync.SourceOccurrenceIdentity
+import com.tequila.tumcalendarcontrol.sync.GroupAttendanceRuleEditor
 
 /** 读取动作的纯状态机结果；调用者据此决定反馈文案或后台任务。 */
 internal sealed interface SourceReadRequest {
@@ -69,7 +70,7 @@ internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = 
         private set
     var occurrences by mutableStateOf(preview?.occurrences.orEmpty())
         private set
-    /** 选择只在本次运行存在；每一项都精确指向一个 UID + 原始实例键。 */
+    /** 选择可由上层私有页面偏好恢复；每一项都精确指向一个 UID + 原始实例键。 */
     var selectedOccurrences by mutableStateOf<Set<SourceOccurrenceIdentity>>(emptySet())
         private set
     var browserQuery by mutableStateOf("")
@@ -81,6 +82,8 @@ internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = 
     var pendingEffectiveDate by mutableStateOf("")
     var pendingFavoriteAction by mutableStateOf(SourceFavoriteAction.KEEP)
     var readToken by mutableStateOf(0L)
+        private set
+    var lastSelectionRemovedCount by mutableStateOf(0)
         private set
 
     /** 仅供应用入口写回私有偏好；不会暴露订阅地址或 Google／本机日历资料。 */
@@ -155,11 +158,15 @@ internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = 
     }
 
     private fun bindActiveSnapshot(clearSelection: Boolean) {
+        val previousSelection = selectedOccurrences
         preview = snapshots.active?.toPreview()
         courses = preview?.courses.orEmpty()
         occurrences = preview?.occurrences.orEmpty()
         catalogLoaded = preview != null
-        if (clearSelection) selectedOccurrences = emptySet()
+        if (clearSelection) {
+            selectedOccurrences = previousSelection.intersect(occurrences.filterNot(SourceCalendarOccurrence::isCancelled).map { it.identity }.toSet())
+            lastSelectionRemovedCount = previousSelection.size - selectedOccurrences.size
+        }
     }
 
     fun toggleSelection(identity: SourceOccurrenceIdentity) {
@@ -193,12 +200,14 @@ internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = 
         scope: AttendanceEditScope = pendingAttendanceScope,
         effectiveDate: String = pendingEffectiveDate,
     ): SourceAttendanceRuleResult {
-        val selected = if (attendance == null) occurrences.filter { it.identity in selection } else
-            SourceAttendanceScope.resolve(occurrences, selection, scope, effectiveDate)
-                ?: return SourceAttendanceRuleResult.Invalid("请输入 YYYY-MM-DD 格式的指定日期。")
+        val anchors = occurrences.filter { it.identity in selection && !it.isCancelled }
+        val selected = SourceAttendanceScope.resolve(occurrences, selection, scope, effectiveDate)
+            ?: return SourceAttendanceRuleResult.Invalid("请输入 YYYY-MM-DD 格式的指定日期。")
         if (selected.isEmpty()) return SourceAttendanceRuleResult.Invalid("课次列表已过期；重新读取后再修改。")
         val sourceUids = selected.map(SourceCalendarOccurrence::sourceUid).toSet()
-        if (attendance == null) return SourceAttendanceRuleResult.Applied(currentLedger, sourceUids, favoriteAction)
+        if (attendance == null) return SourceAttendanceRuleResult.Applied(
+            currentLedger, sourceUids, favoriteAction, selected.map(SourceCalendarOccurrence::identity).toSet(),
+        )
         val command = when (scope) {
             AttendanceEditScope.ALL_OCCURRENCES -> RuleEditCommand.WholeCourse(sourceUids, attendance)
             AttendanceEditScope.CURRENT_AND_FUTURE -> RuleEditCommand.FromOccurrence(selected.groupBy { it.sourceUid }.mapValues { (_, items) -> items.minOf { it.startsAt } }, attendance)
@@ -216,11 +225,20 @@ internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = 
         val ensuredRules = sourceUids.map { sourceUid ->
             existing[sourceUid] ?: SyncRule(sourceUid, hasConfirmedFixplatz = true, defaultState = AttendanceState.CHOOSE_TO_ATTEND)
         }
-        return SourceAttendanceRuleResult.Applied(
-            rules = currentLedger.copy(rules = RuleLedgerEditor.apply(
+        val nextRules = RuleLedgerEditor.apply(
                 RuleLedgerEditor.apply(currentLedger.rules.filterNot { it.sourceUid in sourceUids } + ensuredRules, command),
                 RuleEditCommand.InstancesBySource(sourceUids, selected.groupBy { it.sourceUid }.mapValues { (_, items) -> items.map { it.instanceKey }.toSet() }, attendance),
-            )),
+            )
+        return SourceAttendanceRuleResult.Applied(
+            rules = currentLedger.copy(
+                rules = nextRules,
+                groupRules = GroupAttendanceRuleEditor.apply(
+                    currentLedger.groupRules,
+                    selected.map(SourceCalendarOccurrence::title).toSet(),
+                    command,
+                    anchors.groupBy(SourceCalendarOccurrence::title).mapValues { (_, items) -> items.minOf(SourceCalendarOccurrence::startsAt) },
+                ),
+            ),
             sourceUids = sourceUids,
             favoriteAction = favoriteAction,
             affectedOccurrences = selected.map { it.identity }.toSet(),

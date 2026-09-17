@@ -113,7 +113,7 @@ private fun SettingsList(state: CalendarControlState, palette: TumPalette, modif
         item { InformationCard("出席设置", "新课程默认蓝色“选择出席”；绿色为一定出席，灰色从指定日期起不去。") }
         item { Button(onClick = state::openManualEvents, modifier = Modifier.fillMaxWidth()) { Text("添加校园事项") } }
         item { Button(onClick = state::openBackgroundCheck, modifier = Modifier.fillMaxWidth()) { Text("检查课程更新") } }
-        item { Button(onClick = state::openRuleBackup, modifier = Modifier.fillMaxWidth()) { Text("备份课程设置") } }
+        item { Button(onClick = state::openRuleBackup, modifier = Modifier.fillMaxWidth()) { Text("备份出席规则与事项") } }
         item { SyncDestinationSelector(state) }
         item { InformationCard("写入到哪里", "应用只会写入自己创建的日程。你的主日历、订阅日历和其他应用日程不会改变。") }
         if (state.syncDestinations.googleCalendarEnabled) item { GoogleAuthorizationPanel(state) }
@@ -276,7 +276,14 @@ private fun GoogleAuthorizationPanel(state: CalendarControlState) {
         Text(label)
     }
     if (state.hasGoogleAuthorization) {
-        InformationCard("Google 连接检查", state.googleConnectionCheckDetail)
+        val checkTitle = when (state.googleConnectionVerification) {
+            GoogleConnectionVerification.NOT_CHECKED -> "尚未验证 Google 目标"
+            GoogleConnectionVerification.CHECKING -> "正在验证 Google 目标"
+            GoogleConnectionVerification.VERIFIED -> "Google 目标已验证"
+            GoogleConnectionVerification.ACTION_REQUIRED -> "Google 目标需要处理"
+            GoogleConnectionVerification.FAILED -> "Google 连接检查失败"
+        }
+        InformationCard(checkTitle, state.googleConnectionCheckDetail)
         Button(
             onClick = state::requestGoogleConnectionCheck,
             enabled = !state.googleConnectionCheckInProgress,

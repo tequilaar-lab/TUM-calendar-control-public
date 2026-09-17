@@ -61,7 +61,8 @@ class PageMemoryRegressionTest {
         val preferences = PageMemoryPreferences(ApplicationProvider.getApplicationContext<Context>())
         val memory = PageMemory(individual = true, scope = AttendanceEditScope.CURRENT_AND_FUTURE,
             selection = setOf(items.first().identity, SourceOccurrenceIdentity("absent", "one")), cleanupMode = "COURSES",
-            cleanupCourses = setOf("a"), cleanupTargets = setOf("LOCAL_CALENDAR"), cleanupStart = "2026-10-01")
+            cleanupCourses = setOf("a"), cleanupTargets = setOf("LOCAL_CALENDAR"), cleanupStart = "2026-10-01",
+            visibleSourceStatuses = setOf("UNKNOWN", "CANCELLED"))
         preferences.save(memory)
         assertEquals(memory, preferences.load())
         val state = state()
@@ -70,6 +71,7 @@ class PageMemoryRegressionTest {
         state.openSourceAttendanceEditor()
         assertTrue(state.individualAttendanceMode)
         assertEquals(AttendanceEditScope.CURRENT_AND_FUTURE, state.pendingSourceAttendanceScope)
+        assertEquals(setOf(com.tequila.tumcalendarcontrol.domain.TumEventStatus.UNKNOWN, com.tequila.tumcalendarcontrol.domain.TumEventStatus.CANCELLED), state.visibleSourceStatuses)
         assertFalse(state.managedSyncRequested)
         assertFalse(state.managedRollbackRequested)
     }

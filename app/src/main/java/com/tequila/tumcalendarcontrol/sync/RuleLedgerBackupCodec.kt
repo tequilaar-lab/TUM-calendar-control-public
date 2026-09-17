@@ -6,24 +6,29 @@
  */
 package com.tequila.tumcalendarcontrol.sync
 
-data class RuleLedgerBackup(val rules: List<SyncRule>, val manualEvents: List<ManualScheduleItem>) {
-    val summary: RuleLedgerBackupSummary get() = RuleLedgerBackupSummary(rules.size, manualEvents.size)
+data class RuleLedgerBackup(
+    val rules: List<SyncRule>,
+    val manualEvents: List<ManualScheduleItem>,
+    val groupRules: List<GroupAttendanceRule> = emptyList(),
+) {
+    val summary: RuleLedgerBackupSummary get() = RuleLedgerBackupSummary(rules.size, groupRules.size, manualEvents.size)
 }
 
-data class RuleLedgerBackupSummary(val ruleCount: Int, val manualEventCount: Int)
+data class RuleLedgerBackupSummary(val ruleCount: Int, val groupRuleCount: Int, val manualEventCount: Int)
 
 object RuleLedgerBackupCodec {
-    private const val HEADER = "tum-calendar-rule-backup-v1"
+    private const val HEADER = "tum-calendar-rule-backup-v2"
+    private val SUPPORTED_HEADERS = setOf("tum-calendar-rule-backup-v1", HEADER)
 
     fun encode(ledger: RuleLedger): String = "$HEADER\n" + RuleLedgerCodec.encode(
-        RuleLedger(rules = ledger.rules, manualEvents = ledger.manualEvents),
+        RuleLedger(rules = ledger.rules, manualEvents = ledger.manualEvents, groupRules = ledger.groupRules),
     )
 
     fun decode(text: String): RuleLedgerBackup? {
         val lines = text.lineSequence().toList()
-        if (lines.firstOrNull() != HEADER) return null
+        if (lines.firstOrNull() !in SUPPORTED_HEADERS) return null
         val decoded = RuleLedgerCodec.decodeOrNull(lines.drop(1).joinToString("\n")) ?: return null
         if (decoded.mappings.isNotEmpty() || decoded.lastSummary != null) return null
-        return RuleLedgerBackup(decoded.rules, decoded.manualEvents)
+        return RuleLedgerBackup(decoded.rules, decoded.manualEvents, decoded.groupRules)
     }
 }

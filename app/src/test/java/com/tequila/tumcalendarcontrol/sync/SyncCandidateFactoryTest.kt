@@ -10,6 +10,7 @@ import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SyncCandidateFactoryTest {
@@ -110,6 +111,25 @@ class SyncCandidateFactoryTest {
         )
 
         assertEquals(setOf("inside", "manual-1"), events.map { it.identity.instanceKey }.toSet())
+    }
+
+    @Test
+    fun `用户修改后的最终时间决定是否落入写入范围`() {
+        val source = occurrence("uid-a", "outside-source", "来源", "2026-10-31T08:00:00Z")
+        val movedOutside = factory.build(
+            occurrences = listOf(source),
+            selectedSourceOccurrences = setOf(source.identity),
+            sourceOutputWindow = SourceOutputDateWindow(java.time.LocalDate.parse("2026-10-31"), java.time.LocalDate.parse("2026-10-31")),
+            rules = emptyList(),
+            manualEvents = emptyList(),
+            overrides = mapOf("uid-a" to com.tequila.tumcalendarcontrol.domain.CourseLocalOverride(
+                meetingTime = com.tequila.tumcalendarcontrol.domain.CourseMeetingTime(
+                    com.tequila.tumcalendarcontrol.domain.CourseWeekday.SUNDAY, 9, 0, 10, 0,
+                ),
+            )),
+        )
+
+        assertTrue(movedOutside.isEmpty())
     }
 
     private fun occurrence(uid: String, key: String, title: String, start: String = "2026-10-01T08:00:00Z", cancelled: Boolean = false) = SourceCalendarOccurrence(

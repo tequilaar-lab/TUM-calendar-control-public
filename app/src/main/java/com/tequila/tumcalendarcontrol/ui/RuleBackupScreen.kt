@@ -27,15 +27,15 @@ fun RuleBackupScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("备份课程设置", "备份包含出席设置和手动校园事项，不包含课程地址、Google 登录、日历或已写入日程。")
+        InformationCard("备份出席规则与校园事项", "包含 UID 级及课程组级出席规则、手动校园事项；不包含收藏、显示改名、课程地址、Google 登录、日历或已写入日程。")
         InformationCard("当前保存的内容", "${state.ruleLedger.rules.size} 条出席设置 · ${state.ruleLedger.manualEvents.size} 条校园事项")
-        Button(onClick = state::requestRuleBackupExport, modifier = Modifier.fillMaxWidth()) { Text("导出课程设置") }
-        Button(onClick = state::requestRuleBackupImport, modifier = Modifier.fillMaxWidth()) { Text("从文件恢复课程设置") }
+        Button(onClick = state::requestRuleBackupExport, modifier = Modifier.fillMaxWidth()) { Text("导出出席规则与事项") }
+        Button(onClick = state::requestRuleBackupImport, modifier = Modifier.fillMaxWidth()) { Text("从文件恢复出席规则与事项") }
         if (pending != null) {
-            InformationCard("确认恢复课程设置", "将替换为 ${pending.summary.ruleCount} 条出席设置与 ${pending.summary.manualEventCount} 条校园事项。本机已写入日程不受影响。确认前不会更改任何内容。")
+            InformationCard("确认恢复出席规则与事项", "将替换为 ${pending.summary.ruleCount} 条 UID 规则、${pending.summary.groupRuleCount} 条课程组规则与 ${pending.summary.manualEventCount} 条校园事项。本机已写入日程不受影响。确认前不会更改任何内容。")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 Button(onClick = state::cancelRuleBackupImport, modifier = Modifier.weight(1f)) { Text("取消") }
-                Button(onClick = state::confirmRuleBackupImport, modifier = Modifier.weight(1f)) { Text("确认恢复课程设置") }
+                    Button(onClick = state::confirmRuleBackupImport, modifier = Modifier.weight(1f)) { Text("确认恢复") }
             }
         }
         state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }

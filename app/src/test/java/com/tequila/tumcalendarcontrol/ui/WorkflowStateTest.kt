@@ -127,11 +127,13 @@ class WorkflowStateTest {
         assertEquals(null, workflow.requestGoogleConnectionCheck())
         val token = workflow.googleConnectionCheckToken
         assertTrue(workflow.googleConnectionCheckInProgress)
+        assertEquals(GoogleConnectionVerification.CHECKING, workflow.googleConnectionVerification)
 
         workflow.disconnectGoogle()
 
-        assertFalse(workflow.resolveGoogleConnectionCheck(token, "过期结果"))
+        assertFalse(workflow.resolveGoogleConnectionCheck(token, com.tequila.tumcalendarcontrol.sync.GoogleConnectionCheckResult.Missing))
         assertFalse(workflow.googleConnectionCheckInProgress)
+        assertEquals(GoogleConnectionVerification.NOT_CHECKED, workflow.googleConnectionVerification)
         assertTrue(workflow.googleConnectionCheckDetail.contains("不会创建日历"))
     }
 }
