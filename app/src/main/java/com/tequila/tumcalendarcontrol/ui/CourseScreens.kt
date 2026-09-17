@@ -104,8 +104,8 @@ internal fun DetailScreen(state: CalendarControlState) {
 @Composable
 internal fun CourseEditScreen(state: CalendarControlState) {
     val course = state.selectedCourse
-    var title by remember(course.localOverride) { mutableStateOf(course.localOverride.title.orEmpty()) }
-    var location by remember(course.localOverride) { mutableStateOf(course.localOverride.location.orEmpty()) }
+    var title by androidx.compose.runtime.saveable.rememberSaveable(course.id, course.instanceKey, course.localOverride) { mutableStateOf(course.localOverride.title.orEmpty()) }
+    var location by androidx.compose.runtime.saveable.rememberSaveable(course.id, course.instanceKey, course.localOverride) { mutableStateOf(course.localOverride.location.orEmpty()) }
     val sourceStart = course.startsAt?.atZone(java.time.ZoneId.of("Europe/Berlin"))
     val sourceEnd = course.endsAt?.atZone(java.time.ZoneId.of("Europe/Berlin"))
     val seedWeekday = course.localOverride.meetingTime?.weekday ?: sourceStart?.let { CourseWeekday.entries[it.dayOfWeek.value - 1] } ?: CourseWeekday.MONDAY
@@ -113,11 +113,11 @@ internal fun CourseEditScreen(state: CalendarControlState) {
     val seedStartMinute = (course.localOverride.meetingTime?.startMinute ?: sourceStart?.minute ?: 0).toString()
     val seedEndHour = (course.localOverride.meetingTime?.endHour ?: sourceEnd?.hour ?: 12).toString()
     val seedEndMinute = (course.localOverride.meetingTime?.endMinute ?: sourceEnd?.minute ?: 0).toString()
-    var weekday by remember(course) { mutableStateOf(seedWeekday) }
-    var startHour by remember(course) { mutableStateOf(seedStartHour) }
-    var startMinute by remember(course) { mutableStateOf(seedStartMinute) }
-    var endHour by remember(course) { mutableStateOf(seedEndHour) }
-    var endMinute by remember(course) { mutableStateOf(seedEndMinute) }
+    var weekday by androidx.compose.runtime.saveable.rememberSaveable(course) { mutableStateOf(seedWeekday) }
+    var startHour by androidx.compose.runtime.saveable.rememberSaveable(course) { mutableStateOf(seedStartHour) }
+    var startMinute by androidx.compose.runtime.saveable.rememberSaveable(course) { mutableStateOf(seedStartMinute) }
+    var endHour by androidx.compose.runtime.saveable.rememberSaveable(course) { mutableStateOf(seedEndHour) }
+    var endMinute by androidx.compose.runtime.saveable.rememberSaveable(course) { mutableStateOf(seedEndMinute) }
     var validation by remember { mutableStateOf<String?>(null) }
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),

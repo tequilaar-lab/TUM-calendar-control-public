@@ -128,6 +128,30 @@ class CalendarControlState(
     var courseTypeNames by mutableStateOf<Map<String, String>>(emptyMap())
     var individualAttendanceMode by mutableStateOf(false)
     var individualAttendanceDrafts by mutableStateOf<Map<String, IndividualAttendanceDraft>>(emptyMap())
+    var pageMemory by mutableStateOf(PageMemory())
+    private var openedIndividualDrafts: Map<String, IndividualAttendanceDraft> = emptyMap()
+    private var sourceEditorOpened = false
+    private var sourceEditorChanged = false
+    private var sourceAttendanceChanged = false
+    private var sourceStateChosen = false
+    private var detailAttendanceBaseline: Triple<AttendanceState, AttendanceEditScope, String>? = null
+    fun restorePageMemory(memory: PageMemory) {
+        pageMemory = memory
+        searchQuery = memory.search
+        sourceWorkflow.browserQuery = memory.sourceSearch
+        sourceWorkflow.browserFilter = runCatching { SourceCourseFilter.valueOf(memory.sourceFilter) }.getOrDefault(SourceCourseFilter.ALL)
+        sourceWorkflow.includeInSelection(memory.selection.intersect(currentSourceOccurrences.map { it.identity }.toSet()))
+    }
+    val persistedPageMemory: PageMemory get() = pageMemory.copy(selection = selectedSourceOccurrences, search = searchQuery, sourceSearch = sourceBrowserQuery, sourceFilter = sourceBrowserFilter.name)
+    fun currentSelectionSummary(selection: Set<SourceOccurrenceIdentity>): String {
+        val items = courses.filter { SourceOccurrenceIdentity(it.id, it.instanceKey.orEmpty()) in selection }
+        val states = items.map { it.attendance }.distinct()
+        val favorites = items.map { it.isFavorite }.distinct()
+        return "当前：${states.singleOrNull()?.label ?: "多种出席状态"} · ${favorites.singleOrNull()?.let { if (it) "已收藏" else "未收藏" } ?: "部分已收藏"}"
+    }
+    private fun rememberAttendanceOptions() {
+        pageMemory = pageMemory.copy(individual = individualAttendanceMode, scope = pendingSourceAttendanceScope, date = pendingSourceEffectiveDate)
+    }
     val individualAttendanceGroups: List<IndividualAttendanceGroup> get() = sourceWorkflow.occurrences
         .filter { it.identity in selectedSourceOccurrences }
         .groupBy { CourseDisplayGroupModel.titleGroupingKey(it.title) }
@@ -191,16 +215,16 @@ class CalendarControlState(
     val sourceReloadConfirmationPending: Boolean get() = sourceWorkflow.reloadConfirmationPending
     var pendingSourceAttendance: AttendanceState
         get() = sourceWorkflow.pendingAttendance
-        set(value) { sourceWorkflow.pendingAttendance = value }
+        set(value) { sourceWorkflow.pendingAttendance = value; sourceEditorChanged = true; sourceAttendanceChanged = true; sourceStateChosen = true }
     var pendingSourceAttendanceScope: AttendanceEditScope
         get() = sourceWorkflow.pendingAttendanceScope
-        set(value) { sourceWorkflow.pendingAttendanceScope = value }
+        set(value) { sourceWorkflow.pendingAttendanceScope = value; sourceEditorChanged = true; sourceAttendanceChanged = true }
     var pendingSourceEffectiveDate: String
         get() = sourceWorkflow.pendingEffectiveDate
-        set(value) { sourceWorkflow.pendingEffectiveDate = value }
+        set(value) { sourceWorkflow.pendingEffectiveDate = value; sourceEditorChanged = true; sourceAttendanceChanged = true }
     var pendingSourceFavoriteAction: SourceFavoriteAction
         get() = sourceWorkflow.pendingFavoriteAction
-        set(value) { sourceWorkflow.pendingFavoriteAction = value }
+        set(value) { sourceWorkflow.pendingFavoriteAction = value; sourceEditorChanged = true }
     var managedSyncPreview: ManagedSyncPreview?
         get() = outputWorkflow.preview
         private set(value) { outputWorkflow.preview = value }
@@ -290,8 +314,9 @@ class CalendarControlState(
 
     fun openAttendance() {
         pendingAttendance = selectedCourse.attendance
-        pendingAttendanceScope = AttendanceEditScope.ALL_OCCURRENCES
-        pendingEffectiveDate = ""
+        pendingAttendanceScope = pageMemory.scope
+        pendingEffectiveDate = pageMemory.date
+        detailAttendanceBaseline = Triple(pendingAttendance, pendingAttendanceScope, pendingEffectiveDate)
         feedback = null
         open(AppScreen.ATTENDANCE)
     }
@@ -553,16 +578,40 @@ class CalendarControlState(
         }
         val firstState = courses.firstOrNull { it.id == selection.first().sourceUid && it.instanceKey == selection.first().instanceKey }?.attendance
             ?: sourceAttendanceFor(selection.first().sourceUid)
-        individualAttendanceMode = false
-        individualAttendanceDrafts = emptyMap()
         sourceWorkflow.prepareAttendanceEditor(selection, firstState)
+        individualAttendanceMode = pageMemory.individual
+        sourceWorkflow.pendingAttendanceScope = pageMemory.scope
+        sourceWorkflow.pendingEffectiveDate = pageMemory.date
+        val selectedCourses = courses.filter { SourceOccurrenceIdentity(it.id, it.instanceKey.orEmpty()) in selection }
+        sourceWorkflow.pendingFavoriteAction = selectedCourses.map { it.isFavorite }.distinct().singleOrNull()
+            ?.let { if (it) SourceFavoriteAction.ADD else SourceFavoriteAction.REMOVE } ?: SourceFavoriteAction.KEEP
+        individualAttendanceDrafts = individualAttendanceGroups.associate { group ->
+            val members = courses.filter { SourceOccurrenceIdentity(it.id, it.instanceKey.orEmpty()) in group.selection }
+            group.key to IndividualAttendanceDraft(members.map { it.attendance }.distinct().singleOrNull(),
+                members.map { it.isFavorite }.distinct().singleOrNull()?.let { if (it) SourceFavoriteAction.ADD else SourceFavoriteAction.REMOVE } ?: SourceFavoriteAction.KEEP)
+        }
+        openedIndividualDrafts = individualAttendanceDrafts
+        sourceEditorOpened = true
+        sourceEditorChanged = false
+        sourceAttendanceChanged = false
+        sourceStateChosen = false
         navigation.openSourceAttendance()
     }
 
     /** 将 UI 范围转换为 UID 规则；“仅本次”严格使用选中的原始实例键。 */
     fun confirmSourceAttendance() {
+        if (sourceEditorOpened && !sourceEditorChanged && (!individualAttendanceMode || individualAttendanceDrafts == openedIndividualDrafts)) {
+            rememberAttendanceOptions()
+            feedback = "已保留原有出席和收藏；编辑模式与范围已保存。"
+            navigation.handleBack()
+            return
+        }
         if (individualAttendanceMode) { confirmIndividualSourceAttendance(); return }
-        val result = sourceWorkflow.applyAttendanceRules(ruleLedger)
+        if (sourceAttendanceChanged && !sourceStateChosen && openedIndividualDrafts.values.map { it.attendance }.let { it.contains(null) || it.distinct().size > 1 }) {
+            feedback = "当前课次有不同出席状态，请明确选择统一状态，或使用按课程分别设置。"
+            return
+        }
+        val result = sourceWorkflow.applyAttendanceRules(ruleLedger, attendance = if (!sourceEditorOpened || sourceAttendanceChanged) pendingSourceAttendance else null)
         if (result is SourceAttendanceRuleResult.Invalid) {
             feedback = result.message
             if (result.message.startsWith("课程列表")) navigation.handleBack()
@@ -579,6 +628,7 @@ class CalendarControlState(
             }
         }
         rememberPresentations()
+        rememberAttendanceOptions()
         feedback = "已保存 ${selectedSourceOccurrences.size} 个课次的出席方式${if (result.favoriteAction == SourceFavoriteAction.KEEP) "" else "与收藏设置"}；尚未写入日历。"
         navigation.handleBack()
     }
@@ -591,7 +641,11 @@ class CalendarControlState(
         val results = mutableListOf<SourceAttendanceRuleResult.Applied>()
         for (group in groups) {
             val draft = individualAttendanceDrafts[group.key] ?: IndividualAttendanceDraft()
-            val result = sourceWorkflow.applyAttendanceRules(nextLedger, group.selection, draft.attendance, draft.favorite)
+            if (!sourceEditorChanged && draft == openedIndividualDrafts[group.key]) continue
+            val before = openedIndividualDrafts[group.key]
+            val result = sourceWorkflow.applyAttendanceRules(nextLedger, group.selection,
+                if (sourceAttendanceChanged || draft.attendance != before?.attendance) draft.attendance else null,
+                if (draft.favorite != before?.favorite) draft.favorite else SourceFavoriteAction.KEEP)
             if (result is SourceAttendanceRuleResult.Invalid) { feedback = result.message; return }
             result as SourceAttendanceRuleResult.Applied
             nextLedger = result.rules
@@ -605,11 +659,17 @@ class CalendarControlState(
             courses = courses.map { course -> if (course.id in result.sourceUids) course.copy(isFavorite = result.favoriteAction == SourceFavoriteAction.ADD) else course }
         }
         rememberPresentations()
+        rememberAttendanceOptions()
         feedback = "已保存 ${groups.size} 门课程的分别设置；尚未写入日历。"
         navigation.handleBack()
     }
 
     fun confirmAttendance() {
+        if (detailAttendanceBaseline == Triple(pendingAttendance, pendingAttendanceScope, pendingEffectiveDate)) {
+            feedback = "出席设置没有改变。"
+            open(AppScreen.DETAIL)
+            return
+        }
         if (sourceCatalogLoaded && selectedCourse.instanceKey != null) {
             val result = sourceWorkflow.applyAttendanceRules(
                 ruleLedger, setOf(SourceOccurrenceIdentity(selectedCourseId, selectedCourse.instanceKey!!)),
@@ -618,6 +678,7 @@ class CalendarControlState(
             if (result is SourceAttendanceRuleResult.Invalid) { feedback = result.message; return }
             result as SourceAttendanceRuleResult.Applied
             ruleLedger = result.rules
+            pageMemory = pageMemory.copy(scope = pendingAttendanceScope, date = pendingEffectiveDate)
             sourceWorkflow.includeInSelection(result.affectedOccurrences)
             refreshCoursesFromSource()
             invalidateWritePreview()

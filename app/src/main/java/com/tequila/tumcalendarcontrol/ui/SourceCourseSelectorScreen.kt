@@ -63,7 +63,7 @@ fun SourceCourseSelectorScreen(state: CalendarControlState) {
         outputWindow = outputWindow,
         zoneId = CourseBrowserZone,
     )
-    var mode by remember { mutableStateOf(SourceBrowserMode.GROUPS) }
+    var mode by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(SourceBrowserMode.GROUPS) }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         if (maxWidth >= ExpandedSelectorBreakpoint) {
             ExpandedSourceCourseSelector(state, outputWindow, groups, mode, onModeChange = { mode = it })
@@ -204,7 +204,7 @@ private fun SourceGroupList(state: CalendarControlState, groups: List<SourceCour
 
 @Composable
 private fun SourceGroupRow(state: CalendarControlState, group: SourceCourseDisplayGroup) {
-    var expanded by remember(group.displayTitle, group.earliestStart) { mutableStateOf(group.selectedOccurrenceCount > 0) }
+    var expanded by androidx.compose.runtime.saveable.rememberSaveable(group.displayTitle) { mutableStateOf(group.selectedOccurrenceCount > 0) }
     Card(modifier = Modifier.fillMaxWidth(), insideMargin = PaddingValues(14.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(

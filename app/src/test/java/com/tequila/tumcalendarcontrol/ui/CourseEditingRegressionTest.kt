@@ -120,6 +120,7 @@ class CourseEditingRegressionTest {
         assertTrue(state.ruleLedger.rules.isEmpty())
         assertFalse(state.courses.single().isFavorite)
         state.openSourceAttendanceEditor(setOf(a.identity))
-        assertTrue(state.individualAttendanceDrafts.isEmpty())
+        assertEquals(AttendanceState.CHOOSE_TO_ATTEND, state.individualAttendanceDrafts.values.single().attendance)
+        assertEquals(SourceFavoriteAction.REMOVE, state.individualAttendanceDrafts.values.single().favorite)
     }
 }

@@ -45,8 +45,8 @@ private val BerlinZone = ZoneId.of("Europe/Berlin")
 fun SourceRangeScreen(state: CalendarControlState) {
     val configuration = state.privateSyncConfiguration
     val usesDarkTheme = state.themeMode.usesDarkTheme(isSystemInDarkTheme())
-    var startDate by remember(configuration.sourceRangeStartDate) { mutableStateOf(configuration.sourceRangeStartDate) }
-    var endDate by remember(configuration.sourceRangeEndDate) { mutableStateOf(configuration.sourceRangeEndDate) }
+    var startDate by androidx.compose.runtime.saveable.rememberSaveable(configuration.sourceRangeStartDate) { mutableStateOf(configuration.sourceRangeStartDate) }
+    var endDate by androidx.compose.runtime.saveable.rememberSaveable(configuration.sourceRangeEndDate) { mutableStateOf(configuration.sourceRangeEndDate) }
     var validation by remember { mutableStateOf<List<String>>(emptyList()) }
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 32.dp),

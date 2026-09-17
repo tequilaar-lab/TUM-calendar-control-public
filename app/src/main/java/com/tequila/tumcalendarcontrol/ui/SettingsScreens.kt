@@ -343,8 +343,8 @@ private fun SyncDestinationChangeDialog(
 /** 资料编辑只准备草稿；点击保存后才更新状态，再由界面根部写入应用私有偏好。 */
 @Composable
 internal fun ProfileScreen(state: CalendarControlState) {
-    var draftName by remember(state.profile) { mutableStateOf(state.profile.displayName) }
-    var draftTone by remember(state.profile) { mutableStateOf(state.profile.avatarTone) }
+    var draftName by androidx.compose.runtime.saveable.rememberSaveable(state.profile) { mutableStateOf(state.profile.displayName) }
+    var draftTone by androidx.compose.runtime.saveable.rememberSaveable(state.profile) { mutableStateOf(state.profile.avatarTone) }
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),

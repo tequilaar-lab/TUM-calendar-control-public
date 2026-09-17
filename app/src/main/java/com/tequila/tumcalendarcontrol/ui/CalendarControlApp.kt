@@ -42,6 +42,7 @@ fun CalendarControlApp() {
     val context = LocalContext.current
     val session = androidx.lifecycle.ViewModelProvider(context as androidx.activity.ComponentActivity)[CalendarSessionModel::class.java]
     val profilePreferences = remember(context) { ProfilePreferences(context) }
+    val pageMemoryPreferences = remember(context) { PageMemoryPreferences(context) }
     val appearancePreferences = remember(context) { AppearancePreferences(context) }
     val courseTypeNamesPreferences = remember(context) { CourseTypeNamesPreferences(context) }
     val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
@@ -67,7 +68,7 @@ fun CalendarControlApp() {
             initialSourceCheckStatus = sourceCheckSettingsStore.loadStatus(),
             initialCoursePresentations = courseOverridePreferences.loadPresentations(),
             initialSourceSnapshots = initialSourceSnapshots,
-        ).also { it.courseTypeNames = courseTypeNamesPreferences.load(); session.state = it }
+        ).also { it.courseTypeNames = courseTypeNamesPreferences.load(); it.restorePageMemory(pageMemoryPreferences.load()); session.state = it }
     }
     var privateConfigurationInitialized by remember { mutableStateOf(false) }
     val localCalendarPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
@@ -102,6 +103,10 @@ fun CalendarControlApp() {
         googleAuthorizationCoordinator.resolveResult(result.resultCode, result.data, state::resolveGoogleAuthorization)
     }
     LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
+    LaunchedEffect(state.persistedPageMemory) {
+        runCatching { pageMemoryPreferences.save(state.persistedPageMemory) }
+            .onFailure { state.feedback = "页面选择未能保存，重启后可能需要重新选择。" }
+    }
     LaunchedEffect(state.appearanceSettings) { appearancePreferences.save(state.appearanceSettings) }
     LaunchedEffect(state.courseTypeNames) { courseTypeNamesPreferences.save(state.courseTypeNames) }
     LaunchedEffect(state.syncDestinations) { syncDestinationPreferences.save(state.syncDestinations) }

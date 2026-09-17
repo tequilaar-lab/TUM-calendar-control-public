@@ -50,8 +50,10 @@ fun SourceCourseDateBrowser(state: CalendarControlState, outputWindow: SourceOut
     val initialMonth = visibleOccurrences.minByOrNull(SourceCalendarOccurrence::startsAt)
         ?.startsAt?.atZone(BrowserZone)?.let(YearMonth::from)
         ?: YearMonth.now(BrowserZone)
-    var month by remember { mutableStateOf(initialMonth) }
-    var chosenDate by remember { mutableStateOf<LocalDate?>(null) }
+    var monthText by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(initialMonth.toString()) }
+    var dateText by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
+    val month = YearMonth.parse(monthText)
+    val chosenDate = dateText.takeIf { it.isNotBlank() }?.let(LocalDate::parse)
     val byDate = visibleOccurrences.groupBy { it.startsAt.atZone(BrowserZone).toLocalDate() }
     val selectedDay = chosenDate
     val occurrencesOnDate = selectedDay?.let(byDate::get).orEmpty()
@@ -61,8 +63,8 @@ fun SourceCourseDateBrowser(state: CalendarControlState, outputWindow: SourceOut
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item { InformationCard("按日期找课次", "带圆点的日期有可选择的具体上课时间。") }
-        item { MonthNavigation(month, onPrevious = { month = month.minusMonths(1) }, onNext = { month = month.plusMonths(1) }) }
-        item { SourceMonthGrid(month, byDate, chosenDate, onDateSelected = { chosenDate = it }) }
+        item { MonthNavigation(month, onPrevious = { monthText = month.minusMonths(1).toString() }, onNext = { monthText = month.plusMonths(1).toString() }) }
+        item { SourceMonthGrid(month, byDate, chosenDate, onDateSelected = { dateText = it.toString() }) }
         if (selectedDay == null) {
             item { InformationCard("选择日期", "点按带圆点的日期，查看并选择当天课次。") }
         } else {

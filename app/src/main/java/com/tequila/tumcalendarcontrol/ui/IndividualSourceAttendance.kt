@@ -26,6 +26,7 @@ internal fun IndividualSourceAttendance(state: CalendarControlState) {
         Card(Modifier.fillMaxWidth(), insideMargin = PaddingValues(12.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(group.title)
+                Text(state.currentSelectionSummary(group.selection))
                 Text("${group.selection.size} 个已选课次 · ${draft.attendance?.label ?: "保持出席不变"} · ${draft.favorite.label}")
                 Button(onClick = { expanded = !expanded }) { Text(if (expanded) "收起设置" else "单独设置") }
                 if (expanded) {

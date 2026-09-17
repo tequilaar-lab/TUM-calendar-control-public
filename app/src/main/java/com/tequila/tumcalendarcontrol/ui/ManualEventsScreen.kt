@@ -28,13 +28,13 @@ import top.yukonga.miuix.kmp.basic.TextField
 
 @Composable
 fun ManualEventsScreen(state: CalendarControlState) {
-    var title by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf(java.time.LocalDate.now().toString()) }
-    var startHour by remember { mutableStateOf("9") }
-    var startMinute by remember { mutableStateOf("0") }
-    var endHour by remember { mutableStateOf("10") }
-    var endMinute by remember { mutableStateOf("0") }
-    var attendance by remember { mutableStateOf(AttendanceState.CHOOSE_TO_ATTEND) }
+    var title by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
+    var date by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(java.time.LocalDate.now().toString()) }
+    var startHour by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("9") }
+    var startMinute by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("0") }
+    var endHour by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("10") }
+    var endMinute by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("0") }
+    var attendance by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(AttendanceState.CHOOSE_TO_ATTEND) }
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),

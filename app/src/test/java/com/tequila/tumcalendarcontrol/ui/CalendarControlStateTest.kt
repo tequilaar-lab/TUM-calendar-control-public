@@ -373,6 +373,7 @@ class CalendarControlStateTest {
         AttendanceEditScope.entries.forEach { scope ->
             state.openCourse("course-a")
             state.openAttendance()
+            state.pendingAttendance = if (state.selectedCourse.attendance == AttendanceState.MUST_ATTEND) AttendanceState.CHOOSE_TO_ATTEND else AttendanceState.MUST_ATTEND
             state.pendingAttendanceScope = scope
             state.pendingEffectiveDate = if (scope == AttendanceEditScope.SPECIFIED_AND_FUTURE) "2026-10-10" else ""
             state.confirmAttendance()

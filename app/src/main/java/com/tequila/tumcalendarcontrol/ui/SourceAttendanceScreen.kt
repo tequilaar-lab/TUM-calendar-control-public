@@ -36,6 +36,7 @@ fun SourceAttendanceScreen(state: CalendarControlState) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text("为 ${state.selectedSourceOccurrences.size} 个课次设置出席和收藏", style = MiuixTheme.textStyles.title3)
+        Text(state.currentSelectionSummary(state.selectedSourceOccurrences))
         Text("“只改本次”只改勾选课次；其他范围包含已保存数据中原始课名、类型和组别相同的课次，不合并不同类型。保存后加入待写入选择；写入仍受时间范围限制，尚未写日历。", color = LocalTumPalette.current.onSurfaceVariant)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = { state.individualAttendanceMode = false }, modifier = Modifier.weight(1f)) { Text(if (!state.individualAttendanceMode) "✓ 统一设置" else "统一设置") }

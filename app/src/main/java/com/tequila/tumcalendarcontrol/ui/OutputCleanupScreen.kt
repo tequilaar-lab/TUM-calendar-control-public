@@ -55,16 +55,20 @@ private data class CleanupCourseGroup(
 
 @Composable
 internal fun OutputCleanupScreen(state: CalendarControlState) {
-    var mode by remember { mutableStateOf(OutputCleanupMode.ALL) }
-    var selectedSourceUids by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var startDate by remember { mutableStateOf<LocalDate?>(null) }
-    var endDate by remember { mutableStateOf<LocalDate?>(null) }
+    var mode by remember { mutableStateOf(runCatching { OutputCleanupMode.valueOf(state.pageMemory.cleanupMode) }.getOrDefault(OutputCleanupMode.COURSES)) }
+    var selectedSourceUids by remember { mutableStateOf(state.pageMemory.cleanupCourses) }
+    var startDate by remember { mutableStateOf(runCatching { LocalDate.parse(state.pageMemory.cleanupStart) }.getOrNull()) }
+    var endDate by remember { mutableStateOf(runCatching { LocalDate.parse(state.pageMemory.cleanupEnd) }.getOrNull()) }
     var pendingScope by remember { mutableStateOf<ManagedEventCleanupScope?>(null) }
     var localMessage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val darkTheme = state.themeMode.usesDarkTheme(isSystemInDarkTheme())
     val targets = state.managedOutputTargetsForCleanup
-    var selectedTargets by remember(targets) { mutableStateOf(targets) }
+    var selectedTargets by remember(targets) { mutableStateOf(targets.filter { it.name in state.pageMemory.cleanupTargets }.toSet()) }
+    androidx.compose.runtime.LaunchedEffect(mode, selectedSourceUids, startDate, endDate, selectedTargets) {
+        state.pageMemory = state.pageMemory.copy(cleanupMode = mode.name, cleanupCourses = selectedSourceUids,
+            cleanupStart = startDate?.toString().orEmpty(), cleanupEnd = endDate?.toString().orEmpty(), cleanupTargets = selectedTargets.map { it.name }.toSet())
+    }
     val catalogue = state.cleanupOccurrencesForTargets(selectedTargets)
     val sourceLoaded = catalogue.isNotEmpty()
     val courseGroups = cleanupCourseGroups(catalogue)
