@@ -24,7 +24,7 @@ android {
         applicationId = "com.tequila.tumcalendarcontrol"
         minSdk = 26
         targetSdk = 37
-        // 每次可验收发布均递增构建号；完整记录见仓库根目录 VERSIONING.md。
+        // 每次可验收发布均递增构建号；详细验收记录只保存在本机审计目录。
         versionCode = 57
         versionName = "1.0.3"
 
