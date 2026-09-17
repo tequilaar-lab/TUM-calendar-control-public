@@ -497,14 +497,13 @@ class CalendarControlState(
         feedback = "已恢复出席设置和校园事项；日历没有改变。"
     }
 
-    /** 保存范围只写入加密本机配置；不会清除当前来源目录或选择。 */
+    /** 保存的是下一次真实读取的范围；不会改变当前快照、选择或待写入候选。 */
     fun saveSourceOutputRange(startDate: String, endDate: String): List<String> {
         val updated = privateSyncConfiguration.copy(sourceRangeStartDate = startDate, sourceRangeEndDate = endDate)
         val problems = updated.validate()
         if (problems.isEmpty()) {
             privateSyncConfiguration = updated
-            invalidateWritePreview()
-            feedback = "已保存读取时间；当前课程列表和选择保持不变。"
+            feedback = "已保存下次读取时间；当前课程、选择和待写入内容保持不变。"
         }
         return problems.map { it.message }
     }
@@ -535,15 +534,13 @@ class CalendarControlState(
     }
 
     /** 已读课程目录可直接返回；无目录时只提示，不能暗中发起来源读取。 */
-    fun continueWithSavedCourses(start: String, end: String): List<String> {
+    fun continueWithSavedCourses(): List<String> {
         if (sourceReadInProgress) return listOf("正在读取课程，请稍候。")
         if (sourcePreview == null) return listOf("还没有保存的课程，请先读取。")
-        val errors = saveSourceOutputRange(start, end)
-        if (errors.isEmpty()) {
-            resolveSourceReloadConfirmation(false)
-            openSourceCourseSelector()
-        }
-        return errors
+        resolveSourceReloadConfirmation(false)
+        openSourceCourseSelector()
+        feedback = "正在使用${sourceSnapshotLabel}；日期范围只在重新读取课程时生效。"
+        return emptyList()
     }
 
     /** 打开已有目录，不发起读取或清空选择。 */
@@ -798,8 +795,6 @@ class CalendarControlState(
         managedDesiredEvents = SyncCandidateFactory().build(
             occurrences = currentSourceOccurrences,
             selectedSourceOccurrences = selectedSourceOccurrences,
-            sourceOutputWindow = privateSyncConfiguration.sourceOutputWindow
-                ?: run { feedback = "读取时间不正确；回到“选择读取时间”修改后重试。"; return },
             rules = GroupAttendanceRuleResolver.materialize(ruleLedger, currentSourceOccurrences),
             manualEvents = ruleLedger.manualEvents,
             overrides = courses.associate { it.id to it.localOverride },

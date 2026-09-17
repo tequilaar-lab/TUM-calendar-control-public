@@ -52,7 +52,7 @@ fun SourceRangeScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("选择读取时间", "按所选日期读取，最多五年。两端留空读取过去 120 天至未来 180 天；只填一端读取相邻约 300 天。无限重复课程无法无限展开。保存范围不会重新读取，已有课程仍可使用。")
+        InformationCard("选择读取时间", "按所选日期读取，最多五年。两端留空读取过去 120 天至未来 180 天；只填一端读取相邻约 300 天。无限重复课程无法无限展开。此范围只在点击“读取课程”时生效，不会删减已保存课程、已选课次或待写入内容。")
         val context = LocalContext.current
         DateRangeField("开始日期", startDate, "不限", onClick = { showDatePicker(context, startDate, usesDarkTheme) { startDate = it } })
         DateRangeField("结束日期", endDate, "不限", onClick = { showDatePicker(context, endDate, usesDarkTheme) { endDate = it } })
@@ -70,16 +70,16 @@ fun SourceRangeScreen(state: CalendarControlState) {
                 validation = state.saveSourceOutputRange(startDate, endDate)
             },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("保存时间范围") }
+        ) { Text("保存下次读取时间") }
         validation.forEach { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
         ReadCoverageCard(state)
         if (state.sourcePreview != null) {
             Button(
-                onClick = { validation = state.continueWithSavedCourses(startDate, endDate) },
+                onClick = { validation = state.continueWithSavedCourses() },
                 enabled = !state.sourceReadInProgress,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("使用已保存课程 · 下一步") }
-            Text("使用${state.sourceSnapshotLabel}，按上方时间范围筛选，不重新联网读取。超出已保存数据的课次需要重新读取。", color = LocalTumPalette.current.onSurfaceVariant)
+            Text("使用${state.sourceSnapshotLabel}，不重新读取，也不会按上方日期范围删减已选课次。上方范围只会在点击“读取课程”后影响新课程数据。", color = LocalTumPalette.current.onSurfaceVariant)
         }
         if (state.sourceReloadConfirmationPending) {
             SourceReloadConfirmationCard(state)

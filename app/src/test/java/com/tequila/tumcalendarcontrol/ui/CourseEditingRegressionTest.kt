@@ -47,22 +47,18 @@ class CourseEditingRegressionTest {
         assertFalse(validCourseTypeName("a\nb"))
         assertFalse(validCourseTypeName("x".repeat(31)))
     }
-    @Test fun cachedNextSavesRangeWithoutReading() {
+    @Test fun cachedNextDoesNotSaveRangeOrRead() {
         val state = state(item("a", "Synthetic VO"))
         state.openSourceRange()
         val before = state.sourcePreview
-        assertTrue(state.continueWithSavedCourses("2026-10-01", "2026-10-31").isEmpty())
+        assertTrue(state.continueWithSavedCourses().isEmpty())
         assertEquals(AppScreen.SOURCE_PREVIEW, state.screen)
         assertSame(before, state.sourcePreview)
         assertFalse(state.sourceReadRequested)
-        assertEquals("2026-10-01", state.privateSyncConfiguration.sourceRangeStartDate)
+        assertEquals("", state.privateSyncConfiguration.sourceRangeStartDate)
     }
-    @Test fun cachedNextRejectsInvalidRangeAndMissingCache() {
-        val state = state(item("a", "Synthetic VO"))
-        state.openSourceRange()
-        assertTrue(state.continueWithSavedCourses("invalid", "").isNotEmpty())
-        assertEquals(AppScreen.SOURCE_RANGE, state.screen)
-        assertTrue(CalendarControlState().continueWithSavedCourses("", "").isNotEmpty())
+    @Test fun cachedNextRejectsMissingCache() {
+        assertTrue(CalendarControlState().continueWithSavedCourses().isNotEmpty())
     }
     @Test fun individualRulesAffectOnlySelectedInstancesAndSelectedFavorites() {
         val a = item("a", "Synthetic A VO")

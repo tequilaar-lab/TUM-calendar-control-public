@@ -76,7 +76,7 @@ class AttendanceScopeRegressionTest {
         assertTrue(state.courses.all { it.attendance == AttendanceState.MUST_ATTEND })
     }
 
-    @Test fun specifiedDateCancellationAndOutputWindowRemainBounded() {
+    @Test fun specifiedDateCancellationExpandsOnlyMatchingFutureCourse() {
         val first = item("a", 0)
         val next = item("b", 1)
         val cancelled = item("c", 2).copy(isCancelled = true)
@@ -89,7 +89,25 @@ class AttendanceScopeRegressionTest {
         assertFalse(cancelled.identity in state.selectedSourceOccurrences)
         state.saveSourceOutputRange("2026-10-02", "2026-10-02")
         state.prepareCalendarWrite()
-        assertEquals(listOf("b"), state.currentDesiredEvents().map { it.identity.sourceUid })
+        assertEquals(listOf("a", "b"), state.currentDesiredEvents().map { it.identity.sourceUid })
+    }
+
+    @Test fun savedSnapshotSelectionIsNotCutDownByNextReadRange() {
+        val items = (0 until 133).map { item("uid-$it", it.toLong()) }
+        val state = state(*items.toTypedArray())
+        state.selectAllSourceOccurrences()
+        assertEquals(133, state.selectedSourceOccurrences.size)
+        assertTrue(state.saveSourceOutputRange("2026-10-02", "2026-10-02").isEmpty())
+        state.prepareCalendarWrite()
+        assertEquals(133, state.currentDesiredEvents().size)
+    }
+
+    @Test fun newlyReadNarrowSnapshotOnlyOffersItsOwnSelectedItems() {
+        val items = (0 until 28).map { item("uid-$it", it.toLong()) }
+        val state = state(*items.toTypedArray())
+        state.selectAllSourceOccurrences()
+        state.prepareCalendarWrite()
+        assertEquals(28, state.currentDesiredEvents().size)
     }
 
     @Test fun readButtonSavesDraftAndInvalidDateCannotStartRequest() {

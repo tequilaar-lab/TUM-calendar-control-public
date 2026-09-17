@@ -11,13 +11,13 @@ import java.time.ZoneId
 
 class SyncCandidateFactory(private val zoneId: ZoneId = ZoneId.of("Europe/Berlin")) {
     /**
-     * 仅将明确选中的来源课次转为候选；未配置规则的选中课次默认蓝色，取消实例不会输出。
+     * 仅将明确选中的活动快照课次转为候选；未配置规则的选中课次默认蓝色，取消实例不会输出。
+     * 读取时间范围只在生成活动快照时生效，绝不在写入前二次过滤已选课次。
      * 身份同时含 UID 与原始实例键，避免用户选一节课却输出整门课程的所有课次。
      */
     fun build(
         occurrences: List<SourceCalendarOccurrence>,
         selectedSourceOccurrences: Set<SourceOccurrenceIdentity>,
-        sourceOutputWindow: SourceOutputDateWindow = SourceOutputDateWindow(),
         rules: List<SyncRule>,
         manualEvents: List<ManualScheduleItem>,
         overrides: Map<String, com.tequila.tumcalendarcontrol.domain.CourseLocalOverride> = emptyMap(),
@@ -35,7 +35,6 @@ class SyncCandidateFactory(private val zoneId: ZoneId = ZoneId.of("Europe/Berlin
                 val newDay = meeting?.let { originalDay.plusDays((it.weekday.ordinal + 1 - originalDay.dayOfWeek.value).toLong()) }
                 val start = meeting?.let { newDay!!.atTime(it.startHour, it.startMinute).atZone(zoneId).toInstant() } ?: occurrence.startsAt
                 val end = meeting?.let { newDay!!.atTime(it.endHour, it.endMinute).atZone(zoneId).toInstant() } ?: occurrence.endsAt
-                if (!sourceOutputWindow.includes(start, end, zoneId)) return@let null
                 DesiredCalendarEvent(
                     identity = ManagedEventIdentity(occurrence.sourceUid, occurrence.instanceKey),
                     title = override?.title ?: occurrence.title,

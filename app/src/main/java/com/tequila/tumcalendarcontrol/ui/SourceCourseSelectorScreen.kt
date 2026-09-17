@@ -54,7 +54,8 @@ private enum class SourceBrowserMode(val label: String) { GROUPS("按课程分�
 
 @Composable
 fun SourceCourseSelectorScreen(state: CalendarControlState) {
-    val outputWindow = state.privateSyncConfiguration.sourceOutputWindow ?: SourceOutputDateWindow()
+    // 活动快照已在真正读取时按范围生成；旧快照不能再被“下次读取”草稿二次裁剪。
+    val outputWindow = SourceOutputDateWindow()
     val groups = SourceCourseBrowserModel.groups(
         occurrences = state.currentSourceOccurrences,
         selectedOccurrences = state.selectedSourceOccurrences,

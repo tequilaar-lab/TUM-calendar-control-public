@@ -83,15 +83,15 @@ class PreinstallBoundaryRegressionTest {
         assertEquals(1, state.cleanupIdentities(setOf("synthetic"), null, null).size)
     }
 
-    @Test fun changingRangeInvalidatesConfirmation() {
+    @Test fun changingNextReadRangeDoesNotInvalidateCurrentConfirmation() {
         val item = occurrence()
         val state = state(item)
         state.toggleSourceOccurrenceSelection(item.identity)
         state.prepareCalendarWrite()
         assertNotNull(state.managedSyncPreview)
         state.saveSourceOutputRange("2026-11-01", "2026-11-30")
-        assertNull(state.managedSyncPreview)
-        assertTrue(state.currentDesiredEvents().isEmpty())
+        assertNotNull(state.managedSyncPreview)
+        assertEquals(1, state.currentDesiredEvents().size)
     }
 
     @Test fun cleanupCanExplicitlySelectLocalWithoutGooglePermission() {
@@ -123,7 +123,7 @@ class PreinstallBoundaryRegressionTest {
         assertTrue(scope.forTarget(OutputTarget.GOOGLE_CALENDAR).isEmpty())
     }
 
-    @Test fun editsDuringWriteInvalidateNextConfirmationWithoutChangingConfirmedEvents() {
+    @Test fun changingNextReadRangeDuringWriteKeepsConfirmedEventsAndPreview() {
         val item = occurrence()
         val state = state(item)
         state.refreshLocalCalendarPermission(true)
@@ -134,7 +134,7 @@ class PreinstallBoundaryRegressionTest {
         state.saveSourceOutputRange("2026-11-01", "2026-11-30")
         assertEquals(confirmed, state.currentDesiredEvents())
         state.resolveManagedOperation(state.currentManagedOperationToken(), ManagedSyncResult(emptyList(), emptyList()), PrivateSyncConfiguration(localCalendarId = "owned"))
-        assertNull(state.managedSyncPreview)
+        assertNotNull(state.managedSyncPreview)
         assertEquals("2026-11-01", state.privateSyncConfiguration.sourceRangeStartDate)
         assertEquals("owned", state.privateSyncConfiguration.localCalendarId)
     }

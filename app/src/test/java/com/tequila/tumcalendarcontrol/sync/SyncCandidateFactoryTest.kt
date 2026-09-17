@@ -98,28 +98,26 @@ class SyncCandidateFactoryTest {
     }
 
     @Test
-    fun `来源日期窗口只过滤来源实例而不影响手动事项`() {
+    fun `已选活动快照不会被读取范围二次过滤`() {
         val events = factory.build(
             occurrences = listOf(
                 occurrence("uid-a", "inside", "来源", "2026-10-20T08:00:00Z"),
                 occurrence("uid-a", "outside", "来源", "2026-11-20T08:00:00Z"),
             ),
             selectedSourceOccurrences = setOf(SourceOccurrenceIdentity("uid-a", "inside"), SourceOccurrenceIdentity("uid-a", "outside")),
-            sourceOutputWindow = SourceOutputDateWindow(java.time.LocalDate.parse("2026-10-01"), java.time.LocalDate.parse("2026-10-31")),
             rules = emptyList(),
             manualEvents = listOf(ManualScheduleItem("manual-1", "手动测试", Instant.parse("2026-11-22T08:00:00Z"), Instant.parse("2026-11-22T09:00:00Z"), AttendanceState.MUST_ATTEND)),
         )
 
-        assertEquals(setOf("inside", "manual-1"), events.map { it.identity.instanceKey }.toSet())
+        assertEquals(setOf("inside", "outside", "manual-1"), events.map { it.identity.instanceKey }.toSet())
     }
 
     @Test
-    fun `用户修改后的最终时间决定是否落入写入范围`() {
+    fun `用户修改后的最终时间不改变已选课次的写入资格`() {
         val source = occurrence("uid-a", "outside-source", "来源", "2026-10-31T08:00:00Z")
-        val movedOutside = factory.build(
+        val moved = factory.build(
             occurrences = listOf(source),
             selectedSourceOccurrences = setOf(source.identity),
-            sourceOutputWindow = SourceOutputDateWindow(java.time.LocalDate.parse("2026-10-31"), java.time.LocalDate.parse("2026-10-31")),
             rules = emptyList(),
             manualEvents = emptyList(),
             overrides = mapOf("uid-a" to com.tequila.tumcalendarcontrol.domain.CourseLocalOverride(
@@ -129,7 +127,8 @@ class SyncCandidateFactoryTest {
             )),
         )
 
-        assertTrue(movedOutside.isEmpty())
+        assertEquals(1, moved.size)
+        assertEquals(Instant.parse("2026-11-01T08:00:00Z"), moved.single().startsAt)
     }
 
     private fun occurrence(uid: String, key: String, title: String, start: String = "2026-10-01T08:00:00Z", cancelled: Boolean = false) = SourceCalendarOccurrence(
