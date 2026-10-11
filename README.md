@@ -29,3 +29,15 @@
 本地构建和单元测试不能代替真机、Google 或荣耀日历验证。真实读取、授权和写入均应逐项确认。
 
 执行约束见 [AGENTS.md](AGENTS.md)。
+
+## Lizenz und Beiträge
+
+Der eigene Quellcode steht unter GPL-3.0-only mit einer zusätzlichen Erlaubnis
+für die benötigten Google-Play-services-Bibliotheken. Siehe [LICENSE](LICENSE) und
+[LICENSE-NOTICE.md](LICENSE-NOTICE.md). Wer geänderte Versionen weitergibt, muss den zugehörigen
+Quellcode entsprechend der GPLv3 bereitstellen. Fremdbibliotheken behalten
+ihre eigenen Lizenzbedingungen.
+
+Beiträge können als Pull Request eingereicht werden. Die Entscheidung über
+die Aufnahme in main liegt beim Maintainer. Ein Fork oder Klon verleiht keine
+Schreibberechtigung für dieses Repository.
