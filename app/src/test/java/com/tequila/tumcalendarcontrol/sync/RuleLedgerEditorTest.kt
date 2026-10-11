@@ -1,8 +1,8 @@
 /*
- * 职责：验证资料库编解码、批量规则作用域和未来状态时间线的离线行为。
- * 输入／输出：输入合成规则与编辑命令；输出确定性规则及解析状态断言。
- * 外部副作用：无。
- * 不负责：Android 偏好、网络、真实日历或账户验证。
+ * Aufgabe: synthetische Regressionstests für RuleLedgerEditor.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

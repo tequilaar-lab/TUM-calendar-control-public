@@ -1,63 +1,61 @@
 /*
- * 职责：定义同步结果可输出到的独立目标及其本机配置值。
- * 输入／输出：输入某个目标和开关值；输出不可变的 SyncDestinations 配置。
- * 外部副作用：无。
- * 不负责：账户授权、日历权限、日历创建、事件写入或网络同步。
+ * Aufgabe: Unabhängige Ausgabeziele und lokale Konfigurationswerte definieren.
+ * Ein-/Ausgabe: Ziel und Schalterwert -> unveränderliche SyncDestinations.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Kontoautorisierung, Kalenderberechtigungen, Kalendererstellung, Terminänderungen oder Netzwerksynchronisierung.
  */
 package com.tequila.tumcalendarcontrol.ui
 
-/** 输出目标彼此独立；它们都只会消费同一份已通过本地规则筛选的结果。 */
+import com.tequila.tumcalendarcontrol.i18n.message
+import com.tequila.tumcalendarcontrol.i18n.concatenateMessages
+
+/** Unabhängige Ausgabeziele verwenden dieselben lokal geprüften Ergebnisse. */
 enum class SyncDestination(
     val title: String,
     val disabledSummary: String,
     val enabledSummary: String,
 ) {
     LOCAL_CALENDAR(
-        title = "本机荣耀日历",
-        disabledSummary = "关闭：不会请求日历权限，也不会写入本机日历",
-        enabledSummary = "已允许：完成日历授权后，写入本应用专用本机日历",
+        title = message(522),
+        disabledSummary = message(656),
+        enabledSummary = message(657),
     ),
     GOOGLE_CALENDAR(
-        title = "Google 日历镜像",
-        disabledSummary = "关闭：不会连接 Google 账户或发送日程数据",
-        enabledSummary = "已允许：完成授权后，只写入本应用创建的 Google 次级日历",
+        title = message(523),
+        disabledSummary = message(658),
+        enabledSummary = message(659),
     ),
 }
 
-/** 用户切换输出开关前的暂存意图；确认前不改变偏好、权限或 Google 运行内授权。 */
+/** Ausgabeschalter zunächst als Absicht; vor Bestätigung keine Präferenz-, Rechte- oder Autorisierungsänderung. */
 data class PendingSyncDestinationChange(
     val destination: SyncDestination,
     val enabled: Boolean,
 ) {
-    val title: String get() = if (enabled) "启用${destination.title}" else "关闭${destination.title}"
-    /** 仅描述尚未确认的输出变化；不读取账户、日程或日历内容。 */
+    val title: String get() = if (enabled) message(660, (destination.title)) else message(661, (destination.title))
+    /** Beschreibt unbestätigte Ausgabeänderung; keine Konten, Termine oder Kalender lesen. */
     fun consequence(current: SyncDestinations): String = when (destination) {
         SyncDestination.LOCAL_CALENDAR -> if (enabled) {
-            "确认后会请求本机日历权限；获得权限后，未来确认写入才会写入应用专用本机日历。" +
-                current.duplicateDisplayHint(otherEnabled = current.googleCalendarEnabled)
+            concatenateMessages(message(662), current.duplicateDisplayHint(otherEnabled = current.googleCalendarEnabled))
         } else {
-            "确认后不再向本机日历写入；已经写入的日程不会被删除。"
+            message(663)
         }
         SyncDestination.GOOGLE_CALENDAR -> if (enabled) {
-            "确认后可手动连接 Google 日历；连接和确认写入前不会发送任何日程。" +
-                current.duplicateDisplayHint(otherEnabled = current.localCalendarEnabled)
+            concatenateMessages(message(664), current.duplicateDisplayHint(otherEnabled = current.localCalendarEnabled))
         } else {
-            "确认后会结束本次 Google 授权并停止未来镜像；已经写入的日程不会被删除。"
+            message(665)
         }
     }
 }
 
 private fun SyncDestinations.duplicateDisplayHint(otherEnabled: Boolean): String =
     if (otherEnabled) {
-        " 另一种输出已开启；若荣耀日历同时显示两本应用日历，同一课次会出现两份。想只显示一份，请只启用一种输出，或在荣耀日历隐藏其中一本。"
+        message(666)
     } else {
         ""
     }
 
-/**
- * 只保存“未来允许输出到哪里”的用户意图。
- * 默认全部关闭，防止原型阶段产生任何意外外部写入。
- */
+/** Nur künftige Ausgabeabsicht speichern; alles standardmäßig aus, um unbeabsichtigte externe Ausgabe zu verhindern. */
 data class SyncDestinations(
     val localCalendarEnabled: Boolean = false,
     val googleCalendarEnabled: Boolean = false,

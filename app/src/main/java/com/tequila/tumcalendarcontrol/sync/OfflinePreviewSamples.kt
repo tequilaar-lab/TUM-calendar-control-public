@@ -1,8 +1,8 @@
 /*
- * 职责：提供仅供界面演示的合成差异预览，不依赖真实来源、账户或日历。
- * 输入／输出：无输入；输出固定的 SyncPreview。
- * 外部副作用：无。
- * 不负责：模拟真实同步结果或作为写入计划执行。
+ * Aufgabe: Synthetische Ausgabevorschau ohne echte Quelle, Konten oder Kalender bereitstellen.
+ * Ein-/Ausgabe: Keine externe Eingabe -> feste synthetische Vorschau.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Simulation echter Synchronisierungsergebnisse oder Ausführung als Schreibplan.
  */
 package com.tequila.tumcalendarcontrol.sync
 

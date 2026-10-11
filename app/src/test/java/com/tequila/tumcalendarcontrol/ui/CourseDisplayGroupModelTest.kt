@@ -1,8 +1,8 @@
 /*
- * 职责：验证课程名称分组仅改变浏览结构，且不合并底层独立课程身份。
- * 输入／输出：输入合成 Course；输出分组与成员身份断言。
- * 外部副作用：无；不渲染 UI、不保存规则、不读取或写入日历。
- * 不负责：来源解析、实际搜索、导航动画或同步验证。
+ * Aufgabe: synthetische Regressionstests für CourseDisplayGroupModel.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.ui
 

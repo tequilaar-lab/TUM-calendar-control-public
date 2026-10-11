@@ -1,17 +1,19 @@
 /*
- * 职责：提供仅用于离线 UI 原型的合成 Fixplatz 课程。
- * 输入／输出：无输入；输出五门没有真实来源、账户或标识信息的合成课程。
- * 外部副作用：无。
- * 不负责：模拟 TUM 数据、推断 Fixplatz 或作为任何同步输入。
+ * Aufgabe: Synthetische Fixplatz-Kurse für die Offline-Oberfläche bereitstellen.
+ * Ein-/Ausgabe: Keine Eingabe -> fünf künstliche Kurse ohne echte Quellen oder Konten.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Simulation echter TUM-Daten, Fixplatz-Ableitung oder Synchronisierungseingaben.
  */
 package com.tequila.tumcalendarcontrol.domain
 
+import com.tequila.tumcalendarcontrol.i18n.message
+
 object SampleCourses {
     fun all(): List<Course> = listOf(
-        Course("course-a", "课程 A", "周二 10:00–12:00", "示例校区", AttendanceState.MUST_ATTEND, false),
-        Course("course-b", "课程 B", "周三 14:00–16:00", "示例校区", AttendanceState.CHOOSE_TO_ATTEND, true, sourceStatus = TumEventStatus.PLANNED),
-        Course("course-c", "课程 C", "周四 08:00–10:00", "示例校区", AttendanceState.STOP_ATTENDING, false, sourceStatus = TumEventStatus.MOVED),
-        Course("course-d", "课程 D", "周四 16:00–18:00", "示例校区", AttendanceState.CHOOSE_TO_ATTEND, false, sourceStatus = TumEventStatus.CANCELLED),
-        Course("course-e", "课程 E", "周五 10:00–12:00", "示例校区", AttendanceState.MUST_ATTEND, false),
+        Course("course-a", message(21), message(22), message(23), AttendanceState.MUST_ATTEND, false),
+        Course("course-b", message(24), message(25), message(23), AttendanceState.CHOOSE_TO_ATTEND, true, sourceStatus = TumEventStatus.PLANNED),
+        Course("course-c", message(26), message(27), message(23), AttendanceState.STOP_ATTENDING, false, sourceStatus = TumEventStatus.MOVED),
+        Course("course-d", message(28), message(29), message(23), AttendanceState.CHOOSE_TO_ATTEND, false, sourceStatus = TumEventStatus.CANCELLED),
+        Course("course-e", message(30), message(31), message(23), AttendanceState.MUST_ATTEND, false),
     )
 }

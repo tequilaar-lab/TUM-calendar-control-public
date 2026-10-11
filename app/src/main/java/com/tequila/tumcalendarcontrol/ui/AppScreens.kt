@@ -1,18 +1,16 @@
 /*
- * 职责：将稳定的 AppScreen 值分发到对应 Compose 页面。
- * 输入／输出：输入 CalendarControlState 与当前 AppScreen；输出一个已存在的页面内容。
- * 外部副作用：无；各页面的用户操作仍通过 CalendarControlState 的既有入口表达。
- * 不负责：任何页面布局、课程／设置业务、导航栈修改、读取、授权或日历写入。
+ * Aufgabe: Stabile AppScreen-Werte an Compose-Seiten weiterleiten.
+ * Ein-/Ausgabe: AppScreen und vorhandener Zustand -> passende Compose-Seite.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Seitenlayout, Kurs-/Einstellungslogik, Navigationsstack, Quellenlesen, Autorisierung oder Kalenderausgabe.
  */
 package com.tequila.tumcalendarcontrol.ui
 
+import com.tequila.tumcalendarcontrol.i18n.message
+
 import androidx.compose.runtime.Composable
 
-/**
- * 只用于合成单元测试的显式路由清单。
- *
- * 运行时仍使用下方可由编译器检查穷尽性的 when；新增屏幕时，测试会要求同步更新本清单。
- */
+/** Explizite Routingliste nur für synthetische Unit-Tests. Laufzeit nutzt erschöpfendes when; Tests verlangen Aktualisierung bei neuen Seiten. */
 internal val routedAppScreens: Set<AppScreen> =
     setOf(
     AppScreen.OVERVIEW,
@@ -77,7 +75,7 @@ private fun CourseScreenContent(state: CalendarControlState, screen: AppScreen) 
         AppScreen.COURSE_EDIT -> CourseEditScreen(state)
         AppScreen.SEARCH -> SearchScreen(state)
         AppScreen.FAVORITES -> FavoritesScreen(state)
-        else -> error("课程页面路由只接受课程屏幕")
+        else -> error(message(182))
     }
 }
 
@@ -89,7 +87,7 @@ private fun SettingsScreenContent(state: CalendarControlState, screen: AppScreen
         AppScreen.PROFILE -> ProfileScreen(state)
         AppScreen.SYNC_CONFIGURATION -> SyncConfigurationScreen(state)
         AppScreen.SYNC_PREVIEW -> SyncPreviewScreen(state)
-        else -> error("设置页面路由只接受设置屏幕")
+        else -> error(message(183))
     }
 }
 
@@ -105,6 +103,6 @@ private fun WorkflowScreenContent(state: CalendarControlState, screen: AppScreen
         AppScreen.OUTPUT_CLEANUP -> OutputCleanupScreen(state)
         AppScreen.BACKGROUND_CHECK -> BackgroundCheckScreen(state)
         AppScreen.RULE_BACKUP -> RuleBackupScreen(state)
-        else -> error("工作流页面路由只接受工作流屏幕")
+        else -> error(message(184))
     }
 }

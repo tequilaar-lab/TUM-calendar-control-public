@@ -1,10 +1,12 @@
 /*
- * 职责：在应用私有偏好中保存课程收藏及名称、时间和地点的本机覆盖。
- * 输入／输出：输入合成或已读取的来源课程；输出按稳定课程 UID 恢复的本机展示元数据。
- * 外部副作用：只写入应用沙盒 SharedPreferences。
- * 不负责：保存订阅、读取 TUM、修改原始课程或写入任何日历。
+ * Aufgabe: Favoriten und lokale Namens-/Zeit-/Ortsänderungen privat speichern.
+ * Ein-/Ausgabe: Course-IDs und lokale Änderungen -> private Anzeige-/Favoritenmetadaten.
+ * Nebenwirkungen: Nur app-private Anzeige-/Favoritenpräferenzen.
+ * Nicht zuständig: Abonnementpersistenz, TUM-Abruf, Originalkursänderungen oder Kalenderausgabe.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import android.content.Context
 import com.tequila.tumcalendarcontrol.domain.Course
@@ -23,7 +25,7 @@ class CourseOverridePreferences(context: Context) {
         )
     }
 
-    /** 只返回本机展示元数据；不会把来源标题或任何 iCal 正文带入偏好。 */
+    /** Nur lokale Anzeigemetadaten zurückgeben; keine Quelltitel oder iCal-Inhalte in Präferenzen. */
     fun loadPresentations(): Map<String, CoursePresentation> = preferences.all.keys
         .mapNotNull(::courseIdFromKey)
         .toSet()
@@ -64,11 +66,11 @@ class CourseOverridePreferences(context: Context) {
 
     private fun courseIdFromKey(preferenceKey: String): String? {
         val prefix = "course_override_"
-        val suffix = FIELDS.firstOrNull { preferenceKey.endsWith("_$it") } ?: return null
-        return preferenceKey.removePrefix(prefix).removeSuffix("_$suffix").takeIf { preferenceKey.startsWith(prefix) && it.isNotBlank() }
+        val suffix = FIELDS.firstOrNull { preferenceKey.endsWith("_${(it)}") } ?: return null
+        return preferenceKey.removePrefix(prefix).removeSuffix("_${(suffix)}").takeIf { preferenceKey.startsWith(prefix) && it.isNotBlank() }
     }
 
-    private fun key(courseId: String, field: String) = "course_override_${courseId}_$field"
+    private fun key(courseId: String, field: String) = "course_override_${(courseId)}_${(field)}"
     private fun meetingTime(courseId: String): CourseMeetingTime? = runCatching {
         val weekday = preferences.getString(key(courseId, "weekday"), null) ?: return null
         CourseMeetingTime(CourseWeekday.valueOf(weekday), preferences.getInt(key(courseId, "start_hour"), -1), preferences.getInt(key(courseId, "start_minute"), -1), preferences.getInt(key(courseId, "end_hour"), -1), preferences.getInt(key(courseId, "end_minute"), -1))
@@ -79,7 +81,7 @@ class CourseOverridePreferences(context: Context) {
     }
 }
 
-/** 仅保存用户本机展示选择；`null` 表示沿用课程默认收藏值。 */
+/** Nur lokale Benutzeranzeige speichern; null übernimmt Standardfavorit des Kurses. */
 data class CoursePresentation(
     val isFavorite: Boolean? = null,
     val localOverride: CourseLocalOverride = CourseLocalOverride(),

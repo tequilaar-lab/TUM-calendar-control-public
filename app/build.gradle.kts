@@ -1,8 +1,8 @@
 /*
- * 职责：配置 Android app 模块与 Compose、测试依赖。
- * 输入／输出：公开插件和库坐标；输出为 debug APK 与 JVM 单元测试任务。
- * 外部副作用：首次构建下载公开 AndroidX/Compose 依赖。
- * 不负责：网络、账户授权、iCal 解析和任何真实日历写入。
+ * Aufgabe: Android-App-Modul, Compose und Testabhängigkeiten konfigurieren.
+ * Ein-/Ausgabe: Öffentliche Plugin-/Bibliothekskoordinaten -> Debug-APK und JVM-Testaufgaben.
+ * Nebenwirkungen: Beim ersten Build öffentliche Abhängigkeiten herunterladen.
+ * Nicht zuständig: Netzwerkzugriffe, Kontoautorisierung, iCal-Parsing oder echte Kalenderausgaben.
  */
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import dev.detekt.gradle.Detekt
@@ -11,7 +11,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("io.github.takahirom.roborazzi")
-    // 只生成诊断报告；不会格式化源文件，也不会成为 check 的前置任务。
+    // Nur Diagnoseberichte erzeugen; keine Formatierung und keine Vorbedingung für check.
     id("org.jlleitschuh.gradle.ktlint")
     id("dev.detekt")
 }
@@ -24,9 +24,9 @@ android {
         applicationId = "com.tequila.tumcalendarcontrol"
         minSdk = 26
         targetSdk = 37
-        // 每次可验收发布均递增构建号；详细验收记录只保存在本机审计目录。
-        versionCode = 57
-        versionName = "1.0.3"
+        // Buildnummer nach jedem abgenommenen Release erhöhen; Nachweise bleiben im lokalen Audit.
+        versionCode = 58
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -63,16 +63,16 @@ android {
 }
 
 kotlin {
-    // 使用现有较高版本 JDK 运行构建，同时保持产物与 Java 17 兼容。
+    // Mit vorhandenem neuerem JDK bauen; Artefakte bleiben Java-17-kompatibel.
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
-// 职责：提供可手动运行的静态分析报告，不改写代码、不设质量门槛、不接入常规构建。
-// 输入／输出：Kotlin 与 Gradle 源码；输出为 app/build/reports 下的 Ktlint 与 Detekt 报告。
-// 外部副作用：首次运行解析公开分析器依赖；不访问日历、账户或设备。
-// 不负责：自动格式化、基线生成、抑制规则或阻断 check／assemble。
+// Aufgabe: manuell ausführbare Analyseberichte, ohne Codeänderung oder verpflichtende Qualitätsprüfung.
+// Ein-/Ausgabe: Kotlin/Gradle-Quellen -> Ktlint-/Detekt-Berichte unter app/build/reports.
+// Nebenwirkungen: öffentliche Analyseabhängigkeiten beim ersten Lauf laden; keine Kalender-, Konto- oder Gerätezugriffe.
+// Nicht zuständig: Formatierung, Baselines, Unterdrückungsregeln oder Blockieren von check/assemble.
 ktlint {
     ignoreFailures.set(true)
     outputToConsole.set(false)
@@ -95,30 +95,30 @@ tasks.withType<Detekt>().configureEach {
 
 val lintCompatibilityReport = tasks.register("lintCompatibilityReport") {
     group = "verification"
-    description = "试验性生成 Ktlint 与 Detekt 报告；不格式化且不阻断构建。"
+    description = "Erzeugt versuchsweise Ktlint- und Detekt-Berichte; formatiert nicht und blockiert den Build nicht."
     dependsOn("ktlintCheck", "detekt")
 }
 
-// 两插件会默认把检查任务接到 Gradle check；恢复 Android app 原有的 lint 与 test 直接依赖，
-// 使新增分析只能由上方手动入口触发，而不影响既有 Android 校验范围。
+// Beide Plugins hängen standardmäßig an check; die ursprünglichen direkten lint-/test-Abhängigkeiten wiederherstellen.
+// Neue Analysen nur über den manuellen Einstieg ausführen; Android-Prüfumfang unverändert.
 tasks.named("check") {
     setDependsOn(listOf(tasks.named("lint"), tasks.named("test")))
 }
 
 dependencies {
     implementation("androidx.activity:activity-compose:1.13.0")
-    // 仅提供 Rounded 图标向量；界面组件仍全部来自 Compose-Miuix。
+    // Nur Rounded-Symbolvektoren; Oberflächenkomponenten weiterhin aus Compose-Miuix.
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.3")
-    // 成熟的 RFC 5545 解析器；最低 API 26 与现有 Java 17 构建设置满足其 Android 前提。
+    // Bewährter RFC-5545-Parser; API 26 und Java 17 erfüllen seine Android-Voraussetzungen.
     implementation("org.mnode.ical4j:ical4j:3.1.0")
-    // 官方 Android 授权客户端；只在用户点按连接 Google 时请求最小的 app.created 范围。
+    // Offizieller Autorisierungsclient; minimaler app.created-Umfang erst nach ausdrücklichem Verbinden.
     implementation("com.google.android.gms:play-services-auth:21.6.0")
-    // Android 官方稳定 WorkManager；后台任务只读检查来源，不执行日历同步。
+    // Offizieller WorkManager; Hintergrundprüfung liest nur die Quelle, keine Kalendersynchronisierung.
     implementation("androidx.work:work-runtime:2.11.2")
 
     testImplementation("junit:junit:4.13.2")
-    // 仅用于本机 Compose 截图回归；不连接设备、账户或日历。
+    // Nur lokale Compose-Bildregression; keine Geräte-, Konto- oder Kalenderverbindung.
     testImplementation("io.github.takahirom.roborazzi:roborazzi:1.74.0")
     testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.74.0")
     testImplementation("androidx.compose.ui:ui-test-junit4:1.7.8")

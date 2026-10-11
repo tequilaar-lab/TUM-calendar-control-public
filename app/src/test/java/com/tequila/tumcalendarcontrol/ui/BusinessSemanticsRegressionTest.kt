@@ -1,8 +1,8 @@
 /*
- * 职责：验证审计发现的范围继承、收藏范围、取消提示、选择恢复和提交失败边界。
- * 输入／输出：仅合成来源、规则与内存持久化回调；输出状态断言。
- * 外部副作用：无；不访问网络、账户、系统日历或真实课程。
- * 不负责：真机 UI、Google/荣耀延迟和系统杀进程行为。
+ * Aufgabe: synthetische Regressionstests für BusinessSemanticsRegression.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.ui
 

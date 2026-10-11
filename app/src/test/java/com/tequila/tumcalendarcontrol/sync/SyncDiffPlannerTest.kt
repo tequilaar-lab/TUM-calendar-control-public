@@ -1,8 +1,8 @@
 /*
- * 职责：验证同步差异只以 UID 与实例键定位，正确生成新增、更新、移除和保持不变操作。
- * 输入／输出：输入合成来源实例及既有应用映射；输出差异类型断言。
- * 外部副作用：无。
- * 不负责：真实日历 API、网络或数据库验证。
+ * Aufgabe: synthetische Regressionstests für SyncDiffPlanner.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

@@ -1,10 +1,12 @@
 /*
- * 职责：定义每个 AppScreen 的静态展示元数据和主导航属性。
- * 输入／输出：输入 AppScreen；输出标题、副标题、底栏索引及导航控件适用性。
- * 外部副作用：无。
- * 不负责：渲染页面、处理用户点击、保存状态、请求权限或读写日历。
+ * Aufgabe: Statische Seitenmetadaten und Hauptnavigation definieren.
+ * Ein-/Ausgabe: AppScreen -> Titel, Untertitel und Navigationsmerkmale.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Seitendarstellung, Benutzeraktionen, Zustandsspeicherung, Berechtigungen oder Kalenderzugriffe.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 internal fun AppScreen.usesBottomNavigation(): Boolean = this in setOf(
     AppScreen.OVERVIEW,
@@ -39,39 +41,39 @@ internal fun AppScreen.bottomNavigationIndex(): Int = when (this) {
 }
 
 internal fun AppScreen.title(): String = when (this) {
-    AppScreen.OVERVIEW -> "TUM 日程控制"
-    AppScreen.DETAIL -> "课程详情"
-    AppScreen.ATTENDANCE -> "状态选择"
-    AppScreen.COURSE_EDIT -> "编辑课程"
-    AppScreen.SEARCH -> "搜索课程"
-    AppScreen.FAVORITES -> "收藏课程"
-    AppScreen.MORE -> "更多操作"
-    AppScreen.SETTINGS -> "设置与同步"
-    AppScreen.PROFILE -> "个人资料"
-    AppScreen.SYNC_CONFIGURATION -> "日历连接"
-    AppScreen.SYNC_PREVIEW -> "离线示例"
-    AppScreen.SOURCE_RANGE -> "选择读取时间"
-    AppScreen.SOURCE_PREVIEW -> "选择课程"
-    AppScreen.SOURCE_ATTENDANCE -> "设置出席与收藏"
-    AppScreen.MANUAL_EVENTS -> "手动校园事项"
-    AppScreen.MANAGED_SYNC_PREVIEW -> "确认写入日历"
-    AppScreen.OUTPUT_CLEANUP -> "清理已写入日程"
-    AppScreen.BACKGROUND_CHECK -> "检查课程更新"
-    AppScreen.RULE_BACKUP -> "备份课程设置"
+    AppScreen.OVERVIEW -> message(151)
+    AppScreen.DETAIL -> message(152)
+    AppScreen.ATTENDANCE -> message(153)
+    AppScreen.COURSE_EDIT -> message(154)
+    AppScreen.SEARCH -> message(155)
+    AppScreen.FAVORITES -> message(156)
+    AppScreen.MORE -> message(157)
+    AppScreen.SETTINGS -> message(158)
+    AppScreen.PROFILE -> message(159)
+    AppScreen.SYNC_CONFIGURATION -> message(160)
+    AppScreen.SYNC_PREVIEW -> message(161)
+    AppScreen.SOURCE_RANGE -> message(162)
+    AppScreen.SOURCE_PREVIEW -> message(163)
+    AppScreen.SOURCE_ATTENDANCE -> message(164)
+    AppScreen.MANUAL_EVENTS -> message(165)
+    AppScreen.MANAGED_SYNC_PREVIEW -> message(166)
+    AppScreen.OUTPUT_CLEANUP -> message(167)
+    AppScreen.BACKGROUND_CHECK -> message(168)
+    AppScreen.RULE_BACKUP -> message(169)
 }
 
 internal fun AppScreen.subtitle(): String? = when (this) {
-    AppScreen.OVERVIEW -> "读取课程后会显示在这里"
-    AppScreen.SETTINGS -> "读取课程、设置写入位置与外观"
-    AppScreen.SYNC_CONFIGURATION -> "保存到这台设备，不会联网"
-    AppScreen.SYNC_PREVIEW -> "示例不会写入日历"
-    AppScreen.SOURCE_RANGE -> "选择时间后读取课程"
-    AppScreen.SOURCE_PREVIEW -> "选择后设置出席与收藏"
-    AppScreen.SOURCE_ATTENDANCE -> "保存后可返回课程列表写入日历"
-    AppScreen.MANUAL_EVENTS -> "保存后可与课程一起写入日历"
-    AppScreen.MANAGED_SYNC_PREVIEW -> "确认后才会修改所选日历"
-    AppScreen.OUTPUT_CLEANUP -> "选择范围并确认后才会清理应用日程"
-    AppScreen.BACKGROUND_CHECK -> "只检查课程变化，不会自动写入日历"
-    AppScreen.RULE_BACKUP -> "备份课程设置；恢复前需确认"
+    AppScreen.OVERVIEW -> message(170)
+    AppScreen.SETTINGS -> message(171)
+    AppScreen.SYNC_CONFIGURATION -> message(172)
+    AppScreen.SYNC_PREVIEW -> message(173)
+    AppScreen.SOURCE_RANGE -> message(174)
+    AppScreen.SOURCE_PREVIEW -> message(175)
+    AppScreen.SOURCE_ATTENDANCE -> message(176)
+    AppScreen.MANUAL_EVENTS -> message(177)
+    AppScreen.MANAGED_SYNC_PREVIEW -> message(178)
+    AppScreen.OUTPUT_CLEANUP -> message(179)
+    AppScreen.BACKGROUND_CHECK -> message(180)
+    AppScreen.RULE_BACKUP -> message(181)
     else -> null
 }

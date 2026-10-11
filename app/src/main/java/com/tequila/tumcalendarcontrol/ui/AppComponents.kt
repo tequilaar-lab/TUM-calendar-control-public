@@ -1,10 +1,12 @@
 /*
- * 职责：提供页面复用的课程行、信息卡片和状态颜色部件。
- * 输入／输出：输入课程或文字数据与点击回调；输出 Compose-Miuix 视觉组件。
- * 外部副作用：仅在用户点击时调用上层回调。
- * 不负责：改变领域规则、保存数据或执行导航决策。
+ * Aufgabe: Wiederverwendbare Kurszeilen, Informationskarten und Teilnahmefarben bereitstellen.
+ * Ein-/Ausgabe: Kurs-/Hinweisdaten und Rückrufe -> Kurszeilen, Informationskarten und Statusfarben.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Domänenregeln, Datenspeicherung oder Navigationsentscheidungen.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -51,22 +53,22 @@ fun CourseRow(course: Course, onClick: () -> Unit, condensed: Boolean = false) {
                     .size(40.dp)
                     .background(palette.primaryContainer, RoundedCornerShape(20.dp)),
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Rounded.Star, "课程") }
+            ) { Icon(Icons.Rounded.Star, tr(message(146))) }
             Spacer(Modifier.size(12.dp))
             Column(modifier = Modifier.padding(end = 8.dp)) {
                 Text(
-                    if (condensed) "${course.displaySchedule} · ${course.attendance.label}" else "${course.displayTitle} · ${course.attendance.label}",
+                    tr(if (condensed) message(147, (course.displaySchedule), (course.attendance.label)) else message(147, (course.displayTitle), (course.attendance.label))),
                     style = MiuixTheme.textStyles.title3,
                 )
                 Text(
-                    (if (condensed) "${course.displayLocation} · ${course.attendance.colorLabel}" else "${course.displaySchedule} · ${course.displayLocation} · ${course.attendance.colorLabel}") +
-                        if (course.attendance == AttendanceState.STOP_ATTENDING) "；历史不改" else "",
+                    tr(com.tequila.tumcalendarcontrol.i18n.concatenateMessages((if (condensed) message(147, (course.displayLocation), (course.attendance.colorLabel)) else message(148, (course.displaySchedule), (course.displayLocation), (course.attendance.colorLabel))),
+                        if (course.attendance == AttendanceState.STOP_ATTENDING) message(149) else "")),
                     color = palette.onSurfaceVariant,
                 )
             }
             StatusDot(course.attendance)
             Spacer(Modifier.size(8.dp))
-            Icon(Icons.Rounded.ChevronRight, "查看课程详情")
+            Icon(Icons.Rounded.ChevronRight, tr(message(150)))
         }
     }
 }
@@ -76,8 +78,8 @@ fun InformationCard(title: String, body: String, modifier: Modifier = Modifier) 
     val palette = LocalTumPalette.current
     Card(modifier = modifier.fillMaxWidth(), insideMargin = androidx.compose.foundation.layout.PaddingValues(20.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = MiuixTheme.textStyles.title3)
-            Text(body, color = palette.onSurfaceVariant)
+            Text(tr(title), style = MiuixTheme.textStyles.title3)
+            Text(tr(body), color = palette.onSurfaceVariant)
         }
     }
 }

@@ -1,8 +1,8 @@
 /*
- * 职责：保存应用内屏幕、返回目标、更多覆盖层背景与页面切换方向。
- * 输入／输出：接收 AppScreen 导航意图；输出当前屏幕、稳定内容屏幕及可否拦截返回。
- * 外部副作用：无；不读取课程、不保存配置、不申请权限、不访问网络或日历。
- * 不负责：课程选择、规则编辑、来源读取、授权、同步预览或输出执行。
+ * Aufgabe: Seiten, Rückkehrziele, Überlagerungshintergrund und Navigationsrichtung halten.
+ * Ein-/Ausgabe: AppScreen-Absicht -> aktuelle/stabile Seite und Rückkehrverhalten.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Kursauswahl, Regelbearbeitung, Quellenlesen, Autorisierung, Synchronisierungsvorschau oder Ausgabeausführung.
  */
 package com.tequila.tumcalendarcontrol.ui
 
@@ -42,7 +42,7 @@ internal class NavigationState {
     fun openDetail() { detailReturnScreen = contentScreen; open(AppScreen.DETAIL) }
     fun openCourseEdit() { courseEditReturnScreen = AppScreen.DETAIL; open(AppScreen.COURSE_EDIT) }
     fun openMore() { moreReturnScreen = contentScreen; screen = AppScreen.MORE }
-    /** 个人资料是左侧入口：进入从左滑入，返回时资料向左滑出、原页面从右进入。 */
+    /** Profil links öffnen/verlassen; vorige Seite bei Rückkehr von rechts einblenden. */
     fun openProfile() { profileReturnScreen = contentScreen; direction = NavigationDirection.PROFILE_ENTER; screen = AppScreen.PROFILE }
     fun openSyncConfiguration() { syncConfigurationReturnScreen = contentScreen; openChild(AppScreen.SYNC_CONFIGURATION) }
     fun openSourceRange() { sourceRangeReturnScreen = contentScreen; direction = NavigationDirection.FORWARD; screen = AppScreen.SOURCE_RANGE }
@@ -98,7 +98,7 @@ internal class NavigationState {
         }
     }
 
-    /** 子页面不受上一轮主标签滑动方向影响，始终从右侧进入。 */
+    /** Unterseiten kommen immer von rechts, unabhängig von letzter Haupttab-Richtung. */
     private fun openChild(destination: AppScreen) {
         direction = NavigationDirection.FORWARD
         screen = destination

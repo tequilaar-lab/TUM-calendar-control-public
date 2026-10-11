@@ -1,10 +1,12 @@
 /*
- * 职责：提供来源课次的分组／按日期浏览、精确选择和折叠屏响应式布局。
- * 输入／输出：输入用户已选择的只读来源快照、课次选择状态与浏览条件；输出设置状态收藏或生成写入预览的意图。
- * 外部副作用：无；不读取 iCal、不持久化来源正文、不执行日历写入。
- * 不负责：按标题生成同步身份、修改解析结果或替代最后的写入确认。
+ * Aufgabe: Gruppierte/datumsbezogene Terminauswahl mit responsiver Faltbildschirmansicht darstellen.
+ * Ein-/Ausgabe: Aktive Momentaufnahme und Browserbedingungen -> genaue Auswahl oder Vorschauabsicht.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Synchronisierungsidentität anhand von Titeln, Änderung der Parsergebnisse oder Ersatz der abschließenden Schreibbestätigung.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -50,11 +52,11 @@ private val SourceSelectionBarShape = androidx.compose.foundation.shape.RoundedC
 private val ExpandedSelectorBreakpoint = 720.dp
 private val CourseBrowserZone = ZoneId.of("Europe/Berlin")
 
-private enum class SourceBrowserMode(val label: String) { GROUPS("按课程分组"), DATES("按日期找课次") }
+private enum class SourceBrowserMode(val label: String) { GROUPS(message(613)), DATES(message(596)) }
 
 @Composable
 fun SourceCourseSelectorScreen(state: CalendarControlState) {
-    // 活动快照已在真正读取时按范围生成；旧快照不能再被“下次读取”草稿二次裁剪。
+    // Aktive Daten wurden beim Lesen begrenzt; nächster Leseentwurf darf alte Momentaufnahme nicht erneut kürzen.
     val outputWindow = SourceOutputDateWindow()
     val groups = SourceCourseBrowserModel.groups(
         occurrences = state.currentSourceOccurrences,
@@ -74,7 +76,7 @@ fun SourceCourseSelectorScreen(state: CalendarControlState) {
     }
 }
 
-/** 展开态左栏只承载控制和悬浮操作；右栏始终完整显示且独立滚动课程／课次。 */
+/** Breite Ansicht: links Steuerung, rechts vollständige unabhängig scrollbare Kurse/Termine. */
 @Composable
 private fun ExpandedSourceCourseSelector(
     state: CalendarControlState,
@@ -107,7 +109,7 @@ private fun ExpandedSourceCourseSelector(
     }
 }
 
-/** 折叠态保持单栏；列表独立滚动，操作卡片仅悬浮在底部而不铺满页面。 */
+/** Schmale Ansicht einspaltig; Liste unabhängig scrollen, Aktionskarte schwebt nur unten. */
 @Composable
 private fun CompactSourceCourseSelector(
     state: CalendarControlState,
@@ -141,12 +143,12 @@ private fun SourceSelectorControls(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        InformationCard("选择具体课次", "勾选一个日期与时间，就只会处理这一个课次；不会自动选中同一门课的其他时间。")
+        InformationCard(message(614), message(615))
         TextField(
             value = state.sourceBrowserQuery,
             onValueChange = state::updateSourceBrowserQuery,
             modifier = Modifier.fillMaxWidth(),
-            label = "搜索课程或地点",
+            label = tr(message(616)),
         )
         SourceFilterRow(state)
         SourceModeRow(mode = mode, onChange = onModeChange)
@@ -174,7 +176,7 @@ private fun SourceFilterRow(state: CalendarControlState) {
         SourceCourseFilter.entries.forEach { filter ->
             val selected = state.sourceBrowserFilter == filter
             Button(onClick = { state.updateSourceBrowserFilter(filter) }, modifier = Modifier.weight(1f)) {
-                Text(if (selected) "✓ ${filter.label}" else filter.label)
+                Text(tr(if (selected) message(202, (filter.label)) else filter.label))
             }
         }
     }
@@ -185,7 +187,7 @@ private fun SourceModeRow(mode: SourceBrowserMode, onChange: (SourceBrowserMode)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
         SourceBrowserMode.entries.forEach { item ->
             Button(onClick = { onChange(item) }, modifier = Modifier.weight(1f)) {
-                Text(if (item == mode) "✓ ${item.label}" else item.label)
+                Text(tr(if (item == mode) message(202, (item.label)) else item.label))
             }
         }
     }
@@ -198,7 +200,7 @@ private fun SourceGroupList(state: CalendarControlState, groups: List<SourceCour
         verticalArrangement = Arrangement.spacedBy(10.dp),
         contentPadding = PaddingValues(bottom = bottomClearance),
     ) {
-        if (groups.isEmpty()) item { InformationCard("没有匹配课次", "尝试清除搜索或切换到“全部”。") }
+        if (groups.isEmpty()) item { InformationCard(message(617), message(618)) }
         items(groups, key = { it.displayTitle + it.earliestStart }) { group -> SourceGroupRow(state, group) }
     }
 }
@@ -213,17 +215,17 @@ private fun SourceGroupRow(state: CalendarControlState, group: SourceCourseDispl
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(group.displayTitle, style = MiuixTheme.textStyles.title3)
+                    Text(tr(group.displayTitle), style = MiuixTheme.textStyles.title3)
                     Text(
-                        "${group.sourceUidCount} 个来源条目 · 共 ${group.totalOccurrenceCount} 个课次 · 已选 ${group.selectedOccurrenceCount} 个课次",
+                        tr(message(619, (group.sourceUidCount), (group.totalOccurrenceCount), (group.selectedOccurrenceCount))),
                         color = LocalTumPalette.current.onSurfaceVariant,
                     )
                     Text(
-                        "所选时间范围内有 ${group.inOutputRangeOccurrenceCount} 个课次",
+                        tr(message(620, (group.inOutputRangeOccurrenceCount))),
                         color = LocalTumPalette.current.onSurfaceVariant,
                     )
                 }
-                Text(if (expanded) "收起" else "展开")
+                Text(tr(if (expanded) message(621) else message(622)))
             }
             if (expanded) group.occurrences.forEach { occurrence ->
                 SourceOccurrenceChoiceRow(
@@ -236,7 +238,7 @@ private fun SourceGroupRow(state: CalendarControlState, group: SourceCourseDispl
     }
 }
 
-/** 仅包住操作本身的悬浮卡；页面背景和右栏列表均不由它着色。 */
+/** Schwebende Karte umfasst nur Aktionen; färbt weder Seitenhintergrund noch rechte Liste. */
 @Composable
 private fun SourceSelectionBottomBar(
     selectedCount: Int,
@@ -255,13 +257,13 @@ private fun SourceSelectionBottomBar(
         insideMargin = PaddingValues(12.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("已选择 $selectedCount 个课次", style = MiuixTheme.textStyles.title3)
+            Text(tr(message(623, (selectedCount))), style = MiuixTheme.textStyles.title3)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = onClear, enabled = selectedCount > 0, modifier = Modifier.weight(1f)) { Text("取消选择") }
-                Button(onClick = onAttendance, enabled = selectedCount > 0, modifier = Modifier.weight(1f)) { Text("状态和收藏") }
+                Button(onClick = onClear, enabled = selectedCount > 0, modifier = Modifier.weight(1f)) { Text(tr(message(624))) }
+                Button(onClick = onAttendance, enabled = selectedCount > 0, modifier = Modifier.weight(1f)) { Text(tr(message(625))) }
             }
-            Button(onClick = onWrite, enabled = selectedCount > 0, modifier = Modifier.fillMaxWidth()) { Text("查看写入内容") }
-            Text("这里只查看将写入的课次；最后确认前不会修改任何日历。", color = palette.onSurfaceVariant)
+            Button(onClick = onWrite, enabled = selectedCount > 0, modifier = Modifier.fillMaxWidth()) { Text(tr(message(626))) }
+            Text(tr(message(627)), color = palette.onSurfaceVariant)
         }
     }
 }

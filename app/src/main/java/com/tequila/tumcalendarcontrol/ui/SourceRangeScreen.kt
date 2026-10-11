@@ -1,10 +1,12 @@
 /*
- * 职责：编辑 iCal 来源输出范围并明确区分“配置范围”与“已读数据覆盖期”。
- * 输入／输出：输入当前私有配置及只读来源摘要；输出经状态机校验后的本机范围配置或读取意图。
- * 外部副作用：日期选择器仅由系统显示；保存通过根层加密偏好持久化，读取必须再次由用户确认。
- * 不负责：iCal 网络请求、来源解析、Google 授权或任何日历写入。
+ * Aufgabe: Lesezeitraum bearbeiten, getrennt vom Zeitraum bereits gelesener Daten.
+ * Ein-/Ausgabe: Private Konfiguration und gelesene Zusammenfassung -> validierter Leseentwurf oder Leseabsicht.
+ * Nebenwirkungen: Nur ausdrücklich geöffneter Datumsdialog; Speichern/Lesen über den App-Einstieg.
+ * Nicht zuständig: iCal-Netzwerk, Quellen-Parsing, Google-Autorisierung oder Kalenderausgabe.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import android.app.DatePickerDialog
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -52,10 +54,10 @@ fun SourceRangeScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("选择读取时间", "按所选日期读取，最多五年。两端留空读取过去 120 天至未来 180 天；只填一端读取相邻约 300 天。无限重复课程无法无限展开。此范围只在点击“读取课程”时生效，不会删减已保存课程、已选课次或待写入内容。")
-        val context = LocalContext.current
-        DateRangeField("开始日期", startDate, "不限", onClick = { showDatePicker(context, startDate, usesDarkTheme) { startDate = it } })
-        DateRangeField("结束日期", endDate, "不限", onClick = { showDatePicker(context, endDate, usesDarkTheme) { endDate = it } })
+        InformationCard(message(162), message(631))
+        val context = localizedContext()
+        DateRangeField(message(465), startDate, message(474), onClick = { showDatePicker(context, startDate, usesDarkTheme) { startDate = it } })
+        DateRangeField(message(466), endDate, message(474), onClick = { showDatePicker(context, endDate, usesDarkTheme) { endDate = it } })
         QuickRangeButtons(
             onFromToday = { startDate = LocalDate.now(BerlinZone).format(DateText); endDate = "" },
             onNextNinetyDays = {
@@ -70,16 +72,16 @@ fun SourceRangeScreen(state: CalendarControlState) {
                 validation = state.saveSourceOutputRange(startDate, endDate)
             },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("保存下次读取时间") }
-        validation.forEach { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
+        ) { Text(tr(message(632))) }
+        validation.forEach { Text(tr(it), color = LocalTumPalette.current.onSurfaceVariant) }
         ReadCoverageCard(state)
         if (state.sourcePreview != null) {
             Button(
                 onClick = { validation = state.continueWithSavedCourses() },
                 enabled = !state.sourceReadInProgress,
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("使用已保存课程 · 下一步") }
-            Text("使用${state.sourceSnapshotLabel}，不重新读取，也不会按上方日期范围删减已选课次。上方范围只会在点击“读取课程”后影响新课程数据。", color = LocalTumPalette.current.onSurfaceVariant)
+            ) { Text(tr(message(633))) }
+            Text(tr(message(634, (state.sourceSnapshotLabel))), color = LocalTumPalette.current.onSurfaceVariant)
         }
         if (state.sourceReloadConfirmationPending) {
             SourceReloadConfirmationCard(state)
@@ -88,22 +90,22 @@ fun SourceRangeScreen(state: CalendarControlState) {
                 onClick = { validation = state.requestSourceReadForRange(startDate, endDate) },
                 enabled = !state.sourceReadInProgress,
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text(if (state.sourceReadInProgress) "正在读取课程…" else "读取课程") }
+            ) { Text(tr(if (state.sourceReadInProgress) message(635) else message(506))) }
         }
-        InformationCard("下一步：选择课程", "读取后先选择要管理的课程，再设置出席和收藏。写入前会显示本机和 Google 日历将受影响的数量；确认后才会写入。")
+        InformationCard(message(636), message(637))
     }
 }
 
-/** 重读确认只保存新的只读课程版本；旧版本保留一个可供用户切换，继续不是日历同步。 */
+/** Neulesebestätigung speichert nur neue Datenversion; eine frühere bleibt wählbar. Fortfahren ist keine Synchronisierung. */
 @Composable
 private fun SourceReloadConfirmationCard(state: CalendarControlState) {
     Card(modifier = Modifier.fillMaxWidth(), insideMargin = PaddingValues(14.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("重新读取课程", style = MiuixTheme.textStyles.title3)
-            Text("会保存为最新课程版本并清空本次选择；较早一次成功读取会保留，之后可自行切换。已保存的出席和收藏不变；是否继续？", color = LocalTumPalette.current.onSurfaceVariant)
+            Text(tr(message(638)), style = MiuixTheme.textStyles.title3)
+            Text(tr(message(639)), color = LocalTumPalette.current.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = { state.resolveSourceReloadConfirmation(false) }, modifier = Modifier.weight(1f)) { Text("取消") }
-                Button(onClick = { state.resolveSourceReloadConfirmation(true) }, modifier = Modifier.weight(1f)) { Text("重新读取") }
+                Button(onClick = { state.resolveSourceReloadConfirmation(false) }, modifier = Modifier.weight(1f)) { Text(tr(message(197))) }
+                Button(onClick = { state.resolveSourceReloadConfirmation(true) }, modifier = Modifier.weight(1f)) { Text(tr(message(640))) }
             }
         }
     }
@@ -117,10 +119,10 @@ private fun DateRangeField(label: String, value: String, emptyLabel: String, onC
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(label, style = MiuixTheme.textStyles.body1)
-                Text(if (value.isBlank()) emptyLabel else value, color = LocalTumPalette.current.onSurfaceVariant)
+                Text(tr(label), style = MiuixTheme.textStyles.body1)
+                Text(tr(if (value.isBlank()) emptyLabel else value), color = LocalTumPalette.current.onSurfaceVariant)
             }
-            Text("选择日期")
+            Text(tr(message(475)))
         }
     }
 }
@@ -128,27 +130,27 @@ private fun DateRangeField(label: String, value: String, emptyLabel: String, onC
 @Composable
 private fun QuickRangeButtons(onFromToday: () -> Unit, onNextNinetyDays: () -> Unit, onClear: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("快捷范围", style = MiuixTheme.textStyles.title3)
+        Text(tr(message(641)), style = MiuixTheme.textStyles.title3)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            Button(onClick = onFromToday, modifier = Modifier.weight(1f)) { Text("从今天起") }
-            Button(onClick = onNextNinetyDays, modifier = Modifier.weight(1f)) { Text("未来 90 天") }
+            Button(onClick = onFromToday, modifier = Modifier.weight(1f)) { Text(tr(message(642))) }
+            Button(onClick = onNextNinetyDays, modifier = Modifier.weight(1f)) { Text(tr(message(643))) }
         }
-        Button(onClick = onClear, modifier = Modifier.fillMaxWidth()) { Text("恢复默认读取范围") }
+        Button(onClick = onClear, modifier = Modifier.fillMaxWidth()) { Text(tr(message(644))) }
     }
 }
 
 @Composable
 private fun ReadCoverageCard(state: CalendarControlState) {
     val preview = state.sourcePreview
-    val coverage = if (preview == null) "还没有读取课程。读取后会在这里显示可用的时间。" else {
-        "${preview.firstManageableStart.toLocalDateText()} 至 ${preview.lastManageableEnd.toLocalDateText()}；共 ${preview.manageableOccurrenceCount} 条课程日程。"
+    val coverage = if (preview == null) message(645) else {
+        message(646, (preview.firstManageableStart.toLocalDateText()), (preview.lastManageableEnd.toLocalDateText()), (preview.manageableOccurrenceCount))
     }
-    InformationCard("已读取的课程时间", coverage)
+    InformationCard(message(647), coverage)
 }
 
-private fun Instant?.toLocalDateText(): String = this?.atZone(BerlinZone)?.toLocalDate()?.format(DateText) ?: "无"
+private fun Instant?.toLocalDateText(): String = this?.atZone(BerlinZone)?.toLocalDate()?.format(DateText) ?: message(648)
 
-/** 平台日期选择器沿用应用已解析的明暗模式，避免 Compose 深色页弹出浅色系统对话框。 */
+/** Plattform-Datumsdialog verwendet aufgelösten App-Hell/Dunkelmodus. */
 private fun showDatePicker(context: android.content.Context, it: String, usesDarkTheme: Boolean, onPicked: (String) -> Unit) {
     val initial = runCatching { LocalDate.parse(it) }.getOrElse { LocalDate.now(BerlinZone) }
     DatePickerDialog(

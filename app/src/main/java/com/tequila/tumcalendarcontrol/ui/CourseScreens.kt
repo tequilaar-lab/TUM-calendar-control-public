@@ -1,11 +1,14 @@
 /*
- * 职责：渲染课程总览、详情、本机显示编辑、搜索、收藏及其共享列表项。
- * 输入／输出：输入 CalendarControlState 的课程投影与已有回调；输出可滚动 Compose-Miuix 课程页面。
- * 外部副作用：无；按钮只调用既有状态入口，不读取来源、不保存偏好、不写入日历。
- * 不负责：页面路由、出席规则编辑、设置／输出页面或 Android 外部协调。
+ * Aufgabe: Übersicht, Details, lokale Bearbeitung, Suche und Favoriten mit gemeinsamen Listen rendern.
+ * Ein-/Ausgabe: CalendarControlState-Projektion und Rückrufe -> scrollbare Kursseiten.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Seitenrouting, Teilnahmeregelbearbeitung, Einstellungs-/Ausgabeseiten oder Android-Koordination.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 import com.tequila.tumcalendarcontrol.domain.browseKey
+import com.tequila.tumcalendarcontrol.domain.TumEventStatus
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -63,7 +66,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 internal fun OverviewScreen(state: CalendarControlState) {
     CourseList(
         courses = state.displayedCourses,
-        heading = if (state.sourceCatalogLoaded) "已读取的课程" else "课程总览",
+        heading = if (state.sourceCatalogLoaded) message(333) else message(334),
         browserStateKey = "overview",
         onCourseClick = state::openCourse,
     )
@@ -77,30 +80,40 @@ internal fun DetailScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard(course.displayTitle, "${course.displaySchedule} · ${course.displayLocation} · ${course.sourceStatus.label}")
-        InformationCard("本机显示修改", if (course.localOverride == CourseLocalOverride()) "还没有修改；正在显示课程原来的信息" else "已修改本机显示；课程原来的信息没有改变")
-        Button(onClick = state::openCourseEdit, modifier = Modifier.fillMaxWidth()) { Text("编辑名称、时间与地点") }
+        // Quellstatus bleibt fachlich unverändert; nur seine Erklärung wird lokalisiert.
+        val statusLabel = when (course.sourceStatus) {
+            TumEventStatus.UNKNOWN -> message(10)
+            TumEventStatus.FIX -> message(680)
+            TumEventStatus.PLANNED -> message(681)
+            TumEventStatus.MOVED -> message(682)
+            TumEventStatus.CANCELLED -> message(683)
+            TumEventStatus.REJECTED -> message(684)
+            TumEventStatus.DELETED -> message(685)
+        }
+        InformationCard(course.displayTitle, message(148, course.displaySchedule, course.displayLocation, statusLabel))
+        InformationCard(message(335), if (course.localOverride == CourseLocalOverride()) message(336) else message(337))
+        Button(onClick = state::openCourseEdit, modifier = Modifier.fillMaxWidth()) { Text(tr(message(338))) }
         InformationCard(
-            "当前状态：${course.attendance.label}",
-            "${course.attendance.colorLabel}色 · ${course.attendance.description}",
+            message(339, (course.attendance.label)),
+            message(199, (course.attendance.colorLabel), (course.attendance.description)),
         )
-        InformationCard("修改出席状态", "从本次或指定日期起生效；历史日程不改")
+        InformationCard(message(340), message(341))
         Button(onClick = state::openAttendance, modifier = Modifier.fillMaxWidth()) {
-            Icon(Icons.Rounded.Add, "修改出席状态")
-            Text("修改出席状态", modifier = Modifier.padding(start = 8.dp))
+            Icon(Icons.Rounded.Add, tr(message(340)))
+            Text(tr(message(340)), modifier = Modifier.padding(start = 8.dp))
         }
         Button(
             onClick = { state.toggleFavorite(course.id) },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Icon(if (course.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder, "切换收藏")
-            Text(if (course.isFavorite) "取消收藏" else "收藏课程", modifier = Modifier.padding(start = 8.dp))
+            Icon(if (course.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder, tr(message(342)))
+            Text(tr(if (course.isFavorite) message(229) else message(156)), modifier = Modifier.padding(start = 8.dp))
         }
-        state.feedback?.let { Text(it, color = palette.onSurfaceVariant) }
+        state.feedback?.let { Text(tr(it), color = palette.onSurfaceVariant) }
     }
 }
 
-/** 只编辑本机覆盖值；留空即恢复显示来源字段，不会回写 TUM。 */
+/** Nur lokale Änderungen bearbeiten; leere Werte übernehmen Quelle, kein Rückschreiben an TUM. */
 @Composable
 internal fun CourseEditScreen(state: CalendarControlState) {
     val course = state.selectedCourse
@@ -123,34 +136,34 @@ internal fun CourseEditScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("编辑这门课程", "修改适用于这门课的所有课次，下次确认写入时更新日历，不修改学校来源。名称和地点留空沿用来源；未改动时间则保留各课次原时间。修改星期会移动到同一周。")
-        TextField(title, { title = it }, Modifier.fillMaxWidth(), label = "名称（当前来源：${course.title}）")
-        TextField(location, { location = it }, Modifier.fillMaxWidth(), label = "地点（当前来源：${course.location}）")
-        Text("上课日", style = MiuixTheme.textStyles.title3)
+        InformationCard(message(343), message(344))
+        TextField(title, { title = it }, Modifier.fillMaxWidth(), label = tr(message(345, (course.title))))
+        TextField(location, { location = it }, Modifier.fillMaxWidth(), label = tr(message(346, (course.location))))
+        Text(tr(message(347)), style = MiuixTheme.textStyles.title3)
         androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             CourseWeekday.entries.forEach { day ->
                 Text(
-                    day.label,
+                    tr(day.label),
                     modifier = Modifier.clickable { weekday = day }.padding(6.dp),
                     color = if (weekday == day) LocalTumPalette.current.primary else LocalTumPalette.current.onSurfaceVariant,
                 )
             }
         }
-        Text("时间", style = MiuixTheme.textStyles.title3)
+        Text(tr(message(348)), style = MiuixTheme.textStyles.title3)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextField(startHour, { startHour = it }, Modifier.weight(1f), label = "开始时")
-            TextField(startMinute, { startMinute = it }, Modifier.weight(1f), label = "开始分")
-            TextField(endHour, { endHour = it }, Modifier.weight(1f), label = "结束时")
-            TextField(endMinute, { endMinute = it }, Modifier.weight(1f), label = "结束分")
+            TextField(startHour, { startHour = it }, Modifier.weight(1f), label = tr(message(349)))
+            TextField(startMinute, { startMinute = it }, Modifier.weight(1f), label = tr(message(350)))
+            TextField(endHour, { endHour = it }, Modifier.weight(1f), label = tr(message(351)))
+            TextField(endMinute, { endMinute = it }, Modifier.weight(1f), label = tr(message(352)))
         }
-        validation?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
+        validation?.let { Text(tr(it), color = LocalTumPalette.current.onSurfaceVariant) }
         Button(
             onClick = {
                 val timeChanged = weekday != seedWeekday || startHour != seedStartHour || startMinute != seedStartMinute || endHour != seedEndHour || endMinute != seedEndMinute
                 val time = if (!timeChanged) course.localOverride.meetingTime else runCatching {
                     CourseMeetingTime(weekday, startHour.toInt(), startMinute.toInt(), endHour.toInt(), endMinute.toInt())
                 }.getOrElse {
-                    validation = "请填写合法时间：小时 0–23、分钟 0–59，结束须晚于开始。"
+                    validation = message(353)
                     return@Button
                 }
                 state.updateSelectedCourseOverride(
@@ -159,7 +172,7 @@ internal fun CourseEditScreen(state: CalendarControlState) {
                 state.handleBack()
             },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("保存课程修改") }
+        ) { Text(tr(message(354))) }
     }
 }
 
@@ -167,7 +180,7 @@ internal fun CourseEditScreen(state: CalendarControlState) {
 internal fun SearchScreen(state: CalendarControlState) {
     AdaptiveCourseBrowser(
         courses = state.searchedCourses,
-        heading = if (state.searchQuery.isBlank()) "可搜索的课程" else "搜索结果",
+        heading = if (state.searchQuery.isBlank()) message(355) else message(356),
         browserStateKey = "search",
         onCourseClick = state::openCourse,
         leadingItems = {
@@ -176,7 +189,7 @@ internal fun SearchScreen(state: CalendarControlState) {
                 value = state.searchQuery,
                 onValueChange = { state.searchQuery = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = "搜索课程",
+                label = tr(message(155)),
             )
             }
         },
@@ -187,10 +200,10 @@ internal fun SearchScreen(state: CalendarControlState) {
 internal fun FavoritesScreen(state: CalendarControlState) {
     AdaptiveCourseBrowser(
         courses = state.favoriteCourses,
-        heading = "收藏列表",
+        heading = message(357),
         browserStateKey = "favorites",
         onCourseClick = state::openCourse,
-        leadingItems = { item { InformationCard("已收藏课程", "收藏只影响显示，不改变出席状态") } },
+        leadingItems = { item { InformationCard(message(358), message(359)) } },
     )
 }
 
@@ -199,7 +212,7 @@ private fun CourseList(courses: List<Course>, heading: String, browserStateKey: 
     AdaptiveCourseBrowser(courses, heading, browserStateKey, onCourseClick)
 }
 
-/** 展开屏以列表＋辅助面板利用额外宽度；窄屏保持单一可滚动课程列表。 */
+/** Breite Ansicht mit Liste und Zusatzbereich; schmale Ansicht als einzelne scrollbare Liste. */
 @Composable
 private fun AdaptiveCourseBrowser(
     courses: List<Course>,
@@ -266,7 +279,7 @@ private fun CourseBrowserSupportPane(
         modifier = modifier.verticalScroll(rememberScrollState()).padding(bottom = FloatingNavigationContentClearance),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("课程目录", "左侧是完整列表；这里是同一份“课程名 → 类型 → 课次”索引，可独立滚动和展开。")
+        InformationCard(message(360), message(361))
         groups.forEach { group ->
             CourseDirectoryGroup(
                 group = group,
@@ -276,11 +289,11 @@ private fun CourseBrowserSupportPane(
                 onTeachingTypeExpandedChange = onTeachingTypeExpandedChange,
             )
         }
-        InformationCard("安全说明", "课程名称和类型只用于浏览分组。写入、更新和清理始终使用来源 UID 与具体课次身份。")
+        InformationCard(message(362), message(363))
     }
 }
 
-/** 让总览、搜索和收藏共用同一批列表项，避免在可滚动页面中嵌套 LazyColumn。 */
+/** Gemeinsame Listenelemente für Übersicht, Suche und Favoriten; keine verschachtelte LazyColumn. */
 private fun LazyListScope.courseListItems(
     groups: List<CourseDisplayGroup>,
     heading: String,
@@ -290,9 +303,9 @@ private fun LazyListScope.courseListItems(
     onGroupExpandedChange: (String) -> Unit,
     onTeachingTypeExpandedChange: (String) -> Unit,
 ) {
-    item { Text(heading, style = MiuixTheme.textStyles.title3) }
+    item { Text(tr(heading), style = MiuixTheme.textStyles.title3) }
     if (groups.isEmpty()) {
-        item { InformationCard("暂无课程", "请先读取课程或检查筛选条件。") }
+        item { InformationCard(message(364), message(365)) }
     } else {
         groups.forEach { group ->
             item(key = "course-group:${group.key}") {
@@ -337,12 +350,12 @@ private fun LazyListScope.courseListItems(
     }
 }
 
-/** 同名同课程基础名先折叠为浏览卡片；展开只改变当前页面状态，不会合并课程身份。 */
+/** Gleiche Basisnamen visuell zusammenfassen; Aufklappen verändert nur Seitenzustand, keine Kursidentitäten. */
 @Composable
 private fun CourseGroupCard(group: CourseDisplayGroup, expanded: Boolean, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
-    // 左箭头顺时针旋转会朝上；逆时针 90° 才是使用者预期的向下展开指示。
-    val arrowRotation by animateFloatAsState(if (expanded) -90f else 0f, label = "课程组箭头旋转")
+    // Linkspfeil gegen Uhrzeigersinn um 90 Grad drehen, damit er beim Öffnen nach unten zeigt.
+    val arrowRotation by animateFloatAsState(if (expanded) -90f else 0f, label = message(366))
     Card(
         modifier = Modifier.fillMaxWidth().clickable(
             interactionSource = interactionSource,
@@ -353,26 +366,26 @@ private fun CourseGroupCard(group: CourseDisplayGroup, expanded: Boolean, onClic
     ) {
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(group.displayTitle, style = MiuixTheme.textStyles.body1)
+                Text(tr(group.displayTitle), style = MiuixTheme.textStyles.body1)
                 Text(
-                    if (expanded) "${group.teachingTypeCount} 种教学类型、${group.courses.size} 个课次已展开；点按可收起。" else "${group.teachingTypeCount} 种教学类型、${group.courses.size} 个课次；点按查看。",
+                    tr(if (expanded) message(367, (group.teachingTypeCount), (group.courses.size)) else message(368, (group.teachingTypeCount), (group.courses.size))),
                     color = LocalTumPalette.current.onSurfaceVariant,
                 )
             }
             Icon(
                 Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                if (expanded) "收起课程" else "展开课程",
+                tr(if (expanded) message(369) else message(370)),
                 modifier = Modifier.rotate(arrowRotation),
             )
         }
     }
 }
 
-/** 第二层仅显示可识别的教学类型；其展开才显露可独立操作的具体课次。 */
+/** Zweite Ebene zeigt erkannte Lehrtypen; erst Aufklappen zeigt einzeln bedienbare Termine. */
 @Composable
 private fun CourseTeachingTypeCard(typeGroup: CourseTeachingTypeGroup, expanded: Boolean, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
-    val arrowRotation by animateFloatAsState(if (expanded) -90f else 0f, label = "教学类型箭头旋转")
+    val arrowRotation by animateFloatAsState(if (expanded) -90f else 0f, label = message(371))
     Card(
         modifier = Modifier.fillMaxWidth().padding(start = 14.dp).clickable(
             interactionSource = interactionSource,
@@ -382,15 +395,15 @@ private fun CourseTeachingTypeCard(typeGroup: CourseTeachingTypeGroup, expanded:
         insideMargin = PaddingValues(12.dp),
     ) {
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Text("└", color = LocalTumPalette.current.onSurfaceVariant, modifier = Modifier.padding(end = 8.dp))
+            Text(tr("└"), color = LocalTumPalette.current.onSurfaceVariant, modifier = Modifier.padding(end = 8.dp))
             Column(Modifier.weight(1f)) {
-                Text(typeGroup.label, style = MiuixTheme.textStyles.body2)
-                Text("${typeGroup.courses.size} 个课次", color = LocalTumPalette.current.onSurfaceVariant)
+                Text(tr(typeGroup.label), style = MiuixTheme.textStyles.body2)
+                Text(tr(message(372, (typeGroup.courses.size))), color = LocalTumPalette.current.onSurfaceVariant)
             }
             CourseTypeRenameButton(typeGroup)
             Icon(
                 Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                if (expanded) "收起${typeGroup.label}" else "展开${typeGroup.label}",
+                tr(if (expanded) message(373, (typeGroup.label)) else message(374, (typeGroup.label))),
                 modifier = Modifier.rotate(arrowRotation),
             )
         }
@@ -399,7 +412,7 @@ private fun CourseTeachingTypeCard(typeGroup: CourseTeachingTypeGroup, expanded:
 
 internal fun directoryArrowRotation(expanded: Boolean): Float = if (expanded) 90f else 0f
 
-/** 宽屏右列用紧凑树形索引复用左列的展开状态，不复制或改变任一课程数据。 */
+/** Kompakter Baum rechts verwendet denselben Aufklappzustand; keine Kurskopie oder Datenänderung. */
 @Composable
 private fun CourseDirectoryGroup(
     group: CourseDisplayGroup,
@@ -409,15 +422,15 @@ private fun CourseDirectoryGroup(
     onTeachingTypeExpandedChange: (String) -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val arrowRotation by animateFloatAsState(directoryArrowRotation(expanded), label = "宽屏课程目录箭头")
+    val arrowRotation by animateFloatAsState(directoryArrowRotation(expanded), label = message(375))
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth().clickable(interactionSource, indication = null) { onGroupExpandedChange(group.key) }.padding(8.dp),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         ) {
-            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, if (expanded) "收起课程目录" else "展开课程目录", modifier = Modifier.rotate(arrowRotation))
-            Text(group.displayTitle, modifier = Modifier.padding(start = 8.dp).weight(1f), style = MiuixTheme.textStyles.body2)
-            Text("${group.courses.size}", color = LocalTumPalette.current.onSurfaceVariant)
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, tr(if (expanded) message(376) else message(377)), modifier = Modifier.rotate(arrowRotation))
+            Text(tr(group.displayTitle), modifier = Modifier.padding(start = 8.dp).weight(1f), style = MiuixTheme.textStyles.body2)
+            Text(tr(message(378, (group.courses.size))), color = LocalTumPalette.current.onSurfaceVariant)
         }
         AnimatedVisibility(visible = expanded, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
             Column(modifier = Modifier.padding(start = 24.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -427,15 +440,15 @@ private fun CourseDirectoryGroup(
                         modifier = Modifier.fillMaxWidth().clickable(interactionSource, indication = null) { onTeachingTypeExpandedChange(typeGroup.key) }.padding(6.dp),
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                     ) {
-                        val typeRotation by animateFloatAsState(directoryArrowRotation(typeExpanded), label = "目录类型箭头")
-                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, if (typeExpanded) "收起教学类型" else "展开教学类型", modifier = Modifier.rotate(typeRotation))
-                        Text(typeGroup.label, modifier = Modifier.padding(start = 8.dp).weight(1f))
-                        Text("${typeGroup.courses.size}", color = LocalTumPalette.current.onSurfaceVariant)
+                        val typeRotation by animateFloatAsState(directoryArrowRotation(typeExpanded), label = message(379))
+                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, tr(if (typeExpanded) message(380) else message(381)), modifier = Modifier.rotate(typeRotation))
+                        Text(tr(typeGroup.label), modifier = Modifier.padding(start = 8.dp).weight(1f))
+                        Text(tr(message(378, (typeGroup.courses.size))), color = LocalTumPalette.current.onSurfaceVariant)
                     }
                     AnimatedVisibility(visible = typeExpanded, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                         Column(modifier = Modifier.padding(start = 22.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             typeGroup.courses.forEach { course ->
-                                Text("• ${course.displaySchedule}", color = LocalTumPalette.current.onSurfaceVariant)
+                                Text(tr(message(382, (course.displaySchedule))), color = LocalTumPalette.current.onSurfaceVariant)
                             }
                         }
                     }

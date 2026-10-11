@@ -1,7 +1,8 @@
 /*
- * 职责：回归验证安装前审查缺陷的正确行为。
- * 输入输出：仅合成课程与内存网关；无网络、账户、手机、文件偏好或真实日历操作。
- * 不负责：网络、真实日历或 UI 真机验证。
+ * Aufgabe: synthetische Regressionstests für PreinstallFixRegression.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.ui
 
@@ -59,7 +60,7 @@ class PreinstallFixRegressionTest {
         state.pendingAttendanceScope = AttendanceEditScope.ONLY_THIS_OCCURRENCE
         state.confirmAttendance()
         assertTrue(state.ruleLedger.rules.single().instanceOverrides.containsKey("instance-a"))
-        // 1.0.0 保存范围后直接加入待写入集合，不应再反向切换为取消选择。
+        // Seit 1.0.0 Bereichsspeicherung fügt direkt zur Ausgabe hinzu; nicht wieder abwählen.
         assertTrue(item().identity in state.selectedSourceOccurrences)
         state.prepareCalendarWrite()
         assertEquals(AttendanceState.MUST_ATTEND, state.currentDesiredEvents().single().attendanceState)

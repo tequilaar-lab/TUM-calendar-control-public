@@ -1,8 +1,8 @@
 /*
- * 职责：验证离线同步预览正确区分变更与 Fixplatz 跳过原因。
- * 输入／输出：输入合成差异与跳过事件；输出预览计数断言。
- * 外部副作用：无。
- * 不负责：确认写入、权限、网络或真实日历显示。
+ * Aufgabe: synthetische Regressionstests für SyncPreview.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

@@ -1,10 +1,12 @@
 /*
- * 职责：录入和移除应用拥有的手动校园事项，供下一次写入日历时批量输出。
- * 输入／输出：输入用户填写的标题、日期、时分和三态；输出本机 RuleLedger 编辑请求。
- * 外部副作用：无；事项保存到应用私有规则资料库，不会立即写入日历。
- * 不负责：来源课程编辑、真实日期选择器、OAuth 或执行同步。
+ * Aufgabe: Eigene Campustermine für nächste bestätigte Ausgabe erfassen oder entfernen.
+ * Ein-/Ausgabe: Titel, Datum, Uhrzeit und Status -> lokale Regelbestands-Änderungsabsicht.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Quellenkursbearbeitung, echte Datumsdialoge, OAuth oder Synchronisierungsausführung.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -44,37 +46,37 @@ fun ManualEventsScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        InformationCard("添加校园事项", "日期和时间均按欧洲/柏林时间保存。可先添加多条事项；下次确认写入时才会处理。")
-        TextField(title, { title = it }, Modifier.fillMaxWidth(), label = "事项名称")
-        TextField(date, { date = it }, Modifier.fillMaxWidth(), label = "日期（YYYY-MM-DD）")
+        InformationCard(message(430), message(431))
+        TextField(title, { title = it }, Modifier.fillMaxWidth(), label = tr(message(432)))
+        TextField(date, { date = it }, Modifier.fillMaxWidth(), label = tr(message(433)))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextField(startHour, { startHour = it }, Modifier.weight(1f), label = "开始时")
-            TextField(startMinute, { startMinute = it }, Modifier.weight(1f), label = "开始分")
-            TextField(endHour, { endHour = it }, Modifier.weight(1f), label = "结束时")
-            TextField(endMinute, { endMinute = it }, Modifier.weight(1f), label = "结束分")
+            TextField(startHour, { startHour = it }, Modifier.weight(1f), label = tr(message(349)))
+            TextField(startMinute, { startMinute = it }, Modifier.weight(1f), label = tr(message(350)))
+            TextField(endHour, { endHour = it }, Modifier.weight(1f), label = tr(message(351)))
+            TextField(endMinute, { endMinute = it }, Modifier.weight(1f), label = tr(message(352)))
         }
         AttendanceState.entries.forEach { option ->
             Button(onClick = { attendance = option }, modifier = Modifier.fillMaxWidth()) {
-                Text(if (attendance == option) "✓ ${option.label}（${option.colorLabel}）" else "${option.label}（${option.colorLabel}）")
+                Text(tr(if (attendance == option) message(434, (option.label), (option.colorLabel)) else message(435, (option.label), (option.colorLabel))))
             }
         }
         Button(
             onClick = {
                 state.addManualEvent(title, date, startHour, startMinute, endHour, endMinute, attendance)
-                if (state.feedback?.startsWith("校园事项已保存") == true) title = ""
+                if (state.feedback?.startsWith(message(436)) == true) title = ""
             },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("保存事项到这台设备") }
+        ) { Text(tr(message(437))) }
         state.ruleLedger.manualEvents.forEach { item ->
-            InformationCard("${item.title} · ${item.attendanceState.label}", item.berlinTimeSummary())
-            Button(onClick = { state.removeManualEvent(item.id) }, modifier = Modifier.fillMaxWidth()) { Text("删除此事项") }
+            InformationCard(message(147, (item.title), (item.attendanceState.label)), item.berlinTimeSummary())
+            Button(onClick = { state.removeManualEvent(item.id) }, modifier = Modifier.fillMaxWidth()) { Text(tr(message(438))) }
         }
-        state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
+        state.feedback?.let { Text(tr(it), color = LocalTumPalette.current.onSurfaceVariant) }
     }
 }
 
 private fun ManualScheduleItem.berlinTimeSummary(): String {
     val zone = ZoneId.of("Europe/Berlin")
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-    return "${startsAt.atZone(zone).format(formatter)} 至 ${endsAt.atZone(zone).format(formatter)}（欧洲/柏林）"
+    return message(439, (startsAt.atZone(zone).format(formatter)), (endsAt.atZone(zone).format(formatter)))
 }

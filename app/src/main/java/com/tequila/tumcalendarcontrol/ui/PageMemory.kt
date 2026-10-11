@@ -1,10 +1,12 @@
 /*
- * 职责：保存非敏感页面偏好及稳定选择身份；与正式出席规则分离。
- * 输入／输出：页面记忆与 JSON；输出恢复值，损坏字段安全回退。
- * 外部副作用：仅应用私有偏好；不包含令牌、来源地址或执行确认。
- * 不负责：日历访问、规则存储或自动执行。
+ * Aufgabe: Unkritische Seitenpräferenzen und stabile Auswahlidentitäten getrennt von Regeln speichern.
+ * Ein-/Ausgabe: Seitenwerte und JSON -> Wiederherstellung mit sicherem Feldfallback.
+ * Nebenwirkungen: Nur private Seitenpräferenzen, keine Adressen oder Token.
+ * Nicht zuständig: Kalenderzugriff, Regelspeicherung oder automatische Ausführung.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import android.content.Context
 import com.tequila.tumcalendarcontrol.sync.SourceOccurrenceIdentity
@@ -48,6 +50,6 @@ class PageMemoryPreferences(context: Context) {
             .put("cleanupTargets", JSONArray(memory.cleanupTargets.toList())).put("cleanupStart", memory.cleanupStart).put("cleanupEnd", memory.cleanupEnd)
             .put("search", memory.search).put("sourceSearch", memory.sourceSearch).put("sourceFilter", memory.sourceFilter)
             .put("visibleSourceStatuses", JSONArray(memory.visibleSourceStatuses.toList()))
-        check(preferences.edit().putString("data", json.toString()).commit()) { "页面选择未能保存" }
+        check(preferences.edit().putString("data", json.toString()).commit()) { message(483) }
     }
 }

@@ -1,8 +1,8 @@
 /*
- * 职责：以固定合成状态记录并校验关键 Compose 页面截图，防止既有布局回归。
- * 输入／输出：输入内存 CalendarControlState 与固定 Robolectric 尺寸；输出已确认的 PNG 基线或差异报告。
- * 外部副作用：仅在显式 Roborazzi 记录任务写入 src/test/screenshots；不读取网络、账户、iCal 或日历。
- * 不负责：荣耀真机状态栏、Google 授权、本机 Calendar Provider 或真实日历写入验证。
+ * Aufgabe: feste synthetische Compose-Ansichten aufnehmen und auf Layoutregression prüfen.
+ * Ein-/Ausgabe: feste Robolectric-Größen und Speicherzustände -> PNG-Baselines/Differenzberichte.
+ * Nebenwirkungen: nur ausdrücklich gestartete Bildaufnahme schreibt src/test/screenshots.
+ * Nicht zuständig: echte HONOR-Systemleisten, Google-Autorisierung oder Calendar-Provider-Ausgabe.
  */
 package com.tequila.tumcalendarcontrol.ui
 
@@ -203,7 +203,7 @@ class CalendarControlScreenshotTest {
         assertEquals(listOf("自定义类型"), state.courseTypeNames.values.toList())
     }
 
-    /** 仅渲染日期选择组件，以稳定审查月格本身，不受来源选择页固定操作栏高度影响。 */
+    /** Datumsbrowser isoliert rendern, damit Aktionsleistenhöhe die Monatsrasterprüfung nicht beeinflusst. */
     private fun renderDateBrowser(state: CalendarControlState) {
         composeRule.setContent {
             TumCalendarTheme(mode = state.themeMode) {
@@ -218,7 +218,7 @@ class CalendarControlScreenshotTest {
     }
 
     private fun capture(name: String) {
-        // Compose 专用捕获支持 Miuix 的圆角 Shader；UI 树导出由项目 Gradle 配置固定关闭。
+        // Compose-Bildaufnahme unterstützt Miuix-Shader; UI-Baumexport ist in Gradle ausgeschaltet.
         composeRule.onRoot().captureRoboImage("src/test/screenshots/$name.png")
     }
 

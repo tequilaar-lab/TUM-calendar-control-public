@@ -1,8 +1,8 @@
 /*
- * 职责：验证多目标预览、失败隔离与映射限定撤销。
- * 输入／输出：输入合成绑定和内存网关；输出差异、映射与失败摘要断言。
- * 外部副作用：无。
- * 不负责：Android Provider、OAuth、Google 网络或真机测试。
+ * Aufgabe: synthetische Regressionstests für ManagedSyncEngine.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

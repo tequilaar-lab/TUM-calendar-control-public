@@ -1,10 +1,12 @@
 /*
- * 职责：提供三态出席选择与四种统一生效范围。
- * 输入／输出：输入当前选课与待确认状态；输出用户选择并在确认后交给上层状态机。
- * 外部副作用：无，不直接写入日历、数据库或网络。
- * 不负责：真实来源实例选择器；当前合成原型只保存用户选择，不写入日历。
+ * Aufgabe: Dreizustandsauswahl mit vier gemeinsamen Geltungsbereichen darstellen.
+ * Ein-/Ausgabe: Teilnahmeentwurf und Bereich -> ausdrückliche Bestätigungsabsicht.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Echte Quelleninstanzauswahl; der synthetische Prototyp speichert nur die Auswahl und schreibt keine Kalender.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
@@ -36,21 +38,21 @@ fun AttendanceScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("为“${state.selectedCourse.title}”选择状态", style = MiuixTheme.textStyles.title3)
-        Text("范围按已保存的完整原始课名、类型和组别匹配。保存后加入待写入选择；写入仍受日期范围限制，学校来源和日历尚不改变。")
+        Text(tr(message(193, (state.selectedCourse.title))), style = MiuixTheme.textStyles.title3)
+        Text(tr(message(194)))
         AttendanceOption(AttendanceState.MUST_ATTEND, state)
         AttendanceOption(AttendanceState.CHOOSE_TO_ATTEND, state)
         AttendanceOption(AttendanceState.STOP_ATTENDING, state)
-        Text("生效范围", style = MiuixTheme.textStyles.title3)
+        Text(tr(message(195)), style = MiuixTheme.textStyles.title3)
         AttendanceEditScope.entries.forEach { scope -> AttendanceScopeOption(scope, state) }
         if (state.pendingAttendanceScope == AttendanceEditScope.SPECIFIED_AND_FUTURE) TextField(
             value = state.pendingEffectiveDate,
             onValueChange = { state.pendingEffectiveDate = it },
             modifier = Modifier.fillMaxWidth(),
-            label = "指定从这天起（YYYY-MM-DD）",
+            label = tr(message(196)),
         )
         state.feedback?.let { message ->
-            Text(message, color = LocalTumPalette.current.onSurfaceVariant)
+            Text(tr(message), color = LocalTumPalette.current.onSurfaceVariant)
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -58,14 +60,14 @@ fun AttendanceScreen(state: CalendarControlState) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             TextButton(
-                text = "取消",
+                text = tr(message(197)),
                 onClick = { state.open(AppScreen.DETAIL) },
                 modifier = Modifier.weight(1f),
             )
             Button(
                 onClick = state::confirmAttendance,
                 modifier = Modifier.weight(2f),
-            ) { Text("确认") }
+            ) { Text(tr(message(198))) }
         }
     }
 }
@@ -80,8 +82,8 @@ private fun AttendanceScopeOption(scope: AttendanceEditScope, state: CalendarCon
         Row(verticalAlignment = Alignment.CenterVertically) {
             RadioButton(selected = selected, onClick = { state.pendingAttendanceScope = scope })
             Column(modifier = Modifier.padding(start = 8.dp)) {
-                Text(scope.label, style = MiuixTheme.textStyles.body1)
-                Text(scope.description, color = LocalTumPalette.current.onSurfaceVariant)
+                Text(tr(scope.label), style = MiuixTheme.textStyles.body1)
+                Text(tr(scope.description), color = LocalTumPalette.current.onSurfaceVariant)
             }
         }
     }
@@ -101,8 +103,8 @@ private fun AttendanceOption(option: AttendanceState, state: CalendarControlStat
             RadioButton(selected = selected, onClick = { state.pendingAttendance = option })
             Spacer(Modifier.padding(4.dp))
             Column(modifier = Modifier.padding(start = 4.dp, end = 8.dp)) {
-                Text(option.label, style = MiuixTheme.textStyles.title3)
-                Text("${option.colorLabel}色 · ${option.description}", color = palette.onSurfaceVariant)
+                Text(tr(option.label), style = MiuixTheme.textStyles.title3)
+                Text(tr(message(199, (option.colorLabel), (option.description))), color = palette.onSurfaceVariant)
             }
             StatusDot(option)
         }

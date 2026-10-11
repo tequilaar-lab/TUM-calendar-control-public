@@ -1,8 +1,8 @@
 /*
- * 职责：验证离线出席规则的关键业务边界。
- * 输入／输出：使用合成规则和实例，断言解析后的状态或不导入结果。
- * 外部副作用：无，不读取网络、文件、真实日历或设备。
- * 不负责：ICS 重复事件解析与 Android 端到端同步测试。
+ * Aufgabe: synthetische Regressionstests für AttendanceResolver.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.domain
 

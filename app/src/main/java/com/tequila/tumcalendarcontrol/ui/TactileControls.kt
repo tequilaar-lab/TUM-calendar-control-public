@@ -1,10 +1,12 @@
 /*
- * 职责：提供符合 Compose-Miuix 视觉令牌的可复用按压反馈图标与底部导航项。
- * 输入／输出：输入图标、文字、选中态和点击回调；输出带圆形／圆角按压色与缩放反馈的控件。
- * 外部副作用：仅在用户点击时调用上层回调。
- * 不负责：页面导航决策、主题持久化、Material UI 组件或真实日历操作。
+ * Aufgabe: Wiederverwendbare Druckrückmeldung für Symbole und Navigation mit Compose-Miuix-Farben bieten.
+ * Ein-/Ausgabe: Symbole, Texte, Auswahl und Rückrufe -> Druckfarbe und Skalierungsrückmeldung.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Navigationsentscheidungen, Themenpersistenz, Material-UI-Komponenten oder echte Kalenderaktionen.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -37,7 +39,7 @@ import top.yukonga.miuix.kmp.theme.LocalContentColor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.CompositionLocalProvider
 
-/** 顶栏使用的圆形触感按钮：按住时缩小且出现明显圆形着色。 */
+/** Runder Druckknopf im Kopfbereich: beim Drücken kleiner und deutlich eingefärbt. */
 @Composable
 fun TactileIconButton(
     icon: ImageVector,
@@ -53,11 +55,11 @@ fun TactileIconButton(
         restingColor = Color.Transparent,
         pressedColor = palette.primary.copy(alpha = 0.18f),
     ) {
-        Icon(icon, contentDescription)
+        Icon(icon, tr(contentDescription))
     }
 }
 
-/** 顶栏个人资料入口：显示可恢复的首字与颜色，但不代表登录账户。 */
+/** Lokaler Profileinstieg mit wiederherstellbarem Anfangszeichen/Farbe; kein angemeldetes Konto. */
 @Composable
 fun TactileProfileButton(profile: UserProfile, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val palette = LocalTumPalette.current
@@ -72,7 +74,7 @@ fun TactileProfileButton(profile: UserProfile, onClick: () -> Unit, modifier: Mo
     }
 }
 
-/** 非图片头像的视觉表示；颜色来自本机偏好，文字只使用昵称第一个可见字符。 */
+/** Avatar ohne Bild; lokale Farbe und erstes sichtbares Zeichen des Namens. */
 @Composable
 fun ProfileAvatar(profile: UserProfile, modifier: Modifier = Modifier) {
     val palette = LocalTumPalette.current
@@ -84,14 +86,14 @@ fun ProfileAvatar(profile: UserProfile, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = profile.displayName.trim().ifBlank { UserProfile().displayName }.take(1),
+            text = tr(profile.displayName.trim().ifBlank { UserProfile().displayName }).take(1),
             color = Color.White,
             style = MiuixTheme.textStyles.body1,
         )
     }
 }
 
-/** 浮动底栏的单项：选中态和按压态独立，使切换时有可见确认感。 */
+/** Navigationspunkt mit getrenntem Auswahl-/Druckzustand für sichtbare Bestätigung. */
 @Composable
 fun TactileNavigationItem(
     icon: ImageVector,
@@ -113,14 +115,14 @@ fun TactileNavigationItem(
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(icon, label)
-                Text(label, color = contentColor, style = MiuixTheme.textStyles.body2)
+                Icon(icon, tr(label))
+                Text(tr(label), color = contentColor, style = MiuixTheme.textStyles.body2)
             }
         }
     }
 }
 
-/** 将触感状态集中在单一容器，避免各页面重复实现点击、形状与按压动画。 */
+/** Druckzustand in einem Container bündeln; Klick, Form und Animation nicht auf jeder Seite duplizieren. */
 @Composable
 private fun TactileSurface(
     modifier: Modifier,
@@ -132,10 +134,10 @@ private fun TactileSurface(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.92f else 1f, label = "按压缩放")
+    val scale by animateFloatAsState(if (pressed) 0.92f else 1f, label = message(667))
     val backgroundColor by animateColorAsState(
         if (pressed) pressedColor else restingColor,
-        label = "按压着色",
+        label = message(668),
     )
     Box(
         modifier = modifier

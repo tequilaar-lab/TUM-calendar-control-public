@@ -1,10 +1,12 @@
 /*
- * 职责：以用户选择的 SAF 文件导出、导入并二次确认替换本机规则与手动事项。
- * 输入／输出：输入当前规则资料和待确认备份；输出明确的文件选择／确认意图。
- * 外部副作用：无；文件读写由根层 Activity Result 在用户选择 URI 后完成。
- * 不负责：备份私有连接信息、替换事件映射、自动同步或改写任何日历。
+ * Aufgabe: Regeln und eigene Termine über ausdrücklich gewählte SAF-Datei sichern/wiederherstellen und bestätigen.
+ * Ein-/Ausgabe: Regelbestand und Sicherungsentwurf -> ausdrücklich bestätigte Datei-/Wiederherstellungsabsicht.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Private Verbindungen, Ersetzen von Terminzuordnungen, automatische Synchronisierung oder Kalenderänderungen.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,17 +29,17 @@ fun RuleBackupScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("备份出席规则与校园事项", "包含 UID 级及课程组级出席规则、手动校园事项；不包含收藏、显示改名、课程地址、Google 登录、日历或已写入日程。")
-        InformationCard("当前保存的内容", "${state.ruleLedger.rules.size} 条出席设置 · ${state.ruleLedger.manualEvents.size} 条校园事项")
-        Button(onClick = state::requestRuleBackupExport, modifier = Modifier.fillMaxWidth()) { Text("导出出席规则与事项") }
-        Button(onClick = state::requestRuleBackupImport, modifier = Modifier.fillMaxWidth()) { Text("从文件恢复出席规则与事项") }
+        InformationCard(message(487), message(488))
+        InformationCard(message(489), message(490, (state.ruleLedger.rules.size), (state.ruleLedger.manualEvents.size)))
+        Button(onClick = state::requestRuleBackupExport, modifier = Modifier.fillMaxWidth()) { Text(tr(message(491))) }
+        Button(onClick = state::requestRuleBackupImport, modifier = Modifier.fillMaxWidth()) { Text(tr(message(492))) }
         if (pending != null) {
-            InformationCard("确认恢复出席规则与事项", "将替换为 ${pending.summary.ruleCount} 条 UID 规则、${pending.summary.groupRuleCount} 条课程组规则与 ${pending.summary.manualEventCount} 条校园事项。本机已写入日程不受影响。确认前不会更改任何内容。")
+            InformationCard(message(493), message(494, (pending.summary.ruleCount), (pending.summary.groupRuleCount), (pending.summary.manualEventCount)))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = state::cancelRuleBackupImport, modifier = Modifier.weight(1f)) { Text("取消") }
-                    Button(onClick = state::confirmRuleBackupImport, modifier = Modifier.weight(1f)) { Text("确认恢复") }
+                Button(onClick = state::cancelRuleBackupImport, modifier = Modifier.weight(1f)) { Text(tr(message(197))) }
+                    Button(onClick = state::confirmRuleBackupImport, modifier = Modifier.weight(1f)) { Text(tr(message(495))) }
             }
         }
-        state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant) }
+        state.feedback?.let { Text(tr(it), color = LocalTumPalette.current.onSurfaceVariant) }
     }
 }

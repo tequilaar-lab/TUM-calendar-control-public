@@ -1,10 +1,12 @@
 /*
- * 职责：以只读月格浏览来源日程，并在点选日期后提供该日的具体课次选择入口。
- * 输入／输出：输入运行内来源实例、当前输出范围和课次选择集；输出点按选择意图。
- * 外部副作用：无；不保存月视图、来源内容或用户选择。
- * 不负责：日历 Provider、重复规则展开、范围保存或同步候选计算。
+ * Aufgabe: Quelltermine im lesenden Monatsraster anzeigen und Tagesauswahl anbieten.
+ * Ein-/Ausgabe: Laufzeitinstanzen, Zeitraum und Auswahl -> Monatsraster und Tagesauswahlabsicht.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Calendar Provider, Wiederholungsauflösung, Bereichsspeicherung oder Kandidatenberechnung.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,7 +42,6 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val BrowserZone = ZoneId.of("Europe/Berlin")
-private val MonthTitle = DateTimeFormatter.ofPattern("yyyy年M月")
 
 @Composable
 fun SourceCourseDateBrowser(state: CalendarControlState, outputWindow: SourceOutputDateWindow, modifier: Modifier = Modifier, bottomClearance: androidx.compose.ui.unit.Dp = 16.dp) {
@@ -62,14 +63,14 @@ fun SourceCourseDateBrowser(state: CalendarControlState, outputWindow: SourceOut
         contentPadding = PaddingValues(bottom = bottomClearance),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item { InformationCard("按日期找课次", "带圆点的日期有可选择的具体上课时间。") }
+        item { InformationCard(message(596), message(597)) }
         item { MonthNavigation(month, onPrevious = { monthText = month.minusMonths(1).toString() }, onNext = { monthText = month.plusMonths(1).toString() }) }
         item { SourceMonthGrid(month, byDate, chosenDate, onDateSelected = { dateText = it.toString() }) }
         if (selectedDay == null) {
-            item { InformationCard("选择日期", "点按带圆点的日期，查看并选择当天课次。") }
+            item { InformationCard(message(475), message(598)) }
         } else {
-            item { Text("${selectedDay.monthValue}月${selectedDay.dayOfMonth}日 · ${occurrencesOnDate.size} 个课次", style = MiuixTheme.textStyles.title3) }
-            if (occurrencesOnDate.isEmpty()) item { InformationCard("当天没有课次", "切换月份或选择其他带圆点的日期。") }
+            item { Text(tr(message(599, (selectedDay.monthValue), (selectedDay.dayOfMonth), (occurrencesOnDate.size))), style = MiuixTheme.textStyles.title3) }
+            if (occurrencesOnDate.isEmpty()) item { InformationCard(message(600), message(601)) }
             items(occurrencesOnDate, key = { "${it.sourceUid}|${it.instanceKey}" }) { occurrence ->
                 Card(modifier = Modifier.fillMaxWidth(), insideMargin = PaddingValues(10.dp)) {
                     SourceOccurrenceChoiceRow(
@@ -85,10 +86,11 @@ fun SourceCourseDateBrowser(state: CalendarControlState, outputWindow: SourceOut
 
 @Composable
 private fun MonthNavigation(month: YearMonth, onPrevious: () -> Unit, onNext: () -> Unit) {
+    val monthTitle = DateTimeFormatter.ofPattern(tr(message(595)), java.util.Locale.forLanguageTag(LocalAppLanguage.current.language.tag))
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        Button(onClick = onPrevious, modifier = Modifier.weight(1f)) { Text("上月") }
-        Text(month.format(MonthTitle), style = MiuixTheme.textStyles.title3, modifier = Modifier.weight(1f).padding(horizontal = 8.dp))
-        Button(onClick = onNext, modifier = Modifier.weight(1f)) { Text("下月") }
+        Button(onClick = onPrevious, modifier = Modifier.weight(1f)) { Text(tr(message(602))) }
+        Text(tr(month.format(monthTitle)), style = MiuixTheme.textStyles.title3, modifier = Modifier.weight(1f).padding(horizontal = 8.dp))
+        Button(onClick = onNext, modifier = Modifier.weight(1f)) { Text(tr(message(603))) }
     }
 }
 
@@ -103,7 +105,7 @@ private fun SourceMonthGrid(
     val cells = List(firstOffset) { null } + (1..month.lengthOfMonth()).map(month::atDay)
     val rows = cells.chunked(7)
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(Modifier.fillMaxWidth()) { listOf("一", "二", "三", "四", "五", "六", "日").forEach { day -> Text(day, modifier = Modifier.weight(1f), style = MiuixTheme.textStyles.body2) } }
+        Row(Modifier.fillMaxWidth()) { listOf(message(604), message(605), message(606), message(607), message(608), message(609), message(610)).forEach { day -> Text(tr(day), modifier = Modifier.weight(1f), style = MiuixTheme.textStyles.body2) } }
         rows.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
                 row.forEach { day ->
@@ -130,8 +132,8 @@ private fun SourceDayCell(day: LocalDate, occurrenceCount: Int, selected: Boolea
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(day.dayOfMonth.toString(), style = MiuixTheme.textStyles.body2)
-        if (occurrenceCount > 0) Text("●", color = palette.primary, style = MiuixTheme.textStyles.body2)
+        Text(tr(day.dayOfMonth.toString()), style = MiuixTheme.textStyles.body2)
+        if (occurrenceCount > 0) Text(tr("●"), color = palette.primary, style = MiuixTheme.textStyles.body2)
     }
 }
 

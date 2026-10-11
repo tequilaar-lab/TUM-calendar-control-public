@@ -1,8 +1,8 @@
 /*
- * 职责：验证 Google 只读安全连接诊断的所有权、缺失与脱敏失败结果。
- * 输入／输出：输入合成专用日历或异常；输出可供界面显示的诊断分类。
- * 外部副作用：无；不访问网络、OAuth、账户、日历或事件。
- * 不负责：Android 授权、HTTP 传输、创建目标日历或执行同步。
+ * Aufgabe: synthetische Regressionstests für GoogleConnectionChecker.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

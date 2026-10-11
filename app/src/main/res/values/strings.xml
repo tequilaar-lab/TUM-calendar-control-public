@@ -1,4 +1,692 @@
-<!-- 职责：保存应用可见文本；不含真实课程或账号信息。 -->
+<!-- Aufgabe: lokalisierte App-Texte; Ein-/Ausgabe: Ressourcenschlüssel und Anzeigevorlagen; keine externen Nebenwirkungen. -->
 <resources>
-    <string name="app_name">TUM日程控制</string>
+    <string name="app_name">TUM Calendar Control</string>
+    <string name="msg_0000" formatted="false">"Rule and occurrence must share the same source UID."</string>
+    <string name="msg_0001" formatted="false">"Must attend"</string>
+    <string name="msg_0002" formatted="false">"Green"</string>
+    <string name="msg_0003" formatted="false">"Prioritize attendance"</string>
+    <string name="msg_0004" formatted="false">"Choose attendance"</string>
+    <string name="msg_0005" formatted="false">"Blue"</string>
+    <string name="msg_0006" formatted="false">"Decide attendance as needed"</string>
+    <string name="msg_0007" formatted="false">"Stop attending from here"</string>
+    <string name="msg_0008" formatted="false">"Gray"</string>
+    <string name="msg_0009" formatted="false">"Stop from the selected occurrence; past unchanged"</string>
+    <string name="msg_0010" formatted="false">"Unspecified by source"</string>
+    <string name="msg_0011" formatted="false">"Hours must be between 0 and 23."</string>
+    <string name="msg_0012" formatted="false">"Minutes must be between 0 and 59."</string>
+    <string name="msg_0013" formatted="false">"End must be after start."</string>
+    <string name="msg_0014" formatted="false">"Monday"</string>
+    <string name="msg_0015" formatted="false">"Tuesday"</string>
+    <string name="msg_0016" formatted="false">"Wednesday"</string>
+    <string name="msg_0017" formatted="false">"Thursday"</string>
+    <string name="msg_0018" formatted="false">"Friday"</string>
+    <string name="msg_0019" formatted="false">"Saturday"</string>
+    <string name="msg_0020" formatted="false">"Sunday"</string>
+    <string name="msg_0021" formatted="false">"Course A"</string>
+    <string name="msg_0022" formatted="false">"Tuesday 10:00–12:00"</string>
+    <string name="msg_0023" formatted="false">"Example campus"</string>
+    <string name="msg_0024" formatted="false">"Course B"</string>
+    <string name="msg_0025" formatted="false">"Wednesday 14:00–16:00"</string>
+    <string name="msg_0026" formatted="false">"Course C"</string>
+    <string name="msg_0027" formatted="false">"Thursday 08:00–10:00"</string>
+    <string name="msg_0028" formatted="false">"Course D"</string>
+    <string name="msg_0029" formatted="false">"Thursday 16:00–18:00"</string>
+    <string name="msg_0030" formatted="false">"Course E"</string>
+    <string name="msg_0031" formatted="false">"Friday 10:00–12:00"</string>
+    <string name="msg_0032" formatted="false">"Synthetic course: rule demo"</string>
+    <string name="msg_0033" formatted="false">"TUM Calendar Control"</string>
+    <string name="msg_0034" formatted="false">"Created by TUM Calendar Control."</string>
+    <string name="msg_0035" formatted="false">"Could not create local app calendar"</string>
+    <string name="msg_0036" formatted="false">"Local app calendar unavailable; check calendar permission"</string>
+    <string name="msg_0037" formatted="false">"Local app calendar not found; no new calendar created."</string>
+    <string name="msg_0038" formatted="false">"Local app calendar unavailable; no new calendar created."</string>
+    <string name="msg_0039" formatted="false">"Refusing to write to a local calendar not owned by this app."</string>
+    <string name="msg_0040" formatted="false">"Could not create local event"</string>
+    <string name="msg_0041" formatted="false">"Refusing to read a local calendar not owned by this app."</string>
+    <string name="msg_0042" formatted="false">"Could not verify local events; creation stopped"</string>
+    <string name="msg_0043" formatted="false">"Could not verify local events; cleanup stopped"</string>
+    <string name="msg_0044" formatted="false">"Refusing to update a local calendar not owned by this app."</string>
+    <string name="msg_0045" formatted="false">"Could not update local event"</string>
+    <string name="msg_0046" formatted="false">"Refusing to delete from a local calendar not owned by this app."</string>
+    <string name="msg_0047" formatted="false">"Could not delete local event"</string>
+    <string name="msg_0048" formatted="false">"Check app calendar"</string>
+    <string name="msg_0049" formatted="false">"Create app calendar"</string>
+    <string name="msg_0050" formatted="false">"Verify written app events"</string>
+    <string name="msg_0051" formatted="false">"Verify all written app events"</string>
+    <string name="msg_0052" formatted="false">"Write new app event"</string>
+    <string name="msg_0053" formatted="false">"Update written app event"</string>
+    <string name="msg_0054" formatted="false">"Delete written app event"</string>
+    <string name="msg_0055" formatted="false">"Invalid token"</string>
+    <string name="msg_0056" formatted="false">"Insufficient permission scope"</string>
+    <string name="msg_0057" formatted="false">"Invalid authorization request"</string>
+    <string name="msg_0058" formatted="false">"Google provided no further authorization details"</string>
+    <string name="msg_0059" formatted="false">"Google app calendar unavailable"</string>
+    <string name="msg_0060" formatted="false">"Google app calendar not found; no new calendar created."</string>
+    <string name="msg_0061" formatted="false">"Google app calendar unavailable; no new calendar created"</string>
+    <string name="msg_0062" formatted="false">"Refusing to read a Google calendar not owned by this app."</string>
+    <string name="msg_0063" formatted="false">"Refusing to write to a Google calendar not owned by this app."</string>
+    <string name="msg_0064" formatted="false">"Refusing to update a Google calendar not owned by this app."</string>
+    <string name="msg_0065" formatted="false">"Refusing to delete from a Google calendar not owned by this app."</string>
+    <string name="msg_0066" formatted="false">"Repeated Google pagination token; pre-cleanup verification stopped."</string>
+    <string name="msg_0067" formatted="false">"Target event no longer belongs to this occurrence; refusing overwrite"</string>
+    <string name="msg_0068" formatted="false">"Deletion result must originate from a deletion request"</string>
+    <string name="msg_0069" formatted="false">"Unreachable"</string>
+    <string name="msg_0070" formatted="false">"{0} (HTTP {2} during {1}; {3})"</string>
+    <string name="msg_0071" formatted="false">"{0}; check authorization and network"</string>
+    <string name="msg_0072" formatted="false">"Google API path must start with /."</string>
+    <string name="msg_0073" formatted="false">"Google response exceeds size limit"</string>
+    <string name="msg_0074" formatted="false">"No Google app calendar yet. This check creates none; check after the first confirmed write."</string>
+    <string name="msg_0075" formatted="false">"Google connection available: app calendar readable. No events written."</string>
+    <string name="msg_0076" formatted="false">"Google connection available; previous app calendar no longer exists. Nothing created or written."</string>
+    <string name="msg_0077" formatted="false">"Google connection available; saved target lacks app marker. Nothing written to protect other calendars."</string>
+    <string name="msg_0078" formatted="false">"Google connection check failed"</string>
+    <string name="msg_0079" formatted="false">"Invalid address format"</string>
+    <string name="msg_0080" formatted="false">"Only private HTTPS subscription URLs allowed"</string>
+    <string name="msg_0081" formatted="false">"Source read failed"</string>
+    <string name="msg_0082" formatted="false">"Source server did not return success"</string>
+    <string name="msg_0083" formatted="false">"Source response exceeds size limit"</string>
+    <string name="msg_0084" formatted="false">"iCalendar expansion window must have positive length."</string>
+    <string name="msg_0085" formatted="false">"Unnamed source event"</string>
+    <string name="msg_0086" formatted="false">"Encrypted private configuration is empty."</string>
+    <string name="msg_0087" formatted="false">"Invalid encrypted configuration format."</string>
+    <string name="msg_0088" formatted="false">"Event details currently unavailable"</string>
+    <string name="msg_0089" formatted="false">"Local calendar"</string>
+    <string name="msg_0090" formatted="false">"Google Calendar"</string>
+    <string name="msg_0091" formatted="false">"{0}: created {1}, updated {2}, verified unchanged {3}, failed {4}"</string>
+    <string name="msg_0092" formatted="false">"; restored {0} missing target events"</string>
+    <string name="msg_0093" formatted="false">"Post-deletion check: {0} remaining"</string>
+    <string name="msg_0094" formatted="false">"Post-deletion verification incomplete"</string>
+    <string name="msg_0095" formatted="false">"{0}: cleanup requested for {1} app events, {2} deleted, {3} already absent, {4}"</string>
+    <string name="msg_0096" formatted="false">"{0} synchronization failed"</string>
+    <string name="msg_0097" formatted="false">"{0} rollback failed; local mappings retained"</string>
+    <string name="msg_0098" formatted="false">"Target calendar not owned by this app; write refused."</string>
+    <string name="msg_0099" formatted="false">"Duplicate target occurrence; left unchanged. Check duplicates first."</string>
+    <string name="msg_0100" formatted="false">"{0}: {1} completed, {2} failed"</string>
+    <string name="msg_0101" formatted="false">"Target calendar not owned by this app; rollback refused."</string>
+    <string name="msg_0102" formatted="false">"{0} cleanup incomplete: {1} deletions failed."</string>
+    <string name="msg_0103" formatted="false">"{0} post-deletion verification incomplete; run a read-only check later."</string>
+    <string name="msg_0104" formatted="false">"{1} app events remain in {0} after cleanup."</string>
+    <string name="msg_0105" formatted="false">"Synthetic deletion failure"</string>
+    <string name="msg_0106" formatted="false">"TUM source check"</string>
+    <string name="msg_0107" formatted="false">"Possible source update detected; open the app and preview manually."</string>
+    <string name="msg_0108" formatted="false">"No Google authorization for this session; connection not checked."</string>
+    <string name="msg_0109" formatted="false">"Google not authorized in this session; nothing written"</string>
+    <string name="msg_0110" formatted="false">"•••••••• · stored encrypted on this device"</string>
+    <string name="msg_0111" formatted="false">"Not configured"</string>
+    <string name="msg_0112" formatted="false">"Subscription URL must use HTTPS with a hostname"</string>
+    <string name="msg_0113" formatted="false">"Google OAuth client ID must end in .apps.googleusercontent.com"</string>
+    <string name="msg_0114" formatted="false">"Valid YYYY-MM-DD range required; start must not follow end"</string>
+    <string name="msg_0115" formatted="false">"Google app calendar name must not be empty"</string>
+    <string name="msg_0116" formatted="false">"Invalid private sync configuration; saving refused."</string>
+    <string name="msg_0117" formatted="false">"Private configuration could not be saved locally."</string>
+    <string name="msg_0118" formatted="false">"Read range limited to five years; shorten the range."</string>
+    <string name="msg_0119" formatted="false">"Source content cannot be parsed as an iCal calendar"</string>
+    <string name="msg_0120" formatted="false">"Unknown ledger record"</string>
+    <string name="msg_0121" formatted="false">"Could not save app write ledger"</string>
+    <string name="msg_0122" formatted="false">"Missing UID"</string>
+    <string name="msg_0123" formatted="false">"Missing start or end"</string>
+    <string name="msg_0124" formatted="false">"Fixplatz not confirmed"</string>
+    <string name="msg_0125" formatted="false">"Check daily"</string>
+    <string name="msg_0126" formatted="false">"Check weekly"</string>
+    <string name="msg_0127" formatted="false">"Output range start must not follow end."</string>
+    <string name="msg_0128" formatted="false">"Source read stopped after {0} seconds; check network and retry"</string>
+    <string name="msg_0129" formatted="false">"Unknown source read error; retry later"</string>
+    <string name="msg_0130" formatted="false">"Add"</string>
+    <string name="msg_0131" formatted="false">"Update"</string>
+    <string name="msg_0132" formatted="false">"Remove"</string>
+    <string name="msg_0133" formatted="false">"Keep unchanged"</string>
+    <string name="msg_0134" formatted="false">"Rule and source occurrence must share the same UID."</string>
+    <string name="msg_0135" formatted="false">"App ledger matches the calendar."</string>
+    <string name="msg_0136" formatted="false">"Recorded event missing from calendar; can recreate on next confirmation."</string>
+    <string name="msg_0137" formatted="false">"Event changed outside the app. Adopt calendar state or repair using app rules."</string>
+    <string name="msg_0138" formatted="false">"Back to previous page"</string>
+    <string name="msg_0139" formatted="false">"Switch main page"</string>
+    <string name="msg_0140" formatted="false">"Navigation selection animation"</string>
+    <string name="msg_0141" formatted="false">"Overview"</string>
+    <string name="msg_0142" formatted="false">"Search"</string>
+    <string name="msg_0143" formatted="false">"Favorites"</string>
+    <string name="msg_0144" formatted="false">"Settings"</string>
+    <string name="msg_0145" formatted="false">"Close more actions"</string>
+    <string name="msg_0146" formatted="false">"Course"</string>
+    <string name="msg_0147" formatted="false">"{0} · {1}"</string>
+    <string name="msg_0148" formatted="false">"{0} · {1} · {2}"</string>
+    <string name="msg_0149" formatted="false">"; past unchanged"</string>
+    <string name="msg_0150" formatted="false">"View course details"</string>
+    <string name="msg_0151" formatted="false">"TUM Calendar Control"</string>
+    <string name="msg_0152" formatted="false">"Course details"</string>
+    <string name="msg_0153" formatted="false">"Select status"</string>
+    <string name="msg_0154" formatted="false">"Edit course"</string>
+    <string name="msg_0155" formatted="false">"Search courses"</string>
+    <string name="msg_0156" formatted="false">"Favorite courses"</string>
+    <string name="msg_0157" formatted="false">"More actions"</string>
+    <string name="msg_0158" formatted="false">"Settings &amp; sync"</string>
+    <string name="msg_0159" formatted="false">"Profile"</string>
+    <string name="msg_0160" formatted="false">"Calendar connection"</string>
+    <string name="msg_0161" formatted="false">"Offline example"</string>
+    <string name="msg_0162" formatted="false">"Read range"</string>
+    <string name="msg_0163" formatted="false">"Choose courses"</string>
+    <string name="msg_0164" formatted="false">"Attendance &amp; favorites"</string>
+    <string name="msg_0165" formatted="false">"Manual campus events"</string>
+    <string name="msg_0166" formatted="false">"Confirm write"</string>
+    <string name="msg_0167" formatted="false">"Clean up events"</string>
+    <string name="msg_0168" formatted="false">"Course updates"</string>
+    <string name="msg_0169" formatted="false">"Backup"</string>
+    <string name="msg_0170" formatted="false">"Read courses appear here"</string>
+    <string name="msg_0171" formatted="false">"Read courses and configure output and appearance"</string>
+    <string name="msg_0172" formatted="false">"Save only on this device; offline"</string>
+    <string name="msg_0173" formatted="false">"Example does not write to calendars"</string>
+    <string name="msg_0174" formatted="false">"Choose a range, then read courses"</string>
+    <string name="msg_0175" formatted="false">"After selection, set attendance &amp; favorites"</string>
+    <string name="msg_0176" formatted="false">"After saving, return to course list for calendar output"</string>
+    <string name="msg_0177" formatted="false">"After saving, write alongside courses"</string>
+    <string name="msg_0178" formatted="false">"Selected calendars change only after confirmation"</string>
+    <string name="msg_0179" formatted="false">"Cleanup only after scope selection and confirmation"</string>
+    <string name="msg_0180" formatted="false">"Only check changes; no automatic calendar output"</string>
+    <string name="msg_0181" formatted="false">"Back up course settings; confirm before restoring"</string>
+    <string name="msg_0182" formatted="false">"Course router accepts only course screens"</string>
+    <string name="msg_0183" formatted="false">"Settings router accepts only settings screens"</string>
+    <string name="msg_0184" formatted="false">"Workflow router accepts only workflow screens"</string>
+    <string name="msg_0185" formatted="false">"Light palette"</string>
+    <string name="msg_0186" formatted="false">"Save palettes per mode; attendance colors unchanged."</string>
+    <string name="msg_0187" formatted="false">"Dark palette"</string>
+    <string name="msg_0188" formatted="false">"Selected"</string>
+    <string name="msg_0189" formatted="false">"Clean white"</string>
+    <string name="msg_0190" formatted="false">"Warm off-white"</string>
+    <string name="msg_0191" formatted="false">"Neutral black"</string>
+    <string name="msg_0192" formatted="false">"Deep blue"</string>
+    <string name="msg_0193" formatted="false">"Choose status for “{0}”"</string>
+    <string name="msg_0194" formatted="false">"Scope uses saved original name, type and group. Saving queues occurrences for output; date limits still apply. Source and calendars initially unchanged."</string>
+    <string name="msg_0195" formatted="false">"Effective scope"</string>
+    <string name="msg_0196" formatted="false">"From date (YYYY-MM-DD)"</string>
+    <string name="msg_0197" formatted="false">"Cancel"</string>
+    <string name="msg_0198" formatted="false">"Confirm"</string>
+    <string name="msg_0199" formatted="false">"{0} · {1}"</string>
+    <string name="msg_0200" formatted="false">"Off by default. Checks course changes when online; no automatic writes or deletes. Power saving may delay checks."</string>
+    <string name="msg_0201" formatted="false">"Check frequency"</string>
+    <string name="msg_0202" formatted="false">"✓ {0}"</string>
+    <string name="msg_0203" formatted="false">"Disable update checks"</string>
+    <string name="msg_0204" formatted="false">"Enable update checks"</string>
+    <string name="msg_0205" formatted="false">"Last check"</string>
+    <string name="msg_0206" formatted="false">"Notifications &amp; privacy"</string>
+    <string name="msg_0207" formatted="false">"Possible changes trigger only a generic reminder, without course names, locations, links or contents. Status remains visible in the app without notification permission."</string>
+    <string name="msg_0208" formatted="false">"Not checked yet"</string>
+    <string name="msg_0209" formatted="false">"Not run yet"</string>
+    <string name="msg_0210" formatted="false">"Initial read-only fingerprint established"</string>
+    <string name="msg_0211" formatted="false">"No changes detected"</string>
+    <string name="msg_0212" formatted="false">"Possible course changes. Open the app and read courses again."</string>
+    <string name="msg_0213" formatted="false">"Check failed; system will retry later"</string>
+    <string name="msg_0214" formatted="false">"Course subscription URL not configured yet"</string>
+    <string name="msg_0215" formatted="false">"Cannot open backup file"</string>
+    <string name="msg_0216" formatted="false">"Page selection not saved; reselect after restart."</string>
+    <string name="msg_0217" formatted="false">"Configuration not saved; check local storage. Settings apply only to this session."</string>
+    <string name="msg_0218" formatted="false">"Calendar operation returned but local ledger not saved. Check target calendar before retrying."</string>
+    <string name="msg_0219" formatted="false">"Calendar result returned but configuration not saved. Check written events."</string>
+    <string name="msg_0220" formatted="false">"Calendar write incomplete; check permissions and network"</string>
+    <string name="msg_0221" formatted="false">"Verification returned but local ledger not saved. No events deleted."</string>
+    <string name="msg_0222" formatted="false">"Light"</string>
+    <string name="msg_0223" formatted="false">"Dark"</string>
+    <string name="msg_0224" formatted="false">"Follow system"</string>
+    <string name="msg_0225" formatted="false">"Keep favorites unchanged"</string>
+    <string name="msg_0226" formatted="false">"Keep each course’s current favorite state"</string>
+    <string name="msg_0227" formatted="false">"Add to favorites"</string>
+    <string name="msg_0228" formatted="false">"Add these courses to favorites together"</string>
+    <string name="msg_0229" formatted="false">"Remove from favorites"</string>
+    <string name="msg_0230" formatted="false">"Remove these courses from favorites together"</string>
+    <string name="msg_0231" formatted="false">"Google Calendar not connected"</string>
+    <string name="msg_0232" formatted="false">"Session not authorized; no Google calendar created or written."</string>
+    <string name="msg_0233" formatted="false">"Connecting Google Calendar"</string>
+    <string name="msg_0234" formatted="false">"Select a Google account and allow access, then return to the app."</string>
+    <string name="msg_0235" formatted="false">"Google authorized for this session"</string>
+    <string name="msg_0236" formatted="false">"Token obtained. Read-only check or write preview available; Google Calendar unchanged."</string>
+    <string name="msg_0237" formatted="false">"Could not connect Google Calendar"</string>
+    <string name="msg_0238" formatted="false">"Authorization incomplete; Google Calendar unchanged. Check configuration."</string>
+    <string name="msg_0239" formatted="false">"Current: {0} · {1}"</string>
+    <string name="msg_0240" formatted="false">"Mixed attendance states"</string>
+    <string name="msg_0241" formatted="false">"Favorited"</string>
+    <string name="msg_0242" formatted="false">"Not favorited"</string>
+    <string name="msg_0243" formatted="false">"Partly favorited"</string>
+    <string name="msg_0244" formatted="false">"Course settings not saved; previous attendance, favorites and local changes retained."</string>
+    <string name="msg_0245" formatted="false">"Courses just read"</string>
+    <string name="msg_0246" formatted="false">"Last successfully read courses"</string>
+    <string name="msg_0247" formatted="false">"Earlier course data"</string>
+    <string name="msg_0248" formatted="false">"Not saved"</string>
+    <string name="msg_0249" formatted="false">"First select calendars to verify."</string>
+    <string name="msg_0250" formatted="false">"Google not connected; connect or select only local calendar."</string>
+    <string name="msg_0251" formatted="false">"First allow local calendar access."</string>
+    <string name="msg_0252" formatted="false">"Checking written courses and times; nothing will be deleted."</string>
+    <string name="msg_0253" formatted="false">"Verification failed; ledger retained. Check permissions and connection."</string>
+    <string name="msg_0254" formatted="false">"Verified {0} records, {1} still unconfirmed; nothing deleted."</string>
+    <string name="msg_0255" formatted="false">"Course changes saved; apply on next confirmed write. School source unchanged."</string>
+    <string name="msg_0256" formatted="false">"Enabled {0}; calendars unchanged until write confirmation."</string>
+    <string name="msg_0257" formatted="false">"Disabled {0}; written events retained."</string>
+    <string name="msg_0258" formatted="false">"Local access allowed; still review counts and confirm the write."</string>
+    <string name="msg_0259" formatted="false">"Local calendar permission not granted; local output remains off."</string>
+    <string name="msg_0260" formatted="false">"Invalid sync configuration format."</string>
+    <string name="msg_0261" formatted="false">"Save course URL first; update checks still off."</string>
+    <string name="msg_0262" formatted="false">"Course update checks enabled; no automatic calendar writes."</string>
+    <string name="msg_0263" formatted="false">"Course update checks disabled."</string>
+    <string name="msg_0264" formatted="false">"Notification permission not granted; check status still recorded in the app."</string>
+    <string name="msg_0265" formatted="false">"Attendance rules and campus events exported; excludes favorites, display names, URLs, accounts and written events."</string>
+    <string name="msg_0266" formatted="false">"Not exported."</string>
+    <string name="msg_0267" formatted="false">"Backup unreadable; local rules unchanged."</string>
+    <string name="msg_0268" formatted="false">"Backup read. Confirmation required to replace rules and campus events; favorites and display names unchanged."</string>
+    <string name="msg_0269" formatted="false">"Attendance and campus events restored; calendars unchanged."</string>
+    <string name="msg_0270" formatted="false">"Next read range saved; current courses, selection and queued output unchanged."</string>
+    <string name="msg_0271" formatted="false">"Reading courses, please wait."</string>
+    <string name="msg_0272" formatted="false">"No saved courses; read first."</string>
+    <string name="msg_0273" formatted="false">"Using {0}. Date range applies only when reading again."</string>
+    <string name="msg_0274" formatted="false">"No courses read yet. Read under “Choose read range” first."</string>
+    <string name="msg_0275" formatted="false">"Reading courses; no calendar writes."</string>
+    <string name="msg_0276" formatted="false">"Existing selection retained; deselected {0} missing or cancelled occurrences."</string>
+    <string name="msg_0277" formatted="false">"Courses updated; surviving selections retained."</string>
+    <string name="msg_0278" formatted="false">"Could not read courses: {0}. Calendars unchanged."</string>
+    <string name="msg_0279" formatted="false">"Wait for current operation before switching course data."</string>
+    <string name="msg_0280" formatted="false">"No earlier course data available."</string>
+    <string name="msg_0281" formatted="false">"Using {0}; surviving selection retained{1}. Calendars unchanged."</string>
+    <string name="msg_0282" formatted="false">"; deselected {0} missing occurrences"</string>
+    <string name="msg_0283" formatted="false">"Select at least one occurrence."</string>
+    <string name="msg_0284" formatted="false">"Attendance and favorites retained; edit mode and scope saved."</string>
+    <string name="msg_0285" formatted="false">"Mixed attendance states. Select a common state or edit per course."</string>
+    <string name="msg_0286" formatted="false">"Course list"</string>
+    <string name="msg_0287" formatted="false">"Attendance{1} saved for {0} occurrences; no calendar write yet."</string>
+    <string name="msg_0288" formatted="false">" and favorites"</string>
+    <string name="msg_0289" formatted="false">"Select occurrences first."</string>
+    <string name="msg_0290" formatted="false">"Individual settings for {0} courses saved; no calendar write yet."</string>
+    <string name="msg_0291" formatted="false">"Attendance settings unchanged."</string>
+    <string name="msg_0292" formatted="false">"Updated {0} saved occurrences and queued for output; calendar changes only after confirmation."</string>
+    <string name="msg_0293" formatted="false">"Attendance changed for “{0}” ({1}); calendar changes only after confirmation."</string>
+    <string name="msg_0294" formatted="false">"Open an occurrence with a specific date."</string>
+    <string name="msg_0295" formatted="false">"Enter a date in YYYY-MM-DD format."</string>
+    <string name="msg_0296" formatted="false">"No app calendar available for cleanup."</string>
+    <string name="msg_0297" formatted="false">"Wait for current calendar operation."</string>
+    <string name="msg_0298" formatted="false">"Read and select courses or add campus events, then write."</string>
+    <string name="msg_0299" formatted="false">"Wait for event verification."</string>
+    <string name="msg_0300" formatted="false">"First choose “Write to calendars”, review counts and confirm."</string>
+    <string name="msg_0301" formatted="false">"Select calendars for this write."</string>
+    <string name="msg_0302" formatted="false">"Local permission missing; nothing written."</string>
+    <string name="msg_0303" formatted="false">"Connect Google Calendar first; nothing written."</string>
+    <string name="msg_0304" formatted="false">"Writing to calendars…"</string>
+    <string name="msg_0305" formatted="false">"No calendar ready."</string>
+    <string name="msg_0306" formatted="false">"Write only to ready calendars; disconnected targets unchanged."</string>
+    <string name="msg_0307" formatted="false">"Wait for verification before cleanup."</string>
+    <string name="msg_0308" formatted="false">"Select at least one course or occurrences in a date range."</string>
+    <string name="msg_0309" formatted="false">"No app calendar to clean up."</string>
+    <string name="msg_0310" formatted="false">"Local permission missing; nothing deleted."</string>
+    <string name="msg_0311" formatted="false">"Connect Google Calendar first; nothing deleted."</string>
+    <string name="msg_0312" formatted="false">"Deleting selected app events…"</string>
+    <string name="msg_0313" formatted="false">"manual:{0}"</string>
+    <string name="msg_0314" formatted="false">"Calendars updated: {0} created, {1} updated, {2} deleted."</string>
+    <string name="msg_0315" formatted="false">"Title must not be empty"</string>
+    <string name="msg_0316" formatted="false">"Enter a valid title, YYYY-MM-DD date and hours/minutes; end after start."</string>
+    <string name="msg_0317" formatted="false">"Campus event saved locally; handled alongside courses on the next write."</string>
+    <string name="msg_0318" formatted="false">"Campus event deleted locally; calendars unchanged."</string>
+    <string name="msg_0319" formatted="false">"All occurrences"</string>
+    <string name="msg_0320" formatted="false">"Change all occurrences of this course, including past ones"</string>
+    <string name="msg_0321" formatted="false">"Only this occurrence"</string>
+    <string name="msg_0322" formatted="false">"Change only the selected occurrence"</string>
+    <string name="msg_0323" formatted="false">"This and following"</string>
+    <string name="msg_0324" formatted="false">"Change from selected occurrence; past unchanged"</string>
+    <string name="msg_0325" formatted="false">"From a specified occurrence"</string>
+    <string name="msg_0326" formatted="false">"Choose date or occurrence and change from there"</string>
+    <string name="msg_0327" formatted="false">"{0}:{1}"</string>
+    <string name="msg_0328" formatted="false">"Unnamed course"</string>
+    <string name="msg_0329" formatted="false">"Other occurrences"</string>
+    <string name="msg_0330" formatted="false">"(?i)(?&lt;![A-ZÄÖÜ])({0})(?![A-ZÄÖÜ])"</string>
+    <string name="msg_0331" formatted="false">"_{0}"</string>
+    <string name="msg_0332" formatted="false">"course_override_{0}_{1}"</string>
+    <string name="msg_0333" formatted="false">"Loaded courses"</string>
+    <string name="msg_0334" formatted="false">"Course overview"</string>
+    <string name="msg_0335" formatted="false">"Local display override"</string>
+    <string name="msg_0336" formatted="false">"No override; displaying original course information"</string>
+    <string name="msg_0337" formatted="false">"Local display overridden; original information unchanged"</string>
+    <string name="msg_0338" formatted="false">"Edit name, time &amp; location"</string>
+    <string name="msg_0339" formatted="false">"Current status: {0}"</string>
+    <string name="msg_0340" formatted="false">"Change attendance state"</string>
+    <string name="msg_0341" formatted="false">"From this or a specified occurrence; past unchanged"</string>
+    <string name="msg_0342" formatted="false">"Toggle favorite"</string>
+    <string name="msg_0343" formatted="false">"Edit this course"</string>
+    <string name="msg_0344" formatted="false">"Applies to all occurrences on next confirmed write; source unchanged. Blank name/location uses source. Unchanged times retained; changed weekday shifts within the same week."</string>
+    <string name="msg_0345" formatted="false">"Name (source: {0})"</string>
+    <string name="msg_0346" formatted="false">"Location (source: {0})"</string>
+    <string name="msg_0347" formatted="false">"Weekday"</string>
+    <string name="msg_0348" formatted="false">"Time"</string>
+    <string name="msg_0349" formatted="false">"Start hour"</string>
+    <string name="msg_0350" formatted="false">"Start minute"</string>
+    <string name="msg_0351" formatted="false">"End hour"</string>
+    <string name="msg_0352" formatted="false">"End minute"</string>
+    <string name="msg_0353" formatted="false">"Hours 0–23, minutes 0–59; end must follow start."</string>
+    <string name="msg_0354" formatted="false">"Save course changes"</string>
+    <string name="msg_0355" formatted="false">"Searchable courses"</string>
+    <string name="msg_0356" formatted="false">"Search results"</string>
+    <string name="msg_0357" formatted="false">"Favorites list"</string>
+    <string name="msg_0358" formatted="false">"Favorite courses"</string>
+    <string name="msg_0359" formatted="false">"Favorites affect display only, not attendance"</string>
+    <string name="msg_0360" formatted="false">"Course directory"</string>
+    <string name="msg_0361" formatted="false">"Full list on the left; the same “course → type → occurrence” index here, independently scrollable and expandable."</string>
+    <string name="msg_0362" formatted="false">"Calendar protection"</string>
+    <string name="msg_0363" formatted="false">"Name and type are only for grouping. Writes, updates and cleanup always use source UID and occurrence identity."</string>
+    <string name="msg_0364" formatted="false">"No courses"</string>
+    <string name="msg_0365" formatted="false">"Read courses or check filters."</string>
+    <string name="msg_0366" formatted="false">"Course group animation"</string>
+    <string name="msg_0367" formatted="false">"{0} teaching types, {1} occurrences expanded; tap to collapse."</string>
+    <string name="msg_0368" formatted="false">"{0} teaching types, {1} occurrences; tap to view."</string>
+    <string name="msg_0369" formatted="false">"Collapse course"</string>
+    <string name="msg_0370" formatted="false">"Expand course"</string>
+    <string name="msg_0371" formatted="false">"Teaching type animation"</string>
+    <string name="msg_0372" formatted="false">"{0} occurrences"</string>
+    <string name="msg_0373" formatted="false">"Collapse {0}"</string>
+    <string name="msg_0374" formatted="false">"Expand {0}"</string>
+    <string name="msg_0375" formatted="false">"Course directory animation"</string>
+    <string name="msg_0376" formatted="false">"Collapse course directory"</string>
+    <string name="msg_0377" formatted="false">"Expand course directory"</string>
+    <string name="msg_0378" formatted="false">"{0}"</string>
+    <string name="msg_0379" formatted="false">"Directory type animation"</string>
+    <string name="msg_0380" formatted="false">"Collapse teaching type"</string>
+    <string name="msg_0381" formatted="false">"Expand teaching type"</string>
+    <string name="msg_0382" formatted="false">"• {0}"</string>
+    <string name="msg_0383" formatted="false">"Rename"</string>
+    <string name="msg_0384" formatted="false">"Rename teaching type"</string>
+    <string name="msg_0385" formatted="false">"Changes only the course’s type display across overview, search and favorites; calendar contents unchanged."</string>
+    <string name="msg_0386" formatted="false">"Teaching type name (up to 30 characters)"</string>
+    <string name="msg_0387" formatted="false">"Save name"</string>
+    <string name="msg_0388" formatted="false">"Restore automatic name"</string>
+    <string name="msg_0389" formatted="false">"Request failed"</string>
+    <string name="msg_0390" formatted="false">"Google authorization incomplete (system result: {0})."</string>
+    <string name="msg_0391" formatted="false">"Google authorization returned empty (system result: {0})."</string>
+    <string name="msg_0392" formatted="false">"Result failed"</string>
+    <string name="msg_0393" formatted="false">"Google returned no calendar access token"</string>
+    <string name="msg_0394" formatted="false">"Google authorization: {0} (service status: {1})."</string>
+    <string name="msg_0395" formatted="false">"Google authorization: {0} (exception type: {1})."</string>
+    <string name="msg_0396" formatted="false">"apiStatus={0}"</string>
+    <string name="msg_0397" formatted="false">"exceptionType={0}"</string>
+    <string name="msg_0398" formatted="false">"Edit per course; untouched courses unchanged. Scope applies to all settings; favorites saved per source course."</string>
+    <string name="msg_0399" formatted="false">"{0} selected occurrences · {1} · {2}"</string>
+    <string name="msg_0400" formatted="false">"Keep attendance unchanged"</string>
+    <string name="msg_0401" formatted="false">"Collapse settings"</string>
+    <string name="msg_0402" formatted="false">"Edit individually"</string>
+    <string name="msg_0403" formatted="false">"After connecting, check app calendar read-only; nothing created or written."</string>
+    <string name="msg_0404" formatted="false">"Enable Google calendar output first, then connect."</string>
+    <string name="msg_0405" formatted="false">"Connect Google Calendar first, then run read-only check."</string>
+    <string name="msg_0406" formatted="false">"Checking Google connection; nothing created or written."</string>
+    <string name="msg_0407" formatted="false">"Google authorization expired (HTTP 401); reconnect before writing."</string>
+    <string name="msg_0408" formatted="false">"Google authorization expired (HTTP 401); old token cleared. Reconnect before writing."</string>
+    <string name="msg_0409" formatted="false">"Google authorization expired (HTTP 401); token clearing unconfirmed. Reconnect before writing."</string>
+    <string name="msg_0410" formatted="false">"Estimate from local records. On confirmation, targets are checked and missing events restored. Calendars unchanged so far."</string>
+    <string name="msg_0411" formatted="false">"No events queued"</string>
+    <string name="msg_0412" formatted="false">"Select courses again in settings. Cleanup of written events is handled separately there."</string>
+    <string name="msg_0413" formatted="false">"This write"</string>
+    <string name="msg_0414" formatted="false">"{0} events total: {1} course events, {2} campus events."</string>
+    <string name="msg_0415" formatted="false">"Cancelled previous events found"</string>
+    <string name="msg_0416" formatted="false">"{0} previous entries (counted per target) were cancelled by the source. Normal writes do not delete deselected courses, so no automatic cleanup. Verify and confirm under “Clean up written events”."</string>
+    <string name="msg_0417" formatted="false">"Verify &amp; clean up cancelled events"</string>
+    <string name="msg_0418" formatted="false">"Course data used"</string>
+    <string name="msg_0419" formatted="false">"{0} · saved at {1}. No reread required; update from settings if needed."</string>
+    <string name="msg_0420" formatted="false">"Expected: {0} created, {1} verified and updated. {2}. Previously deselected courses retained."</string>
+    <string name="msg_0421" formatted="false">"Ready"</string>
+    <string name="msg_0422" formatted="false">"Not authorized yet"</string>
+    <string name="msg_0423" formatted="false">"Connect Google Calendar"</string>
+    <string name="msg_0424" formatted="false">"Allow local calendar access"</string>
+    <string name="msg_0425" formatted="false">"Write only to {0}"</string>
+    <string name="msg_0426" formatted="false">"Confirm &amp; write"</string>
+    <string name="msg_0427" formatted="false">"Last write"</string>
+    <string name="msg_0428" formatted="false">"{0} created · {1} updated · {2} deleted"</string>
+    <string name="msg_0429" formatted="false">" · {0}"</string>
+    <string name="msg_0430" formatted="false">"Add campus event"</string>
+    <string name="msg_0431" formatted="false">"Dates and times saved in Europe/Berlin. Multiple events allowed; written only on next confirmation."</string>
+    <string name="msg_0432" formatted="false">"Event name"</string>
+    <string name="msg_0433" formatted="false">"Date (YYYY-MM-DD)"</string>
+    <string name="msg_0434" formatted="false">"✓ {0} ({1})"</string>
+    <string name="msg_0435" formatted="false">"{0} ({1})"</string>
+    <string name="msg_0436" formatted="false">"Campus event saved"</string>
+    <string name="msg_0437" formatted="false">"Save event locally"</string>
+    <string name="msg_0438" formatted="false">"Delete this event"</string>
+    <string name="msg_0439" formatted="false">"{0} to {1} (Europe/Berlin)"</string>
+    <string name="msg_0440" formatted="false">"All app events"</string>
+    <string name="msg_0441" formatted="false">"Delete all events still carrying this app’s marker in the app calendar."</string>
+    <string name="msg_0442" formatted="false">"By course"</string>
+    <string name="msg_0443" formatted="false">"Delete only app events of selected courses."</string>
+    <string name="msg_0444" formatted="false">"By date range"</string>
+    <string name="msg_0445" formatted="false">"Delete only app events in the selected date range."</string>
+    <string name="msg_0446" formatted="false">"Separate deletion operation. Normal writes only add or update the current selection; they do not remove previously written courses."</string>
+    <string name="msg_0447" formatted="false">"Choose cleanup targets"</string>
+    <string name="msg_0448" formatted="false">"Clean only selected calendars; other targets unchanged."</string>
+    <string name="msg_0449" formatted="false">"{0}{1}"</string>
+    <string name="msg_0450" formatted="false">"Verify written events (no deletion)"</string>
+    <string name="msg_0451" formatted="false">"Verifying events…"</string>
+    <string name="msg_0452" formatted="false">"Cannot find previous courses?"</string>
+    <string name="msg_0453" formatted="false">"Verify above to recover courses and dates of old app entries from selected calendars. Check only app records; do not read other calendars."</string>
+    <string name="msg_0454" formatted="false">"Protection during full cleanup"</string>
+    <string name="msg_0455" formatted="false">"Check only invisibly marked app events in owned local/Google calendars. Primary calendars, subscriptions and other apps’ events remain untouched."</string>
+    <string name="msg_0456" formatted="false">"No recognizable courses yet"</string>
+    <string name="msg_0457" formatted="false">"First verify written events. If old write records are also missing, separately select “All app events” and confirm cleanup."</string>
+    <string name="msg_0458" formatted="false">"Clean only selected courses; other courses at the same time unchanged."</string>
+    <string name="msg_0459" formatted="false">"{0} recognizable occurrences"</string>
+    <string name="msg_0460" formatted="false">"Select"</string>
+    <string name="msg_0461" formatted="false">"No recognizable dates yet"</string>
+    <string name="msg_0462" formatted="false">"Verify written events first, then choose dates. Verification does not change calendars."</string>
+    <string name="msg_0463" formatted="false">"Choose date range"</string>
+    <string name="msg_0464" formatted="false">"Start and end independently optional; blank boundary unlimited. Select by written times, including records of removed courses."</string>
+    <string name="msg_0465" formatted="false">"Start date"</string>
+    <string name="msg_0466" formatted="false">"End date"</string>
+    <string name="msg_0467" formatted="false">"Clear date range"</string>
+    <string name="msg_0468" formatted="false">"Prepare cleanup"</string>
+    <string name="msg_0469" formatted="false">"{0} matching occurrences; no calendar changed yet."</string>
+    <string name="msg_0470" formatted="false">"Select at least one course or a matching date range."</string>
+    <string name="msg_0471" formatted="false">"Next: confirm cleanup"</string>
+    <string name="msg_0472" formatted="false">"All app events will be cleaned up."</string>
+    <string name="msg_0473" formatted="false">"{0} occurrences in the selected scope will be cleaned up."</string>
+    <string name="msg_0474" formatted="false">"Unlimited"</string>
+    <string name="msg_0475" formatted="false">"Choose date"</string>
+    <string name="msg_0476" formatted="false">"Confirm event cleanup"</string>
+    <string name="msg_0477" formatted="false">"Affected targets: {0}"</string>
+    <string name="msg_0478" formatted="false">"Deletes only app-marked events; cannot be undone."</string>
+    <string name="msg_0479" formatted="false">"Confirm cleanup"</string>
+    <string name="msg_0480" formatted="false">"Local app calendar"</string>
+    <string name="msg_0481" formatted="false">"Google app calendar"</string>
+    <string name="msg_0482" formatted="false">"No target available"</string>
+    <string name="msg_0483" formatted="false">"Could not save page selection"</string>
+    <string name="msg_0484" formatted="false">"New course subscription URL"</string>
+    <string name="msg_0485" formatted="false">"Show URL (new input only)"</string>
+    <string name="msg_0486" formatted="false">"Show URL"</string>
+    <string name="msg_0487" formatted="false">"Back up attendance rules &amp; campus events"</string>
+    <string name="msg_0488" formatted="false">"Includes UID and group attendance rules and manual campus events. Excludes favorites, display names, URLs, Google sign-in, calendars and written events."</string>
+    <string name="msg_0489" formatted="false">"Saved contents"</string>
+    <string name="msg_0490" formatted="false">"{0} attendance settings · {1} campus events"</string>
+    <string name="msg_0491" formatted="false">"Export rules &amp; events"</string>
+    <string name="msg_0492" formatted="false">"Restore rules &amp; events from file"</string>
+    <string name="msg_0493" formatted="false">"Confirm restoration"</string>
+    <string name="msg_0494" formatted="false">"Replace with {0} UID rules, {1} group rules and {2} campus events. Written events unaffected; no changes before confirmation."</string>
+    <string name="msg_0495" formatted="false">"Restore"</string>
+    <string name="msg_0496" formatted="false">"Current courses"</string>
+    <string name="msg_0497" formatted="false">"Displaying courses from current read"</string>
+    <string name="msg_0498" formatted="false">"Displaying example courses"</string>
+    <string name="msg_0499" formatted="false">"Calendar status"</string>
+    <string name="msg_0500" formatted="false">"No calendars connected and no events queued for output yet."</string>
+    <string name="msg_0501" formatted="false">"App settings"</string>
+    <string name="msg_0502" formatted="false">"Course, calendar and appearance settings"</string>
+    <string name="msg_0503" formatted="false">"Open settings"</string>
+    <string name="msg_0504" formatted="false">"Steps"</string>
+    <string name="msg_0505" formatted="false">"1 Choose range · 2 Read and select courses · 3 Attendance and favorites · 4 Confirm write. Going back keeps selection."</string>
+    <string name="msg_0506" formatted="false">"Read courses"</string>
+    <string name="msg_0507" formatted="false">"Range unlimited; tap to choose boundaries in the calendar."</string>
+    <string name="msg_0508" formatted="false">"Range configured; tap to view, change or clear."</string>
+    <string name="msg_0509" formatted="false">"Invalid range; tap to correct."</string>
+    <string name="msg_0510" formatted="false">"Read range"</string>
+    <string name="msg_0511" formatted="false">"No courses read yet. Choose range and read."</string>
+    <string name="msg_0512" formatted="false">"{0}: {1} courses; {2} specific occurrences selected."</string>
+    <string name="msg_0513" formatted="false">"Loaded courses"</string>
+    <string name="msg_0514" formatted="false">"Attendance settings"</string>
+    <string name="msg_0515" formatted="false">"New courses default to blue: choose attendance. Green: must attend. Gray: stop from specified date."</string>
+    <string name="msg_0516" formatted="false">"Back up rules &amp; events"</string>
+    <string name="msg_0517" formatted="false">"Output targets"</string>
+    <string name="msg_0518" formatted="false">"App manages only events it created. Primary calendars, subscriptions and other apps’ events remain unchanged."</string>
+    <string name="msg_0519" formatted="false">"Write to calendars"</string>
+    <string name="msg_0520" formatted="false">"App version"</string>
+    <string name="msg_0521" formatted="false">"{0} · Build {1}"</string>
+    <string name="msg_0522" formatted="false">"Local HONOR calendar"</string>
+    <string name="msg_0523" formatted="false">"Google calendar mirror"</string>
+    <string name="msg_0524" formatted="false">"Output not enabled yet"</string>
+    <string name="msg_0525" formatted="false">"Current settings"</string>
+    <string name="msg_0526" formatted="false">"Wide layout: actions on the left, sync and protection on the right."</string>
+    <string name="msg_0527" formatted="false">"Loaded courses"</string>
+    <string name="msg_0528" formatted="false">"{0}: {1} courses, {2} specific occurrences selected."</string>
+    <string name="msg_0529" formatted="false">"No courses read yet."</string>
+    <string name="msg_0530" formatted="false">"Write location"</string>
+    <string name="msg_0531" formatted="false">"Calendar protection"</string>
+    <string name="msg_0532" formatted="false">"Normal output only adds or updates current selection. Clean old events separately on the left and confirm again."</string>
+    <string name="msg_0533" formatted="false">"Course display"</string>
+    <string name="msg_0534" formatted="false">"Show all courses from {0}, regardless of school status."</string>
+    <string name="msg_0535" formatted="false">"Controls example display only; course URL and calendars unchanged."</string>
+    <string name="msg_0536" formatted="false">"Course data version"</string>
+    <string name="msg_0537" formatted="false">"Continue selection and preview with {0}. Open “Read courses” to update. Read failures do not remove saved courses."</string>
+    <string name="msg_0538" formatted="false">"✓ Use latest data"</string>
+    <string name="msg_0539" formatted="false">"Use latest data"</string>
+    <string name="msg_0540" formatted="false">"✓ Use earlier data"</string>
+    <string name="msg_0541" formatted="false">"Use earlier data"</string>
+    <string name="msg_0542" formatted="false">"Read changes"</string>
+    <string name="msg_0543" formatted="false">"Example event result"</string>
+    <string name="msg_0544" formatted="false">"Example data: no source reads, permission requests or calendar writes."</string>
+    <string name="msg_0545" formatted="false">"Change summary"</string>
+    <string name="msg_0546" formatted="false">"Add {0} · Update {1} · Remove {2} · Keep {3} · Skip {4}"</string>
+    <string name="msg_0547" formatted="false">"Example data; no calendar write."</string>
+    <string name="msg_0548" formatted="false">"Do not write"</string>
+    <string name="msg_0549" formatted="false">"This example will not be written."</string>
+    <string name="msg_0550" formatted="false">"Course subscription URL"</string>
+    <string name="msg_0551" formatted="false">"Saved: {0}. URL hidden for privacy; replaced only after entering a new one."</string>
+    <string name="msg_0552" formatted="false">"Change course subscription URL"</string>
+    <string name="msg_0553" formatted="false">"Set in “Choose read range” using the calendar; no manual date entry needed."</string>
+    <string name="msg_0554" formatted="false">"Choose a Google account in the system dialog. Only permissions for app-owned calendars requested; sign-in details not stored."</string>
+    <string name="msg_0555" formatted="false">"First connection"</string>
+    <string name="msg_0556" formatted="false">"Configure the app once in Google Cloud before first use. Client ID is not displayed or saved."</string>
+    <string name="msg_0557" formatted="false">"Google calendar name"</string>
+    <string name="msg_0558" formatted="false">"Save on this device"</string>
+    <string name="msg_0559" formatted="false">"Waiting for Google authorization"</string>
+    <string name="msg_0560" formatted="false">"Reauthorize Google Calendar"</string>
+    <string name="msg_0561" formatted="false">"Retry Google authorization"</string>
+    <string name="msg_0562" formatted="false">"Google target not verified yet"</string>
+    <string name="msg_0563" formatted="false">"Verifying Google target"</string>
+    <string name="msg_0564" formatted="false">"Google target verified"</string>
+    <string name="msg_0565" formatted="false">"Google target requires action"</string>
+    <string name="msg_0566" formatted="false">"Checking Google connection"</string>
+    <string name="msg_0567" formatted="false">"Check Google connection (read-only)"</string>
+    <string name="msg_0568" formatted="false">"Write courses and attendance separately to local and Google calendars."</string>
+    <string name="msg_0569" formatted="false">"Calendar permission"</string>
+    <string name="msg_0570" formatted="false">"Local output requests system permission. Still review counts and confirm before writing."</string>
+    <string name="msg_0571" formatted="false">"Previously written events will not be deleted."</string>
+    <string name="msg_0572" formatted="false">"Confirm change"</string>
+    <string name="msg_0573" formatted="false">"Local profile"</string>
+    <string name="msg_0574" formatted="false">"Name and avatar color remain on this device; not a Google or TUM account"</string>
+    <string name="msg_0575" formatted="false">"Display name"</string>
+    <string name="msg_0576" formatted="false">"Avatar color"</string>
+    <string name="msg_0577" formatted="false">"Current selection"</string>
+    <string name="msg_0578" formatted="false">"Tap to select"</string>
+    <string name="msg_0579" formatted="false">"Save profile"</string>
+    <string name="msg_0580" formatted="false">"Appearance"</string>
+    <string name="msg_0581" formatted="false">"Follow system light/dark mode with respective palettes chosen below"</string>
+    <string name="msg_0582" formatted="false">"Applies immediately and saves automatically"</string>
+    <string name="msg_0583" formatted="false">"Set attendance and favorites for {0} occurrences"</string>
+    <string name="msg_0584" formatted="false">"“Only this occurrence” affects selection only. Other scopes include saved occurrences sharing original name, type and group; different types stay separate. Saving queues output; date limits apply, calendars still unchanged."</string>
+    <string name="msg_0585" formatted="false">"✓ Set together"</string>
+    <string name="msg_0586" formatted="false">"Set together"</string>
+    <string name="msg_0587" formatted="false">"✓ Set per course"</string>
+    <string name="msg_0588" formatted="false">"Set per course"</string>
+    <string name="msg_0589" formatted="false">"Attendance"</string>
+    <string name="msg_0590" formatted="false">"Selected scope covers {0} saved occurrences. Unchanged individual courses do not expand selection; favorites apply to involved source courses."</string>
+    <string name="msg_0591" formatted="false">"Valid date required"</string>
+    <string name="msg_0592" formatted="false">"Save attendance &amp; favorites"</string>
+    <string name="msg_0593" formatted="false">"All"</string>
+    <string name="msg_0594" formatted="false">"Events in range"</string>
+    <string name="msg_0595" formatted="false">"MMMM yyyy"</string>
+    <string name="msg_0596" formatted="false">"Find occurrences by date"</string>
+    <string name="msg_0597" formatted="false">"Marked dates contain selectable course occurrences."</string>
+    <string name="msg_0598" formatted="false">"Tap a marked date to view and select occurrences."</string>
+    <string name="msg_0599" formatted="false">"{0}/{1} · {2} occurrences"</string>
+    <string name="msg_0600" formatted="false">"No occurrences on this date"</string>
+    <string name="msg_0601" formatted="false">"Choose another month or marked date."</string>
+    <string name="msg_0602" formatted="false">"Previous month"</string>
+    <string name="msg_0603" formatted="false">"Next month"</string>
+    <string name="msg_0604" formatted="false">"Mon"</string>
+    <string name="msg_0605" formatted="false">"Tue"</string>
+    <string name="msg_0606" formatted="false">"Wed"</string>
+    <string name="msg_0607" formatted="false">"Thu"</string>
+    <string name="msg_0608" formatted="false">"Fri"</string>
+    <string name="msg_0609" formatted="false">"Sat"</string>
+    <string name="msg_0610" formatted="false">"Sun"</string>
+    <string name="msg_0611" formatted="false">"{0} "</string>
+    <string name="msg_0612" formatted="false">"{0} {1} {2}–{3}{4}"</string>
+    <string name="msg_0613" formatted="false">"Group by course"</string>
+    <string name="msg_0614" formatted="false">"Select specific occurrences"</string>
+    <string name="msg_0615" formatted="false">"Selecting a date and time handles only that occurrence; other occurrences of the same course are not automatically selected."</string>
+    <string name="msg_0616" formatted="false">"Search courses or locations"</string>
+    <string name="msg_0617" formatted="false">"No matching occurrences"</string>
+    <string name="msg_0618" formatted="false">"Clear search or switch to “All”."</string>
+    <string name="msg_0619" formatted="false">"{0} source entries · {1} total occurrences · {2} selected"</string>
+    <string name="msg_0620" formatted="false">"{0} occurrences in selected range"</string>
+    <string name="msg_0621" formatted="false">"Collapse"</string>
+    <string name="msg_0622" formatted="false">"Expand"</string>
+    <string name="msg_0623" formatted="false">"{0} occurrences selected"</string>
+    <string name="msg_0624" formatted="false">"Deselect"</string>
+    <string name="msg_0625" formatted="false">"Status &amp; favorites"</string>
+    <string name="msg_0626" formatted="false">"Preview write"</string>
+    <string name="msg_0627" formatted="false">"Preview output only; no calendar changes before final confirmation."</string>
+    <string name="msg_0628" formatted="false">"MMM d (E) HH:mm"</string>
+    <string name="msg_0629" formatted="false">"Location: {0}"</string>
+    <string name="msg_0630" formatted="false">"{0}–{1}"</string>
+    <string name="msg_0631" formatted="false">"Read up to five years. Both boundaries blank: past 120 to next 180 days; one boundary: about 300 adjacent days. Infinite recurrences need limits. Range applies only when reading; saved courses, selection and output are not reduced."</string>
+    <string name="msg_0632" formatted="false">"Save next read range"</string>
+    <string name="msg_0633" formatted="false">"Use saved courses · Next"</string>
+    <string name="msg_0634" formatted="false">"Use {0} without rereading or reducing selection by the range above. Range affects only new data after “Read courses”."</string>
+    <string name="msg_0635" formatted="false">"Reading courses…"</string>
+    <string name="msg_0636" formatted="false">"Next: choose courses"</string>
+    <string name="msg_0637" formatted="false">"After reading, choose courses, then attendance and favorites. Review affected counts for local and Google calendars before confirming the write."</string>
+    <string name="msg_0638" formatted="false">"Read courses again"</string>
+    <string name="msg_0639" formatted="false">"Save as latest version and clear current selection; earlier successful version remains selectable. Attendance and favorites retained. Continue?"</string>
+    <string name="msg_0640" formatted="false">"Read again"</string>
+    <string name="msg_0641" formatted="false">"Quick ranges"</string>
+    <string name="msg_0642" formatted="false">"From today"</string>
+    <string name="msg_0643" formatted="false">"Next 90 days"</string>
+    <string name="msg_0644" formatted="false">"Restore default read range"</string>
+    <string name="msg_0645" formatted="false">"No courses read yet; available times appear after reading."</string>
+    <string name="msg_0646" formatted="false">"{0} to {1}; {2} course events total."</string>
+    <string name="msg_0647" formatted="false">"Read course times"</string>
+    <string name="msg_0648" formatted="false">"None"</string>
+    <string name="msg_0649" formatted="false">"Save course subscription URL first; nothing read yet."</string>
+    <string name="msg_0650" formatted="false">"Occurrence list outdated; read again before editing."</string>
+    <string name="msg_0651" formatted="false">"Saved courses cannot be restored; original records retained. Read again; written calendars unchanged."</string>
+    <string name="msg_0652" formatted="false">"Partly unrestorable course cache; original records retained and recoverable version used."</string>
+    <string name="msg_0653" formatted="false">"Missing snapshot field"</string>
+    <string name="msg_0654" formatted="false">"No occurrence changes since the last read."</string>
+    <string name="msg_0655" formatted="false">"Since last read: {0} added, {1} removed, {2} changed occurrences; new courses with existing names {3}, new names {4}."</string>
+    <string name="msg_0656" formatted="false">"Off: no calendar permission request or local writes"</string>
+    <string name="msg_0657" formatted="false">"Allowed: after authorization, write to owned local app calendar"</string>
+    <string name="msg_0658" formatted="false">"Off: no Google account connection or event data transmission"</string>
+    <string name="msg_0659" formatted="false">"Allowed: after authorization, write only to owned Google secondary calendar"</string>
+    <string name="msg_0660" formatted="false">"Enable {0}"</string>
+    <string name="msg_0661" formatted="false">"Disable {0}"</string>
+    <string name="msg_0662" formatted="false">"Request local permission after confirmation; write only after a later explicit write confirmation."</string>
+    <string name="msg_0663" formatted="false">"Stop future local writes; existing events retained."</string>
+    <string name="msg_0664" formatted="false">"Then connect Google manually; no event data sent before connection and confirmed write."</string>
+    <string name="msg_0665" formatted="false">"Ends current Google authorization and future mirroring; existing events retained."</string>
+    <string name="msg_0666" formatted="false">" Other output already enabled. If HONOR displays both app calendars, events appear twice. Enable one output or hide one calendar in HONOR."</string>
+    <string name="msg_0667" formatted="false">"Press scaling"</string>
+    <string name="msg_0668" formatted="false">"Press tint"</string>
+    <string name="msg_0669" formatted="false">"TUM blue"</string>
+    <string name="msg_0670" formatted="false">"Sea green"</string>
+    <string name="msg_0671" formatted="false">"Warm orange"</string>
+    <string name="msg_0672" formatted="false">"Lavender"</string>
+    <string name="msg_0673" formatted="false">"Me"</string>
+    <string name="msg_0674" formatted="false">"Targets for this write (multiple allowed)"</string>
+    <string name="msg_0675" formatted="false">"{0} {1}"</string>
+    <string name="msg_0676" formatted="false">"This write only; default switches unchanged. Both targets write two calendars; showing both in HONOR may display duplicates."</string>
+    <string name="language_title">Language</string>
+    <string name="language_note">Applies immediately and saves locally. Course names, locations and personal input remain unchanged.</string>
+    <string name="msg_0677" formatted="false">"; "</string>
+    <string name="msg_0678" formatted="false">", "</string>
+    <string name="msg_0679" formatted="false">"{0} {1}:{2}–{3}:{4}"</string>
+    <string name="msg_0680" formatted="false">"Confirmed place"</string>
+    <string name="msg_0681" formatted="false">"Planned"</string>
+    <string name="msg_0682" formatted="false">"Rescheduled"</string>
+    <string name="msg_0683" formatted="false">"Cancelled"</string>
+    <string name="msg_0684" formatted="false">"Rejected"</string>
+    <string name="msg_0685" formatted="false">"Deleted"</string>
 </resources>

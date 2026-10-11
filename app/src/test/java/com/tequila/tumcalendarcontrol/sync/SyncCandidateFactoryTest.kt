@@ -1,8 +1,8 @@
 /*
- * 职责：验证来源、规则和手动事项转换为目标事件的纯逻辑。
- * 输入／输出：输入合成实例、规则与手动事项；输出稳定身份、默认状态和过滤断言。
- * 外部副作用：无。
- * 不负责：网络、Android Provider、Google 或真实日历验证。
+ * Aufgabe: synthetische Regressionstests für SyncCandidateFactory.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

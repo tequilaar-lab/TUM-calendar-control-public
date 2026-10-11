@@ -1,7 +1,8 @@
 /*
- * 职责：把用户选择的锚点与范围解析为明确的已缓存课次集合。
- * 输入／输出：来源课次、选中身份和范围；输出独立课次，不改变 UID 或实例键。
- * 外部副作用：无。不负责日历去重、写入、联网或持久化。
+ * Aufgabe: Gewählten Anker und Bereich in konkrete gespeicherte Termine auflösen.
+ * Ein-/Ausgabe: Quelltermine, Auswahlidentitäten und Bereich -> konkrete unveränderte Instanzen.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Direkte Netzwerke, eigene Quellenanalyse oder eigenmächtige Kalenderoperationen.
  */
 package com.tequila.tumcalendarcontrol.ui
 
@@ -10,7 +11,7 @@ import com.tequila.tumcalendarcontrol.sync.SourceOccurrenceIdentity
 import java.time.ZoneId
 
 internal object SourceAttendanceScope {
-    /** 完整原始标题保留教学类型和组别；标题仅选取成员，绝不作为事件身份。 */
+    /** Originaltitel behält Typ/Gruppe; nur Mitgliedsauswahl, niemals Terminidentität. */
     fun resolve(
         occurrences: List<SourceCalendarOccurrence>,
         selection: Set<SourceOccurrenceIdentity>,

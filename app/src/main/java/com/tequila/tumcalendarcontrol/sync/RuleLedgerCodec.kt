@@ -1,10 +1,12 @@
 /*
- * 职责：以版本化、确定性的文本格式编解码非敏感规则资料库，供私有偏好存储使用。
- * 输入／输出：输入 RuleLedger 或其文本；输出可恢复资料库，损坏数据安全退回空资料库。
- * 外部副作用：无。
- * 不负责：加密连接凭据、解析真实日历、迁移 OAuth 令牌或写入任何外部服务。
+ * Aufgabe: Regelbestand in versioniertem deterministischem Textformat für private Speicherung kodieren.
+ * Ein-/Ausgabe: Regelbestand/versionierter Text -> deterministische Kodierung bzw. sicherer Wiederherstellungswert.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Verschlüsselung von Zugangsdaten, echte Kalender, OAuth-Tokenmigration oder externe Dienste.
  */
 package com.tequila.tumcalendarcontrol.sync
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import java.nio.charset.StandardCharsets
@@ -41,7 +43,7 @@ object RuleLedgerCodec {
 
     fun decode(text: String?): RuleLedger = decodeOrNull(text) ?: RuleLedger()
 
-    /** 供备份导入区分“合法空资料库”和“无法解析文件”；偏好恢复仍使用安全空默认值。 */
+    /** Sicherungsimport unterscheidet gültige leere Datenbank von unlesbarer Datei; Präferenzen behalten sicheren leeren Standard. */
     fun decodeOrNull(text: String?): RuleLedger? = runCatching {
         val lines = text?.lineSequence()?.filter(String::isNotBlank)?.toList().orEmpty()
         require(lines.firstOrNull() in SUPPORTED_VERSIONS)
@@ -75,7 +77,7 @@ object RuleLedgerCodec {
                     unpack(fields[6]).ifBlank { null },
                     fields.getOrNull(7)?.let(::unpack)?.ifBlank { null },
                 )
-                else -> error("未知资料库记录")
+                else -> error(message(120))
             }
         }
         RuleLedger(rules.values.toList(), manualEvents, mappings, summary, groupRules.values.toList())

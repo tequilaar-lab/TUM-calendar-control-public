@@ -1,8 +1,8 @@
 /*
- * 职责：验证私有同步配置的纯格式校验与脱敏显示。
- * 输入／输出：输入合成地址与合成客户端标识；输出配置问题与不含路径的摘要断言。
- * 外部副作用：无。
- * 不负责：Android Keystore、真实订阅、OAuth、网络或日历 Provider 集成。
+ * Aufgabe: synthetische Regressionstests für PrivateSyncConfiguration.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

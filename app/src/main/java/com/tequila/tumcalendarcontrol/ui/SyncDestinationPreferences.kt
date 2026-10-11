@@ -1,8 +1,8 @@
 /*
- * 职责：在应用私有 SharedPreferences 中保存同步目标的开关选择。
- * 输入／输出：输入 SyncDestinations；输出恢复的 SyncDestinations，缺失时安全地全部关闭。
- * 外部副作用：只写入本应用沙盒；不访问日历 Provider、Google、网络或账户。
- * 不负责：令牌、账户标识、日历 ID、真实同步队列或跨设备配置同步。
+ * Aufgabe: Ausgabezielschalter in app-privaten SharedPreferences speichern.
+ * Ein-/Ausgabe: SyncDestinations -> privat wiederhergestellte Schalter, standardmäßig alle aus.
+ * Nebenwirkungen: Nur private Ausgabeschalterpräferenzen.
+ * Nicht zuständig: Tokens, Kontoidentitäten, Kalender-IDs, echte Synchronisierungswarteschlangen oder geräteübergreifende Konfiguration.
  */
 package com.tequila.tumcalendarcontrol.ui
 

@@ -1,10 +1,12 @@
 /*
- * 职责：保存受控输出预览、Google 授权和执行／回滚请求的运行时状态。
- * 输入／输出：接收用户确认和适配层回调；输出令牌、请求标志、授权结果及待执行候选。
- * 外部副作用：无；不保存令牌、不调用 OAuth、不创建／更新／删除任何日历事件。
- * 不负责：构建同步候选、读写 RuleLedger、解析 iCal、系统权限请求或网关实现。
+ * Aufgabe: Ausgabevorschau, Google-Autorisierung und Ausführungs-/Rücknahmeanfragen im Prozess halten.
+ * Ein-/Ausgabe: Bestätigungen und Adapterrückrufe -> Sitzungstoken, Anfrageflags und Ausgabekandidaten.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Synchronisierungskandidaten, RuleLedger-Zugriffe, iCal-Parsing, Systemberechtigungen oder Gateways.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,7 +19,7 @@ enum class GoogleConnectionVerification {
     NOT_CHECKED, CHECKING, VERIFIED, ACTION_REQUIRED, FAILED,
 }
 
-/** 输出动作由调用者先完成前置检查，状态机只负责一次运行中的请求与令牌。 */
+/** Aufrufer prüft Voraussetzungen; Zustandsmaschine verwaltet nur laufende Anfrage und Token. */
 internal class ManagedOutputWorkflowState {
     var preview by mutableStateOf<ManagedSyncPreview?>(null)
     var desiredEvents by mutableStateOf<List<DesiredCalendarEvent>>(emptyList())
@@ -33,10 +35,10 @@ internal class ManagedOutputWorkflowState {
         private set
     var googleConnectionCheckInProgress by mutableStateOf(false)
         private set
-    /** 只读检查也有独立编号，断开或重新授权后忽略旧网络线程的回调。 */
+    /** Lesende Prüfung mit eigener Nummer; nach Trennung/Neuauthorisierung alte Rückrufe ignorieren. */
     var googleConnectionCheckToken by mutableStateOf(0L)
         private set
-    var googleConnectionCheckDetail by mutableStateOf("连接后可检查应用专用日历；检查不会创建日历或写入日程。")
+    var googleConnectionCheckDetail by mutableStateOf(message(403))
         private set
     var googleConnectionVerification by mutableStateOf(GoogleConnectionVerification.NOT_CHECKED)
         private set
@@ -52,11 +54,11 @@ internal class ManagedOutputWorkflowState {
     val hasGoogleAuthorization: Boolean get() = googleAccessToken != null
     fun currentGoogleAccessToken(): String? = googleAccessToken
 
-    /** 仅表达 OAuth 页面启动意图，令牌只在适配层回调后写入当前进程。 */
+    /** Nur OAuth-Seitenabsicht; Token erst nach Adapterrückruf in aktuellen Prozess übernehmen. */
     fun requestGoogleAuthorization(enabled: Boolean): String? {
         if (!enabled) {
             googleAuthorizationStatus = GoogleAuthorizationStatus.FAILED
-            googleAuthorizationDetail = "请先开启 Google 日历写入，再连接 Google 日历。"
+            googleAuthorizationDetail = message(404)
             return googleAuthorizationDetail
         }
         googleAccessToken = null
@@ -98,17 +100,17 @@ internal class ManagedOutputWorkflowState {
         cancelGoogleConnectionCheck()
     }
 
-    /** 只允许拥有当前运行短令牌时发起；具体网络检查由应用入口协调。 */
+    /** Nur mit Sitzungstoken erlauben; tatsächliche Netzwerkprüfung am App-Einstieg koordinieren. */
     fun requestGoogleConnectionCheck(): String? {
         if (googleAccessToken.isNullOrBlank()) {
-            googleConnectionCheckDetail = "请先连接 Google 日历，再执行只读连接检查。"
+            googleConnectionCheckDetail = message(405)
             return googleConnectionCheckDetail
         }
         if (googleConnectionCheckInProgress) return null
         googleConnectionCheckToken += 1
         googleConnectionCheckRequested = true
         googleConnectionCheckInProgress = true
-        googleConnectionCheckDetail = "正在检查 Google 连接；不会创建日历或写入日程。"
+        googleConnectionCheckDetail = message(406)
         googleConnectionVerification = GoogleConnectionVerification.CHECKING
         return null
     }
@@ -129,12 +131,12 @@ internal class ManagedOutputWorkflowState {
         return true
     }
 
-    /** HTTP 401 已证明当前短令牌无效；清除内存引用，下一次操作必须经用户重新连接。 */
+    /** HTTP 401 beweist ungültigen Token; Speicherreferenz entfernen und ausdrückliche Neuverbindung verlangen. */
     fun invalidateGoogleAuthorization(): String {
         googleAuthorizationRequested = false
         googleAccessToken = null
         googleAuthorizationStatus = GoogleAuthorizationStatus.FAILED
-        googleAuthorizationDetail = "Google 授权已失效（HTTP 401）；请重新连接 Google 日历后再写入。"
+        googleAuthorizationDetail = message(407)
         googleConnectionVerification = GoogleConnectionVerification.FAILED
         cancelGoogleConnectionCheck()
         return googleAuthorizationDetail
@@ -144,17 +146,17 @@ internal class ManagedOutputWorkflowState {
         googleConnectionCheckToken += 1
         googleConnectionCheckRequested = false
         googleConnectionCheckInProgress = false
-        googleConnectionCheckDetail = "连接后可检查应用专用日历；检查不会创建日历或写入日程。"
+        googleConnectionCheckDetail = message(403)
         googleConnectionVerification = GoogleConnectionVerification.NOT_CHECKED
     }
 
-    /** 缓存清理结果只更新同一轮失效授权；不能覆盖用户已经完成的新授权。 */
+    /** Cache-Ergebnis nur derselben abgelaufenen Autorisierung zuordnen; neue Autorisierung nicht überschreiben. */
     fun resolveRejectedGoogleTokenCacheClear(cleared: Boolean): String? {
         if (googleAuthorizationStatus != GoogleAuthorizationStatus.FAILED || googleAccessToken != null) return null
         googleAuthorizationDetail = if (cleared) {
-            "Google 授权已失效（HTTP 401）；旧令牌缓存已清除，请重新连接 Google 日历后再写入。"
+            message(408)
         } else {
-            "Google 授权已失效（HTTP 401）；旧令牌缓存清理未确认，请重新连接 Google 日历后再写入。"
+            message(409)
         }
         return googleAuthorizationDetail
     }
@@ -179,7 +181,7 @@ internal class ManagedOutputWorkflowState {
         return operationToken
     }
 
-    /** 旧后台任务只有令牌一致时才可以结束当前状态，避免覆盖新操作。 */
+    /** Alter Hintergrundauftrag beendet Zustand nur bei gleichem Token; neue Aktion schützen. */
     fun finishOperation(token: Long): Boolean {
         if (token != operationToken || !inProgress) return false
         syncRequested = false

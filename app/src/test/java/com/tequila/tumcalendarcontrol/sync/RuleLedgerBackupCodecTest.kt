@@ -1,8 +1,8 @@
 /*
- * 职责：验证规则备份只包含可恢复规则和手动事项，并拒绝非备份／含映射内容。
- * 输入／输出：输入合成资料库和文本；输出编解码及隐私边界断言。
- * 外部副作用：无。
- * 不负责：SAF 文件选择、偏好持久化、来源读取或日历验证。
+ * Aufgabe: synthetische Regressionstests für RuleLedgerBackupCodec.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

@@ -1,8 +1,8 @@
 /*
- * 职责：回归用户范围承诺与实际待写入集合。
- * 输入／输出：合成缓存与交互，输出范围、状态和日期断言。
- * 外部副作用：仅 Robolectric 沙盒；不访问网络或真实日历。
- * 不负责：真机与供应商同步验收。
+ * Aufgabe: synthetische Regressionstests für AttendanceScopeRegression.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.ui
 

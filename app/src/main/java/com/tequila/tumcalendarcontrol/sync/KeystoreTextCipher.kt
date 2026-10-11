@@ -1,10 +1,12 @@
 /*
- * 职责：以 Android Keystore 中不可导出的 AES-GCM 密钥加密／解密少量私有配置文本。
- * 输入／输出：输入明文或 Base64 封装密文；输出对应文本或受控失败。
- * 外部副作用：首次使用时在 Android Keystore 创建本应用密钥；不联网、不记录明文。
- * 不负责：用户认证、生物识别、令牌刷新、备份或跨设备密钥迁移。
+ * Aufgabe: Private Konfiguration mit nicht exportierbarem Android-Keystore-AES-GCM-Schlüssel verschlüsseln.
+ * Ein-/Ausgabe: Klartext/verschlüsselte Konfiguration -> AES-GCM-Chiffrat/Klartext.
+ * Nebenwirkungen: Nur Android-Keystore und private Verschlüsselung; keine Netzwerke oder Kalender.
+ * Nicht zuständig: Benutzerauthentifizierung, Biometrie, Token-Erneuerung, Sicherung oder geräteübergreifende Schlüsselmigration.
  */
 package com.tequila.tumcalendarcontrol.sync
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
@@ -28,9 +30,9 @@ class KeystoreTextCipher {
 
     fun decrypt(encodedPayload: String): String {
         val payload = Base64.decode(encodedPayload, Base64.NO_WRAP)
-        require(payload.isNotEmpty()) { "私有配置密文为空。" }
+        require(payload.isNotEmpty()) { message(86) }
         val ivLength = payload[0].toInt() and 0xff
-        require(ivLength in 12..16 && payload.size > ivLength + 1) { "私有配置密文格式无效。" }
+        require(ivLength in 12..16 && payload.size > ivLength + 1) { message(87) }
         val buffer = ByteBuffer.wrap(payload, 1, payload.size - 1)
         val iv = ByteArray(ivLength).also(buffer::get)
         val encrypted = ByteArray(buffer.remaining()).also(buffer::get)

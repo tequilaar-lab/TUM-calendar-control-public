@@ -1,16 +1,18 @@
 /*
- * 职责：把课程组织为“课程名 → 教学类型 → 独立课次”的纯视觉目录。
- * 输入／输出：输入独立 Course 列表；输出保留每条 Course 身份的三级浏览分组。
- * 外部副作用：无；不保存分组、不修改课程、规则、收藏或日历。
- * 不负责：以标题或教学类型作为同步身份、合并 UID／实例、筛选来源或处理用户点击。
+ * Aufgabe: Rein visuellen Kursname-/Lehrtyp-/Terminbaum erstellen.
+ * Ein-/Ausgabe: Kurse und Anzeigenamen -> rein visueller Kurs-/Typ-/Terminbaum.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Synchronisierungsidentität anhand von Titel/Lehrtyp, Zusammenlegen von UIDs/Instanzen, Quellenfilter oder Benutzeraktionen.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import com.tequila.tumcalendarcontrol.domain.Course
 import com.tequila.tumcalendarcontrol.domain.displayTitle
 import java.util.Locale
 
-/** 顶层只按去除教学类型后的显示课程名归类；成员身份仍由 Course.id 保留。 */
+/** Visuelle Gruppierung nach Kursname ohne Lehrtyp; Course.id behält jede Mitgliedsidentität. */
 internal data class CourseDisplayGroup(
     val key: String,
     val displayTitle: String,
@@ -20,7 +22,7 @@ internal data class CourseDisplayGroup(
     val teachingTypeCount: Int get() = teachingTypes.size
 }
 
-/** 类型行是目录节点，不是同步类型或日历颜色；未知后缀只安全归入“其他课次”。 */
+/** Typzeile ist Browserknoten, kein Synchronisierungstyp oder Kalenderfarbe; unbekannte Suffixe in sonstige Termine. */
 internal data class CourseTeachingTypeGroup(
     val key: String,
     val label: String,
@@ -28,18 +30,18 @@ internal data class CourseTeachingTypeGroup(
 )
 
 internal object CourseDisplayGroupModel {
-    /** 空白与大小写差异不会拆散同一视觉课程名；排序仅改善浏览，不参与任何业务规则。 */
+    /** Leerzeichen/Großschreibung teilen visuelle Gruppen nicht; Sortierung ausschließlich zum Browsen. */
     fun groups(courses: List<Course>, typeNames: Map<String, String> = emptyMap()): List<CourseDisplayGroup> = courses
         .map { course -> course to parseTitle(course.displayTitle) }
         .groupBy { (_, parsed) -> normalizedKey(parsed.courseName) }
         .map { (key, members) ->
-            val title = members.first().second.courseName.ifBlank { "未命名课程" }
+            val title = members.first().second.courseName.ifBlank { message(328) }
             val types = members
                 .groupBy { (_, parsed) -> parsed.type }
                 .map { (type, typeMembers) ->
                     CourseTeachingTypeGroup(
-                        key = "$key:${normalizedKey(type.key)}",
-                        label = typeNames["$key:${normalizedKey(type.key)}"] ?: type.label,
+                        key = "${(key)}:${(normalizedKey(type.key))}",
+                        label = typeNames["${(key)}:${(normalizedKey(type.key))}"] ?: type.label,
                         courses = typeMembers.map { it.first }.sortedWith(compareBy<Course> { it.startsAt }.thenBy { it.id }),
                     )
                 }
@@ -48,12 +50,12 @@ internal object CourseDisplayGroupModel {
         }
         .sortedWith(compareBy<CourseDisplayGroup> { it.displayTitle.lowercase(Locale.ROOT) }.thenBy(CourseDisplayGroup::key))
 
-    /** 给更新说明复用与目录相同的“课程名忽略教学类型”归类规则；不用于同步身份。 */
+    /** Gleiche visuelle Gruppierung für Änderungsübersicht; niemals Synchronisierungsidentität. */
     fun titleGroupingKey(title: String): String = normalizedKey(parseTitle(title).courseName)
 
-    /** 只识别标题末尾的标准 TUM 教学类型，避免把普通文字或地点错误当成类型。 */
+    /** Nur standardisierte TUM-Lehrtypen am Titelende erkennen; keine normalen Wörter oder Orte als Typ. */
     private fun parseTitle(rawTitle: String): ParsedCourseTitle {
-        val title = rawTitle.trim().replace(Regex("\\s+"), " ").ifBlank { "未命名课程" }
+        val title = rawTitle.trim().replace(Regex("\\s+"), " ").ifBlank { message(328) }
         val bracket = TitleRules.BRACKET_SUFFIX.find(title)
         if (bracket != null) {
             val type = recognizedType(bracket.groupValues[1])
@@ -68,7 +70,7 @@ internal object CourseDisplayGroupModel {
         if (grouped != null) {
             return ParsedCourseTitle(title.substring(0, grouped.range.first).cleanName(), TeachingType(grouped.groupValues[1].uppercase(Locale.ROOT)))
         }
-        // 仅在原标准类型无法识别时回退；完整词匹配不会把 Praktikumsbericht 误判成 PR。
+        // Fallback nur bei unbekanntem Standardtyp; vollständige Wörter verhindern PR-Erkennung in Praktikumsbericht.
         val inferred = when {
             TitleRules.VI_TOKEN.containsMatchIn(title) -> TeachingType("VI")
             TitleRules.PRACTICAL_TOKEN.containsMatchIn(title) -> TeachingType("PR")
@@ -80,25 +82,25 @@ internal object CourseDisplayGroupModel {
     private fun recognizedType(bracketContent: String): TeachingType? = TitleRules.TYPE_TOKEN.find(bracketContent)
         ?.groupValues?.get(1)?.uppercase(Locale.ROOT)?.let(::TeachingType)
 
-    private fun String.cleanName(): String = trim().trimEnd(',', ';', ':', '/', '-', '–', '—').trim().ifBlank { "未命名课程" }
+    private fun String.cleanName(): String = trim().trimEnd(',', ';', ':', '/', '-', '–', '—').trim().ifBlank { message(328) }
     private fun normalizedKey(title: String): String = title.trim().replace(Regex("\\s+"), " ").lowercase(Locale.ROOT).ifBlank { "(untitled)" }
 
     private data class ParsedCourseTitle(val courseName: String, val type: TeachingType)
     private data class TeachingType(val label: String) { val key: String get() = label.lowercase(Locale.ROOT) }
 
     private object TitleRules {
-        val OTHER_TYPE = TeachingType("其他课次")
+        val OTHER_TYPE = TeachingType(message(329))
         private const val TYPE_NAMES = "VO|UE|PR|SE|TU|EX|KO|VL|VI|ÜB|VÜ"
         val VI_TOKEN = Regex("(?i)(?<![\\p{L}\\p{N}])VI(?![\\p{L}\\p{N}])")
         val PRACTICAL_TOKEN = Regex("(?i)(?<![\\p{L}\\p{N}])(?:Projektpraktikum|Praktikum)(?![\\p{L}\\p{N}])")
-        val TYPE_TOKEN = Regex("(?i)(?<![A-ZÄÖÜ])($TYPE_NAMES)(?![A-ZÄÖÜ])")
+        val TYPE_TOKEN = Regex("(?i)(?<![A-ZÄÖÜ])(${(TYPE_NAMES)})(?![A-ZÄÖÜ])")
         val BRACKET_SUFFIX = Regex("\\s*[\\(\\[]([^\\)\\]]+)[\\)\\]]\\s*$")
         val TYPE_SUFFIX = Regex("(?i)(?:\\s|[,;:/\\-–—])+($TYPE_NAMES)\\s*$")
         val TYPE_BEFORE_GROUP = Regex("(?i)\\s+($TYPE_NAMES)\\s*,\\s*(?:Standardgruppe|Gruppe\\b.*|Group\\b.*)$")
     }
 }
 
-/** 顶层和类型层都仅保存视觉组键；切换不会改变其它组或课程成员。 */
+/** Nur visuelle Gruppenschlüssel speichern; Auswahl verändert keine Gruppen oder Kursmitglieder. */
 internal fun Set<String>.toggleCourseDisplayGroup(key: String): Set<String> =
     if (key in this) this - key else this + key
 

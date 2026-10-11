@@ -1,10 +1,12 @@
 /*
- * 职责：组合受限 HTTPS 获取与 RFC 5545 解析，产出仅供用户查看的脱敏只读预览摘要。
- * 输入／输出：输入私有来源地址；输出全部来源课程的本机目录与脱敏摘要。
- * 外部副作用：通过获取器产生一次由用户操作触发的 HTTPS 只读请求；不保存原文或日程。
- * 不负责：推断 Fixplatz、向日志显示来源标题/URL、请求日历权限、创建或修改本机/Google 日历。
+ * Aufgabe: Begrenzten HTTPS-Abruf und RFC-5545-Analyse zur lesenden bereinigten Vorschau kombinieren.
+ * Ein-/Ausgabe: Expliziter Leseauftrag -> bereinigte Vorschau mit Kursen/Instanzen.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Fixplatz-Ableitung, Quellentitel/URLs in Logs, Kalenderberechtigungen oder lokale/Google-Kalenderänderungen.
  */
 package com.tequila.tumcalendarcontrol.sync
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import java.time.Clock
 import java.time.Instant
@@ -16,9 +18,9 @@ data class IcalReadOnlyPreview(
     val skippedByReason: Map<IcalSkipReason, Int>,
     val firstManageableStart: Instant?,
     val lastManageableEnd: Instant?,
-    /** 默认交给内存 UI；用户明确保留时，应用私有快照可保存目录字段以供新旧版本切换，绝不保存原始 ICS、地址、日志或审计文档。 */
+    /** Standardmäßig nur im Speicher. Nach ausdrücklichem Behalten private Katalogmomentaufnahme für Versionswahl; keine Original-ICS, Adressen, Logs oder Auditdateien. */
     val courses: List<SourceCourse>,
-    /** 用于生成同步候选；用户明确保留时，应用私有快照可保存 UID、实例键和显示字段，绝不进入日志、计划或 Git。 */
+    /** Synchronisierungskandidaten; nach ausdrücklichem Behalten UID, Instanz und Anzeige privat speicherbar, niemals in Logs, Plänen oder Git. */
     val occurrences: List<SourceCalendarOccurrence> = emptyList(),
 )
 
@@ -32,12 +34,12 @@ class ReadOnlyIcalImportService(
     private val parser: IcalSourceParser = IcalSourceParser(),
     private val clock: Clock = Clock.systemUTC(),
 ) {
-    /** 只展开历史 120 天到未来 180 天，避免无限 RRULE 占用资源。 */
+    /** Vergangene 120 bis kommende 180 Tage expandieren; unendliche RRULE-Auswertung verhindern. */
     fun preview(url: String): IcalReadOnlyImportResult = preview(url, SourceOutputDateWindow())
 
     fun preview(url: String, window: SourceOutputDateWindow): IcalReadOnlyImportResult {
         val bounds = sourceReadBounds(window, clock.instant())
-            ?: return IcalReadOnlyImportResult.Failure("读取范围最多五年；请缩小开始和结束日期后重试。")
+            ?: return IcalReadOnlyImportResult.Failure(message(118))
         val text = when (val fetched = fetcher.fetch(url)) {
             is IcalFetchResult.Success -> fetched.text
             is IcalFetchResult.Failure -> return IcalReadOnlyImportResult.Failure(fetched.reason)
@@ -48,7 +50,7 @@ class ReadOnlyIcalImportService(
                 windowStart = bounds.first,
                 windowEnd = bounds.second,
             )
-        }.getOrElse { return IcalReadOnlyImportResult.Failure("来源内容无法作为 iCal 日历解析") }
+        }.getOrElse { return IcalReadOnlyImportResult.Failure(message(119)) }
         val occurrences = parsed.occurrences
         val courses = SourceCourseCatalog.from(occurrences)
         return IcalReadOnlyImportResult.Success(
@@ -65,7 +67,7 @@ class ReadOnlyIcalImportService(
     }
 }
 
-/** 无限重复规则必须有界；用户明确选择的日期优先，空端按相邻日期补齐默认窗口。 */
+/** Unendliche Wiederholungen begrenzen; explizite Datumswahl bevorzugen, leere Grenze passend zum Standardfenster ergänzen. */
 internal fun sourceReadBounds(window: SourceOutputDateWindow, now: Instant): Pair<Instant, Instant>? {
     val zone = java.time.ZoneId.of("Europe/Berlin")
     val start = window.startsOn?.atStartOfDay(zone)?.toInstant()

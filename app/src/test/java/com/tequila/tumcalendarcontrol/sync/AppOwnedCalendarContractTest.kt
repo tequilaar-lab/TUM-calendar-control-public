@@ -1,8 +1,8 @@
 /*
- * 职责：验证目标日历可见描述不泄露同步身份。
- * 输入／输出：输入合成 UID 与实例键；输出通用应用归属描述断言。
- * 外部副作用：无；不访问 Android Provider、网络、账户或真实日历。
- * 不负责：日历创建、事件写入、映射持久化或来源解析。
+ * Aufgabe: synthetische Regressionstests für AppOwnedCalendarContract.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

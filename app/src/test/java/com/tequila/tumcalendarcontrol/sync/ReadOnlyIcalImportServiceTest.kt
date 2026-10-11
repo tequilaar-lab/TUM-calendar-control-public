@@ -1,8 +1,8 @@
 /*
- * 职责：以合成 HTTPS 响应验证只读来源获取、失败脱敏和全部来源课程预览汇总。
- * 输入／输出：输入伪造传输和 RFC 5545 文本；输出获取器及服务结果断言。
- * 外部副作用：无；不请求网络、不读取私有地址或真实日历。
- * 不负责：Android UI、真实 TUM 订阅或目标日历写入验证。
+ * Aufgabe: synthetische Regressionstests für ReadOnlyIcalImportService.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

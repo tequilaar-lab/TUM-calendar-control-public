@@ -1,10 +1,12 @@
 /*
- * 职责：表示并在应用私有偏好中保存用户明确保留的来源课程快照。
- * 输入／输出：输入成功读取后的 iCal 预览；输出可恢复的课程、实例和新旧快照选择状态。
- * 外部副作用：SourceSnapshotPreferences 只写入应用沙盒 SharedPreferences；不访问网络、账户或日历。
- * 不负责：保存订阅地址、原始 ICS、OAuth、目标日历资料、自动写入或按标题识别同步身份。
+ * Aufgabe: Ausdrücklich behaltene Kursmomentaufnahmen in privaten Präferenzen speichern.
+ * Ein-/Ausgabe: Erfolgreiche iCal-Vorschau -> wiederherstellbare Kurse, Instanzen und aktive Datenversion.
+ * Nebenwirkungen: Nur app-private SharedPreferences, keine Quellenadressen oder Original-ICS.
+ * Nicht zuständig: Abonnementadressen, Original-ICS, OAuth, Zielkalenderdaten, automatische Ausgabe oder Titelerkennung.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import android.content.Context
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyPreview
@@ -14,10 +16,10 @@ import com.tequila.tumcalendarcontrol.sync.SourceCourseCatalog
 import java.time.Instant
 import java.util.Base64
 
-/** 两个快照槽位都指向用户曾成功读取的来源；仅活动槽位可进入既有预览流程。 */
+/** Beide Slots sind erfolgreich gelesene Quellen; nur aktiver Slot in Vorschau. */
 enum class SourceSnapshotSlot { LATEST, PREVIOUS }
 
-/** 保存范围刻意只保留课程目录和实例级去重身份，不保留原始订阅文件或地址。 */
+/** Nur Katalog und Instanzidentität speichern, keine Originaldatei oder Abonnementadresse. */
 data class SavedSourceSnapshot(
     val capturedAt: Instant,
     val sourceEventCount: Int,
@@ -44,7 +46,7 @@ data class SavedSourceSnapshot(
     }
 }
 
-/** 新读取会保留一个前序快照；切换只变更活动引用，绝不隐式读取或写入。 */
+/** Neue Lesung behält eine Vorgängerversion; Wechsel nur aktive Referenz, kein implizites Lesen/Schreiben. */
 data class SavedSourceSnapshots(
     val latest: SavedSourceSnapshot? = null,
     val previous: SavedSourceSnapshot? = null,
@@ -67,7 +69,7 @@ data class SavedSourceSnapshots(
     }
 }
 
-/** 私有偏好只保存 Base64 编码字段；字段编码防止课程内容成为 SharedPreferences 键的一部分。 */
+/** Private Präferenzfelder Base64-kodieren; Kursinhalt darf nicht Teil des Präferenzschlüssels werden. */
 internal class SourceSnapshotPreferences(context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
     private var loaded: SavedSourceSnapshots? = null
@@ -79,9 +81,9 @@ internal class SourceSnapshotPreferences(context: Context) {
         val raw = preferences.getString(KEY, null)
         val decoded = SourceSnapshotCodec.decode(raw)
         if (raw != null && SourceSnapshotCodec.encode(decoded) != raw) {
-            // 不覆盖唯一可恢复副本；损坏/旧格式仅留在同一私有偏好中。
+            // Einzige wiederherstellbare Kopie nicht überschreiben; beschädigtes/altes Format nur privat behalten.
             preferences.edit().putString("recovery_original", raw).apply()
-            recoveryNotice = if (decoded.active == null) "保存的课程暂时无法恢复，原记录已保留。请重新读取课程；已写入日历未改变。" else "部分课程缓存无法恢复，已保留原记录并使用可恢复版本。"
+            recoveryNotice = if (decoded.active == null) message(651) else message(652)
         }
         loaded = decoded
         return decoded
@@ -99,7 +101,7 @@ internal class SourceSnapshotPreferences(context: Context) {
     }
 }
 
-/** 可单测的紧凑编码；解析失败时返回空快照，不抛出、不记录任何课程内容。 */
+/** Unit-testbarer kompakter Codec; Fehler liefert leere Daten, keine Inhaltsprotokollierung oder Ausnahme. */
 internal object SourceSnapshotCodec {
     private const val VERSION = "v1"
     private const val LATEST = "latest"
@@ -155,7 +157,7 @@ internal object SourceSnapshotCodec {
                 startsAt = Instant.ofEpochMilli(row.requireField(6).toLong()),
                 endsAt = Instant.ofEpochMilli(row.requireField(7).toLong()),
                 isCancelled = row.requireField(8) == "1",
-                location = decodeField(row.getOrNull(9) ?: error("快照字段缺失")),
+                location = decodeField(row.getOrNull(9) ?: error(message(653))),
             )
         }
         return SavedSourceSnapshot(
@@ -166,12 +168,12 @@ internal object SourceSnapshotCodec {
         )
     }
 
-    private fun List<String>.requireField(index: Int): String = getOrNull(index)?.takeIf(String::isNotBlank) ?: error("快照字段缺失")
+    private fun List<String>.requireField(index: Int): String = getOrNull(index)?.takeIf(String::isNotBlank) ?: error(message(653))
     private fun encodeField(value: String): String = Base64.getUrlEncoder().withoutPadding().encodeToString(value.toByteArray(Charsets.UTF_8))
     private fun decodeField(value: String): String = String(Base64.getUrlDecoder().decode(value), Charsets.UTF_8)
 }
 
-/** 只用 UID 与实例键计算变化；课程名称仅用来说明“同名新课程”或“新名称课程”。 */
+/** Änderungen nur per UID/Instanz; Namen erklären lediglich neue Kurse mit bekanntem/neuem Titel. */
 data class SourceSnapshotDifference(
     val addedOccurrenceCount: Int,
     val removedOccurrenceCount: Int,
@@ -182,9 +184,9 @@ data class SourceSnapshotDifference(
     val isEmpty: Boolean get() = addedOccurrenceCount == 0 && removedOccurrenceCount == 0 && changedOccurrenceCount == 0
 
     fun summary(): String = if (isEmpty) {
-        "和上次读取相比，课程课次没有变化。"
+        message(654)
     } else {
-        "和上次读取相比：新增 $addedOccurrenceCount 个课次、消失 $removedOccurrenceCount 个课次、变更 $changedOccurrenceCount 个课次；新增课程中，同名课程 $sameTitleNewCourseCount 门、新名称课程 $newTitleCourseCount 门。"
+        message(655, (addedOccurrenceCount), (removedOccurrenceCount), (changedOccurrenceCount), (sameTitleNewCourseCount), (newTitleCourseCount))
     }
 }
 

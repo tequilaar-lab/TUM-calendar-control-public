@@ -1,0 +1,692 @@
+<!-- Aufgabe: lokalisierte App-Texte; Ein-/Ausgabe: Ressourcenschlüssel und Anzeigevorlagen; keine externen Nebenwirkungen. -->
+<resources>
+    <string name="app_name">TUM Kalendersteuerung</string>
+    <string name="msg_0000" formatted="false">"Regel und Termin müssen dieselbe Quell-UID haben."</string>
+    <string name="msg_0001" formatted="false">"Verbindlich teilnehmen"</string>
+    <string name="msg_0002" formatted="false">"Grün"</string>
+    <string name="msg_0003" formatted="false">"Teilnahme hat Vorrang"</string>
+    <string name="msg_0004" formatted="false">"Teilnahme auswählen"</string>
+    <string name="msg_0005" formatted="false">"Blau"</string>
+    <string name="msg_0006" formatted="false">"Teilnahme nach Bedarf entscheiden"</string>
+    <string name="msg_0007" formatted="false">"Ab hier nicht teilnehmen"</string>
+    <string name="msg_0008" formatted="false">"Grau"</string>
+    <string name="msg_0009" formatted="false">"Ab dem gewählten Termin nicht teilnehmen; Vergangenheit unverändert"</string>
+    <string name="msg_0010" formatted="false">"Keine Quellenangabe"</string>
+    <string name="msg_0011" formatted="false">"Stunden müssen zwischen 0 und 23 liegen."</string>
+    <string name="msg_0012" formatted="false">"Minuten müssen zwischen 0 und 59 liegen."</string>
+    <string name="msg_0013" formatted="false">"Das Ende muss nach dem Beginn liegen."</string>
+    <string name="msg_0014" formatted="false">"Montag"</string>
+    <string name="msg_0015" formatted="false">"Dienstag"</string>
+    <string name="msg_0016" formatted="false">"Mittwoch"</string>
+    <string name="msg_0017" formatted="false">"Donnerstag"</string>
+    <string name="msg_0018" formatted="false">"Freitag"</string>
+    <string name="msg_0019" formatted="false">"Samstag"</string>
+    <string name="msg_0020" formatted="false">"Sonntag"</string>
+    <string name="msg_0021" formatted="false">"Kurs A"</string>
+    <string name="msg_0022" formatted="false">"Dienstag 10:00–12:00"</string>
+    <string name="msg_0023" formatted="false">"Beispielcampus"</string>
+    <string name="msg_0024" formatted="false">"Kurs B"</string>
+    <string name="msg_0025" formatted="false">"Mittwoch 14:00–16:00"</string>
+    <string name="msg_0026" formatted="false">"Kurs C"</string>
+    <string name="msg_0027" formatted="false">"Donnerstag 08:00–10:00"</string>
+    <string name="msg_0028" formatted="false">"Kurs D"</string>
+    <string name="msg_0029" formatted="false">"Donnerstag 16:00–18:00"</string>
+    <string name="msg_0030" formatted="false">"Kurs E"</string>
+    <string name="msg_0031" formatted="false">"Freitag 10:00–12:00"</string>
+    <string name="msg_0032" formatted="false">"Beispielkurs: Regelvorführung"</string>
+    <string name="msg_0033" formatted="false">"TUM Kalendersteuerung"</string>
+    <string name="msg_0034" formatted="false">"Von TUM Kalendersteuerung erstellt."</string>
+    <string name="msg_0035" formatted="false">"Lokaler App-Kalender konnte nicht erstellt werden"</string>
+    <string name="msg_0036" formatted="false">"Lokaler App-Kalender nicht verfügbar; Kalenderberechtigung prüfen"</string>
+    <string name="msg_0037" formatted="false">"Kein lokaler App-Kalender gefunden; kein neuer Kalender erstellt."</string>
+    <string name="msg_0038" formatted="false">"Lokaler App-Kalender nicht verfügbar; kein neuer Kalender erstellt."</string>
+    <string name="msg_0039" formatted="false">"Schreiben in fremden lokalen Kalender verweigert."</string>
+    <string name="msg_0040" formatted="false">"Lokaler Termin konnte nicht erstellt werden"</string>
+    <string name="msg_0041" formatted="false">"Lesen eines fremden lokalen Kalenders verweigert."</string>
+    <string name="msg_0042" formatted="false">"Lokale Termine nicht überprüfbar; Erstellung abgebrochen"</string>
+    <string name="msg_0043" formatted="false">"Lokale Termine nicht überprüfbar; Bereinigung abgebrochen"</string>
+    <string name="msg_0044" formatted="false">"Aktualisierung eines fremden lokalen Kalenders verweigert."</string>
+    <string name="msg_0045" formatted="false">"Lokaler Termin konnte nicht aktualisiert werden"</string>
+    <string name="msg_0046" formatted="false">"Löschen aus fremdem lokalen Kalender verweigert."</string>
+    <string name="msg_0047" formatted="false">"Lokaler Termin konnte nicht gelöscht werden"</string>
+    <string name="msg_0048" formatted="false">"App-Kalender prüfen"</string>
+    <string name="msg_0049" formatted="false">"App-Kalender erstellen"</string>
+    <string name="msg_0050" formatted="false">"Geschriebene App-Termine abgleichen"</string>
+    <string name="msg_0051" formatted="false">"Alle geschriebenen App-Termine abgleichen"</string>
+    <string name="msg_0052" formatted="false">"Neuen App-Termin schreiben"</string>
+    <string name="msg_0053" formatted="false">"Geschriebenen App-Termin aktualisieren"</string>
+    <string name="msg_0054" formatted="false">"Geschriebenen App-Termin löschen"</string>
+    <string name="msg_0055" formatted="false">"Token ungültig"</string>
+    <string name="msg_0056" formatted="false">"Berechtigungsumfang unzureichend"</string>
+    <string name="msg_0057" formatted="false">"Autorisierungsanfrage ungültig"</string>
+    <string name="msg_0058" formatted="false">"Google nennt keinen genaueren Autorisierungsgrund"</string>
+    <string name="msg_0059" formatted="false">"Google-App-Kalender nicht verfügbar"</string>
+    <string name="msg_0060" formatted="false">"Google-App-Kalender nicht gefunden; kein neuer Kalender erstellt."</string>
+    <string name="msg_0061" formatted="false">"Google-App-Kalender nicht verfügbar; kein neuer Kalender erstellt"</string>
+    <string name="msg_0062" formatted="false">"Lesen eines fremden Google-Kalenders verweigert."</string>
+    <string name="msg_0063" formatted="false">"Schreiben in fremden Google-Kalender verweigert."</string>
+    <string name="msg_0064" formatted="false">"Aktualisierung eines fremden Google-Kalenders verweigert."</string>
+    <string name="msg_0065" formatted="false">"Löschen aus fremdem Google-Kalender verweigert."</string>
+    <string name="msg_0066" formatted="false">"Wiederholter Google-Seitentoken; Abgleich vor Bereinigung gestoppt."</string>
+    <string name="msg_0067" formatted="false">"Zieltermin gehört nicht mehr zu diesem Kurs; Überschreiben verweigert"</string>
+    <string name="msg_0068" formatted="false">"Löschergebnis muss aus einer Löschanfrage stammen"</string>
+    <string name="msg_0069" formatted="false">"Nicht erreichbar"</string>
+    <string name="msg_0070" formatted="false">"{0} (HTTP {2} bei {1}; {3})"</string>
+    <string name="msg_0071" formatted="false">"{0}; Autorisierung und Netzwerk prüfen"</string>
+    <string name="msg_0072" formatted="false">"Google-API-Pfad muss mit / beginnen."</string>
+    <string name="msg_0073" formatted="false">"Google-Antwort überschreitet Größenlimit"</string>
+    <string name="msg_0074" formatted="false">"Noch kein Google-App-Kalender vorhanden. Diese Prüfung erstellt keinen Kalender; erst nach bestätigtem Schreiben prüfbar."</string>
+    <string name="msg_0075" formatted="false">"Google-Verbindung verfügbar: App-Kalender lesbar. Keine Termine geschrieben."</string>
+    <string name="msg_0076" formatted="false">"Google-Verbindung verfügbar; früherer App-Kalender nicht mehr vorhanden. Nichts erstellt oder geschrieben."</string>
+    <string name="msg_0077" formatted="false">"Google-Verbindung verfügbar; gespeichertes Ziel ohne App-Markierung. Zum Schutz anderer Kalender nichts geschrieben."</string>
+    <string name="msg_0078" formatted="false">"Google-Verbindungsprüfung fehlgeschlagen"</string>
+    <string name="msg_0079" formatted="false">"Ungültiges Adressformat"</string>
+    <string name="msg_0080" formatted="false">"Nur private HTTPS-Abonnementadressen erlaubt"</string>
+    <string name="msg_0081" formatted="false">"Quelle konnte nicht gelesen werden"</string>
+    <string name="msg_0082" formatted="false">"Quellserver meldet keinen Erfolg"</string>
+    <string name="msg_0083" formatted="false">"Quellantwort überschreitet Größenlimit"</string>
+    <string name="msg_0084" formatted="false">"iCalendar-Zeitfenster muss eine positive Länge haben."</string>
+    <string name="msg_0085" formatted="false">"Quelltermin ohne Namen"</string>
+    <string name="msg_0086" formatted="false">"Verschlüsselte private Konfiguration ist leer."</string>
+    <string name="msg_0087" formatted="false">"Ungültiges Format der verschlüsselten Konfiguration."</string>
+    <string name="msg_0088" formatted="false">"Termindetails derzeit nicht erkennbar"</string>
+    <string name="msg_0089" formatted="false">"Lokaler Kalender"</string>
+    <string name="msg_0090" formatted="false">"Google Kalender"</string>
+    <string name="msg_0091" formatted="false">"{0}: neu {1}, aktualisiert {2}, unverändert geprüft {3}, fehlgeschlagen {4}"</string>
+    <string name="msg_0092" formatted="false">"; {0} fehlende Zieltermine wiederhergestellt"</string>
+    <string name="msg_0093" formatted="false">"Nachprüfung: {0} verbleibend"</string>
+    <string name="msg_0094" formatted="false">"Nachprüfung nach Löschen nicht abgeschlossen"</string>
+    <string name="msg_0095" formatted="false">"{0}: Bereinigung von {1} App-Terminen angefragt, {2} gelöscht, {3} bereits abwesend, {4}"</string>
+    <string name="msg_0096" formatted="false">"Synchronisierung von {0} fehlgeschlagen"</string>
+    <string name="msg_0097" formatted="false">"Rücknahme für {0} fehlgeschlagen; lokale Zuordnungen erhalten"</string>
+    <string name="msg_0098" formatted="false">"Zielkalender gehört nicht zur App; Schreiben verweigert."</string>
+    <string name="msg_0099" formatted="false">"Doppelter Zieltermin; unverändert gelassen. Duplikate zuerst prüfen."</string>
+    <string name="msg_0100" formatted="false">"{0}: {1} abgeschlossen, {2} fehlgeschlagen"</string>
+    <string name="msg_0101" formatted="false">"Zielkalender gehört nicht zur App; Rücknahme verweigert."</string>
+    <string name="msg_0102" formatted="false">"Bereinigung von {0} unvollständig: {1} Löschungen fehlgeschlagen."</string>
+    <string name="msg_0103" formatted="false">"Nachprüfung für {0} unvollständig; später lesend prüfen."</string>
+    <string name="msg_0104" formatted="false">"Nach Bereinigung verbleiben {1} App-Termine in {0}."</string>
+    <string name="msg_0105" formatted="false">"Simulierter Löschfehler"</string>
+    <string name="msg_0106" formatted="false">"TUM Quellenprüfung"</string>
+    <string name="msg_0107" formatted="false">"Mögliche Quellenänderung erkannt; App öffnen und manuell Vorschau prüfen."</string>
+    <string name="msg_0108" formatted="false">"Keine Google-Autorisierung für diese Sitzung; Verbindung nicht geprüft."</string>
+    <string name="msg_0109" formatted="false">"Google in dieser Sitzung nicht autorisiert; nichts geschrieben"</string>
+    <string name="msg_0110" formatted="false">"•••••••• · lokal verschlüsselt gespeichert"</string>
+    <string name="msg_0111" formatted="false">"Noch nicht eingerichtet"</string>
+    <string name="msg_0112" formatted="false">"Abonnementadresse muss HTTPS mit Hostnamen verwenden"</string>
+    <string name="msg_0113" formatted="false">"Google-OAuth-Clientkennung muss auf .apps.googleusercontent.com enden"</string>
+    <string name="msg_0114" formatted="false">"Gültiger Zeitraum im Format YYYY-MM-DD erforderlich; Beginn darf nicht nach Ende liegen"</string>
+    <string name="msg_0115" formatted="false">"Name des Google-App-Kalenders darf nicht leer sein"</string>
+    <string name="msg_0116" formatted="false">"Ungültige private Synchronisierungskonfiguration; Speichern verweigert."</string>
+    <string name="msg_0117" formatted="false">"Private Konfiguration konnte nicht lokal gespeichert werden."</string>
+    <string name="msg_0118" formatted="false">"Lesezeitraum höchstens fünf Jahre; Zeitraum verkürzen."</string>
+    <string name="msg_0119" formatted="false">"Quelleninhalt ist kein lesbarer iCal-Kalender"</string>
+    <string name="msg_0120" formatted="false">"Unbekannter Datenbankeintrag"</string>
+    <string name="msg_0121" formatted="false">"App-Schreibprotokoll konnte nicht gespeichert werden"</string>
+    <string name="msg_0122" formatted="false">"UID fehlt"</string>
+    <string name="msg_0123" formatted="false">"Beginn oder Ende fehlt"</string>
+    <string name="msg_0124" formatted="false">"Fixplatz nicht bestätigt"</string>
+    <string name="msg_0125" formatted="false">"Täglich prüfen"</string>
+    <string name="msg_0126" formatted="false">"Wöchentlich prüfen"</string>
+    <string name="msg_0127" formatted="false">"Beginn des Ausgabezeitraums darf nicht nach Ende liegen."</string>
+    <string name="msg_0128" formatted="false">"Lesen nach {0} Sekunden abgebrochen; Netzwerk prüfen und erneut versuchen"</string>
+    <string name="msg_0129" formatted="false">"Unbekannter Lesefehler; später erneut versuchen"</string>
+    <string name="msg_0130" formatted="false">"Hinzufügen"</string>
+    <string name="msg_0131" formatted="false">"Aktualisieren"</string>
+    <string name="msg_0132" formatted="false">"Entfernen"</string>
+    <string name="msg_0133" formatted="false">"Unverändert lassen"</string>
+    <string name="msg_0134" formatted="false">"Regel und Quelltermin müssen dieselbe UID haben."</string>
+    <string name="msg_0135" formatted="false">"App-Protokoll stimmt mit Kalender überein."</string>
+    <string name="msg_0136" formatted="false">"Protokollierter Termin fehlt im Kalender; bei nächster Bestätigung neu erstellbar."</string>
+    <string name="msg_0137" formatted="false">"Termin außerhalb der App geändert. Kalenderzustand übernehmen oder nach App-Regeln reparieren."</string>
+    <string name="msg_0138" formatted="false">"Zurück zur vorherigen Seite"</string>
+    <string name="msg_0139" formatted="false">"Hauptseite wechseln"</string>
+    <string name="msg_0140" formatted="false">"Animation der Navigationsauswahl"</string>
+    <string name="msg_0141" formatted="false">"Übersicht"</string>
+    <string name="msg_0142" formatted="false">"Suche"</string>
+    <string name="msg_0143" formatted="false">"Favoriten"</string>
+    <string name="msg_0144" formatted="false">"Einstellungen"</string>
+    <string name="msg_0145" formatted="false">"Weitere Aktionen schließen"</string>
+    <string name="msg_0146" formatted="false">"Kurs"</string>
+    <string name="msg_0147" formatted="false">"{0} · {1}"</string>
+    <string name="msg_0148" formatted="false">"{0} · {1} · {2}"</string>
+    <string name="msg_0149" formatted="false">"; Vergangenheit unverändert"</string>
+    <string name="msg_0150" formatted="false">"Kursdetails anzeigen"</string>
+    <string name="msg_0151" formatted="false">"TUM Kalendersteuerung"</string>
+    <string name="msg_0152" formatted="false">"Kursdetails"</string>
+    <string name="msg_0153" formatted="false">"Status auswählen"</string>
+    <string name="msg_0154" formatted="false">"Kurs bearbeiten"</string>
+    <string name="msg_0155" formatted="false">"Kurse suchen"</string>
+    <string name="msg_0156" formatted="false">"Favorisierte Kurse"</string>
+    <string name="msg_0157" formatted="false">"Weitere Aktionen"</string>
+    <string name="msg_0158" formatted="false">"Einstellungen"</string>
+    <string name="msg_0159" formatted="false">"Profil"</string>
+    <string name="msg_0160" formatted="false">"Kalenderverbindung"</string>
+    <string name="msg_0161" formatted="false">"Offline-Beispiel"</string>
+    <string name="msg_0162" formatted="false">"Lesezeitraum"</string>
+    <string name="msg_0163" formatted="false">"Kurse auswählen"</string>
+    <string name="msg_0164" formatted="false">"Teilnahme &amp; Favoriten"</string>
+    <string name="msg_0165" formatted="false">"Eigene Campustermine"</string>
+    <string name="msg_0166" formatted="false">"Ausgabe bestätigen"</string>
+    <string name="msg_0167" formatted="false">"Termine bereinigen"</string>
+    <string name="msg_0168" formatted="false">"Kursänderungen"</string>
+    <string name="msg_0169" formatted="false">"Sicherung"</string>
+    <string name="msg_0170" formatted="false">"Hier erscheinen die gelesenen Kurse"</string>
+    <string name="msg_0171" formatted="false">"Kurse lesen, Ausgabe und Darstellung einstellen"</string>
+    <string name="msg_0172" formatted="false">"Nur auf diesem Gerät speichern; offline"</string>
+    <string name="msg_0173" formatted="false">"Beispiel schreibt nicht in Kalender"</string>
+    <string name="msg_0174" formatted="false">"Zeitraum auswählen, dann Kurse lesen"</string>
+    <string name="msg_0175" formatted="false">"Nach Auswahl Teilnahme &amp; Favoriten einstellen"</string>
+    <string name="msg_0176" formatted="false">"Nach Speichern zur Kursliste und Kalenderausgabe zurückkehren"</string>
+    <string name="msg_0177" formatted="false">"Nach Speichern mit Kursen in Kalender schreiben"</string>
+    <string name="msg_0178" formatted="false">"Gewählte Kalender erst nach Bestätigung ändern"</string>
+    <string name="msg_0179" formatted="false">"Bereinigung erst nach Auswahl und Bestätigung"</string>
+    <string name="msg_0180" formatted="false">"Nur Änderungen prüfen; keine automatische Kalenderausgabe"</string>
+    <string name="msg_0181" formatted="false">"Kurseinstellungen sichern; Wiederherstellung bestätigen"</string>
+    <string name="msg_0182" formatted="false">"Kursrouter akzeptiert nur Kursseiten"</string>
+    <string name="msg_0183" formatted="false">"Einstellungsrouter akzeptiert nur Einstellungsseiten"</string>
+    <string name="msg_0184" formatted="false">"Ablaufrouter akzeptiert nur Ablaufseiten"</string>
+    <string name="msg_0185" formatted="false">"Helle Farbpalette"</string>
+    <string name="msg_0186" formatted="false">"Farben je Modus speichern; Teilnahmefarben unverändert."</string>
+    <string name="msg_0187" formatted="false">"Dunkle Farbpalette"</string>
+    <string name="msg_0188" formatted="false">"Ausgewählt"</string>
+    <string name="msg_0189" formatted="false">"Klares Weiß"</string>
+    <string name="msg_0190" formatted="false">"Warmes Cremeweiß"</string>
+    <string name="msg_0191" formatted="false">"Neutrales Schwarz"</string>
+    <string name="msg_0192" formatted="false">"Dunkelblau"</string>
+    <string name="msg_0193" formatted="false">"Status für „{0}“ auswählen"</string>
+    <string name="msg_0194" formatted="false">"Bereich nach gespeichertem Originalnamen, Typ und Gruppe. Speichern übernimmt Termine zur Ausgabe; Datumsgrenzen gelten weiterhin. Quelle und Kalender bleiben zunächst unverändert."</string>
+    <string name="msg_0195" formatted="false">"Geltungsbereich"</string>
+    <string name="msg_0196" formatted="false">"Ab Datum (YYYY-MM-DD)"</string>
+    <string name="msg_0197" formatted="false">"Abbrechen"</string>
+    <string name="msg_0198" formatted="false">"Bestätigen"</string>
+    <string name="msg_0199" formatted="false">"{0} · {1}"</string>
+    <string name="msg_0200" formatted="false">"Standardmäßig aus. Prüft bei Netzwerkverfügbarkeit nur Kursänderungen; kein automatisches Schreiben oder Löschen. Energiesparmodus kann Prüfungen verzögern."</string>
+    <string name="msg_0201" formatted="false">"Prüfhäufigkeit"</string>
+    <string name="msg_0202" formatted="false">"✓ {0}"</string>
+    <string name="msg_0203" formatted="false">"Änderungsprüfung ausschalten"</string>
+    <string name="msg_0204" formatted="false">"Änderungsprüfung einschalten"</string>
+    <string name="msg_0205" formatted="false">"Letzte Prüfung"</string>
+    <string name="msg_0206" formatted="false">"Benachrichtigungen &amp; Datenschutz"</string>
+    <string name="msg_0207" formatted="false">"Bei möglichen Änderungen nur allgemeine Erinnerung, ohne Kursnamen, Orte, Links oder Inhalte. Ohne Benachrichtigungsberechtigung bleibt der Status in der App sichtbar."</string>
+    <string name="msg_0208" formatted="false">"Noch nicht geprüft"</string>
+    <string name="msg_0209" formatted="false">"Noch nicht ausgeführt"</string>
+    <string name="msg_0210" formatted="false">"Erster lesender Vergleichswert erstellt"</string>
+    <string name="msg_0211" formatted="false">"Keine Änderung erkannt"</string>
+    <string name="msg_0212" formatted="false">"Mögliche Kursänderung. App öffnen und Kurse erneut lesen."</string>
+    <string name="msg_0213" formatted="false">"Prüfung fehlgeschlagen; System versucht später erneut"</string>
+    <string name="msg_0214" formatted="false">"Kursabonnementadresse noch nicht eingerichtet"</string>
+    <string name="msg_0215" formatted="false">"Sicherungsdatei kann nicht geöffnet werden"</string>
+    <string name="msg_0216" formatted="false">"Seitenauswahl nicht gespeichert; nach Neustart erneut auswählen."</string>
+    <string name="msg_0217" formatted="false">"Konfiguration nicht gespeichert; lokalen Speicher prüfen. Einstellungen gelten nur für diese Sitzung."</string>
+    <string name="msg_0218" formatted="false">"Kalenderaktion beendet, lokales Protokoll nicht gespeichert. Zielkalender vor Wiederholung prüfen."</string>
+    <string name="msg_0219" formatted="false">"Kalenderergebnis vorhanden, Konfiguration nicht gespeichert. Geschriebene Termine prüfen."</string>
+    <string name="msg_0220" formatted="false">"Kalenderausgabe unvollständig; Berechtigungen und Netzwerk prüfen"</string>
+    <string name="msg_0221" formatted="false">"Abgleich beendet, lokales Protokoll nicht gespeichert. Keine Termine gelöscht."</string>
+    <string name="msg_0222" formatted="false">"Hell"</string>
+    <string name="msg_0223" formatted="false">"Dunkel"</string>
+    <string name="msg_0224" formatted="false">"Systemeinstellung"</string>
+    <string name="msg_0225" formatted="false">"Favoriten unverändert"</string>
+    <string name="msg_0226" formatted="false">"Favoritenstatus jedes Kurses behalten"</string>
+    <string name="msg_0227" formatted="false">"Zu Favoriten hinzufügen"</string>
+    <string name="msg_0228" formatted="false">"Diese Kurse gemeinsam favorisieren"</string>
+    <string name="msg_0229" formatted="false">"Aus Favoriten entfernen"</string>
+    <string name="msg_0230" formatted="false">"Diese Kurse gemeinsam aus Favoriten entfernen"</string>
+    <string name="msg_0231" formatted="false">"Google Kalender nicht verbunden"</string>
+    <string name="msg_0232" formatted="false">"Sitzung nicht autorisiert; kein Google-Kalender erstellt oder beschrieben."</string>
+    <string name="msg_0233" formatted="false">"Google Kalender wird verbunden"</string>
+    <string name="msg_0234" formatted="false">"Google-Konto auswählen und Zugriff erlauben, dann zur App zurückkehren."</string>
+    <string name="msg_0235" formatted="false">"Google für diese Sitzung autorisiert"</string>
+    <string name="msg_0236" formatted="false">"Token erhalten. Lesende Prüfung oder Ausgabevorschau möglich; Google Kalender unverändert."</string>
+    <string name="msg_0237" formatted="false">"Google Kalender konnte nicht verbunden werden"</string>
+    <string name="msg_0238" formatted="false">"Autorisierung unvollständig; Google Kalender unverändert. Konfiguration prüfen."</string>
+    <string name="msg_0239" formatted="false">"Aktuell: {0} · {1}"</string>
+    <string name="msg_0240" formatted="false">"Unterschiedliche Teilnahmestatus"</string>
+    <string name="msg_0241" formatted="false">"Favorisiert"</string>
+    <string name="msg_0242" formatted="false">"Nicht favorisiert"</string>
+    <string name="msg_0243" formatted="false">"Teilweise favorisiert"</string>
+    <string name="msg_0244" formatted="false">"Kurseinstellungen nicht gespeichert; bisherige Teilnahme, Favoriten und lokale Änderungen bleiben erhalten."</string>
+    <string name="msg_0245" formatted="false">"Gerade gelesene Kurse"</string>
+    <string name="msg_0246" formatted="false">"Letzte erfolgreich gelesene Kurse"</string>
+    <string name="msg_0247" formatted="false">"Früher gelesene Kurse"</string>
+    <string name="msg_0248" formatted="false">"Nicht gespeichert"</string>
+    <string name="msg_0249" formatted="false">"Zuerst Kalender für den Abgleich auswählen."</string>
+    <string name="msg_0250" formatted="false">"Google nicht verbunden; verbinden oder nur lokalen Kalender wählen."</string>
+    <string name="msg_0251" formatted="false">"Zuerst lokalen Kalenderzugriff erlauben."</string>
+    <string name="msg_0252" formatted="false">"Geschriebene Kurse und Zeiten werden geprüft; nichts wird gelöscht."</string>
+    <string name="msg_0253" formatted="false">"Abgleich fehlgeschlagen; Protokoll erhalten. Berechtigungen und Verbindung prüfen."</string>
+    <string name="msg_0254" formatted="false">"{0} Einträge geprüft, {1} noch unbestätigt; nichts gelöscht."</string>
+    <string name="msg_0255" formatted="false">"Kursänderungen gespeichert; bei nächster bestätigter Ausgabe wirksam. Schulquelle unverändert."</string>
+    <string name="msg_0256" formatted="false">"{0} aktiviert; Kalender bis zur Ausgabebestätigung unverändert."</string>
+    <string name="msg_0257" formatted="false">"{0} deaktiviert; geschriebene Termine bleiben erhalten."</string>
+    <string name="msg_0258" formatted="false">"Lokaler Zugriff erlaubt; Anzahl prüfen und Schreiben weiterhin bestätigen."</string>
+    <string name="msg_0259" formatted="false">"Keine lokale Kalenderberechtigung; lokale Ausgabe bleibt aus."</string>
+    <string name="msg_0260" formatted="false">"Ungültiges Format der Synchronisierungskonfiguration."</string>
+    <string name="msg_0261" formatted="false">"Zuerst Kursadresse speichern; Änderungsprüfung noch aus."</string>
+    <string name="msg_0262" formatted="false">"Kursänderungsprüfung aktiviert; keine automatische Kalenderausgabe."</string>
+    <string name="msg_0263" formatted="false">"Kursänderungsprüfung deaktiviert."</string>
+    <string name="msg_0264" formatted="false">"Keine Benachrichtigungsberechtigung; Prüfstatus wird weiterhin in der App gespeichert."</string>
+    <string name="msg_0265" formatted="false">"Teilnahmeregeln und Campustermine exportiert; ohne Favoriten, Anzeigenamen, Adressen, Konten oder geschriebene Termine."</string>
+    <string name="msg_0266" formatted="false">"Nicht exportiert."</string>
+    <string name="msg_0267" formatted="false">"Sicherung nicht lesbar; lokale Regeln unverändert."</string>
+    <string name="msg_0268" formatted="false">"Sicherung gelesen. Erst Bestätigung ersetzt Regeln und Campustermine; Favoriten und Anzeigenamen unverändert."</string>
+    <string name="msg_0269" formatted="false">"Teilnahme und Campustermine wiederhergestellt; Kalender unverändert."</string>
+    <string name="msg_0270" formatted="false">"Nächster Lesezeitraum gespeichert; aktuelle Kurse, Auswahl und Ausgabe unverändert."</string>
+    <string name="msg_0271" formatted="false">"Kurse werden gelesen, bitte warten."</string>
+    <string name="msg_0272" formatted="false">"Keine gespeicherten Kurse; zuerst lesen."</string>
+    <string name="msg_0273" formatted="false">"Verwendet: {0}. Datumsbereich gilt erst beim erneuten Lesen."</string>
+    <string name="msg_0274" formatted="false">"Noch keine Kurse gelesen. Zuerst unter „Lesezeitraum auswählen“ lesen."</string>
+    <string name="msg_0275" formatted="false">"Kurse werden gelesen; keine Kalenderausgabe."</string>
+    <string name="msg_0276" formatted="false">"Vorhandene Auswahl behalten; {0} entfallene oder abgesagte Termine abgewählt."</string>
+    <string name="msg_0277" formatted="false">"Kurse aktualisiert; weiterhin vorhandene Auswahl behalten."</string>
+    <string name="msg_0278" formatted="false">"Kurse nicht lesbar: {0}. Kalender unverändert."</string>
+    <string name="msg_0279" formatted="false">"Vor Datenwechsel Abschluss der aktuellen Aktion abwarten."</string>
+    <string name="msg_0280" formatted="false">"Keine früheren Kursdaten verfügbar."</string>
+    <string name="msg_0281" formatted="false">"Verwendet: {0}; vorhandene Auswahl behalten{1}. Kalender unverändert."</string>
+    <string name="msg_0282" formatted="false">"; {0} entfallene Termine abgewählt"</string>
+    <string name="msg_0283" formatted="false">"Mindestens einen Termin auswählen."</string>
+    <string name="msg_0284" formatted="false">"Teilnahme und Favoriten behalten; Bearbeitungsmodus und Bereich gespeichert."</string>
+    <string name="msg_0285" formatted="false">"Unterschiedliche Teilnahmestatus. Einheitlichen Status wählen oder pro Kurs einstellen."</string>
+    <string name="msg_0286" formatted="false">"Kursliste"</string>
+    <string name="msg_0287" formatted="false">"Teilnahme für {0} Termine{1} gespeichert; noch keine Kalenderausgabe."</string>
+    <string name="msg_0288" formatted="false">" und Favoriten"</string>
+    <string name="msg_0289" formatted="false">"Zuerst Termine auswählen."</string>
+    <string name="msg_0290" formatted="false">"Einzelne Einstellungen für {0} Kurse gespeichert; noch keine Kalenderausgabe."</string>
+    <string name="msg_0291" formatted="false">"Teilnahmeeinstellungen unverändert."</string>
+    <string name="msg_0292" formatted="false">"{0} gespeicherte Termine aktualisiert und zur Ausgabe ausgewählt; Kalenderänderung erst nach Bestätigung."</string>
+    <string name="msg_0293" formatted="false">"Teilnahme für „{0}“ geändert ({1}); Kalenderänderung erst nach Bestätigung."</string>
+    <string name="msg_0294" formatted="false">"Termin mit konkretem Datum öffnen."</string>
+    <string name="msg_0295" formatted="false">"Datum im Format YYYY-MM-DD eingeben."</string>
+    <string name="msg_0296" formatted="false">"Kein App-Kalender zum Bereinigen vorhanden."</string>
+    <string name="msg_0297" formatted="false">"Aktuelle Kalenderaktion abwarten."</string>
+    <string name="msg_0298" formatted="false">"Kurse lesen und auswählen oder Campustermine hinzufügen, dann ausgeben."</string>
+    <string name="msg_0299" formatted="false">"Terminabgleich abwarten."</string>
+    <string name="msg_0300" formatted="false">"Zuerst „In Kalender schreiben“ wählen, Anzahl prüfen und bestätigen."</string>
+    <string name="msg_0301" formatted="false">"Kalender für diese Ausgabe auswählen."</string>
+    <string name="msg_0302" formatted="false">"Lokale Berechtigung fehlt; nichts geschrieben."</string>
+    <string name="msg_0303" formatted="false">"Zuerst Google Kalender verbinden; nichts geschrieben."</string>
+    <string name="msg_0304" formatted="false">"Kalender werden beschrieben…"</string>
+    <string name="msg_0305" formatted="false">"Kein Kalender bereit."</string>
+    <string name="msg_0306" formatted="false">"Nur in bereitstehende Kalender schreiben; unverbundene Ziele unverändert."</string>
+    <string name="msg_0307" formatted="false">"Vor Bereinigung Terminabgleich abwarten."</string>
+    <string name="msg_0308" formatted="false">"Mindestens einen Kurs oder Termine in einem Datumsbereich auswählen."</string>
+    <string name="msg_0309" formatted="false">"Kein App-Kalender zum Bereinigen."</string>
+    <string name="msg_0310" formatted="false">"Lokale Berechtigung fehlt; nichts gelöscht."</string>
+    <string name="msg_0311" formatted="false">"Zuerst Google Kalender verbinden; nichts gelöscht."</string>
+    <string name="msg_0312" formatted="false">"Ausgewählte App-Termine werden gelöscht…"</string>
+    <string name="msg_0313" formatted="false">"manual:{0}"</string>
+    <string name="msg_0314" formatted="false">"Kalender aktualisiert: {0} neu, {1} geändert, {2} gelöscht."</string>
+    <string name="msg_0315" formatted="false">"Titel darf nicht leer sein"</string>
+    <string name="msg_0316" formatted="false">"Gültigen Titel, YYYY-MM-DD-Datum und Stunden/Minuten eingeben; Ende nach Beginn."</string>
+    <string name="msg_0317" formatted="false">"Campustermin lokal gespeichert; bei nächster Ausgabe mit Kursen verarbeitet."</string>
+    <string name="msg_0318" formatted="false">"Campustermin lokal gelöscht; Kalender unverändert."</string>
+    <string name="msg_0319" formatted="false">"Alle Termine"</string>
+    <string name="msg_0320" formatted="false">"Alle Termine dieses Kurses ändern, auch vergangene"</string>
+    <string name="msg_0321" formatted="false">"Nur diesen Termin"</string>
+    <string name="msg_0322" formatted="false">"Nur den gewählten Termin ändern"</string>
+    <string name="msg_0323" formatted="false">"Diesen und folgende"</string>
+    <string name="msg_0324" formatted="false">"Ab gewähltem Termin ändern; Vergangenheit unverändert"</string>
+    <string name="msg_0325" formatted="false">"Ab festgelegtem Termin"</string>
+    <string name="msg_0326" formatted="false">"Datum oder Termin wählen und ab dort ändern"</string>
+    <string name="msg_0327" formatted="false">"{0}:{1}"</string>
+    <string name="msg_0328" formatted="false">"Unbenannter Kurs"</string>
+    <string name="msg_0329" formatted="false">"Sonstige Termine"</string>
+    <string name="msg_0330" formatted="false">"(?i)(?&lt;![A-ZÄÖÜ])({0})(?![A-ZÄÖÜ])"</string>
+    <string name="msg_0331" formatted="false">"_{0}"</string>
+    <string name="msg_0332" formatted="false">"course_override_{0}_{1}"</string>
+    <string name="msg_0333" formatted="false">"Gelesene Kurse"</string>
+    <string name="msg_0334" formatted="false">"Kursübersicht"</string>
+    <string name="msg_0335" formatted="false">"Lokale Anzeigeänderung"</string>
+    <string name="msg_0336" formatted="false">"Keine Änderung; Originalinformationen werden angezeigt"</string>
+    <string name="msg_0337" formatted="false">"Lokale Anzeige geändert; Originalinformationen unverändert"</string>
+    <string name="msg_0338" formatted="false">"Name, Zeit &amp; Ort bearbeiten"</string>
+    <string name="msg_0339" formatted="false">"Aktueller Status: {0}"</string>
+    <string name="msg_0340" formatted="false">"Teilnahmestatus ändern"</string>
+    <string name="msg_0341" formatted="false">"Ab diesem oder festgelegtem Termin; Vergangenheit unverändert"</string>
+    <string name="msg_0342" formatted="false">"Favoritenstatus wechseln"</string>
+    <string name="msg_0343" formatted="false">"Diesen Kurs bearbeiten"</string>
+    <string name="msg_0344" formatted="false">"Gilt für alle Termine dieses Kurses und wird bei nächster bestätigter Ausgabe angewendet; Quelle unverändert. Leerer Name/Ort übernimmt die Quelle. Unveränderte Zeit bleibt erhalten; anderer Wochentag verschiebt innerhalb derselben Woche."</string>
+    <string name="msg_0345" formatted="false">"Name (Quelle: {0})"</string>
+    <string name="msg_0346" formatted="false">"Ort (Quelle: {0})"</string>
+    <string name="msg_0347" formatted="false">"Wochentag"</string>
+    <string name="msg_0348" formatted="false">"Zeit"</string>
+    <string name="msg_0349" formatted="false">"Beginn: Stunde"</string>
+    <string name="msg_0350" formatted="false">"Beginn: Minute"</string>
+    <string name="msg_0351" formatted="false">"Ende: Stunde"</string>
+    <string name="msg_0352" formatted="false">"Ende: Minute"</string>
+    <string name="msg_0353" formatted="false">"Stunden 0–23, Minuten 0–59; Ende muss nach Beginn liegen."</string>
+    <string name="msg_0354" formatted="false">"Kursänderungen speichern"</string>
+    <string name="msg_0355" formatted="false">"Durchsuchbare Kurse"</string>
+    <string name="msg_0356" formatted="false">"Suchergebnisse"</string>
+    <string name="msg_0357" formatted="false">"Favoritenliste"</string>
+    <string name="msg_0358" formatted="false">"Favorisierte Kurse"</string>
+    <string name="msg_0359" formatted="false">"Favoriten ändern nur die Anzeige, nicht die Teilnahme"</string>
+    <string name="msg_0360" formatted="false">"Kursverzeichnis"</string>
+    <string name="msg_0361" formatted="false">"Links die vollständige Liste; hier derselbe Index „Kurs → Typ → Termin“, unabhängig scrollbar und aufklappbar."</string>
+    <string name="msg_0362" formatted="false">"Schutz der Kalender"</string>
+    <string name="msg_0363" formatted="false">"Name und Typ dienen nur zur Gruppierung. Schreiben, Ändern und Bereinigen verwenden immer Quell-UID und Terminidentität."</string>
+    <string name="msg_0364" formatted="false">"Keine Kurse"</string>
+    <string name="msg_0365" formatted="false">"Kurse lesen oder Filter prüfen."</string>
+    <string name="msg_0366" formatted="false">"Animation der Kursgruppe"</string>
+    <string name="msg_0367" formatted="false">"{0} Lehrtypen, {1} Termine geöffnet; zum Einklappen antippen."</string>
+    <string name="msg_0368" formatted="false">"{0} Lehrtypen, {1} Termine; zum Anzeigen antippen."</string>
+    <string name="msg_0369" formatted="false">"Kurs einklappen"</string>
+    <string name="msg_0370" formatted="false">"Kurs aufklappen"</string>
+    <string name="msg_0371" formatted="false">"Animation des Lehrtyps"</string>
+    <string name="msg_0372" formatted="false">"{0} Termine"</string>
+    <string name="msg_0373" formatted="false">"{0} einklappen"</string>
+    <string name="msg_0374" formatted="false">"{0} aufklappen"</string>
+    <string name="msg_0375" formatted="false">"Animation des Kursverzeichnisses"</string>
+    <string name="msg_0376" formatted="false">"Kursverzeichnis einklappen"</string>
+    <string name="msg_0377" formatted="false">"Kursverzeichnis aufklappen"</string>
+    <string name="msg_0378" formatted="false">"{0}"</string>
+    <string name="msg_0379" formatted="false">"Animation des Verzeichnistyps"</string>
+    <string name="msg_0380" formatted="false">"Lehrtyp einklappen"</string>
+    <string name="msg_0381" formatted="false">"Lehrtyp aufklappen"</string>
+    <string name="msg_0382" formatted="false">"• {0}"</string>
+    <string name="msg_0383" formatted="false">"Umbenennen"</string>
+    <string name="msg_0384" formatted="false">"Lehrtyp umbenennen"</string>
+    <string name="msg_0385" formatted="false">"Ändert nur die Typanzeige für diesen Kurs in Übersicht, Suche und Favoriten; Kalenderinhalt unverändert."</string>
+    <string name="msg_0386" formatted="false">"Lehrtypname (höchstens 30 Zeichen)"</string>
+    <string name="msg_0387" formatted="false">"Namen speichern"</string>
+    <string name="msg_0388" formatted="false">"Automatischen Namen wiederherstellen"</string>
+    <string name="msg_0389" formatted="false">"Anfrage fehlgeschlagen"</string>
+    <string name="msg_0390" formatted="false">"Google-Autorisierung nicht abgeschlossen (Systemcode: {0})."</string>
+    <string name="msg_0391" formatted="false">"Google-Autorisierung ohne Rückgabe (Systemcode: {0})."</string>
+    <string name="msg_0392" formatted="false">"Rückgabe fehlgeschlagen"</string>
+    <string name="msg_0393" formatted="false">"Google liefert keinen Kalenderzugriffstoken"</string>
+    <string name="msg_0394" formatted="false">"Google-Autorisierung: {0} (Dienstcode: {1})."</string>
+    <string name="msg_0395" formatted="false">"Google-Autorisierung: {0} (Fehlertyp: {1})."</string>
+    <string name="msg_0396" formatted="false">"apiStatus={0}"</string>
+    <string name="msg_0397" formatted="false">"exceptionType={0}"</string>
+    <string name="msg_0398" formatted="false">"Pro Kurs einstellen; unbearbeitete Kurse unverändert. Bereich gilt für alle Einstellungen; Favoriten nach Quellkurs speichern."</string>
+    <string name="msg_0399" formatted="false">"{0} gewählte Termine · {1} · {2}"</string>
+    <string name="msg_0400" formatted="false">"Teilnahme unverändert"</string>
+    <string name="msg_0401" formatted="false">"Einstellungen einklappen"</string>
+    <string name="msg_0402" formatted="false">"Einzeln einstellen"</string>
+    <string name="msg_0403" formatted="false">"Nach Verbindung App-Kalender lesend prüfen; nichts erstellen oder schreiben."</string>
+    <string name="msg_0404" formatted="false">"Zuerst Google-Ausgabe aktivieren, dann verbinden."</string>
+    <string name="msg_0405" formatted="false">"Zuerst Google Kalender verbinden, dann lesend prüfen."</string>
+    <string name="msg_0406" formatted="false">"Google-Verbindung wird geprüft; nichts erstellen oder schreiben."</string>
+    <string name="msg_0407" formatted="false">"Google-Autorisierung abgelaufen (HTTP 401); vor Ausgabe erneut verbinden."</string>
+    <string name="msg_0408" formatted="false">"Google-Autorisierung abgelaufen (HTTP 401); alter Token gelöscht. Vor Ausgabe erneut verbinden."</string>
+    <string name="msg_0409" formatted="false">"Google-Autorisierung abgelaufen (HTTP 401); Token-Löschung unbestätigt. Vor Ausgabe erneut verbinden."</string>
+    <string name="msg_0410" formatted="false">"Schätzung anhand lokaler Aufzeichnungen. Nach Bestätigung wird das Ziel geprüft und fehlende Termine ergänzt. Kalender bisher unverändert."</string>
+    <string name="msg_0411" formatted="false">"Keine auszugebenden Termine"</string>
+    <string name="msg_0412" formatted="false">"In Einstellungen erneut Kurse auswählen. Bereinigung geschriebener Termine erfolgt dort getrennt."</string>
+    <string name="msg_0413" formatted="false">"Diese Ausgabe"</string>
+    <string name="msg_0414" formatted="false">"{0} Termine insgesamt: {1} Kurstermine, {2} Campustermine."</string>
+    <string name="msg_0415" formatted="false">"Abgesagte frühere Termine gefunden"</string>
+    <string name="msg_0416" formatted="false">"{0} frühere Einträge (nach Ziel gezählt) wurden an der Quelle abgesagt. Normale Ausgabe löscht keine abgewählten Kurse; daher keine automatische Bereinigung. Unter „Geschriebene Termine bereinigen“ prüfen und bestätigen."</string>
+    <string name="msg_0417" formatted="false">"Abgesagte Termine prüfen &amp; bereinigen"</string>
+    <string name="msg_0418" formatted="false">"Verwendete Kursdaten"</string>
+    <string name="msg_0419" formatted="false">"{0} · gespeichert am {1}. Erneutes Lesen nicht nötig; Aktualisierung in Einstellungen möglich."</string>
+    <string name="msg_0420" formatted="false">"Voraussichtlich {0} neu, {1} prüfen und aktualisieren. {2}. Frühere abgewählte Kurse bleiben erhalten."</string>
+    <string name="msg_0421" formatted="false">"Bereit"</string>
+    <string name="msg_0422" formatted="false">"Noch nicht autorisiert"</string>
+    <string name="msg_0423" formatted="false">"Google Kalender verbinden"</string>
+    <string name="msg_0424" formatted="false">"Lokalen Kalenderzugriff erlauben"</string>
+    <string name="msg_0425" formatted="false">"Nur in {0} schreiben"</string>
+    <string name="msg_0426" formatted="false">"Bestätigen &amp; schreiben"</string>
+    <string name="msg_0427" formatted="false">"Letzte Ausgabe"</string>
+    <string name="msg_0428" formatted="false">"{0} neu · {1} aktualisiert · {2} gelöscht"</string>
+    <string name="msg_0429" formatted="false">" · {0}"</string>
+    <string name="msg_0430" formatted="false">"Campustermin hinzufügen"</string>
+    <string name="msg_0431" formatted="false">"Datum und Zeit in Europe/Berlin gespeichert. Mehrere Termine möglich; Ausgabe erst bei nächster Bestätigung."</string>
+    <string name="msg_0432" formatted="false">"Terminname"</string>
+    <string name="msg_0433" formatted="false">"Datum (YYYY-MM-DD)"</string>
+    <string name="msg_0434" formatted="false">"✓ {0} ({1})"</string>
+    <string name="msg_0435" formatted="false">"{0} ({1})"</string>
+    <string name="msg_0436" formatted="false">"Campustermin gespeichert"</string>
+    <string name="msg_0437" formatted="false">"Termin lokal speichern"</string>
+    <string name="msg_0438" formatted="false">"Diesen Termin löschen"</string>
+    <string name="msg_0439" formatted="false">"{0} bis {1} (Europe/Berlin)"</string>
+    <string name="msg_0440" formatted="false">"Alle App-Termine"</string>
+    <string name="msg_0441" formatted="false">"Alle noch mit App-Markierung versehenen Termine im App-Kalender löschen."</string>
+    <string name="msg_0442" formatted="false">"Nach Kurs"</string>
+    <string name="msg_0443" formatted="false">"Nur App-Termine gewählter Kurse löschen."</string>
+    <string name="msg_0444" formatted="false">"Nach Datumsbereich"</string>
+    <string name="msg_0445" formatted="false">"Nur App-Termine im gewählten Zeitraum löschen."</string>
+    <string name="msg_0446" formatted="false">"Eigenständiger Löschvorgang. Normales Schreiben ergänzt oder aktualisiert nur die aktuelle Auswahl und entfernt keine früher geschriebenen Kurse."</string>
+    <string name="msg_0447" formatted="false">"Bereinigungsziele auswählen"</string>
+    <string name="msg_0448" formatted="false">"Nur ausgewählte Kalender bereinigen; andere Ziele unverändert."</string>
+    <string name="msg_0449" formatted="false">"{0}{1}"</string>
+    <string name="msg_0450" formatted="false">"Geschriebene Termine prüfen (nicht löschen)"</string>
+    <string name="msg_0451" formatted="false">"Termine werden geprüft…"</string>
+    <string name="msg_0452" formatted="false">"Frühere Kurse nicht gefunden?"</string>
+    <string name="msg_0453" formatted="false">"Oben prüfen, um Kurse und Zeiten alter App-Einträge aus gewählten Kalendern zu ergänzen. Nur eigene Einträge prüfen, keine fremden Kalender lesen."</string>
+    <string name="msg_0454" formatted="false">"Schutz bei vollständiger Bereinigung"</string>
+    <string name="msg_0455" formatted="false">"Nur unsichtbar markierte App-Termine in eigenen lokalen/Google-Kalendern prüfen. Hauptkalender, Abonnements und fremde Termine bleiben unberührt."</string>
+    <string name="msg_0456" formatted="false">"Noch keine erkennbaren Kurse"</string>
+    <string name="msg_0457" formatted="false">"Zuerst „Geschriebene Termine prüfen“. Falls auch alte Schreibprotokolle fehlen, „Alle App-Termine“ getrennt wählen und Bereinigung bestätigen."</string>
+    <string name="msg_0458" formatted="false">"Nur gewählte Kurse bereinigen; andere Kurse zur selben Zeit unverändert."</string>
+    <string name="msg_0459" formatted="false">"{0} Termine erkennbar"</string>
+    <string name="msg_0460" formatted="false">"Auswählen"</string>
+    <string name="msg_0461" formatted="false">"Noch keine erkennbaren Daten"</string>
+    <string name="msg_0462" formatted="false">"Zuerst geschriebene Termine prüfen, dann Datum wählen. Die Prüfung verändert keine Kalender."</string>
+    <string name="msg_0463" formatted="false">"Datumsbereich auswählen"</string>
+    <string name="msg_0464" formatted="false">"Beginn und Ende einzeln optional; leere Grenze unbegrenzt. Auswahl nach geschriebenen Zeiten, auch für Einträge entfernter Kurse."</string>
+    <string name="msg_0465" formatted="false">"Beginn"</string>
+    <string name="msg_0466" formatted="false">"Ende"</string>
+    <string name="msg_0467" formatted="false">"Datumsbereich zurücksetzen"</string>
+    <string name="msg_0468" formatted="false">"Bereinigung vorbereiten"</string>
+    <string name="msg_0469" formatted="false">"{0} passende Termine; bisher kein Kalender geändert."</string>
+    <string name="msg_0470" formatted="false">"Mindestens einen Kurs oder passenden Datumsbereich auswählen."</string>
+    <string name="msg_0471" formatted="false">"Weiter: Bereinigung bestätigen"</string>
+    <string name="msg_0472" formatted="false">"Alle App-Termine werden bereinigt."</string>
+    <string name="msg_0473" formatted="false">"{0} Termine im gewählten Bereich werden bereinigt."</string>
+    <string name="msg_0474" formatted="false">"Unbegrenzt"</string>
+    <string name="msg_0475" formatted="false">"Datum auswählen"</string>
+    <string name="msg_0476" formatted="false">"Terminbereinigung bestätigen"</string>
+    <string name="msg_0477" formatted="false">"Betroffene Ziele: {0}"</string>
+    <string name="msg_0478" formatted="false">"Löscht ausschließlich App-markierte Termine; nicht rückgängig zu machen."</string>
+    <string name="msg_0479" formatted="false">"Bereinigung bestätigen"</string>
+    <string name="msg_0480" formatted="false">"Lokaler App-Kalender"</string>
+    <string name="msg_0481" formatted="false">"Google-App-Kalender"</string>
+    <string name="msg_0482" formatted="false">"Kein Ziel verfügbar"</string>
+    <string name="msg_0483" formatted="false">"Seitenauswahl konnte nicht gespeichert werden"</string>
+    <string name="msg_0484" formatted="false">"Neue Kursabonnementadresse"</string>
+    <string name="msg_0485" formatted="false">"Adresse anzeigen (nur neue Eingabe)"</string>
+    <string name="msg_0486" formatted="false">"Adresse anzeigen"</string>
+    <string name="msg_0487" formatted="false">"Teilnahmeregeln &amp; Campustermine sichern"</string>
+    <string name="msg_0488" formatted="false">"Enthält UID- und Gruppenregeln sowie eigene Campustermine. Ohne Favoriten, Anzeigenamen, Kursadressen, Google-Anmeldung, Kalender oder geschriebene Termine."</string>
+    <string name="msg_0489" formatted="false">"Gespeicherter Inhalt"</string>
+    <string name="msg_0490" formatted="false">"{0} Teilnahmeregeln · {1} Campustermine"</string>
+    <string name="msg_0491" formatted="false">"Regeln &amp; Termine exportieren"</string>
+    <string name="msg_0492" formatted="false">"Regeln &amp; Termine aus Datei wiederherstellen"</string>
+    <string name="msg_0493" formatted="false">"Wiederherstellung bestätigen"</string>
+    <string name="msg_0494" formatted="false">"Ersetzt durch {0} UID-Regeln, {1} Gruppenregeln und {2} Campustermine. Geschriebene Termine unberührt; vor Bestätigung keine Änderungen."</string>
+    <string name="msg_0495" formatted="false">"Wiederherstellen"</string>
+    <string name="msg_0496" formatted="false">"Aktuelle Kurse"</string>
+    <string name="msg_0497" formatted="false">"Kurse der aktuellen Lesung"</string>
+    <string name="msg_0498" formatted="false">"Beispielkurse werden angezeigt"</string>
+    <string name="msg_0499" formatted="false">"Kalenderstatus"</string>
+    <string name="msg_0500" formatted="false">"Noch kein Kalender verbunden und keine Ausgabe vorgemerkt."</string>
+    <string name="msg_0501" formatted="false">"App-Einstellungen"</string>
+    <string name="msg_0502" formatted="false">"Kurs-, Kalender- und Darstellungseinstellungen"</string>
+    <string name="msg_0503" formatted="false">"Einstellungen öffnen"</string>
+    <string name="msg_0504" formatted="false">"Ablauf"</string>
+    <string name="msg_0505" formatted="false">"1 Zeitraum wählen · 2 Kurse lesen und auswählen · 3 Teilnahme und Favoriten · 4 Ausgabe bestätigen. Zurück entfernt keine Auswahl."</string>
+    <string name="msg_0506" formatted="false">"Kurse lesen"</string>
+    <string name="msg_0507" formatted="false">"Kein Zeitraum begrenzt; antippen, um Grenzen im Kalender zu wählen."</string>
+    <string name="msg_0508" formatted="false">"Zeitraum eingestellt; antippen zum Anzeigen, Ändern oder Zurücksetzen."</string>
+    <string name="msg_0509" formatted="false">"Ungültiger Zeitraum; zum Korrigieren antippen."</string>
+    <string name="msg_0510" formatted="false">"Lesezeitraum"</string>
+    <string name="msg_0511" formatted="false">"Noch keine Kurse gelesen. Zeitraum wählen und lesen."</string>
+    <string name="msg_0512" formatted="false">"{0}: {1} Kurse; {2} konkrete Termine ausgewählt."</string>
+    <string name="msg_0513" formatted="false">"Gelesene Kurse"</string>
+    <string name="msg_0514" formatted="false">"Teilnahmeeinstellungen"</string>
+    <string name="msg_0515" formatted="false">"Neue Kurse standardmäßig blau: Teilnahme auswählen. Grün: verbindlich teilnehmen. Grau: ab festgelegtem Datum nicht teilnehmen."</string>
+    <string name="msg_0516" formatted="false">"Regeln &amp; Termine sichern"</string>
+    <string name="msg_0517" formatted="false">"Ausgabeziele"</string>
+    <string name="msg_0518" formatted="false">"Die App bearbeitet nur selbst erstellte Termine. Hauptkalender, Abonnements und fremde Termine bleiben unverändert."</string>
+    <string name="msg_0519" formatted="false">"In Kalender schreiben"</string>
+    <string name="msg_0520" formatted="false">"App-Version"</string>
+    <string name="msg_0521" formatted="false">"{0} · Build {1}"</string>
+    <string name="msg_0522" formatted="false">"Lokaler HONOR-Kalender"</string>
+    <string name="msg_0523" formatted="false">"Google-Kalenderspiegel"</string>
+    <string name="msg_0524" formatted="false">"Ausgabe noch deaktiviert"</string>
+    <string name="msg_0525" formatted="false">"Aktuelle Einstellungen"</string>
+    <string name="msg_0526" formatted="false">"Breite Ansicht: Aktionen links, Synchronisierung und Schutz rechts."</string>
+    <string name="msg_0527" formatted="false">"Gelesene Kurse"</string>
+    <string name="msg_0528" formatted="false">"{0}: {1} Kurse, {2} konkrete Termine ausgewählt."</string>
+    <string name="msg_0529" formatted="false">"Noch keine Kurse gelesen."</string>
+    <string name="msg_0530" formatted="false">"Ausgabeort"</string>
+    <string name="msg_0531" formatted="false">"Kalenderschutz"</string>
+    <string name="msg_0532" formatted="false">"Normale Ausgabe ergänzt oder aktualisiert nur aktuelle Auswahl. Alte Termine links separat bereinigen und nochmals bestätigen."</string>
+    <string name="msg_0533" formatted="false">"Kursanzeige"</string>
+    <string name="msg_0534" formatted="false">"Alle Kurse aus {0} anzeigen, unabhängig vom Schulstatus."</string>
+    <string name="msg_0535" formatted="false">"Steuert nur Beispielanzeige; Kursadresse und Kalender unverändert."</string>
+    <string name="msg_0536" formatted="false">"Kursdatenversion"</string>
+    <string name="msg_0537" formatted="false">"Mit {0} direkt weiter auswählen und Ausgabe prüfen. Für Aktualisierung „Kurse lesen“ öffnen. Lesefehler entfernen gespeicherte Kurse nicht."</string>
+    <string name="msg_0538" formatted="false">"✓ Neueste Daten verwenden"</string>
+    <string name="msg_0539" formatted="false">"Neueste Daten verwenden"</string>
+    <string name="msg_0540" formatted="false">"✓ Frühere Daten verwenden"</string>
+    <string name="msg_0541" formatted="false">"Frühere Daten verwenden"</string>
+    <string name="msg_0542" formatted="false">"Leseänderungen"</string>
+    <string name="msg_0543" formatted="false">"Beispielergebnis"</string>
+    <string name="msg_0544" formatted="false">"Beispieldaten: keine Quellenlesung, Berechtigungsanfrage oder Kalenderausgabe."</string>
+    <string name="msg_0545" formatted="false">"Änderungsübersicht"</string>
+    <string name="msg_0546" formatted="false">"Neu {0} · Aktualisieren {1} · Entfernen {2} · Behalten {3} · Überspringen {4}"</string>
+    <string name="msg_0547" formatted="false">"Beispieldaten; keine Kalenderausgabe."</string>
+    <string name="msg_0548" formatted="false">"Nicht ausgeben"</string>
+    <string name="msg_0549" formatted="false">"Dieser Beispieltermin wird nicht geschrieben."</string>
+    <string name="msg_0550" formatted="false">"Kursabonnementadresse"</string>
+    <string name="msg_0551" formatted="false">"Gespeichert: {0}. Adresse zum Datenschutz verborgen; Ersatz nur nach neuer Eingabe."</string>
+    <string name="msg_0552" formatted="false">"Kursabonnementadresse ändern"</string>
+    <string name="msg_0553" formatted="false">"Unter „Lesezeitraum auswählen“ im Kalender einstellen; kein manuell eingegebenes Datum nötig."</string>
+    <string name="msg_0554" formatted="false">"Google-Konto im Systemdialog wählen. Nur Rechte für eigene App-Kalender beantragt; Anmeldedaten werden nicht gespeichert."</string>
+    <string name="msg_0555" formatted="false">"Erste Verbindung"</string>
+    <string name="msg_0556" formatted="false">"Vor Erstnutzung App einmal in Google Cloud konfigurieren. Clientkennung wird nicht angezeigt oder gespeichert."</string>
+    <string name="msg_0557" formatted="false">"Name des Google-Kalenders"</string>
+    <string name="msg_0558" formatted="false">"Auf diesem Gerät speichern"</string>
+    <string name="msg_0559" formatted="false">"Warten auf Google-Autorisierung"</string>
+    <string name="msg_0560" formatted="false">"Google Kalender erneut autorisieren"</string>
+    <string name="msg_0561" formatted="false">"Google-Autorisierung erneut versuchen"</string>
+    <string name="msg_0562" formatted="false">"Google-Ziel noch nicht geprüft"</string>
+    <string name="msg_0563" formatted="false">"Google-Ziel wird geprüft"</string>
+    <string name="msg_0564" formatted="false">"Google-Ziel geprüft"</string>
+    <string name="msg_0565" formatted="false">"Google-Ziel erfordert Eingriff"</string>
+    <string name="msg_0566" formatted="false">"Google-Verbindung wird geprüft"</string>
+    <string name="msg_0567" formatted="false">"Google-Verbindung prüfen (nur lesen)"</string>
+    <string name="msg_0568" formatted="false">"Kurse und Teilnahme getrennt in lokalen und Google-Kalender ausgeben."</string>
+    <string name="msg_0569" formatted="false">"Kalenderberechtigung"</string>
+    <string name="msg_0570" formatted="false">"Lokale Ausgabe fordert Systemberechtigung an. Auch danach Anzahl prüfen und Ausgabe bestätigen."</string>
+    <string name="msg_0571" formatted="false">"Bereits geschriebene Termine werden nicht gelöscht."</string>
+    <string name="msg_0572" formatted="false">"Änderung bestätigen"</string>
+    <string name="msg_0573" formatted="false">"Lokales Profil"</string>
+    <string name="msg_0574" formatted="false">"Name und Avatarfarbe bleiben auf diesem Gerät; kein Google- oder TUM-Konto"</string>
+    <string name="msg_0575" formatted="false">"Anzeigename"</string>
+    <string name="msg_0576" formatted="false">"Avatarfarbe"</string>
+    <string name="msg_0577" formatted="false">"Aktuelle Auswahl"</string>
+    <string name="msg_0578" formatted="false">"Zum Auswählen antippen"</string>
+    <string name="msg_0579" formatted="false">"Profil speichern"</string>
+    <string name="msg_0580" formatted="false">"Darstellung"</string>
+    <string name="msg_0581" formatted="false">"Hell/Dunkel nach System, jeweils mit unten gewählter Farbpalette"</string>
+    <string name="msg_0582" formatted="false">"Sofort wirksam, automatisch gespeichert"</string>
+    <string name="msg_0583" formatted="false">"Teilnahme und Favoriten für {0} Termine einstellen"</string>
+    <string name="msg_0584" formatted="false">"„Nur diesen Termin“ betrifft nur Auswahl. Andere Bereiche umfassen gespeicherte Termine mit gleichem Originalnamen, Typ und Gruppe; unterschiedliche Typen bleiben getrennt. Speichern merkt Ausgabe vor; Datumsgrenzen gelten, Kalender noch unverändert."</string>
+    <string name="msg_0585" formatted="false">"✓ Gemeinsam einstellen"</string>
+    <string name="msg_0586" formatted="false">"Gemeinsam einstellen"</string>
+    <string name="msg_0587" formatted="false">"✓ Pro Kurs einstellen"</string>
+    <string name="msg_0588" formatted="false">"Pro Kurs einstellen"</string>
+    <string name="msg_0589" formatted="false">"Teilnahme"</string>
+    <string name="msg_0590" formatted="false">"Gewählter Bereich umfasst {0} gespeicherte Termine. Unveränderte Einzelkurse erweitern Auswahl nicht; Favoriten gelten für betroffene Quellkurse."</string>
+    <string name="msg_0591" formatted="false">"Gültiges Datum erforderlich"</string>
+    <string name="msg_0592" formatted="false">"Teilnahme &amp; Favoriten speichern"</string>
+    <string name="msg_0593" formatted="false">"Alle"</string>
+    <string name="msg_0594" formatted="false">"Termine im Bereich"</string>
+    <string name="msg_0595" formatted="false">"MMMM yyyy"</string>
+    <string name="msg_0596" formatted="false">"Termine nach Datum suchen"</string>
+    <string name="msg_0597" formatted="false">"Markierte Tage enthalten auswählbare Kurstermine."</string>
+    <string name="msg_0598" formatted="false">"Markierten Tag antippen und Termine auswählen."</string>
+    <string name="msg_0599" formatted="false">"{1}.{0}. · {2} Termine"</string>
+    <string name="msg_0600" formatted="false">"Keine Termine an diesem Tag"</string>
+    <string name="msg_0601" formatted="false">"Anderen Monat oder markierten Tag auswählen."</string>
+    <string name="msg_0602" formatted="false">"Vormonat"</string>
+    <string name="msg_0603" formatted="false">"Folgemonat"</string>
+    <string name="msg_0604" formatted="false">"Mo"</string>
+    <string name="msg_0605" formatted="false">"Di"</string>
+    <string name="msg_0606" formatted="false">"Mi"</string>
+    <string name="msg_0607" formatted="false">"Do"</string>
+    <string name="msg_0608" formatted="false">"Fr"</string>
+    <string name="msg_0609" formatted="false">"Sa"</string>
+    <string name="msg_0610" formatted="false">"So"</string>
+    <string name="msg_0611" formatted="false">"{0} "</string>
+    <string name="msg_0612" formatted="false">"{0} {1} {2}–{3}{4}"</string>
+    <string name="msg_0613" formatted="false">"Nach Kurs gruppieren"</string>
+    <string name="msg_0614" formatted="false">"Konkrete Termine auswählen"</string>
+    <string name="msg_0615" formatted="false">"Datum und Zeit auswählen bearbeitet nur diesen Termin; andere Termine desselben Kurses werden nicht automatisch gewählt."</string>
+    <string name="msg_0616" formatted="false">"Kurs oder Ort suchen"</string>
+    <string name="msg_0617" formatted="false">"Keine passenden Termine"</string>
+    <string name="msg_0618" formatted="false">"Suche löschen oder zu „Alle“ wechseln."</string>
+    <string name="msg_0619" formatted="false">"{0} Quelleinträge · {1} Termine insgesamt · {2} ausgewählt"</string>
+    <string name="msg_0620" formatted="false">"{0} Termine im gewählten Zeitraum"</string>
+    <string name="msg_0621" formatted="false">"Einklappen"</string>
+    <string name="msg_0622" formatted="false">"Aufklappen"</string>
+    <string name="msg_0623" formatted="false">"{0} Termine ausgewählt"</string>
+    <string name="msg_0624" formatted="false">"Auswahl aufheben"</string>
+    <string name="msg_0625" formatted="false">"Status &amp; Favoriten"</string>
+    <string name="msg_0626" formatted="false">"Ausgabevorschau"</string>
+    <string name="msg_0627" formatted="false">"Nur Vorschau der Ausgabe; bis zur endgültigen Bestätigung keine Kalenderänderung."</string>
+    <string name="msg_0628" formatted="false">"dd.MM. (E) HH:mm"</string>
+    <string name="msg_0629" formatted="false">"Ort: {0}"</string>
+    <string name="msg_0630" formatted="false">"{0}–{1}"</string>
+    <string name="msg_0631" formatted="false">"Bis zu fünf Jahre lesen. Beide Grenzen leer: vergangene 120 bis kommende 180 Tage; nur eine Grenze: etwa 300 angrenzende Tage. Unendliche Wiederholungen benötigen Grenzen. Zeitraum gilt nur beim Lesen; gespeicherte Kurse, Auswahl und Ausgabe werden nicht verkürzt."</string>
+    <string name="msg_0632" formatted="false">"Nächsten Lesezeitraum speichern"</string>
+    <string name="msg_0633" formatted="false">"Gespeicherte Kurse verwenden · Weiter"</string>
+    <string name="msg_0634" formatted="false">"{0} verwenden, ohne erneut zu lesen oder Auswahl nach obigem Zeitraum zu kürzen. Zeitraum beeinflusst nur neue Daten nach „Kurse lesen“."</string>
+    <string name="msg_0635" formatted="false">"Kurse werden gelesen…"</string>
+    <string name="msg_0636" formatted="false">"Weiter: Kurse auswählen"</string>
+    <string name="msg_0637" formatted="false">"Nach Lesen Kurse wählen, dann Teilnahme und Favoriten einstellen. Vor Ausgabe betroffene Mengen für lokalen und Google-Kalender prüfen; erst danach bestätigen."</string>
+    <string name="msg_0638" formatted="false">"Kurse erneut lesen"</string>
+    <string name="msg_0639" formatted="false">"Als neueste Version speichern und aktuelle Auswahl löschen; frühere erfolgreiche Version bleibt wählbar. Teilnahme und Favoriten bleiben erhalten. Fortfahren?"</string>
+    <string name="msg_0640" formatted="false">"Erneut lesen"</string>
+    <string name="msg_0641" formatted="false">"Schnellauswahl"</string>
+    <string name="msg_0642" formatted="false">"Ab heute"</string>
+    <string name="msg_0643" formatted="false">"Nächste 90 Tage"</string>
+    <string name="msg_0644" formatted="false">"Standardzeitraum wiederherstellen"</string>
+    <string name="msg_0645" formatted="false">"Noch keine Kurse gelesen; verfügbare Zeiten erscheinen nach Lesen."</string>
+    <string name="msg_0646" formatted="false">"{0} bis {1}; insgesamt {2} Kurstermine."</string>
+    <string name="msg_0647" formatted="false">"Gelesener Kurszeitraum"</string>
+    <string name="msg_0648" formatted="false">"Keine"</string>
+    <string name="msg_0649" formatted="false">"Zuerst Kursabonnementadresse speichern; noch nichts gelesen."</string>
+    <string name="msg_0650" formatted="false">"Terminliste veraltet; erneut lesen, dann bearbeiten."</string>
+    <string name="msg_0651" formatted="false">"Gespeicherte Kurse nicht wiederherstellbar; Originaldaten behalten. Erneut lesen; geschriebene Kalender unverändert."</string>
+    <string name="msg_0652" formatted="false">"Teilweise beschädigter Cache; Originaldaten behalten und wiederherstellbare Version verwenden."</string>
+    <string name="msg_0653" formatted="false">"Momentaufnahme unvollständig"</string>
+    <string name="msg_0654" formatted="false">"Keine Terminänderung gegenüber letzter Lesung."</string>
+    <string name="msg_0655" formatted="false">"Seit letzter Lesung: {0} neue, {1} entfallene, {2} geänderte Termine; neue Kurse mit bekannten Namen {3}, neuen Namen {4}."</string>
+    <string name="msg_0656" formatted="false">"Aus: keine Berechtigungsanfrage und keine lokale Ausgabe"</string>
+    <string name="msg_0657" formatted="false">"Erlaubt: nach Autorisierung in eigenen lokalen App-Kalender schreiben"</string>
+    <string name="msg_0658" formatted="false">"Aus: kein Google-Kontozugriff oder Terminversand"</string>
+    <string name="msg_0659" formatted="false">"Erlaubt: nach Autorisierung nur eigenen Google-Zweitkalender beschreiben"</string>
+    <string name="msg_0660" formatted="false">"{0} aktivieren"</string>
+    <string name="msg_0661" formatted="false">"{0} deaktivieren"</string>
+    <string name="msg_0662" formatted="false">"Nach Bestätigung lokale Berechtigung anfragen; Ausgabe erst nach späterer ausdrücklicher Bestätigung."</string>
+    <string name="msg_0663" formatted="false">"Künftig keine lokale Ausgabe; vorhandene Termine bleiben erhalten."</string>
+    <string name="msg_0664" formatted="false">"Danach Google manuell verbinden; vor Verbindung und bestätigter Ausgabe keine Termindaten senden."</string>
+    <string name="msg_0665" formatted="false">"Beendet aktuelle Google-Autorisierung und künftige Spiegelung; vorhandene Termine bleiben erhalten."</string>
+    <string name="msg_0666" formatted="false">" Andere Ausgabe bereits aktiv. Zeigt HONOR beide App-Kalender, erscheinen Termine doppelt. Nur ein Ausgabeziel aktivieren oder einen Kalender in HONOR ausblenden."</string>
+    <string name="msg_0667" formatted="false">"Druckskalierung"</string>
+    <string name="msg_0668" formatted="false">"Druckfarbe"</string>
+    <string name="msg_0669" formatted="false">"TUM-Blau"</string>
+    <string name="msg_0670" formatted="false">"Meergrün"</string>
+    <string name="msg_0671" formatted="false">"Warmes Orange"</string>
+    <string name="msg_0672" formatted="false">"Lavendel"</string>
+    <string name="msg_0673" formatted="false">"Ich"</string>
+    <string name="msg_0674" formatted="false">"Ausgabeziele diesmal (Mehrfachauswahl)"</string>
+    <string name="msg_0675" formatted="false">"{0} {1}"</string>
+    <string name="msg_0676" formatted="false">"Nur diese Ausgabe; Standardschalter unverändert. Beide Ziele erzeugen zwei Kalender; bei Anzeige beider in HONOR sind Duplikate möglich."</string>
+    <string name="language_title">Sprache</string>
+    <string name="language_note">Sofort wirksam und lokal gespeichert. Kursnamen, Orte und eigene Eingaben bleiben unverändert.</string>
+    <string name="msg_0677" formatted="false">"; "</string>
+    <string name="msg_0678" formatted="false">", "</string>
+    <string name="msg_0679" formatted="false">"{0} {1}:{2}–{3}:{4}"</string>
+    <string name="msg_0680" formatted="false">"Fixplatz"</string>
+    <string name="msg_0681" formatted="false">"Geplant"</string>
+    <string name="msg_0682" formatted="false">"Verschoben"</string>
+    <string name="msg_0683" formatted="false">"Abgesagt"</string>
+    <string name="msg_0684" formatted="false">"Abgelehnt"</string>
+    <string name="msg_0685" formatted="false">"Gelöscht"</string>
+</resources>

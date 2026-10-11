@@ -1,10 +1,12 @@
 /*
- * 职责：提供私有 iCal 地址的密码式输入与短暂末位显示。
- * 输入／输出：输入本次尚未保存的地址草稿；输出同长度的遮罩显示和用户修改后的草稿。
- * 外部副作用：仅维护 Compose 内存状态与短暂计时；不保存、不联网、不读取已保存地址。
- * 不负责：地址校验、Android Keystore 加密、配置持久化或日历同步。
+ * Aufgabe: Private iCal-Adresse als verdeckte Eingabe mit kurzer letzter Zeichenanzeige erfassen.
+ * Ein-/Ausgabe: Neuer ungespeicherter Adressentwurf -> gleichlange Maskierung und Bearbeitungsrückruf.
+ * Nebenwirkungen: Nur Compose-Speicher und kurzer Maskierungs-Timer.
+ * Nicht zuständig: Adressprüfung, Android-Keystore-Verschlüsselung, Konfigurationspersistenz oder Kalendersynchronisierung.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -46,7 +48,7 @@ fun PrivateAddressInput(value: String, onValueChange: (String) -> Unit, modifier
             onValueChange(updated)
         },
         modifier = modifier.fillMaxWidth(),
-        label = "新的课程订阅地址",
+        label = tr(message(484)),
         singleLine = true,
         visualTransformation = PrivateAddressVisualTransformation(showAddress, lastVisibleIndex),
     )
@@ -55,7 +57,7 @@ fun PrivateAddressInput(value: String, onValueChange: (String) -> Unit, modifier
             showAddress = visible
             if (!visible) lastVisibleIndex = -1
         })
-        Text(if (showAddress) "显示地址（仅本次输入）" else "显示地址")
+        Text(tr(if (showAddress) message(485) else message(486)))
     }
 }
 

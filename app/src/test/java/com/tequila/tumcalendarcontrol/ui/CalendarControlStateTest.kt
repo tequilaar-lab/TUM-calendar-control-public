@@ -1,8 +1,8 @@
 /*
- * 职责：验证离线 UI 状态机的课程选择、主题、层级返回、收藏及同步目标开关。
- * 输入／输出：输入合成课程与本地操作；输出内存状态变化断言。
- * 外部副作用：无。
- * 不负责：Compose 视觉渲染、持久化、网络或真实日历验证。
+ * Aufgabe: synthetische Regressionstests für CalendarControlState.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.ui
 

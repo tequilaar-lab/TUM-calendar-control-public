@@ -1,8 +1,8 @@
 /*
- * 职责：把纯差异与导入跳过项汇总成用户可读、不会执行写入的同步预览。
- * 输入／输出：输入 SyncChange 与 IcalSkippedEvent；输出类别数量和可显示行。
- * 外部副作用：无。
- * 不负责：确认、授权、网络、Calendar Provider 或删除任何目标事件。
+ * Aufgabe: Differenzen und übersprungene Importe als rein lesende Vorschau zusammenfassen.
+ * Ein-/Ausgabe: Differenz und ausgeschlossene Importe -> lesbare Vorschau ohne Ausführung.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Bestätigung, Autorisierung, Netzwerk, Calendar Provider oder Löschen von Zielterminen.
  */
 package com.tequila.tumcalendarcontrol.sync
 

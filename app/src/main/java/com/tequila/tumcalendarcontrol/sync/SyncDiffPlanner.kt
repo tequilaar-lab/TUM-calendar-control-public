@@ -1,24 +1,23 @@
 /*
- * 职责：以 UID 与原始实例键计算目标日历的新增、更新、删除和保持不变差异。
- * 输入／输出：输入期望事件和应用拥有的既有映射；输出可预览、可执行的差异计划。
- * 外部副作用：无。
- * 不负责：按标题等不稳定字段识别事件、实际删除／写入或访问外部账户。
+ * Aufgabe: Ausgabedifferenzen über UID und Originalinstanz berechnen.
+ * Ein-/Ausgabe: UID/Originalinstanz, Solltermine und Zuordnungen -> stabile Ausgabedifferenz.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Identität anhand instabiler Felder wie Titel, echtes Löschen/Schreiben oder Kontozugriffe.
  */
 package com.tequila.tumcalendarcontrol.sync
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import java.time.Instant
 import java.security.MessageDigest
 
-/** 变更可见输出字段或事件样式时递增，促使既有映射安全走更新而非删除重建。 */
+/** Bei sichtbaren Feld-/Stiländerungen erhöhen; vorhandene Zuordnungen aktualisieren statt löschen/neu erstellen. */
 private const val EVENT_OUTPUT_FORMAT_REVISION = "2026-09-status-colors-v1"
 
 data class ManagedEventIdentity(val sourceUid: String, val instanceKey: String)
 
-/**
- * 生成目标日历的不可见稳定课次键；不会把私有来源身份暴露到标题、地点或说明。
- * 它只用于映射丢失后的恢复，主身份仍是 UID 与实例键的组合。
- */
+/** Unsichtbaren stabilen Zielinstanzschlüssel erzeugen; Quellidentität nicht in Titel/Ort/Beschreibung. Nur Wiederherstellung bei Zuordnungsverlust; primär UID plus Instanz. */
 fun ManagedEventIdentity.opaqueKey(): String = MessageDigest.getInstance("SHA-256")
     .digest("$sourceUid\u0000$instanceKey".toByteArray(Charsets.UTF_8))
     .joinToString("") { byte -> "%02x".format(byte) }
@@ -39,7 +38,7 @@ data class ManagedEventMapping(
 )
 
 enum class SyncChangeType(val label: String) {
-    CREATE("新增"), UPDATE("更新"), REMOVE("移除"), KEEP("保持不变"),
+    CREATE(message(130)), UPDATE(message(131)), REMOVE(message(132)), KEEP(message(133)),
 }
 
 data class SyncChange(
@@ -49,14 +48,11 @@ data class SyncChange(
 )
 
 class SyncDiffPlanner {
-    /**
-     * 正常写入只新增或更新当前选择，不会把本轮未选择的旧课程解释为“删除”。
-     * 所有删除都必须经 `OwnedCalendarSyncExecutor.rollback` 的单独、显式清理路径。
-     */
+    /** Normales Schreiben ergänzt/aktualisiert aktuelle Auswahl; abgewählte alte Kurse niemals löschen. Löschungen ausschließlich im separaten ausdrücklichen OwnedCalendarSyncExecutor.rollback-Pfad. */
     fun plan(desired: List<DesiredCalendarEvent>, existing: List<ManagedEventMapping>): List<SyncChange> {
         val existingByIdentity = existing.associateBy(ManagedEventMapping::identity)
         val desiredByIdentity = desired.associateBy(DesiredCalendarEvent::identity)
-        // 第二道防线：上游即使漏过去重，同一身份也只能产生一个动作。
+        // Zweite Schutzschicht: pro Identität nur eine Aktion, auch ohne vorherige Deduplizierung.
         val upserts = desiredByIdentity.values.sortedBy { it.startsAt }.map { event ->
             val existingMapping = existingByIdentity[event.identity]
             when {
@@ -69,7 +65,7 @@ class SyncDiffPlanner {
         return upserts
     }
 
-    /** 指纹可包含可见输出字段，但绝不作为跨同步身份；身份始终来自 UID 与实例键。 */
+    /** Hash darf Anzeigefelder enthalten, ist aber keine Synchronisierungsidentität; diese bleibt UID plus Instanz. */
     fun DesiredCalendarEvent.fingerprint(): String = listOf(
         EVENT_OUTPUT_FORMAT_REVISION,
         title,

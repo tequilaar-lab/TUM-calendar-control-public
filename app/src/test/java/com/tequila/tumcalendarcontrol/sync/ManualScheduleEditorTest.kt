@@ -1,8 +1,8 @@
 /*
- * 职责：验证手动事项更新与删除只按应用生成 ID 工作。
- * 输入／输出：输入合成事项；输出确定性的项目列表断言。
- * 外部副作用：无。
- * 不负责：页面输入、来源数据或任何日历输出。
+ * Aufgabe: synthetische Regressionstests für ManualScheduleEditor.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

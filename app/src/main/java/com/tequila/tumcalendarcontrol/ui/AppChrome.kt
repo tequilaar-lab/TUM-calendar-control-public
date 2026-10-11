@@ -1,10 +1,12 @@
 /*
- * 职责：渲染应用固定外壳：顶栏、主页面动效、浮动底栏与“更多操作”覆盖层。
- * 输入／输出：输入 CalendarControlState 的纯 UI 状态与事件回调；输出 Compose-Miuix 布局。
- * 外部副作用：无；所有状态变化经 CalendarControlState 的已有用户操作入口表达。
- * 不负责：装配 Android 权限／文件／网络依赖、读取 iCal、授权 Google 或写入日历。
+ * Aufgabe: Kopfleiste, Hauptseitenanimation, schwebende Navigation und Aktionsüberlagerung rendern.
+ * Ein-/Ausgabe: Navigation und bestehender Zustand -> fester Compose-Rahmen mit Animationen.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Android-Berechtigungs-/Datei-/Netzwerkkoordination, iCal-Lesen, Google-Autorisierung oder Kalenderausgabe.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import androidx.compose.ui.platform.testTag
 
@@ -48,10 +50,10 @@ import top.yukonga.miuix.kmp.basic.TopAppBar
 
 private val FixedTopBarHeight = 136.dp
 private val FloatingNavigationShape = RoundedCornerShape(30.dp)
-/** 仅用于滚动内容末尾，不能作为外层视口 padding；系统安全区另行处理。 */
+/** Nur am Ende scrollbarer Inhalte; kein äußeres Viewport-Padding. Systemsicherheitsbereich getrennt. */
 internal val FloatingNavigationContentClearance = 100.dp
 
-/** 主页面外壳不保留无实际功能的更多操作入口。 */
+/** Keine funktionslose weitere Aktion im Hauptseitenrahmen. */
 @Composable
 internal fun CalendarControlChrome(state: CalendarControlState) {
     CalendarControlScaffold(state)
@@ -71,7 +73,7 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                     if (contentScreen.usesBackArrow()) {
                         TactileIconButton(
                             icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = "返回上一页",
+                            contentDescription = tr(message(138)),
                             onClick = state::handleBack,
                         )
                     } else {
@@ -84,7 +86,7 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                 actions = {},
             )
         },
-        // 底栏叠放在内容之上，避免 Scaffold 为它铺设整条深色背景，也避免资料页返回时改变内容高度。
+        // Navigation über Inhalt legen; keine breite dunkle Scaffold-Fläche oder Höhenänderung bei Profilrückkehr.
         bottomBar = {},
     ) { innerPadding ->
         Box(
@@ -95,14 +97,14 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                         start = 16.dp,
                         top = innerPadding.calculateTopPadding() + 16.dp,
                         end = 16.dp,
-                        // Scaffold 已提供系统导航区；浮块不再重复叠加 navigationBarsPadding。
+                        // Scaffold berücksichtigt Systemnavigation; kein zusätzliches navigationBarsPadding für schwebende Navigation.
                         bottom = innerPadding.calculateBottomPadding() + 8.dp,
                     ),
                 ),
         ) {
             Box(
                 modifier = Modifier
-                    // 页面视口始终完整；浮块避让仅放在滚动内容末尾，不裁短整页。
+                    // Vollständiger Viewport; Navigationsabstand nur am Inhaltende, niemals gesamte Seite kürzen.
                     .fillMaxSize(),
             ) {
                 AnimatedContent(
@@ -112,11 +114,11 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                             NavigationDirection.FORWARD -> (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 3 } + fadeOut())
                             NavigationDirection.BACKWARD -> (slideInHorizontally { -it / 3 } + fadeIn()) togetherWith (slideOutHorizontally { it } + fadeOut())
                             NavigationDirection.PROFILE_ENTER -> (slideInHorizontally { -it } + fadeIn()) togetherWith (slideOutHorizontally { it / 3 } + fadeOut())
-                            // 资料页向左退出，进入前的主页面完整地从右侧进入；不再因底栏出现而纵向重排。
+                            // Profil nach links verlassen, vorige Hauptseite vollständig von rechts einblenden; keine vertikale Neuordnung.
                             NavigationDirection.PROFILE_EXIT -> (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 3 } + fadeOut())
                         }
                     },
-                    label = "主页面切换",
+                    label = message(139),
                 ) { screen ->
                     savedPages.SaveableStateProvider(screen.name) { AppScreenContent(state, screen) }
                 }
@@ -132,7 +134,7 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
     }
 }
 
-/** 顶栏预留状态栏安全区和固定内容高度，避免图标侵入通知栏或正文侵入副标题。 */
+/** Statusleistenabstand und feste Kopfhöhe reservieren; Symbole und Untertitel überlappen nicht. */
 @Composable
 private fun FixedAppTopBar(
     title: String,
@@ -147,8 +149,8 @@ private fun FixedAppTopBar(
             .statusBarsPadding(),
     ) {
         TopAppBar(
-            title = title,
-            subtitle = subtitle,
+            title = tr(title),
+            subtitle = tr(subtitle),
             navigationIcon = navigationIcon,
             actions = actions,
             modifier = Modifier.fillMaxSize(),
@@ -178,7 +180,7 @@ private fun AppBottomNavigation(
             val itemWidth = maxWidth / 4
             val selectedOffset = animateDpAsState(
                 targetValue = itemWidth * selectedScreen.bottomNavigationIndex(),
-                label = "底栏选中块滑动",
+                label = message(140),
             ).value
             Box(
                 modifier = Modifier
@@ -190,31 +192,31 @@ private fun AppBottomNavigation(
                     .background(palette.primaryContainer.copy(alpha = 0.82f)),
             )
             Box(Modifier.fillMaxWidth()) {
-                // 四个等宽槽位与指示器使用同一 itemWidth，避免依赖冲突造成对齐漂移。
+                // Vier gleiche Slots und Indikator teilen itemWidth; keine Ausrichtungsverschiebung.
                 TactileNavigationItem(
                     Icons.Rounded.Home,
-                    "首页",
+                    message(141),
                     selectedScreen == AppScreen.OVERVIEW,
                     onClick = { state.open(AppScreen.OVERVIEW) },
                     modifier = Modifier.width(itemWidth).offset(x = itemWidth * 0),
                 )
                 TactileNavigationItem(
                     Icons.Rounded.Search,
-                    "搜索",
+                    message(142),
                     selectedScreen == AppScreen.SEARCH,
                     onClick = { state.open(AppScreen.SEARCH) },
                     modifier = Modifier.width(itemWidth).offset(x = itemWidth * 1),
                 )
                 TactileNavigationItem(
                     Icons.Rounded.Favorite,
-                    "收藏",
+                    message(143),
                     selectedScreen == AppScreen.FAVORITES,
                     onClick = { state.open(AppScreen.FAVORITES) },
                     modifier = Modifier.width(itemWidth).offset(x = itemWidth * 2),
                 )
                 TactileNavigationItem(
                     Icons.Rounded.Settings,
-                    "设置",
+                    message(144),
                     selectedScreen == AppScreen.SETTINGS,
                     onClick = { state.open(AppScreen.SETTINGS) },
                     modifier = Modifier.width(itemWidth).offset(x = itemWidth * 3),
@@ -224,7 +226,7 @@ private fun AppBottomNavigation(
     }
 }
 
-/** 更多操作以独立覆盖层覆盖完整内容区，避免底栏切换动画与它混在一起。 */
+/** Weitere Aktionen als eigene vollständige Überlagerung; getrennt von Navigationsanimation. */
 @Composable
 private fun MoreOverlay(state: CalendarControlState) {
     val palette = LocalTumPalette.current
@@ -244,7 +246,7 @@ private fun MoreOverlay(state: CalendarControlState) {
                 navigationIcon = {
                     TactileIconButton(
                         icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = "关闭更多操作",
+                        contentDescription = tr(message(145)),
                         onClick = state::handleBack,
                     )
                 },

@@ -1,10 +1,12 @@
 /*
- * 职责：提供界面演示用的合成课程与解析结果。
- * 输入／输出：无外部输入；输出为只含合成标题、UID 和日期的展示模型。
- * 外部副作用：无，不读取真实日历或账户。
- * 不负责：持久化样例、用户编辑或同步。
+ * Aufgabe: Synthetische Kurse und Regelauflösungen für die Vorführung bereitstellen.
+ * Ein-/Ausgabe: Keine externe Eingabe -> künstliche Titel, UIDs, Daten und Anzeigemodelle.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Speicherung von Beispielen, Benutzerbearbeitung oder Synchronisierung.
  */
 package com.tequila.tumcalendarcontrol.domain
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -31,7 +33,7 @@ object SampleSchedule {
         )
         return instances.map { occurrence ->
             PreviewEvent(
-                title = "合成课程：规则演示",
+                title = message(32),
                 dateTime = occurrence.start,
                 state = checkNotNull(AttendanceResolver.resolve(rule, occurrence)),
             )
@@ -41,7 +43,7 @@ object SampleSchedule {
     private fun occurrence(instanceKey: String): CourseOccurrence = CourseOccurrence(
         sourceUid = "sample-fixed-course",
         instanceKey = instanceKey,
-        title = "合成课程：规则演示",
+        title = message(32),
         start = LocalDateTime.parse(instanceKey),
     )
 }

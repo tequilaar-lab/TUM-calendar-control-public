@@ -1,8 +1,8 @@
 /*
- * 职责：验证来源读取协调器的成功、失败、异常、超时和迟到结果边界。
- * 输入／输出：使用合成 URL 与合成读取器；断言只产生一次脱敏完成结果。
- * 外部副作用：仅创建/关闭测试线程，不访问网络、私有配置或 Android 日历。
- * 不负责：iCal 解析正确性、Compose 导航或真机网络验证。
+ * Aufgabe: synthetische Regressionstests für SourceReadCoordinator.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

@@ -1,0 +1,692 @@
+<!-- Aufgabe: lokalisierte App-Texte; Ein-/Ausgabe: Ressourcenschlüssel und Anzeigevorlagen; keine externen Nebenwirkungen. -->
+<resources>
+    <string name="app_name">TUM日程控制</string>
+    <string name="msg_0000" formatted="false">"课程规则与实例必须共享同一源 UID。"</string>
+    <string name="msg_0001" formatted="false">"一定出席"</string>
+    <string name="msg_0002" formatted="false">"绿"</string>
+    <string name="msg_0003" formatted="false">"需要优先出席"</string>
+    <string name="msg_0004" formatted="false">"选择出席"</string>
+    <string name="msg_0005" formatted="false">"蓝"</string>
+    <string name="msg_0006" formatted="false">"可根据实际情况决定是否出席"</string>
+    <string name="msg_0007" formatted="false">"从此不去"</string>
+    <string name="msg_0008" formatted="false">"灰"</string>
+    <string name="msg_0009" formatted="false">"从指定实例起不再出席；过去不变"</string>
+    <string name="msg_0010" formatted="false">"来源未说明"</string>
+    <string name="msg_0011" formatted="false">"小时必须在 0 至 23。"</string>
+    <string name="msg_0012" formatted="false">"分钟必须在 0 至 59。"</string>
+    <string name="msg_0013" formatted="false">"结束时间必须晚于开始时间。"</string>
+    <string name="msg_0014" formatted="false">"周一"</string>
+    <string name="msg_0015" formatted="false">"周二"</string>
+    <string name="msg_0016" formatted="false">"周三"</string>
+    <string name="msg_0017" formatted="false">"周四"</string>
+    <string name="msg_0018" formatted="false">"周五"</string>
+    <string name="msg_0019" formatted="false">"周六"</string>
+    <string name="msg_0020" formatted="false">"周日"</string>
+    <string name="msg_0021" formatted="false">"课程 A"</string>
+    <string name="msg_0022" formatted="false">"周二 10:00–12:00"</string>
+    <string name="msg_0023" formatted="false">"示例校区"</string>
+    <string name="msg_0024" formatted="false">"课程 B"</string>
+    <string name="msg_0025" formatted="false">"周三 14:00–16:00"</string>
+    <string name="msg_0026" formatted="false">"课程 C"</string>
+    <string name="msg_0027" formatted="false">"周四 08:00–10:00"</string>
+    <string name="msg_0028" formatted="false">"课程 D"</string>
+    <string name="msg_0029" formatted="false">"周四 16:00–18:00"</string>
+    <string name="msg_0030" formatted="false">"课程 E"</string>
+    <string name="msg_0031" formatted="false">"周五 10:00–12:00"</string>
+    <string name="msg_0032" formatted="false">"合成课程：规则演示"</string>
+    <string name="msg_0033" formatted="false">"TUM 日历控制"</string>
+    <string name="msg_0034" formatted="false">"由 TUM 日历控制创建。"</string>
+    <string name="msg_0035" formatted="false">"本机专用日历未能创建"</string>
+    <string name="msg_0036" formatted="false">"本机专用日历不可用；请检查日历权限后重试"</string>
+    <string name="msg_0037" formatted="false">"找不到本机应用专用日历；没有创建新日历。"</string>
+    <string name="msg_0038" formatted="false">"本机专用日历不可用；没有创建新日历。"</string>
+    <string name="msg_0039" formatted="false">"拒绝向非应用拥有的本机日历写入。"</string>
+    <string name="msg_0040" formatted="false">"本机事件未能创建"</string>
+    <string name="msg_0041" formatted="false">"拒绝读取非应用拥有的本机日历。"</string>
+    <string name="msg_0042" formatted="false">"无法核对本机日程；未继续创建"</string>
+    <string name="msg_0043" formatted="false">"无法核对本机日程；未继续清理"</string>
+    <string name="msg_0044" formatted="false">"拒绝向非应用拥有的本机日历更新。"</string>
+    <string name="msg_0045" formatted="false">"本机事件未能更新"</string>
+    <string name="msg_0046" formatted="false">"拒绝从非应用拥有的本机日历删除。"</string>
+    <string name="msg_0047" formatted="false">"本机事件未能删除"</string>
+    <string name="msg_0048" formatted="false">"检查应用专用日历"</string>
+    <string name="msg_0049" formatted="false">"创建应用专用日历"</string>
+    <string name="msg_0050" formatted="false">"核对应用已写入的日程"</string>
+    <string name="msg_0051" formatted="false">"核对全部应用已写入的日程"</string>
+    <string name="msg_0052" formatted="false">"写入新的应用日程"</string>
+    <string name="msg_0053" formatted="false">"更新应用已写入的日程"</string>
+    <string name="msg_0054" formatted="false">"删除应用已写入的日程"</string>
+    <string name="msg_0055" formatted="false">"令牌无效"</string>
+    <string name="msg_0056" formatted="false">"权限范围不足"</string>
+    <string name="msg_0057" formatted="false">"授权请求无效"</string>
+    <string name="msg_0058" formatted="false">"Google 未提供更具体的授权原因"</string>
+    <string name="msg_0059" formatted="false">"Google 专用日历不可用"</string>
+    <string name="msg_0060" formatted="false">"找不到 Google 应用专用日历；没有创建新日历。"</string>
+    <string name="msg_0061" formatted="false">"Google 应用专用日历不可用；没有创建新日历"</string>
+    <string name="msg_0062" formatted="false">"拒绝读取非应用拥有的 Google 日历。"</string>
+    <string name="msg_0063" formatted="false">"拒绝向非应用拥有的 Google 日历写入。"</string>
+    <string name="msg_0064" formatted="false">"拒绝向非应用拥有的 Google 日历更新。"</string>
+    <string name="msg_0065" formatted="false">"拒绝从非应用拥有的 Google 日历删除。"</string>
+    <string name="msg_0066" formatted="false">"Google 日历分页令牌重复，已停止清理前核对。"</string>
+    <string name="msg_0067" formatted="false">"目标事件已不属于该课次，拒绝覆盖"</string>
+    <string name="msg_0068" formatted="false">"删除结果只能来自删除请求"</string>
+    <string name="msg_0069" formatted="false">"不可达"</string>
+    <string name="msg_0070" formatted="false">"{0}（{1}时收到 HTTP {2}；{3}）"</string>
+    <string name="msg_0071" formatted="false">"{0}；请检查授权和网络后重试"</string>
+    <string name="msg_0072" formatted="false">"Google API 路径必须以 / 开头。"</string>
+    <string name="msg_0073" formatted="false">"Google 响应超过大小限制"</string>
+    <string name="msg_0074" formatted="false">"还没有本应用创建的 Google 日历；本次检查不会创建日历。首次确认写入后才能检查。"</string>
+    <string name="msg_0075" formatted="false">"Google 连接可用：已能读取应用专用日历。本次没有写入任何日程。"</string>
+    <string name="msg_0076" formatted="false">"Google 连接可用，但此前的应用专用日历已不存在；本次没有创建或写入。"</string>
+    <string name="msg_0077" formatted="false">"Google 连接可用，但保存的目标不再带有应用标记；为保护其他日历，本次没有写入。"</string>
+    <string name="msg_0078" formatted="false">"Google 连接检查失败"</string>
+    <string name="msg_0079" formatted="false">"地址格式无效"</string>
+    <string name="msg_0080" formatted="false">"只允许 HTTPS 私有订阅地址"</string>
+    <string name="msg_0081" formatted="false">"来源读取失败"</string>
+    <string name="msg_0082" formatted="false">"来源服务器未成功响应"</string>
+    <string name="msg_0083" formatted="false">"来源响应超过大小限制"</string>
+    <string name="msg_0084" formatted="false">"iCalendar 展开窗口必须有正长度。"</string>
+    <string name="msg_0085" formatted="false">"未命名来源日程"</string>
+    <string name="msg_0086" formatted="false">"私有配置密文为空。"</string>
+    <string name="msg_0087" formatted="false">"私有配置密文格式无效。"</string>
+    <string name="msg_0088" formatted="false">"暂时无法识别日程详情"</string>
+    <string name="msg_0089" formatted="false">"本机日历"</string>
+    <string name="msg_0090" formatted="false">"Google 日历"</string>
+    <string name="msg_0091" formatted="false">"{0}：新建 {1}，更新 {2}，已核对未变 {3}，失败 {4}"</string>
+    <string name="msg_0092" formatted="false">"；发现 {0} 条日程在目标中缺失，已补写"</string>
+    <string name="msg_0093" formatted="false">"删除后复核剩余 {0} 个"</string>
+    <string name="msg_0094" formatted="false">"删除后复核未完成"</string>
+    <string name="msg_0095" formatted="false">"{0}：本次请求清理 {1} 个应用日程，已删除 {2} 个，之前已不存在 {3} 个，{4}"</string>
+    <string name="msg_0096" formatted="false">"{0} 同步失败"</string>
+    <string name="msg_0097" formatted="false">"{0} 撤销失败；未丢失本机映射"</string>
+    <string name="msg_0098" formatted="false">"目标日历不属于本应用，已拒绝写入。"</string>
+    <string name="msg_0099" formatted="false">"目标存在重复课次，未改动该课次；请先核对重复项。"</string>
+    <string name="msg_0100" formatted="false">"{0}：已完成 {1} 条，失败 {2} 条"</string>
+    <string name="msg_0101" formatted="false">"目标日历不属于本应用，已拒绝撤销。"</string>
+    <string name="msg_0102" formatted="false">"{0} 清理未完成：{1} 条删除失败。"</string>
+    <string name="msg_0103" formatted="false">"{0} 删除后核对未完成；请稍后只读检查。"</string>
+    <string name="msg_0104" formatted="false">"{0} 清理后仍有 {1} 条应用日程。"</string>
+    <string name="msg_0105" formatted="false">"合成删除失败"</string>
+    <string name="msg_0106" formatted="false">"TUM 来源检查"</string>
+    <string name="msg_0107" formatted="false">"检测到来源可能有更新；打开应用查看并手动预览。"</string>
+    <string name="msg_0108" formatted="false">"尚未获得本次运行的 Google 授权；未发起连接检查。"</string>
+    <string name="msg_0109" formatted="false">"Google 未获本次运行授权；未执行写入"</string>
+    <string name="msg_0110" formatted="false">"•••••••• · 已加密保存在本机"</string>
+    <string name="msg_0111" formatted="false">"尚未配置"</string>
+    <string name="msg_0112" formatted="false">"订阅地址必须是带主机名的 HTTPS 地址"</string>
+    <string name="msg_0113" formatted="false">"Google OAuth 客户端标识应以 .apps.googleusercontent.com 结尾"</string>
+    <string name="msg_0114" formatted="false">"来源输出范围须为有效 YYYY-MM-DD，且开始日期不能晚于结束日期"</string>
+    <string name="msg_0115" formatted="false">"Google 专用目标日历名称不能为空"</string>
+    <string name="msg_0116" formatted="false">"私有同步配置格式无效，拒绝保存。"</string>
+    <string name="msg_0117" formatted="false">"私有配置未能保存到应用本机存储。"</string>
+    <string name="msg_0118" formatted="false">"读取范围最多五年；请缩小开始和结束日期后重试。"</string>
+    <string name="msg_0119" formatted="false">"来源内容无法作为 iCal 日历解析"</string>
+    <string name="msg_0120" formatted="false">"未知资料库记录"</string>
+    <string name="msg_0121" formatted="false">"应用写入记录未能保存"</string>
+    <string name="msg_0122" formatted="false">"缺少 UID"</string>
+    <string name="msg_0123" formatted="false">"缺少起止时间"</string>
+    <string name="msg_0124" formatted="false">"未确认 Fixplatz"</string>
+    <string name="msg_0125" formatted="false">"每天检查一次"</string>
+    <string name="msg_0126" formatted="false">"每周检查一次"</string>
+    <string name="msg_0127" formatted="false">"来源输出范围的开始日期不能晚于结束日期。"</string>
+    <string name="msg_0128" formatted="false">"来源读取超过 {0} 秒，已停止等待；请检查网络后再试"</string>
+    <string name="msg_0129" formatted="false">"来源读取发生未知错误；请稍后重试"</string>
+    <string name="msg_0130" formatted="false">"新增"</string>
+    <string name="msg_0131" formatted="false">"更新"</string>
+    <string name="msg_0132" formatted="false">"移除"</string>
+    <string name="msg_0133" formatted="false">"保持不变"</string>
+    <string name="msg_0134" formatted="false">"规则与来源实例 UID 必须相同。"</string>
+    <string name="msg_0135" formatted="false">"应用记录与日历实际内容一致。"</string>
+    <string name="msg_0136" formatted="false">"应用记录显示已写入，但日历中已找不到该日程；下次确认可重新创建。"</string>
+    <string name="msg_0137" formatted="false">"日历中的日程已在应用外被修改；请先选择采用日历实际状态，或按应用规则修复。"</string>
+    <string name="msg_0138" formatted="false">"返回上一页"</string>
+    <string name="msg_0139" formatted="false">"主页面切换"</string>
+    <string name="msg_0140" formatted="false">"底栏选中块滑动"</string>
+    <string name="msg_0141" formatted="false">"首页"</string>
+    <string name="msg_0142" formatted="false">"搜索"</string>
+    <string name="msg_0143" formatted="false">"收藏"</string>
+    <string name="msg_0144" formatted="false">"设置"</string>
+    <string name="msg_0145" formatted="false">"关闭更多操作"</string>
+    <string name="msg_0146" formatted="false">"课程"</string>
+    <string name="msg_0147" formatted="false">"{0} · {1}"</string>
+    <string name="msg_0148" formatted="false">"{0} · {1} · {2}"</string>
+    <string name="msg_0149" formatted="false">"；历史不改"</string>
+    <string name="msg_0150" formatted="false">"查看课程详情"</string>
+    <string name="msg_0151" formatted="false">"TUM 日程控制"</string>
+    <string name="msg_0152" formatted="false">"课程详情"</string>
+    <string name="msg_0153" formatted="false">"状态选择"</string>
+    <string name="msg_0154" formatted="false">"编辑课程"</string>
+    <string name="msg_0155" formatted="false">"搜索课程"</string>
+    <string name="msg_0156" formatted="false">"收藏课程"</string>
+    <string name="msg_0157" formatted="false">"更多操作"</string>
+    <string name="msg_0158" formatted="false">"设置与同步"</string>
+    <string name="msg_0159" formatted="false">"个人资料"</string>
+    <string name="msg_0160" formatted="false">"日历连接"</string>
+    <string name="msg_0161" formatted="false">"离线示例"</string>
+    <string name="msg_0162" formatted="false">"选择读取时间"</string>
+    <string name="msg_0163" formatted="false">"选择课程"</string>
+    <string name="msg_0164" formatted="false">"设置出席与收藏"</string>
+    <string name="msg_0165" formatted="false">"手动校园事项"</string>
+    <string name="msg_0166" formatted="false">"确认写入日历"</string>
+    <string name="msg_0167" formatted="false">"清理已写入日程"</string>
+    <string name="msg_0168" formatted="false">"检查课程更新"</string>
+    <string name="msg_0169" formatted="false">"备份课程设置"</string>
+    <string name="msg_0170" formatted="false">"读取课程后会显示在这里"</string>
+    <string name="msg_0171" formatted="false">"读取课程、设置写入位置与外观"</string>
+    <string name="msg_0172" formatted="false">"保存到这台设备，不会联网"</string>
+    <string name="msg_0173" formatted="false">"示例不会写入日历"</string>
+    <string name="msg_0174" formatted="false">"选择时间后读取课程"</string>
+    <string name="msg_0175" formatted="false">"选择后设置出席与收藏"</string>
+    <string name="msg_0176" formatted="false">"保存后可返回课程列表写入日历"</string>
+    <string name="msg_0177" formatted="false">"保存后可与课程一起写入日历"</string>
+    <string name="msg_0178" formatted="false">"确认后才会修改所选日历"</string>
+    <string name="msg_0179" formatted="false">"选择范围并确认后才会清理应用日程"</string>
+    <string name="msg_0180" formatted="false">"只检查课程变化，不会自动写入日历"</string>
+    <string name="msg_0181" formatted="false">"备份课程设置；恢复前需确认"</string>
+    <string name="msg_0182" formatted="false">"课程页面路由只接受课程屏幕"</string>
+    <string name="msg_0183" formatted="false">"设置页面路由只接受设置屏幕"</string>
+    <string name="msg_0184" formatted="false">"工作流页面路由只接受工作流屏幕"</string>
+    <string name="msg_0185" formatted="false">"浅色配色"</string>
+    <string name="msg_0186" formatted="false">"两种模式分别保存配色，不改变课程的出席颜色。"</string>
+    <string name="msg_0187" formatted="false">"深色配色"</string>
+    <string name="msg_0188" formatted="false">"已选择"</string>
+    <string name="msg_0189" formatted="false">"清爽白"</string>
+    <string name="msg_0190" formatted="false">"暖米白"</string>
+    <string name="msg_0191" formatted="false">"中性黑"</string>
+    <string name="msg_0192" formatted="false">"深蓝"</string>
+    <string name="msg_0193" formatted="false">"为“{0}”选择状态"</string>
+    <string name="msg_0194" formatted="false">"范围按已保存的完整原始课名、类型和组别匹配。保存后加入待写入选择；写入仍受日期范围限制，学校来源和日历尚不改变。"</string>
+    <string name="msg_0195" formatted="false">"生效范围"</string>
+    <string name="msg_0196" formatted="false">"指定从这天起（YYYY-MM-DD）"</string>
+    <string name="msg_0197" formatted="false">"取消"</string>
+    <string name="msg_0198" formatted="false">"确认"</string>
+    <string name="msg_0199" formatted="false">"{0}色 · {1}"</string>
+    <string name="msg_0200" formatted="false">"默认关闭。开启后会在网络可用时检查课程是否变化，不会自动写入或删除日历。省电模式可能推迟检查。"</string>
+    <string name="msg_0201" formatted="false">"当前频率"</string>
+    <string name="msg_0202" formatted="false">"✓ {0}"</string>
+    <string name="msg_0203" formatted="false">"关闭更新检查"</string>
+    <string name="msg_0204" formatted="false">"开启更新检查"</string>
+    <string name="msg_0205" formatted="false">"最近检查"</string>
+    <string name="msg_0206" formatted="false">"通知与隐私"</string>
+    <string name="msg_0207" formatted="false">"检测到可能变化时只发送通用提醒，不包含课程名称、地点、链接或日程内容。拒绝通知权限不影响应用内状态查看。"</string>
+    <string name="msg_0208" formatted="false">"尚未检查"</string>
+    <string name="msg_0209" formatted="false">"尚未执行"</string>
+    <string name="msg_0210" formatted="false">"已建立首次只读摘要"</string>
+    <string name="msg_0211" formatted="false">"未发现变化"</string>
+    <string name="msg_0212" formatted="false">"发现课程可能变化。打开应用重新读取课程。"</string>
+    <string name="msg_0213" formatted="false">"检查失败；系统会按策略稍后重试"</string>
+    <string name="msg_0214" formatted="false">"还没有设置课程订阅地址"</string>
+    <string name="msg_0215" formatted="false">"无法打开备份文件"</string>
+    <string name="msg_0216" formatted="false">"页面选择未能保存，重启后可能需要重新选择。"</string>
+    <string name="msg_0217" formatted="false">"配置未能保存，请检查本机存储后重试；当前配置仅在本次运行有效。"</string>
+    <string name="msg_0218" formatted="false">"日历操作已返回，但本机同步记录保存失败；请先核对目标日历再重试。"</string>
+    <string name="msg_0219" formatted="false">"日历执行结果已返回，但配置保存失败；请先核对已写入日程。"</string>
+    <string name="msg_0220" formatted="false">"写入日历未完成；请检查权限或网络后重试"</string>
+    <string name="msg_0221" formatted="false">"核对结果已返回，但本机记录保存失败；没有删除任何日程。"</string>
+    <string name="msg_0222" formatted="false">"浅色模式"</string>
+    <string name="msg_0223" formatted="false">"深色模式"</string>
+    <string name="msg_0224" formatted="false">"跟随系统"</string>
+    <string name="msg_0225" formatted="false">"不改变收藏"</string>
+    <string name="msg_0226" formatted="false">"保留每门课当前的收藏状态"</string>
+    <string name="msg_0227" formatted="false">"加入收藏"</string>
+    <string name="msg_0228" formatted="false">"把这批课程同时加入收藏"</string>
+    <string name="msg_0229" formatted="false">"取消收藏"</string>
+    <string name="msg_0230" formatted="false">"把这批课程同时移出收藏"</string>
+    <string name="msg_0231" formatted="false">"Google 日历未连接"</string>
+    <string name="msg_0232" formatted="false">"还没有完成本次授权；不会创建或写入 Google 日历。"</string>
+    <string name="msg_0233" formatted="false">"正在连接 Google 日历"</string>
+    <string name="msg_0234" formatted="false">"请在 Google 页面选择账户并允许访问，然后返回本应用。"</string>
+    <string name="msg_0235" formatted="false">"已获本次 Google 授权"</string>
+    <string name="msg_0236" formatted="false">"授权令牌已取得；可继续执行只读连接检查或查看写入内容，Google 日历尚未改变。"</string>
+    <string name="msg_0237" formatted="false">"未能连接 Google 日历"</string>
+    <string name="msg_0238" formatted="false">"没有完成授权，Google 日历没有改变。检查配置后重试。"</string>
+    <string name="msg_0239" formatted="false">"当前：{0} · {1}"</string>
+    <string name="msg_0240" formatted="false">"多种出席状态"</string>
+    <string name="msg_0241" formatted="false">"已收藏"</string>
+    <string name="msg_0242" formatted="false">"未收藏"</string>
+    <string name="msg_0243" formatted="false">"部分已收藏"</string>
+    <string name="msg_0244" formatted="false">"未能保存课程设置；原有出席、收藏和本机修改保持不变。"</string>
+    <string name="msg_0245" formatted="false">"刚刚读取的课程"</string>
+    <string name="msg_0246" formatted="false">"上次成功读取的课程"</string>
+    <string name="msg_0247" formatted="false">"较早一次读取的课程"</string>
+    <string name="msg_0248" formatted="false">"未保存"</string>
+    <string name="msg_0249" formatted="false">"请先选择要核对的日历。"</string>
+    <string name="msg_0250" formatted="false">"Google 尚未连接，请连接或仅选择本机日历。"</string>
+    <string name="msg_0251" formatted="false">"请先允许本机日历访问。"</string>
+    <string name="msg_0252" formatted="false">"正在核对已写入日程的课程和时间；不会删除任何日程。"</string>
+    <string name="msg_0253" formatted="false">"未能核对日程，原记录仍保留；请检查权限和连接后重试。"</string>
+    <string name="msg_0254" formatted="false">"已核对 {0} 条记录，{1} 条暂未确认；没有删除任何日程。"</string>
+    <string name="msg_0255" formatted="false">"已保存这门课的修改；下次确认写入时生效，学校来源不变。"</string>
+    <string name="msg_0256" formatted="false">"已开启{0}；确认写入前不会改动日历。"</string>
+    <string name="msg_0257" formatted="false">"已关闭{0}；已写入日程保持不变。"</string>
+    <string name="msg_0258" formatted="false">"已允许访问本机日历；现在仍需查看数量并确认，才会写入。"</string>
+    <string name="msg_0259" formatted="false">"没有获得本机日历权限；本机日历保持关闭。"</string>
+    <string name="msg_0260" formatted="false">"同步配置格式无效。"</string>
+    <string name="msg_0261" formatted="false">"请先保存课程订阅地址；尚未开启更新检查。"</string>
+    <string name="msg_0262" formatted="false">"已开启课程更新检查；它不会自动写入任何日历。"</string>
+    <string name="msg_0263" formatted="false">"已关闭课程更新检查。"</string>
+    <string name="msg_0264" formatted="false">"未授予通知权限；更新检查仍会在应用内记录状态。"</string>
+    <string name="msg_0265" formatted="false">"出席规则与校园事项已导出；不包含收藏、显示改名、课程地址、账户或已写入日程。"</string>
+    <string name="msg_0266" formatted="false">"没有导出。"</string>
+    <string name="msg_0267" formatted="false">"无法读取备份；本机规则没有改变。"</string>
+    <string name="msg_0268" formatted="false">"已读取备份。确认后才会替换出席规则和校园事项；收藏与显示改名不变。"</string>
+    <string name="msg_0269" formatted="false">"已恢复出席设置和校园事项；日历没有改变。"</string>
+    <string name="msg_0270" formatted="false">"已保存下次读取时间；当前课程、选择和待写入内容保持不变。"</string>
+    <string name="msg_0271" formatted="false">"正在读取课程，请稍候。"</string>
+    <string name="msg_0272" formatted="false">"还没有保存的课程，请先读取。"</string>
+    <string name="msg_0273" formatted="false">"正在使用{0}；日期范围只在重新读取课程时生效。"</string>
+    <string name="msg_0274" formatted="false">"还没有读取课程。请先在“选择读取时间”中读取。"</string>
+    <string name="msg_0275" formatted="false">"正在读取课程；不会写入任何日历。"</string>
+    <string name="msg_0276" formatted="false">"已保留仍存在的选择；{0} 个已不存在或已取消的课次已从选择中移除。"</string>
+    <string name="msg_0277" formatted="false">"课程已更新；原有选择中仍存在的课次已保留。"</string>
+    <string name="msg_0278" formatted="false">"未能读取课程：{0}。日历没有改变。"</string>
+    <string name="msg_0279" formatted="false">"请等待当前操作结束后再切换课程数据。"</string>
+    <string name="msg_0280" formatted="false">"没有可使用的较早课程数据。"</string>
+    <string name="msg_0281" formatted="false">"已使用{0}；仍存在的选择已保留{1}。日历尚未改变。"</string>
+    <string name="msg_0282" formatted="false">"，并移除 {0} 个已不存在课次"</string>
+    <string name="msg_0283" formatted="false">"请至少选择一个课次。"</string>
+    <string name="msg_0284" formatted="false">"已保留原有出席和收藏；编辑模式与范围已保存。"</string>
+    <string name="msg_0285" formatted="false">"当前课次有不同出席状态，请明确选择统一状态，或使用按课程分别设置。"</string>
+    <string name="msg_0286" formatted="false">"课程列表"</string>
+    <string name="msg_0287" formatted="false">"已保存 {0} 个课次的出席方式{1}；尚未写入日历。"</string>
+    <string name="msg_0288" formatted="false">"与收藏设置"</string>
+    <string name="msg_0289" formatted="false">"请先选择课次。"</string>
+    <string name="msg_0290" formatted="false">"已保存 {0} 门课程的分别设置；尚未写入日历。"</string>
+    <string name="msg_0291" formatted="false">"出席设置没有改变。"</string>
+    <string name="msg_0292" formatted="false">"已更新 {0} 个已保存课次并加入待写入选择；确认写入后才会更新日历。"</string>
+    <string name="msg_0293" formatted="false">"已更新“{0}”的出席方式（{1}）；确认写入后才会更新日历。"</string>
+    <string name="msg_0294" formatted="false">"请打开一个有具体日期的课次。"</string>
+    <string name="msg_0295" formatted="false">"请输入 YYYY-MM-DD 格式的指定日期。"</string>
+    <string name="msg_0296" formatted="false">"还没有可清理的应用专用日历。"</string>
+    <string name="msg_0297" formatted="false">"请等待当前日历操作结束。"</string>
+    <string name="msg_0298" formatted="false">"先读取并选择课程，或添加校园事项，再写入日历。"</string>
+    <string name="msg_0299" formatted="false">"请等待日程核对结束。"</string>
+    <string name="msg_0300" formatted="false">"先点击“写入日历”，查看数量后再确认。"</string>
+    <string name="msg_0301" formatted="false">"请勾选本次要写入的日历。"</string>
+    <string name="msg_0302" formatted="false">"本机日历没有获得系统权限；没有写入。"</string>
+    <string name="msg_0303" formatted="false">"请先连接 Google 日历；没有写入。"</string>
+    <string name="msg_0304" formatted="false">"正在写入日历…"</string>
+    <string name="msg_0305" formatted="false">"没有已就绪的日历。"</string>
+    <string name="msg_0306" formatted="false">"仅写入已就绪日历；未连接的目标不会改变。"</string>
+    <string name="msg_0307" formatted="false">"请等待日程核对结束后再清理。"</string>
+    <string name="msg_0308" formatted="false">"请至少选择一门课程或一个日期范围内的课次。"</string>
+    <string name="msg_0309" formatted="false">"没有可清理的应用专用日历。"</string>
+    <string name="msg_0310" formatted="false">"本机日历没有获得系统权限；没有清除。"</string>
+    <string name="msg_0311" formatted="false">"请先连接 Google 日历；没有清除。"</string>
+    <string name="msg_0312" formatted="false">"正在清除已选择的应用日程…"</string>
+    <string name="msg_0313" formatted="false">"manual:{0}"</string>
+    <string name="msg_0314" formatted="false">"日历已更新：新建 {0}、更新 {1}、清除 {2}。"</string>
+    <string name="msg_0315" formatted="false">"标题不能为空"</string>
+    <string name="msg_0316" formatted="false">"请填写有效的标题、YYYY-MM-DD 日期和小时／分钟；结束须晚于开始。"</string>
+    <string name="msg_0317" formatted="false">"校园事项已保存到这台设备。下次写入日历时会和课程一起处理。"</string>
+    <string name="msg_0318" formatted="false">"已从这台设备删除校园事项；日历没有改变。"</string>
+    <string name="msg_0319" formatted="false">"全部日程"</string>
+    <string name="msg_0320" formatted="false">"修改这门课程的所有实例，包含过去日程"</string>
+    <string name="msg_0321" formatted="false">"只改本次"</string>
+    <string name="msg_0322" formatted="false">"只修改当前选定的一次实例"</string>
+    <string name="msg_0323" formatted="false">"本次及以后"</string>
+    <string name="msg_0324" formatted="false">"从当前选定实例起修改，过去不变"</string>
+    <string name="msg_0325" formatted="false">"指定日程及以后"</string>
+    <string name="msg_0326" formatted="false">"选择日期／实例后，从该处起修改"</string>
+    <string name="msg_0327" formatted="false">"{0}:{1}"</string>
+    <string name="msg_0328" formatted="false">"未命名课程"</string>
+    <string name="msg_0329" formatted="false">"其他课次"</string>
+    <string name="msg_0330" formatted="false">"(?i)(?&lt;![A-ZÄÖÜ])({0})(?![A-ZÄÖÜ])"</string>
+    <string name="msg_0331" formatted="false">"_{0}"</string>
+    <string name="msg_0332" formatted="false">"course_override_{0}_{1}"</string>
+    <string name="msg_0333" formatted="false">"已读取的课程"</string>
+    <string name="msg_0334" formatted="false">"课程总览"</string>
+    <string name="msg_0335" formatted="false">"本机显示修改"</string>
+    <string name="msg_0336" formatted="false">"还没有修改；正在显示课程原来的信息"</string>
+    <string name="msg_0337" formatted="false">"已修改本机显示；课程原来的信息没有改变"</string>
+    <string name="msg_0338" formatted="false">"编辑名称、时间与地点"</string>
+    <string name="msg_0339" formatted="false">"当前状态：{0}"</string>
+    <string name="msg_0340" formatted="false">"修改出席状态"</string>
+    <string name="msg_0341" formatted="false">"从本次或指定日期起生效；历史日程不改"</string>
+    <string name="msg_0342" formatted="false">"切换收藏"</string>
+    <string name="msg_0343" formatted="false">"编辑这门课程"</string>
+    <string name="msg_0344" formatted="false">"修改适用于这门课的所有课次，下次确认写入时更新日历，不修改学校来源。名称和地点留空沿用来源；未改动时间则保留各课次原时间。修改星期会移动到同一周。"</string>
+    <string name="msg_0345" formatted="false">"名称（当前来源：{0}）"</string>
+    <string name="msg_0346" formatted="false">"地点（当前来源：{0}）"</string>
+    <string name="msg_0347" formatted="false">"上课日"</string>
+    <string name="msg_0348" formatted="false">"时间"</string>
+    <string name="msg_0349" formatted="false">"开始时"</string>
+    <string name="msg_0350" formatted="false">"开始分"</string>
+    <string name="msg_0351" formatted="false">"结束时"</string>
+    <string name="msg_0352" formatted="false">"结束分"</string>
+    <string name="msg_0353" formatted="false">"请填写合法时间：小时 0–23、分钟 0–59，结束须晚于开始。"</string>
+    <string name="msg_0354" formatted="false">"保存课程修改"</string>
+    <string name="msg_0355" formatted="false">"可搜索的课程"</string>
+    <string name="msg_0356" formatted="false">"搜索结果"</string>
+    <string name="msg_0357" formatted="false">"收藏列表"</string>
+    <string name="msg_0358" formatted="false">"已收藏课程"</string>
+    <string name="msg_0359" formatted="false">"收藏只影响显示，不改变出席状态"</string>
+    <string name="msg_0360" formatted="false">"课程目录"</string>
+    <string name="msg_0361" formatted="false">"左侧是完整列表；这里是同一份“课程名 → 类型 → 课次”索引，可独立滚动和展开。"</string>
+    <string name="msg_0362" formatted="false">"安全说明"</string>
+    <string name="msg_0363" formatted="false">"课程名称和类型只用于浏览分组。写入、更新和清理始终使用来源 UID 与具体课次身份。"</string>
+    <string name="msg_0364" formatted="false">"暂无课程"</string>
+    <string name="msg_0365" formatted="false">"请先读取课程或检查筛选条件。"</string>
+    <string name="msg_0366" formatted="false">"课程组箭头旋转"</string>
+    <string name="msg_0367" formatted="false">"{0} 种教学类型、{1} 个课次已展开；点按可收起。"</string>
+    <string name="msg_0368" formatted="false">"{0} 种教学类型、{1} 个课次；点按查看。"</string>
+    <string name="msg_0369" formatted="false">"收起课程"</string>
+    <string name="msg_0370" formatted="false">"展开课程"</string>
+    <string name="msg_0371" formatted="false">"教学类型箭头旋转"</string>
+    <string name="msg_0372" formatted="false">"{0} 个课次"</string>
+    <string name="msg_0373" formatted="false">"收起{0}"</string>
+    <string name="msg_0374" formatted="false">"展开{0}"</string>
+    <string name="msg_0375" formatted="false">"宽屏课程目录箭头"</string>
+    <string name="msg_0376" formatted="false">"收起课程目录"</string>
+    <string name="msg_0377" formatted="false">"展开课程目录"</string>
+    <string name="msg_0378" formatted="false">"{0}"</string>
+    <string name="msg_0379" formatted="false">"目录类型箭头"</string>
+    <string name="msg_0380" formatted="false">"收起教学类型"</string>
+    <string name="msg_0381" formatted="false">"展开教学类型"</string>
+    <string name="msg_0382" formatted="false">"• {0}"</string>
+    <string name="msg_0383" formatted="false">"改名"</string>
+    <string name="msg_0384" formatted="false">"编辑子类型名称"</string>
+    <string name="msg_0385" formatted="false">"仅更改这门课的类型显示；首页、搜索和收藏一起更新，不改变日历内容。"</string>
+    <string name="msg_0386" formatted="false">"子类型名称（最多 30 字）"</string>
+    <string name="msg_0387" formatted="false">"保存名称"</string>
+    <string name="msg_0388" formatted="false">"恢复自动名称"</string>
+    <string name="msg_0389" formatted="false">"请求失败"</string>
+    <string name="msg_0390" formatted="false">"Google 授权页未完成（系统结果码：{0}）。"</string>
+    <string name="msg_0391" formatted="false">"Google 授权返回为空（系统结果码：{0}）。"</string>
+    <string name="msg_0392" formatted="false">"返回失败"</string>
+    <string name="msg_0393" formatted="false">"Google 未返回日历访问令牌"</string>
+    <string name="msg_0394" formatted="false">"Google 授权{0}（服务状态码：{1}）。"</string>
+    <string name="msg_0395" formatted="false">"Google 授权{0}（异常类型：{1}）。"</string>
+    <string name="msg_0396" formatted="false">"apiStatus={0}"</string>
+    <string name="msg_0397" formatted="false">"exceptionType={0}"</string>
+    <string name="msg_0398" formatted="false">"每门课分别设置；未修改的项目保持原样。下方生效范围对这些设置共同生效，收藏按所属课程保存。"</string>
+    <string name="msg_0399" formatted="false">"{0} 个已选课次 · {1} · {2}"</string>
+    <string name="msg_0400" formatted="false">"保持出席不变"</string>
+    <string name="msg_0401" formatted="false">"收起设置"</string>
+    <string name="msg_0402" formatted="false">"单独设置"</string>
+    <string name="msg_0403" formatted="false">"连接后可检查应用专用日历；检查不会创建日历或写入日程。"</string>
+    <string name="msg_0404" formatted="false">"请先开启 Google 日历写入，再连接 Google 日历。"</string>
+    <string name="msg_0405" formatted="false">"请先连接 Google 日历，再执行只读连接检查。"</string>
+    <string name="msg_0406" formatted="false">"正在检查 Google 连接；不会创建日历或写入日程。"</string>
+    <string name="msg_0407" formatted="false">"Google 授权已失效（HTTP 401）；请重新连接 Google 日历后再写入。"</string>
+    <string name="msg_0408" formatted="false">"Google 授权已失效（HTTP 401）；旧令牌缓存已清除，请重新连接 Google 日历后再写入。"</string>
+    <string name="msg_0409" formatted="false">"Google 授权已失效（HTTP 401）；旧令牌缓存清理未确认，请重新连接 Google 日历后再写入。"</string>
+    <string name="msg_0410" formatted="false">"以下为本机记录估算；确认后会核对目标日历，补写已缺失的日程。现在还没有改动任何日历。"</string>
+    <string name="msg_0411" formatted="false">"没有待写入内容"</string>
+    <string name="msg_0412" formatted="false">"请返回设置页重新选择课程后再写入。清理已写入日程在设置页单独管理。"</string>
+    <string name="msg_0413" formatted="false">"本次将写入"</string>
+    <string name="msg_0414" formatted="false">"共 {0} 条日程：课程 {1} 条，校园事项 {2} 条。"</string>
+    <string name="msg_0415" formatted="false">"发现来源已取消的旧日程"</string>
+    <string name="msg_0416" formatted="false">"有 {0} 条按目标计数的既有日程已被学校来源取消。普通写入不会把未选课程当作删除，因此本次不会自动清除；请在“清理已写入日程”中核对并确认。"</string>
+    <string name="msg_0417" formatted="false">"核对并清理已取消日程"</string>
+    <string name="msg_0418" formatted="false">"使用的课程数据"</string>
+    <string name="msg_0419" formatted="false">"{0} · 保存于 {1}。不需要重新读取；需要新版时可返回设置更新。"</string>
+    <string name="msg_0420" formatted="false">"预计新建 {0} 条 · 核对并更新 {1} 条。{2}。未选中的旧课程会保留。"</string>
+    <string name="msg_0421" formatted="false">"已就绪"</string>
+    <string name="msg_0422" formatted="false">"尚未授权"</string>
+    <string name="msg_0423" formatted="false">"连接 Google 日历"</string>
+    <string name="msg_0424" formatted="false">"允许访问本机日历"</string>
+    <string name="msg_0425" formatted="false">"仅写入{0}"</string>
+    <string name="msg_0426" formatted="false">"确认并写入日历"</string>
+    <string name="msg_0427" formatted="false">"上次写入"</string>
+    <string name="msg_0428" formatted="false">"新建 {0} · 更新 {1} · 清除 {2}"</string>
+    <string name="msg_0429" formatted="false">" · {0}"</string>
+    <string name="msg_0430" formatted="false">"添加校园事项"</string>
+    <string name="msg_0431" formatted="false">"日期和时间均按欧洲/柏林时间保存。可先添加多条事项；下次确认写入时才会处理。"</string>
+    <string name="msg_0432" formatted="false">"事项名称"</string>
+    <string name="msg_0433" formatted="false">"日期（YYYY-MM-DD）"</string>
+    <string name="msg_0434" formatted="false">"✓ {0}（{1}）"</string>
+    <string name="msg_0435" formatted="false">"{0}（{1}）"</string>
+    <string name="msg_0436" formatted="false">"校园事项已保存"</string>
+    <string name="msg_0437" formatted="false">"保存事项到这台设备"</string>
+    <string name="msg_0438" formatted="false">"删除此事项"</string>
+    <string name="msg_0439" formatted="false">"{0} 至 {1}（欧洲/柏林）"</string>
+    <string name="msg_0440" formatted="false">"全部应用日程"</string>
+    <string name="msg_0441" formatted="false">"清除应用专用日历中仍带有本应用标记的所有日程。"</string>
+    <string name="msg_0442" formatted="false">"按课程"</string>
+    <string name="msg_0443" formatted="false">"只清除选中课程的应用日程。"</string>
+    <string name="msg_0444" formatted="false">"按日期范围"</string>
+    <string name="msg_0445" formatted="false">"只清除所选日期范围内的应用日程。"</string>
+    <string name="msg_0446" formatted="false">"这是独立的删除操作。普通“写入日历”只新增或更新本次选择，不会清除以前写入的课程。"</string>
+    <string name="msg_0447" formatted="false">"选择清理位置"</string>
+    <string name="msg_0448" formatted="false">"仅清理勾选的日历；另一端的日程不会改变。"</string>
+    <string name="msg_0449" formatted="false">"{0}{1}"</string>
+    <string name="msg_0450" formatted="false">"核对已写入日程（不删除）"</string>
+    <string name="msg_0451" formatted="false">"正在核对日程…"</string>
+    <string name="msg_0452" formatted="false">"找不到以前的课程？"</string>
+    <string name="msg_0453" formatted="false">"点击上方核对，可从所选日历补齐旧版写入记录的课程和日期。只核对应用自己的记录，不读取其他日历。"</string>
+    <string name="msg_0454" formatted="false">"全部清理的保护"</string>
+    <string name="msg_0455" formatted="false">"只会检查本机／Google 的应用专用日历中带不可见应用标记的日程；不会触碰主日历、订阅日历或其他应用日程。"</string>
+    <string name="msg_0456" formatted="false">"还没有可识别的课程"</string>
+    <string name="msg_0457" formatted="false">"先点击“核对已写入日程”。若旧版连写入记录也已丢失，可单独选择“全部应用日程”并确认清理。"</string>
+    <string name="msg_0458" formatted="false">"只清理选中的课程，不影响同时段的其他课程。"</string>
+    <string name="msg_0459" formatted="false">"可识别 {0} 个课次"</string>
+    <string name="msg_0460" formatted="false">"选择"</string>
+    <string name="msg_0461" formatted="false">"还没有可识别的日期"</string>
+    <string name="msg_0462" formatted="false">"先点击“核对已写入日程”，再按日期选择。日历不会因核对而改变。"</string>
+    <string name="msg_0463" formatted="false">"选择日期范围"</string>
+    <string name="msg_0464" formatted="false">"开始或结束可单独设置，留空的一端不限制。按已写入的时间选择，也包括已从课程列表移除的记录。"</string>
+    <string name="msg_0465" formatted="false">"开始日期"</string>
+    <string name="msg_0466" formatted="false">"结束日期"</string>
+    <string name="msg_0467" formatted="false">"清除日期范围"</string>
+    <string name="msg_0468" formatted="false">"准备清理"</string>
+    <string name="msg_0469" formatted="false">"当前匹配 {0} 个具体课次；此处尚未修改任何日历。"</string>
+    <string name="msg_0470" formatted="false">"请先选择至少一门课程，或设置能匹配课次的日期范围。"</string>
+    <string name="msg_0471" formatted="false">"下一步：确认清理"</string>
+    <string name="msg_0472" formatted="false">"将清理全部应用日程。"</string>
+    <string name="msg_0473" formatted="false">"将清理所选范围内的 {0} 个具体课次。"</string>
+    <string name="msg_0474" formatted="false">"不限"</string>
+    <string name="msg_0475" formatted="false">"选择日期"</string>
+    <string name="msg_0476" formatted="false">"确认清理日程"</string>
+    <string name="msg_0477" formatted="false">"将影响：{0}"</string>
+    <string name="msg_0478" formatted="false">"此操作只删除本应用标记的日程，不能撤回。"</string>
+    <string name="msg_0479" formatted="false">"确认清理"</string>
+    <string name="msg_0480" formatted="false">"本机应用专用日历"</string>
+    <string name="msg_0481" formatted="false">"Google 应用专用日历"</string>
+    <string name="msg_0482" formatted="false">"没有可用目标"</string>
+    <string name="msg_0483" formatted="false">"页面选择未能保存"</string>
+    <string name="msg_0484" formatted="false">"新的课程订阅地址"</string>
+    <string name="msg_0485" formatted="false">"显示地址（仅本次输入）"</string>
+    <string name="msg_0486" formatted="false">"显示地址"</string>
+    <string name="msg_0487" formatted="false">"备份出席规则与校园事项"</string>
+    <string name="msg_0488" formatted="false">"包含 UID 级及课程组级出席规则、手动校园事项；不包含收藏、显示改名、课程地址、Google 登录、日历或已写入日程。"</string>
+    <string name="msg_0489" formatted="false">"当前保存的内容"</string>
+    <string name="msg_0490" formatted="false">"{0} 条出席设置 · {1} 条校园事项"</string>
+    <string name="msg_0491" formatted="false">"导出出席规则与事项"</string>
+    <string name="msg_0492" formatted="false">"从文件恢复出席规则与事项"</string>
+    <string name="msg_0493" formatted="false">"确认恢复出席规则与事项"</string>
+    <string name="msg_0494" formatted="false">"将替换为 {0} 条 UID 规则、{1} 条课程组规则与 {2} 条校园事项。本机已写入日程不受影响。确认前不会更改任何内容。"</string>
+    <string name="msg_0495" formatted="false">"确认恢复"</string>
+    <string name="msg_0496" formatted="false">"当前课程"</string>
+    <string name="msg_0497" formatted="false">"正在显示本次读取的课程"</string>
+    <string name="msg_0498" formatted="false">"当前显示示例课程"</string>
+    <string name="msg_0499" formatted="false">"日历状态"</string>
+    <string name="msg_0500" formatted="false">"还没有连接日历，也没有等待写入的日程。"</string>
+    <string name="msg_0501" formatted="false">"应用设置"</string>
+    <string name="msg_0502" formatted="false">"课程、日历和外观设置"</string>
+    <string name="msg_0503" formatted="false">"打开设置"</string>
+    <string name="msg_0504" formatted="false">"使用步骤"</string>
+    <string name="msg_0505" formatted="false">"1 选择时间 · 2 读取并选择课程 · 3 设置出席和收藏 · 4 确认写入。返回不会清空已选课程。"</string>
+    <string name="msg_0506" formatted="false">"读取课程"</string>
+    <string name="msg_0507" formatted="false">"当前不限时间；点按可使用日历选择范围。"</string>
+    <string name="msg_0508" formatted="false">"当前已设置范围；点按可查看、修改或清除。"</string>
+    <string name="msg_0509" formatted="false">"当前范围格式无效；请点按修正。"</string>
+    <string name="msg_0510" formatted="false">"读取时间"</string>
+    <string name="msg_0511" formatted="false">"还没有读取课程。先选择时间并读取课程。"</string>
+    <string name="msg_0512" formatted="false">"当前使用{0}：{1} 门课程；已选择 {2} 个具体课次。"</string>
+    <string name="msg_0513" formatted="false">"已读取课程"</string>
+    <string name="msg_0514" formatted="false">"出席设置"</string>
+    <string name="msg_0515" formatted="false">"新课程默认蓝色“选择出席”；绿色为一定出席，灰色从指定日期起不去。"</string>
+    <string name="msg_0516" formatted="false">"备份出席规则与事项"</string>
+    <string name="msg_0517" formatted="false">"写入到哪里"</string>
+    <string name="msg_0518" formatted="false">"应用只会写入自己创建的日程。你的主日历、订阅日历和其他应用日程不会改变。"</string>
+    <string name="msg_0519" formatted="false">"写入日历"</string>
+    <string name="msg_0520" formatted="false">"应用版本"</string>
+    <string name="msg_0521" formatted="false">"{0} · 构建号 {1}"</string>
+    <string name="msg_0522" formatted="false">"本机荣耀日历"</string>
+    <string name="msg_0523" formatted="false">"Google 日历镜像"</string>
+    <string name="msg_0524" formatted="false">"尚未启用输出"</string>
+    <string name="msg_0525" formatted="false">"当前设置"</string>
+    <string name="msg_0526" formatted="false">"展开屏把操作放在左侧，右侧显示同步与安全说明。"</string>
+    <string name="msg_0527" formatted="false">"已读课程"</string>
+    <string name="msg_0528" formatted="false">"当前使用{0}：{1} 门课程、选择 {2} 个具体课次。"</string>
+    <string name="msg_0529" formatted="false">"尚未读取课程。"</string>
+    <string name="msg_0530" formatted="false">"写入位置"</string>
+    <string name="msg_0531" formatted="false">"保护方式"</string>
+    <string name="msg_0532" formatted="false">"普通写入只新增或更新本次选择。清理旧日程要在左侧单独进入，并再次确认。"</string>
+    <string name="msg_0533" formatted="false">"课程显示"</string>
+    <string name="msg_0534" formatted="false">"{0}会全部显示，不会按学校状态隐藏。"</string>
+    <string name="msg_0535" formatted="false">"这里只控制示例课程显示，不会改变课程地址或任何日历。"</string>
+    <string name="msg_0536" formatted="false">"课程数据版本"</string>
+    <string name="msg_0537" formatted="false">"可以直接使用{0}继续选择和查看写入内容。需要更新时，回到“读取课程”获取最新数据；读取失败不会丢失这里的课程。"</string>
+    <string name="msg_0538" formatted="false">"✓ 使用最新读取"</string>
+    <string name="msg_0539" formatted="false">"使用最新读取"</string>
+    <string name="msg_0540" formatted="false">"✓ 使用较早数据"</string>
+    <string name="msg_0541" formatted="false">"使用较早数据"</string>
+    <string name="msg_0542" formatted="false">"读取更新"</string>
+    <string name="msg_0543" formatted="false">"示例日程结果"</string>
+    <string name="msg_0544" formatted="false">"这是示例数据，不会读取课程、申请权限或写入日历。"</string>
+    <string name="msg_0545" formatted="false">"变更汇总"</string>
+    <string name="msg_0546" formatted="false">"新增 {0} · 更新 {1} · 移除 {2} · 保持 {3} · 跳过 {4}"</string>
+    <string name="msg_0547" formatted="false">"这条是示例数据，不会写入日历。"</string>
+    <string name="msg_0548" formatted="false">"不写入"</string>
+    <string name="msg_0549" formatted="false">"这条示例不会写入日历。"</string>
+    <string name="msg_0550" formatted="false">"课程订阅地址"</string>
+    <string name="msg_0551" formatted="false">"已保存：{0}。为保护隐私，地址不会显示；只有重新填写后才会替换。"</string>
+    <string name="msg_0552" formatted="false">"更换课程订阅地址"</string>
+    <string name="msg_0553" formatted="false">"在“选择读取时间”页面设置；使用日历选择，无需手动输入日期。"</string>
+    <string name="msg_0554" formatted="false">"系统会让你选择 Google 账户。应用只请求创建和管理自己日历所需的权限；不会保存登录信息。"</string>
+    <string name="msg_0555" formatted="false">"首次连接说明"</string>
+    <string name="msg_0556" formatted="false">"首次使用前，需要在 Google Cloud 为此应用完成一次配置。应用不会显示或保存客户端编号。"</string>
+    <string name="msg_0557" formatted="false">"Google 日历名称"</string>
+    <string name="msg_0558" formatted="false">"保存到这台设备"</string>
+    <string name="msg_0559" formatted="false">"正在等待 Google 授权"</string>
+    <string name="msg_0560" formatted="false">"重新授权 Google 日历"</string>
+    <string name="msg_0561" formatted="false">"重试 Google 授权"</string>
+    <string name="msg_0562" formatted="false">"尚未验证 Google 目标"</string>
+    <string name="msg_0563" formatted="false">"正在验证 Google 目标"</string>
+    <string name="msg_0564" formatted="false">"Google 目标已验证"</string>
+    <string name="msg_0565" formatted="false">"Google 目标需要处理"</string>
+    <string name="msg_0566" formatted="false">"正在检查 Google 连接"</string>
+    <string name="msg_0567" formatted="false">"检查 Google 连接（不写入）"</string>
+    <string name="msg_0568" formatted="false">"课程和出席设置可分别写入本机日历和 Google 日历。"</string>
+    <string name="msg_0569" formatted="false">"日历权限"</string>
+    <string name="msg_0570" formatted="false">"打开本机日历后，系统会请求日历权限。允许后仍要查看数量并确认写入。"</string>
+    <string name="msg_0571" formatted="false">"这不会删除已经写入的日程。"</string>
+    <string name="msg_0572" formatted="false">"确认更改"</string>
+    <string name="msg_0573" formatted="false">"本机个人资料"</string>
+    <string name="msg_0574" formatted="false">"昵称和头像颜色只保存在这台设备的应用内，不是 Google 或 TUM 账户"</string>
+    <string name="msg_0575" formatted="false">"显示昵称"</string>
+    <string name="msg_0576" formatted="false">"头像颜色"</string>
+    <string name="msg_0577" formatted="false">"当前选择"</string>
+    <string name="msg_0578" formatted="false">"点按选择"</string>
+    <string name="msg_0579" formatted="false">"保存个人资料"</string>
+    <string name="msg_0580" formatted="false">"外观"</string>
+    <string name="msg_0581" formatted="false">"随系统切换明暗，使用下方各自选择的配色"</string>
+    <string name="msg_0582" formatted="false">"立即生效，并自动保存"</string>
+    <string name="msg_0583" formatted="false">"为 {0} 个课次设置出席和收藏"</string>
+    <string name="msg_0584" formatted="false">"“只改本次”只改勾选课次；其他范围包含已保存数据中原始课名、类型和组别相同的课次，不合并不同类型。保存后加入待写入选择；写入仍受时间范围限制，尚未写日历。"</string>
+    <string name="msg_0585" formatted="false">"✓ 统一设置"</string>
+    <string name="msg_0586" formatted="false">"统一设置"</string>
+    <string name="msg_0587" formatted="false">"✓ 按课程分别设置"</string>
+    <string name="msg_0588" formatted="false">"按课程分别设置"</string>
+    <string name="msg_0589" formatted="false">"出席方式"</string>
+    <string name="msg_0590" formatted="false">"所选范围覆盖 {0} 个已保存课次；分别设置中保持原样的课程不会扩大选择。收藏按涉及的来源课程生效。"</string>
+    <string name="msg_0591" formatted="false">"待填写有效日期"</string>
+    <string name="msg_0592" formatted="false">"保存出席和收藏"</string>
+    <string name="msg_0593" formatted="false">"全部"</string>
+    <string name="msg_0594" formatted="false">"范围内有日程"</string>
+    <string name="msg_0595" formatted="false">"yyyy年M月"</string>
+    <string name="msg_0596" formatted="false">"按日期找课次"</string>
+    <string name="msg_0597" formatted="false">"带圆点的日期有可选择的具体上课时间。"</string>
+    <string name="msg_0598" formatted="false">"点按带圆点的日期，查看并选择当天课次。"</string>
+    <string name="msg_0599" formatted="false">"{0}月{1}日 · {2} 个课次"</string>
+    <string name="msg_0600" formatted="false">"当天没有课次"</string>
+    <string name="msg_0601" formatted="false">"切换月份或选择其他带圆点的日期。"</string>
+    <string name="msg_0602" formatted="false">"上月"</string>
+    <string name="msg_0603" formatted="false">"下月"</string>
+    <string name="msg_0604" formatted="false">"一"</string>
+    <string name="msg_0605" formatted="false">"二"</string>
+    <string name="msg_0606" formatted="false">"三"</string>
+    <string name="msg_0607" formatted="false">"四"</string>
+    <string name="msg_0608" formatted="false">"五"</string>
+    <string name="msg_0609" formatted="false">"六"</string>
+    <string name="msg_0610" formatted="false">"日"</string>
+    <string name="msg_0611" formatted="false">"{0} "</string>
+    <string name="msg_0612" formatted="false">"{0} {1} {2}–{3}{4}"</string>
+    <string name="msg_0613" formatted="false">"按课程分组"</string>
+    <string name="msg_0614" formatted="false">"选择具体课次"</string>
+    <string name="msg_0615" formatted="false">"勾选一个日期与时间，就只会处理这一个课次；不会自动选中同一门课的其他时间。"</string>
+    <string name="msg_0616" formatted="false">"搜索课程或地点"</string>
+    <string name="msg_0617" formatted="false">"没有匹配课次"</string>
+    <string name="msg_0618" formatted="false">"尝试清除搜索或切换到“全部”。"</string>
+    <string name="msg_0619" formatted="false">"{0} 个来源条目 · 共 {1} 个课次 · 已选 {2} 个课次"</string>
+    <string name="msg_0620" formatted="false">"所选时间范围内有 {0} 个课次"</string>
+    <string name="msg_0621" formatted="false">"收起"</string>
+    <string name="msg_0622" formatted="false">"展开"</string>
+    <string name="msg_0623" formatted="false">"已选择 {0} 个课次"</string>
+    <string name="msg_0624" formatted="false">"取消选择"</string>
+    <string name="msg_0625" formatted="false">"状态和收藏"</string>
+    <string name="msg_0626" formatted="false">"查看写入内容"</string>
+    <string name="msg_0627" formatted="false">"这里只查看将写入的课次；最后确认前不会修改任何日历。"</string>
+    <string name="msg_0628" formatted="false">"M月d日（E）HH:mm"</string>
+    <string name="msg_0629" formatted="false">"地点：{0}"</string>
+    <string name="msg_0630" formatted="false">"{0}–{1}"</string>
+    <string name="msg_0631" formatted="false">"按所选日期读取，最多五年。两端留空读取过去 120 天至未来 180 天；只填一端读取相邻约 300 天。无限重复课程无法无限展开。此范围只在点击“读取课程”时生效，不会删减已保存课程、已选课次或待写入内容。"</string>
+    <string name="msg_0632" formatted="false">"保存下次读取时间"</string>
+    <string name="msg_0633" formatted="false">"使用已保存课程 · 下一步"</string>
+    <string name="msg_0634" formatted="false">"使用{0}，不重新读取，也不会按上方日期范围删减已选课次。上方范围只会在点击“读取课程”后影响新课程数据。"</string>
+    <string name="msg_0635" formatted="false">"正在读取课程…"</string>
+    <string name="msg_0636" formatted="false">"下一步：选择课程"</string>
+    <string name="msg_0637" formatted="false">"读取后先选择要管理的课程，再设置出席和收藏。写入前会显示本机和 Google 日历将受影响的数量；确认后才会写入。"</string>
+    <string name="msg_0638" formatted="false">"重新读取课程"</string>
+    <string name="msg_0639" formatted="false">"会保存为最新课程版本并清空本次选择；较早一次成功读取会保留，之后可自行切换。已保存的出席和收藏不变；是否继续？"</string>
+    <string name="msg_0640" formatted="false">"重新读取"</string>
+    <string name="msg_0641" formatted="false">"快捷范围"</string>
+    <string name="msg_0642" formatted="false">"从今天起"</string>
+    <string name="msg_0643" formatted="false">"未来 90 天"</string>
+    <string name="msg_0644" formatted="false">"恢复默认读取范围"</string>
+    <string name="msg_0645" formatted="false">"还没有读取课程。读取后会在这里显示可用的时间。"</string>
+    <string name="msg_0646" formatted="false">"{0} 至 {1}；共 {2} 条课程日程。"</string>
+    <string name="msg_0647" formatted="false">"已读取的课程时间"</string>
+    <string name="msg_0648" formatted="false">"无"</string>
+    <string name="msg_0649" formatted="false">"请先保存课程订阅地址；尚未读取课程。"</string>
+    <string name="msg_0650" formatted="false">"课次列表已过期；重新读取后再修改。"</string>
+    <string name="msg_0651" formatted="false">"保存的课程暂时无法恢复，原记录已保留。请重新读取课程；已写入日历未改变。"</string>
+    <string name="msg_0652" formatted="false">"部分课程缓存无法恢复，已保留原记录并使用可恢复版本。"</string>
+    <string name="msg_0653" formatted="false">"快照字段缺失"</string>
+    <string name="msg_0654" formatted="false">"和上次读取相比，课程课次没有变化。"</string>
+    <string name="msg_0655" formatted="false">"和上次读取相比：新增 {0} 个课次、消失 {1} 个课次、变更 {2} 个课次；新增课程中，同名课程 {3} 门、新名称课程 {4} 门。"</string>
+    <string name="msg_0656" formatted="false">"关闭：不会请求日历权限，也不会写入本机日历"</string>
+    <string name="msg_0657" formatted="false">"已允许：完成日历授权后，写入本应用专用本机日历"</string>
+    <string name="msg_0658" formatted="false">"关闭：不会连接 Google 账户或发送日程数据"</string>
+    <string name="msg_0659" formatted="false">"已允许：完成授权后，只写入本应用创建的 Google 次级日历"</string>
+    <string name="msg_0660" formatted="false">"启用{0}"</string>
+    <string name="msg_0661" formatted="false">"关闭{0}"</string>
+    <string name="msg_0662" formatted="false">"确认后会请求本机日历权限；获得权限后，未来确认写入才会写入应用专用本机日历。"</string>
+    <string name="msg_0663" formatted="false">"确认后不再向本机日历写入；已经写入的日程不会被删除。"</string>
+    <string name="msg_0664" formatted="false">"确认后可手动连接 Google 日历；连接和确认写入前不会发送任何日程。"</string>
+    <string name="msg_0665" formatted="false">"确认后会结束本次 Google 授权并停止未来镜像；已经写入的日程不会被删除。"</string>
+    <string name="msg_0666" formatted="false">" 另一种输出已开启；若荣耀日历同时显示两本应用日历，同一课次会出现两份。想只显示一份，请只启用一种输出，或在荣耀日历隐藏其中一本。"</string>
+    <string name="msg_0667" formatted="false">"按压缩放"</string>
+    <string name="msg_0668" formatted="false">"按压着色"</string>
+    <string name="msg_0669" formatted="false">"TUM 蓝"</string>
+    <string name="msg_0670" formatted="false">"海绿"</string>
+    <string name="msg_0671" formatted="false">"暖橙"</string>
+    <string name="msg_0672" formatted="false">"薰衣草"</string>
+    <string name="msg_0673" formatted="false">"我"</string>
+    <string name="msg_0674" formatted="false">"本次写入到哪里（可多选）"</string>
+    <string name="msg_0675" formatted="false">"{0} {1}"</string>
+    <string name="msg_0676" formatted="false">"仅影响本次写入，不改变默认开关。双选会写入两本日历；荣耀若同时显示两本，可能看到两份。"</string>
+    <string name="language_title">界面语言</string>
+    <string name="language_note">立即生效并保存在本机；课程名称、地点和个人输入不翻译。</string>
+    <string name="msg_0677" formatted="false">"；"</string>
+    <string name="msg_0678" formatted="false">"、"</string>
+    <string name="msg_0679" formatted="false">"{0} {1}:{2}–{3}:{4}"</string>
+    <string name="msg_0680" formatted="false">"正式名额"</string>
+    <string name="msg_0681" formatted="false">"计划中"</string>
+    <string name="msg_0682" formatted="false">"已改期"</string>
+    <string name="msg_0683" formatted="false">"已取消"</string>
+    <string name="msg_0684" formatted="false">"被拒绝"</string>
+    <string name="msg_0685" formatted="false">"已删除"</string>
+</resources>

@@ -1,10 +1,12 @@
 /*
- * 职责：在 Android Calendar Provider 中定位／创建应用专用本地日历，并只写入该日历。
- * 输入／输出：输入应用私有目标 ID、拥有权标记和期望事件；输出目标引用或事件 ID。
- * 外部副作用：经用户授予 READ/WRITE_CALENDAR 且执行同步时才查询、创建、更新或删除本地日历事件。
- * 不负责：申请权限、读取用户其他日历、Google 同步、来源解析或保存映射。
+ * Aufgabe: Eigenen lokalen Android-Kalender suchen/erstellen und ausschließlich darin schreiben.
+ * Ein-/Ausgabe: Private Ziel-ID, Eigentumsmarker und Solltermine -> Zielreferenz oder Termin-ID.
+ * Nebenwirkungen: Nur nach erteilten Kalenderrechten und bestätigter Ausführung eigene Provider-Ziele lesen/schreiben.
+ * Nicht zuständig: Berechtigungsanfragen, fremde Kalender, Google-Synchronisierung, Quellen-Parsing oder Zuordnungsspeicherung.
  */
 package com.tequila.tumcalendarcontrol.sync
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import android.content.ContentResolver
 import android.content.ContentUris
@@ -22,7 +24,7 @@ object AppOwnedCalendarContract {
     const val LOCAL_DISPLAY_NAME = "TUM 日历控制"
     private const val EVENT_DESCRIPTION = "由 TUM 日历控制创建。"
 
-    /** 日历描述只声明应用归属；同步身份仅保存在不可见同步字段与应用私有映射中。 */
+    /** Beschreibung nennt nur App-Zugehörigkeit; Synchronisierungsidentität bleibt in unsichtbaren Feldern und privaten Zuordnungen. */
     fun eventDescription(): String = EVENT_DESCRIPTION
 }
 
@@ -31,7 +33,7 @@ sealed interface CalendarTargetResolution {
     data class Failure(val summary: String, val failureCode: TargetFailureCode? = null) : CalendarTargetResolution
 }
 
-/** 只有在同步已获权限的阶段调用；若缓存目标无效则新建一个本地专用日历。 */
+/** Erst nach erteilter Synchronisierungsberechtigung aufrufen; ungültiges Ziel durch eigenen lokalen Kalender ersetzen. */
 class AndroidLocalCalendarTarget(private val resolver: ContentResolver) {
     fun ensure(existingCalendarId: String): CalendarTargetResolution = runCatching {
         val existing = existingCalendarId.takeIf(String::isNotBlank)
@@ -50,18 +52,18 @@ class AndroidLocalCalendarTarget(private val resolver: ContentResolver) {
             put(CalendarContract.Calendars.SYNC_EVENTS, 1)
         }
         val uri = resolver.insert(asSyncAdapter(CalendarContract.Calendars.CONTENT_URI), values)
-            ?: error("本机专用日历未能创建")
+            ?: error(message(35))
         CalendarTargetResolution.Success(localRef(ContentUris.parseId(uri).toString()))
-    }.getOrElse { CalendarTargetResolution.Failure("本机专用日历不可用；请检查日历权限后重试") }
+    }.getOrElse { CalendarTargetResolution.Failure(message(36)) }
 
-    /** 显式清理绝不为“找不到旧日历”创建新的日历；只复用仍可验证的应用目标。 */
+    /** Bereinigung erstellt niemals Ersatzkalender; nur weiterhin nachweisbar eigene Ziele verwenden. */
     fun resolveExisting(existingCalendarId: String): CalendarTargetResolution = runCatching {
         val resolvedId = existingCalendarId.takeIf(String::isNotBlank)
             ?.takeIf { AndroidLocalCalendarGateway(resolver).verifyOwnership(localRef(it)) }
             ?: findExisting()
-            ?: return CalendarTargetResolution.Failure("找不到本机应用专用日历；没有创建新日历。")
+            ?: return CalendarTargetResolution.Failure(message(37))
         CalendarTargetResolution.Success(localRef(resolvedId))
-    }.getOrElse { CalendarTargetResolution.Failure("本机专用日历不可用；没有创建新日历。") }
+    }.getOrElse { CalendarTargetResolution.Failure(message(38)) }
 
     private fun findExisting(): String? = resolver.query(
         CalendarContract.Calendars.CONTENT_URI,
@@ -80,7 +82,7 @@ class AndroidLocalCalendarTarget(private val resolver: ContentResolver) {
         .build()
 }
 
-/** 事件 API 再次核对目标所有权；不会根据标题、颜色或位置删除任何事件。 */
+/** Termin-API prüft erneut Eigentum; keine Löschentscheidung nach Titel, Farbe oder Ort. */
 class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : OwnedCalendarGateway {
     override fun verifyOwnership(calendar: OwnedCalendarRef): Boolean {
         if (calendar.target != OutputTarget.LOCAL_CALENDAR || calendar.ownershipMarker != AppOwnedCalendarContract.OWNERSHIP_MARKER) return false
@@ -99,41 +101,41 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
     }
 
     override fun create(calendar: OwnedCalendarRef, event: DesiredCalendarEvent): String {
-        check(verifyOwnership(calendar)) { "拒绝向非应用拥有的本机日历写入。" }
-        val uri = resolver.insert(asSyncAdapter(CalendarContract.Events.CONTENT_URI), eventValues(calendar, event)) ?: error("本机事件未能创建")
+        check(verifyOwnership(calendar)) { message(39) }
+        val uri = resolver.insert(asSyncAdapter(CalendarContract.Events.CONTENT_URI), eventValues(calendar, event)) ?: error(message(40))
         return ContentUris.parseId(uri).toString()
     }
 
     override fun findEventIdsByIdentity(calendar: OwnedCalendarRef, identity: ManagedEventIdentity): List<String> {
-        check(verifyOwnership(calendar)) { "拒绝读取非应用拥有的本机日历。" }
+        check(verifyOwnership(calendar)) { message(41) }
         return resolver.query(
             CalendarContract.Events.CONTENT_URI,
             arrayOf(CalendarContract.Events._ID),
             "${CalendarContract.Events.CALENDAR_ID}=? AND ${CalendarContract.Events.DELETED}=0 AND ${CalendarContract.Events.SYNC_DATA1}=?",
             arrayOf(calendar.calendarId, identity.opaqueKey()),
             null,
-        )?.use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.getLong(0).toString()) } } ?: error("无法核对本机日程；未继续创建")
+        )?.use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.getLong(0).toString()) } } ?: error(message(42))
     }
 
-    /** 只用于用户明确选择“清除全部”；查询仅返回应用同步字段，不读取标题、地点或时间。 */
+    /** Nur nach ausdrücklichem „Alle löschen“; liest ausschließlich Synchronisierungsfelder, keine Titel, Orte oder Zeiten. */
     override fun findAllManagedEventIds(calendar: OwnedCalendarRef): List<String> {
-        check(verifyOwnership(calendar)) { "拒绝读取非应用拥有的本机日历。" }
+        check(verifyOwnership(calendar)) { message(41) }
         return resolver.query(
             CalendarContract.Events.CONTENT_URI,
             arrayOf(CalendarContract.Events._ID),
             "${CalendarContract.Events.CALENDAR_ID}=? AND ${CalendarContract.Events.DELETED}=0 AND ${CalendarContract.Events.SYNC_DATA1} IS NOT NULL AND ${CalendarContract.Events.DESCRIPTION}=?",
             arrayOf(calendar.calendarId, AppOwnedCalendarContract.eventDescription()),
             null,
-        )?.use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.getLong(0).toString()) } } ?: error("无法核对本机日程；未继续清理")
+        )?.use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.getLong(0).toString()) } } ?: error(message(43))
     }
 
     override fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent) {
-        check(verifyOwnership(calendar)) { "拒绝向非应用拥有的本机日历更新。" }
+        check(verifyOwnership(calendar)) { message(44) }
         val updated = resolver.update(asSyncAdapter(CalendarContract.Events.CONTENT_URI), eventValues(calendar, event),
             "${CalendarContract.Events._ID}=? AND ${CalendarContract.Events.CALENDAR_ID}=? AND ${CalendarContract.Events.DELETED}=0 AND ${CalendarContract.Events.SYNC_DATA1}=?",
             arrayOf(eventId, calendar.calendarId, event.identity.opaqueKey()))
         if (updated == 0) throw ManagedEventMissingException()
-        check(updated == 1) { "本机事件未能更新" }
+        check(updated == 1) { message(45) }
     }
 
     override fun readEvent(calendar: OwnedCalendarRef, eventId: String, identity: ManagedEventIdentity): DesiredCalendarEvent? {
@@ -149,11 +151,11 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
     }
 
     override fun remove(calendar: OwnedCalendarRef, eventId: String): ManagedEventRemovalOutcome {
-        check(verifyOwnership(calendar)) { "拒绝从非应用拥有的本机日历删除。" }
+        check(verifyOwnership(calendar)) { message(46) }
         val removed = resolver.delete(asSyncAdapter(CalendarContract.Events.CONTENT_URI),
             "${CalendarContract.Events._ID}=? AND ${CalendarContract.Events.CALENDAR_ID}=? AND ${CalendarContract.Events.SYNC_DATA1} IS NOT NULL AND ${CalendarContract.Events.DESCRIPTION}=?",
             arrayOf(eventId, calendar.calendarId, AppOwnedCalendarContract.eventDescription()))
-        check(removed in 0..1) { "本机事件未能删除" }
+        check(removed in 0..1) { message(47) }
         return if (removed == 1) ManagedEventRemovalOutcome.REMOVED_NOW else ManagedEventRemovalOutcome.ALREADY_ABSENT
     }
 

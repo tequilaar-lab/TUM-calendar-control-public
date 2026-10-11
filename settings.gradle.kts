@@ -1,8 +1,8 @@
 /*
- * 职责：定义项目模块与插件仓库。
- * 输入／输出：Gradle 设置；输出为单一 app 模块的构建图。
- * 外部副作用：解析公开构建依赖。
- * 不负责：日历数据、同步规则或 Android 界面。
+ * Aufgabe: Module und Plugin-Repositories definieren.
+ * Ein-/Ausgabe: Gradle-Einstellungen -> Buildgraph mit einem App-Modul.
+ * Nebenwirkungen: Öffentliche Build-Abhängigkeiten auflösen.
+ * Nicht zuständig: Kalenderdaten, Synchronisierungsregeln oder Android-Oberfläche.
  */
 pluginManagement {
     repositories {

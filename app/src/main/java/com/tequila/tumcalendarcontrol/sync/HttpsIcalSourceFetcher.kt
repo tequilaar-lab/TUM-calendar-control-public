@@ -1,10 +1,12 @@
 /*
- * 职责：在用户明确触发后，以受限 HTTPS GET 读取 iCal 文本。
- * 输入／输出：输入私有 URL；输出文本或不含 URL/响应内容的失败代码。
- * 外部副作用：仅发生一次 HTTPS 只读请求；不保存响应、不写日历。
- * 不负责：解析、Fixplatz 决策、重试、账户授权或任何日历写入。
+ * Aufgabe: Nach ausdrücklicher Aktion iCal über begrenzten HTTPS-GET lesen.
+ * Ein-/Ausgabe: Private HTTPS-URL -> begrenzter iCal-Text oder bereinigter Lesefehler.
+ * Nebenwirkungen: Ein begrenzter HTTPS-GET nach ausdrücklichem Auftrag; keine URL-/Antwortprotokollierung.
+ * Nicht zuständig: Parsing, Fixplatz-Entscheidungen, Wiederholungsversuche, Kontoautorisierung oder Kalenderausgabe.
  */
 package com.tequila.tumcalendarcontrol.sync
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import java.net.HttpURLConnection
 import java.net.URI
@@ -15,7 +17,7 @@ sealed interface IcalFetchResult {
     data class Failure(val reason: String) : IcalFetchResult
 }
 
-/** 可替换的 HTTPS 传输边界，使网络错误可以在 JVM 合成测试中复现。 */
+/** Austauschbare HTTPS-Grenze für reproduzierbare Netzwerkfehler in synthetischen JVM-Tests. */
 interface IcalHttpTransport {
     fun get(uri: URI, connectTimeoutMillis: Int, readTimeoutMillis: Int, maxBytes: Int): IcalHttpResponse
 }
@@ -30,17 +32,17 @@ class HttpsIcalSourceFetcher(
 ) {
     fun fetch(urlText: String): IcalFetchResult {
         val uri = runCatching { URI(urlText) }.getOrNull()
-            ?: return IcalFetchResult.Failure("地址格式无效")
-        if (uri.scheme != "https" || uri.host.isNullOrBlank()) return IcalFetchResult.Failure("只允许 HTTPS 私有订阅地址")
+            ?: return IcalFetchResult.Failure(message(79))
+        if (uri.scheme != "https" || uri.host.isNullOrBlank()) return IcalFetchResult.Failure(message(80))
         val response = runCatching { transport.get(uri, connectTimeoutMillis, readTimeoutMillis, maxBytes) }
-            .getOrElse { return IcalFetchResult.Failure("来源读取失败") }
-        if (response.statusCode !in 200..299) return IcalFetchResult.Failure("来源服务器未成功响应")
-        if (response.body.size > maxBytes) return IcalFetchResult.Failure("来源响应超过大小限制")
+            .getOrElse { return IcalFetchResult.Failure(message(81)) }
+        if (response.statusCode !in 200..299) return IcalFetchResult.Failure(message(82))
+        if (response.body.size > maxBytes) return IcalFetchResult.Failure(message(83))
         return IcalFetchResult.Success(response.body.toString(Charsets.UTF_8))
     }
 }
 
-/** 生产传输仅执行单次、无重定向的 HTTPS GET；调用者绝不记录 URI 或响应。 */
+/** Produktiv nur einzelner HTTPS-GET ohne Umleitung; URI und Antwort niemals protokollieren. */
 private class UrlConnectionIcalHttpTransport : IcalHttpTransport {
     override fun get(uri: URI, connectTimeoutMillis: Int, readTimeoutMillis: Int, maxBytes: Int): IcalHttpResponse {
         val connection = URL(uri.toString()).openConnection() as HttpURLConnection

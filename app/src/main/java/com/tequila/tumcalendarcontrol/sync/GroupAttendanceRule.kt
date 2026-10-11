@@ -1,8 +1,8 @@
 /*
- * 职责：保存课程组级出席意图，并把它安全投影到后来出现的新来源 UID。
- * 输入／输出：输入不含标题正文的组键、时间线与来源课次；输出 UID 级有效规则。
- * 外部副作用：无。
- * 不负责：用标题识别目标日历事件、合并课次身份、读写来源或执行同步。
+ * Aufgabe: Gruppenregeln speichern und sicher auf neue Quell-UIDs projizieren.
+ * Ein-/Ausgabe: Gruppenschlüssel und Zeitlinie -> Anfangsregeln für neue Quell-UIDs.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Titelerkennung von Zielterminen, Zusammenlegen von Instanzidentitäten, Quellenzugriffe oder Synchronisierung.
  */
 package com.tequila.tumcalendarcontrol.sync
 
@@ -12,7 +12,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.Locale
 
-/** 组键是完整原始标题的不可逆摘要；类型和组别不同的课程不会互相继承。 */
+/** Gruppenschlüssel ist irreversibler Hash des vollständigen Originaltitels; Typen/Gruppen erben nicht voneinander. */
 data class GroupAttendanceRule(
     val groupKey: String,
     val defaultState: AttendanceState? = null,
@@ -30,7 +30,7 @@ object SourceCourseGroupKey {
 }
 
 object GroupAttendanceRuleResolver {
-    /** 已存在的 UID 规则优先；组规则只为后来新增且尚无独立规则的 UID 提供初值。 */
+    /** Vorhandene UID-Regeln haben Vorrang; Gruppenregeln initialisieren nur neue UIDs ohne eigene Regel. */
     fun materialize(ledger: RuleLedger, occurrences: List<SourceCalendarOccurrence>): List<SyncRule> {
         val existing = ledger.rules.associateBy(SyncRule::sourceUid)
         val groups = ledger.groupRules.associateBy(GroupAttendanceRule::groupKey)

@@ -1,10 +1,12 @@
 /*
- * 职责：以独立于 Compose 生命周期的后台执行与超时竞争协调一次 iCal 只读请求。
- * 输入／输出：输入来源地址和读取函数；输出一次且仅一次带阶段/耗时的脱敏读取完成结果。
- * 外部副作用：运行调用方提供的只读读取函数；不记录 URL、ICS 正文或日历内容。
- * 不负责：保存私有配置、解析 iCal、改变 UI 状态、申请权限或写入任何目标日历。
+ * Aufgabe: Einmalige lesende iCal-Anfrage mit unabhängigem Hintergrundauftrag und Timeout koordinieren.
+ * Ein-/Ausgabe: Einmaliger Abrufauftrag -> genau ein Ergebnis oder Timeout.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Private Konfigurationsspeicherung, iCal-Parsing, UI-Zustandsänderungen, Berechtigungen oder Zielkalenderausgabe.
  */
 package com.tequila.tumcalendarcontrol.sync
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -21,10 +23,7 @@ data class SourceReadCompletion(
     val elapsedMillis: Long,
 )
 
-/**
- * 读取协调器确保回调只发生一次：超时优先时会取消工作线程，任何迟到结果都会被忽略。
- * 调用方须自行在主线程处理回调；本类不持有 Android Context，也不会输出敏感输入。
- */
+/** Koordinator ruft genau einmal zurück. Timeout stoppt Arbeitsfaden und verwirft verspätete Ergebnisse. Aufrufer übernimmt Hauptthread; kein Android Context oder sensitive Ausgabe. */
 class SourceReadCoordinator(
     private val reader: (String) -> IcalReadOnlyImportResult,
     private val timeoutMillis: Long,
@@ -50,9 +49,9 @@ class SourceReadCoordinator(
         }
         val timeout = scheduler.schedule(
             {
-                // 先获得唯一终结权，避免被中断的工作线程抢先报告为“异常”。
+                // Zuerst exklusiven Abschluss beanspruchen, damit unterbrochener Arbeitsfaden nicht vorzeitig einen Fehler meldet.
                 val timedOut = finish(
-                    IcalReadOnlyImportResult.Failure("来源读取超过 ${timeoutMillis / 1000} 秒，已停止等待；请检查网络后再试"),
+                    IcalReadOnlyImportResult.Failure(message(128, (timeoutMillis / 1000))),
                     SourceReadCompletionStage.TIMEOUT,
                 )
                 if (timedOut) worker.get()?.cancel(true)
@@ -68,7 +67,7 @@ class SourceReadCoordinator(
                 null -> SourceReadCompletionStage.EXCEPTION
             }
             val safeResult = result.getOrElse {
-                IcalReadOnlyImportResult.Failure("来源读取发生未知错误；请稍后重试")
+                IcalReadOnlyImportResult.Failure(message(129))
             }
             timeout.cancel(false)
             finish(safeResult, stage)

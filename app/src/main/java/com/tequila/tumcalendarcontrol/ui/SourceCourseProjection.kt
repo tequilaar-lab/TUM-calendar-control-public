@@ -1,10 +1,12 @@
 /*
- * 职责：把运行内 iCal 来源目录投影为首页、搜索、收藏与详情共用的界面课程。
- * 输入／输出：输入来源 UID 目录、来源实例、三态规则及旧界面课程；输出按 UID 稳定合并后的课程列表。
- * 外部副作用：无；不读取网络、不持久化来源正文、不申请权限也不写入任何日历。
- * 不负责：来源解析、Fixplatz 判断、规则编辑、日历差异计算或同步执行。
+ * Aufgabe: iCal-Katalog auf gemeinsame Kurse für Übersicht, Suche, Favoriten und Details projizieren.
+ * Ein-/Ausgabe: UID-Katalog, Instanzen, Regeln und bisherige Anzeigen -> stabil nach UID verbundene Kursliste.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Quellen-Parsing, Fixplatz-Entscheidungen, Regelbearbeitung, Kalenderdifferenzen oder Synchronisierungsausführung.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import com.tequila.tumcalendarcontrol.domain.Course
@@ -17,7 +19,7 @@ import com.tequila.tumcalendarcontrol.sync.SyncRuleResolver
 import java.time.DayOfWeek
 import java.time.ZoneId
 
-/** 来源标题只是展示资料；只有 sourceUid 能把本机收藏与覆盖安全带到下一次读取。 */
+/** Quelltitel nur Anzeige; ausschließlich sourceUid übernimmt Favoriten/Änderungen zur nächsten Lesung. */
 internal object SourceCourseProjection {
     private val sourceZone: ZoneId = ZoneId.of("Europe/Berlin")
 
@@ -45,7 +47,7 @@ internal object SourceCourseProjection {
                     rulesByUid[source.sourceUid]?.let { SyncRuleResolver.resolve(it, item, sourceZone) }
                 } ?: previous?.attendance ?: AttendanceState.CHOOSE_TO_ATTEND,
                 isFavorite = presentation.isFavorite ?: false,
-                // iCal 本身没有可靠的 TUM 报名状态字段；课程显示不得因旧 Fixplatz 筛选而丢失。
+                // iCal hat keinen verlässlichen TUM-Anmeldestatus; alter Fixplatz-Filter darf keine Kurse ausblenden.
                 hasFixedPlus = true,
                 sourceStatus = if (occurrence.isCancelled) TumEventStatus.CANCELLED else TumEventStatus.UNKNOWN,
                 localOverride = presentation.localOverride,
@@ -60,8 +62,8 @@ internal object SourceCourseProjection {
         val start = startsAt.atZone(sourceZone)
         val end = endsAt.atZone(sourceZone)
         val timeFormat = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
-        val endDate = if (start.toLocalDate() == end.toLocalDate()) "" else "${end.toLocalDate()} "
-        return "${start.toLocalDate()} ${start.dayOfWeek.toCourseWeekday().label} ${start.format(timeFormat)}–$endDate${end.format(timeFormat)}"
+        val endDate = if (start.toLocalDate() == end.toLocalDate()) "" else message(611, (end.toLocalDate()))
+        return message(612, (start.toLocalDate()), (start.dayOfWeek.toCourseWeekday().label), (start.format(timeFormat)), (endDate), (end.format(timeFormat)))
     }
 
     private fun DayOfWeek.toCourseWeekday(): CourseWeekday = when (this) {

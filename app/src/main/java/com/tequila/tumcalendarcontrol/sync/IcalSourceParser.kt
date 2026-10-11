@@ -1,10 +1,12 @@
 /*
- * 职责：通过 iCal4j 解析 RFC 5545 文本、展开指定窗口内的重复事件，并可选按 UID 筛选。
- * 输入／输出：输入 ICS 文本、时间窗口和可选 UID 清单；输出稳定实例与跳过原因。
- * 外部副作用：无；调用者负责以已授权方式取得文本，本类不访问网络或文件。
- * 不负责：推断 Fixplatz、手写 ICS 语法、保存规则或写入目标日历。
+ * Aufgabe: RFC-5545-Quelle mit iCal4j analysieren und Wiederholungen im begrenzten Zeitfenster expandieren.
+ * Ein-/Ausgabe: iCal-Text, Zeitfenster und optionale UID-Liste -> expandierte Termine und Ausschlussgründe.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Fixplatz-Ableitung, selbst entwickelte ICS-Syntax, Regelspeicherung oder Zielkalenderausgabe.
  */
 package com.tequila.tumcalendarcontrol.sync
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.model.Component
@@ -16,17 +18,14 @@ import java.io.StringReader
 import java.time.Instant
 
 class IcalSourceParser {
-    /**
-     * `null` UID 清单代表接受全部来源课程；非空清单只用于兼容旧的显式筛选场景。
-     * `windowStart` 与 `windowEnd` 限制展开范围，避免无限 RRULE 占用资源。
-     */
+    /** Null-UID-Liste akzeptiert alle Quellkurse; andere Listen nur für alte explizite Filter. windowStart/windowEnd begrenzen unendliche RRULE-Auswertung. */
     fun parse(
         icsText: String,
         windowStart: Instant,
         windowEnd: Instant,
         allowedSourceUids: Set<String>? = null,
     ): IcalImportResult {
-        require(windowEnd.isAfter(windowStart)) { "iCalendar 展开窗口必须有正长度。" }
+        require(windowEnd.isAfter(windowStart)) { message(84) }
         Ical4jRuntimeConfiguration.configureOfflineCache()
         val calendar = CalendarBuilder().build(StringReader(icsText))
         val candidates = mutableListOf<SourceCalendarOccurrence>()
@@ -71,7 +70,7 @@ class IcalSourceParser {
         return SourceCalendarOccurrence(
             sourceUid = uid,
             instanceKey = recurrenceId ?: start.toString(),
-            title = event.summary?.value.orEmpty().ifBlank { "未命名来源日程" },
+            title = event.summary?.value.orEmpty().ifBlank { message(85) },
             location = event.location?.value.orEmpty(),
             startsAt = start,
             endsAt = end,

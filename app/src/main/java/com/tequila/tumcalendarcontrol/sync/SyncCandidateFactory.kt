@@ -1,20 +1,18 @@
 /*
- * 职责：将来源实例、手动事项与本机三态规则转换为确定性的目标日历候选。
- * 输入／输出：输入当前进程来源实例、规则与手动事项；输出按稳定身份排序的 DesiredCalendarEvent。
- * 外部副作用：无。
- * 不负责：读取 iCal、保存来源数据、创建日历、差异执行或按标题推断身份。
+ * Aufgabe: Quelltermine, eigene Termine und Dreizustandsregeln zu deterministischen Zielkandidaten verbinden.
+ * Ein-/Ausgabe: Ausgewählte Quellinstanzen, eigene Termine und Regeln -> deterministische Zielkandidaten.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: iCal-Lesen, Quellenpersistenz, Kalendererstellung, Differenzausführung oder Identitätsableitung anhand von Titeln.
  */
 package com.tequila.tumcalendarcontrol.sync
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import java.time.ZoneId
 
 class SyncCandidateFactory(private val zoneId: ZoneId = ZoneId.of("Europe/Berlin")) {
-    /**
-     * 仅将明确选中的活动快照课次转为候选；未配置规则的选中课次默认蓝色，取消实例不会输出。
-     * 读取时间范围只在生成活动快照时生效，绝不在写入前二次过滤已选课次。
-     * 身份同时含 UID 与原始实例键，避免用户选一节课却输出整门课程的所有课次。
-     */
+    /** Nur ausdrücklich gewählte aktive Termine als Kandidaten; ohne Regel blau, abgesagte Termine ausgeschlossen. Lesegrenze nur bei Momentaufnahme, keine zweite Ausgabefilterung. Identität immer UID plus Originalinstanz. */
     fun build(
         occurrences: List<SourceCalendarOccurrence>,
         selectedSourceOccurrences: Set<SourceOccurrenceIdentity>,
@@ -47,14 +45,14 @@ class SyncCandidateFactory(private val zoneId: ZoneId = ZoneId.of("Europe/Berlin
         }.toList()
         val manual = manualEvents.map { item ->
             DesiredCalendarEvent(
-                identity = ManagedEventIdentity("manual:${item.id}", item.id),
+                identity = ManagedEventIdentity("manual:${(item.id)}", item.id),
                 title = item.title,
                 startsAt = item.startsAt,
                 endsAt = item.endsAt,
                 attendanceState = item.attendanceState,
             )
         }
-        // 同一 iCal 实例偶尔会被来源展开器交付两次；只按稳定来源身份折叠。
+        // Doppelt expandierte iCal-Instanzen nur über stabile Quellenidentität zusammenfassen.
         return (sourceEvents + manual)
             .distinctBy(DesiredCalendarEvent::identity)
             .sortedWith(compareBy<DesiredCalendarEvent> { it.startsAt }.thenBy { it.identity.sourceUid }.thenBy { it.identity.instanceKey })

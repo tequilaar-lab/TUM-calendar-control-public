@@ -1,8 +1,8 @@
 /*
- * 职责：验证来源实例仅按 UID 聚合为课程目录。
- * 输入／输出：输入合成实例；输出课程聚合和代表实例断言。
- * 外部副作用：无。
- * 不负责：iCal 解析、规则持久化、界面或日历写入。
+ * Aufgabe: synthetische Regressionstests für SourceCourseCatalog.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

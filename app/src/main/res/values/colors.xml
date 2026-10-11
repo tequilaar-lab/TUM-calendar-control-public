@@ -1,4 +1,4 @@
-<!-- 职责：定义启动器图标的纯色背景；不承载业务状态颜色。 -->
+<!-- Aufgabe: Android-Darstellungsressourcen definieren; keine Konten, privaten Daten oder externen Aktionen. -->
 <resources>
     <color name="launcher_background">#146C94</color>
     <color name="tum_date_picker_light_primary">#0065BD</color>

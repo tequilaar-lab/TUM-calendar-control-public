@@ -1,8 +1,8 @@
 /*
- * 职责：验证 iCal 来源输出日期窗口的解析、边界和跨日相交语义。
- * 输入／输出：输入合成日期文本与时间实例；输出解析或保留断言。
- * 外部副作用：无。
- * 不负责：网络、课程选择、日历写入或真实日程验证。
+ * Aufgabe: synthetische Regressionstests für SourceOutputDateWindow.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

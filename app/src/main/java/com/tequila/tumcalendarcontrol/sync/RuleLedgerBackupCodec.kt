@@ -1,8 +1,8 @@
 /*
- * 职责：导出和导入不含连接信息、目标映射或同步摘要的规则备份。
- * 输入／输出：输入 RuleLedger 或备份文本；输出可预览的规则／手动事项资料。
- * 外部副作用：无。
- * 不负责：文件 I/O、替换当前资料库、保存订阅地址、OAuth 或修改日历。
+ * Aufgabe: Regelsicherung ohne Verbindungsdaten, Zielzuordnungen oder Synchronisierungsergebnisse kodieren.
+ * Ein-/Ausgabe: Regelbestand/Sicherungstext -> Sicherung ohne Verbindungen, Zuordnungen oder Ergebnisse.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Datei-I/O, Ersetzen des aktuellen Bestands, Abonnementadressen, OAuth oder Kalenderänderungen.
  */
 package com.tequila.tumcalendarcontrol.sync
 

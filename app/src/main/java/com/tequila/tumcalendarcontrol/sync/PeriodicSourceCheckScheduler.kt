@@ -1,8 +1,8 @@
 /*
- * 职责：把用户明确开启的后台只读检查映射为唯一的 WorkManager 周期任务。
- * 输入／输出：输入检查设置；输出排程或取消操作。
- * 外部副作用：写入 WorkManager 队列；不会立即读取 iCal、通知或写入日历。
- * 不负责：检查内容、账户授权、日历同步或通知权限请求。
+ * Aufgabe: Ausdrücklich aktivierte Quellenprüfung als eindeutigen periodischen WorkManager-Auftrag planen.
+ * Ein-/Ausgabe: Expliziter Prüfschalter und Häufigkeit -> eindeutiger periodischer WorkManager-Auftrag.
+ * Nebenwirkungen: Nur ausdrücklich aktivierten WorkManager-Auftrag einplanen/entfernen.
+ * Nicht zuständig: Inhaltsprüfung, Kontoautorisierung, Synchronisierung oder Anfrage der Benachrichtigungsberechtigung.
  */
 package com.tequila.tumcalendarcontrol.sync
 

@@ -1,8 +1,8 @@
 /*
- * 职责：验证出席规则日期输入的字符规范化与严格日期校验。
- * 输入／输出：输入合成 ASCII／全角日期字符串；输出解析成功或失败断言。
- * 外部副作用：无。
- * 不负责：Compose 表单、规则保存、网络或真实日历验证。
+ * Aufgabe: synthetische Regressionstests für AttendanceEffectiveDateParser.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.ui
 

@@ -1,8 +1,8 @@
 /*
- * 职责：验证全部来源、单实例覆盖及“从此不去”只影响未来的规则决议。
- * 输入／输出：输入合成规则与实例；输出三态或空值断言。
- * 外部副作用：无。
- * 不负责：iCalendar 文本、持久化或外部日历输出。
+ * Aufgabe: synthetische Regressionstests für SyncRuleResolver.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

@@ -1,8 +1,8 @@
 /*
- * 职责：创建、替换和移除应用拥有的手动校园事项，且保持稳定的手动身份。
- * 输入／输出：输入现有事项与明确编辑命令；输出新事项列表，不改变原输入。
- * 外部副作用：无。
- * 不负责：解析来源课程、Calendar Provider、Google 写入或按标题合并事项。
+ * Aufgabe: Eigene Campustermine mit stabiler manueller Identität erstellen, ersetzen oder entfernen.
+ * Ein-/Ausgabe: Lokaler Terminbefehl -> neuer Regelbestand mit stabilen manuellen IDs.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Quellen-Parsing, Calendar Provider, Google-Ausgabe oder Zusammenlegen anhand von Titeln.
  */
 package com.tequila.tumcalendarcontrol.sync
 

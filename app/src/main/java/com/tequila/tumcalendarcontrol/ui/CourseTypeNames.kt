@@ -1,10 +1,12 @@
 /*
- * 职责：保存课程子类型的显示别名，并提供独立改名弹窗。
- * 输入／输出：视觉分组键和名称；输出共享显示别名。
- * 外部副作用：偏好类仅写应用私有存储，界面通过回调更新状态。
- * 不负责：修改源标题、课程成员、出席状态或日历。
+ * Aufgabe: Lehrtyp-Anzeigenamen speichern und Umbenennungsdialog bereitstellen.
+ * Ein-/Ausgabe: Visuelle Gruppenschlüssel und Namen -> gemeinsame Anzeigenamen.
+ * Nebenwirkungen: Nur private Namenspräferenzen; Oberfläche meldet Auswahl über Rückrufe.
+ * Nicht zuständig: Quellentitel, Kurszugehörigkeit, Teilnahmestatus oder Kalenderänderungen.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import android.content.Context
 import androidx.compose.runtime.*
@@ -40,16 +42,16 @@ internal fun CourseTypeRenameButton(type: CourseTeachingTypeGroup) {
     var editing by remember { mutableStateOf(false) }
     var value by remember(type.label) { mutableStateOf(type.label) }
     val configuration = LocalConfiguration.current
-    Button(onClick = { value = type.label; editing = true }) { Text("改名") }
+    Button(onClick = { value = type.label; editing = true }) { Text(tr(message(383))) }
     if (editing) Dialog(onDismissRequest = { editing = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Card(Modifier.width((configuration.screenWidthDp - 48).coerceIn(200, 480).dp).height((configuration.screenHeightDp * 0.72f).coerceAtMost(480f).dp), insideMargin = PaddingValues(16.dp)) {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("编辑子类型名称")
-                Text("仅更改这门课的类型显示；首页、搜索和收藏一起更新，不改变日历内容。")
-                TextField(value, { value = it }, Modifier.fillMaxWidth(), label = "子类型名称（最多 30 字）")
-                Button(onClick = { names.change(type.key, value.trim()); editing = false }, enabled = validCourseTypeName(value), modifier = Modifier.fillMaxWidth()) { Text("保存名称") }
-                Button(onClick = { names.change(type.key, null); editing = false }, modifier = Modifier.fillMaxWidth()) { Text("恢复自动名称") }
-                Button(onClick = { editing = false }, modifier = Modifier.fillMaxWidth()) { Text("取消") }
+                Text(tr(message(384)))
+                Text(tr(message(385)))
+                TextField(value, { value = it }, Modifier.fillMaxWidth(), label = tr(message(386)))
+                Button(onClick = { names.change(type.key, value.trim()); editing = false }, enabled = validCourseTypeName(value), modifier = Modifier.fillMaxWidth()) { Text(tr(message(387))) }
+                Button(onClick = { names.change(type.key, null); editing = false }, modifier = Modifier.fillMaxWidth()) { Text(tr(message(388))) }
+                Button(onClick = { editing = false }, modifier = Modifier.fillMaxWidth()) { Text(tr(message(197))) }
             }
         }
     }

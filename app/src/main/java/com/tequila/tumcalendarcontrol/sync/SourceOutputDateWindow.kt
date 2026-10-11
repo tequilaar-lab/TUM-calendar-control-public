@@ -1,10 +1,12 @@
 /*
- * 职责：严格解析可选的 iCal 来源输出日期窗口，并判断来源实例是否与窗口相交。
- * 输入／输出：输入日期文本或来源实例；输出日期窗口、解析结果或是否保留。
- * 外部副作用：无。
- * 不负责：网络读取、保存配置、选择课程、规则三态或写入日历。
+ * Aufgabe: Optionales Ausgabezeitfenster streng prüfen und Überschneidungen ermitteln.
+ * Ein-/Ausgabe: Optionale YYYY-MM-DD-Grenzen und Terminzeiten -> validiertes Zeitfenster und Überschneidung.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Netzwerkabruf, Konfigurationsspeicherung, Kursauswahl, Teilnahmeregeln oder Kalenderausgabe.
  */
 package com.tequila.tumcalendarcontrol.sync
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import java.time.Instant
 import java.time.LocalDate
@@ -26,9 +28,9 @@ object SourceDateTextParser {
     }
 }
 
-/** 开始/结束均为可选且按当地自然日包含；实例只要与窗口相交即可保留。 */
+/** Beide Grenzen optional und lokal einschließlich; überlappende Termine behalten. */
 data class SourceOutputDateWindow(val startsOn: LocalDate? = null, val endsOn: LocalDate? = null) {
-    init { require(startsOn == null || endsOn == null || startsOn <= endsOn) { "来源输出范围的开始日期不能晚于结束日期。" } }
+    init { require(startsOn == null || endsOn == null || startsOn <= endsOn) { message(127) } }
 
     fun includes(startsAt: Instant, endsAt: Instant, zoneId: ZoneId): Boolean {
         val lowerBound = startsOn?.atStartOfDay(zoneId)?.toInstant()

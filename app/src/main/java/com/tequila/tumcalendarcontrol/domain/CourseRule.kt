@@ -1,8 +1,8 @@
 /*
- * 职责：表达一门课程的 Fixplatz 准入、默认类别、截点和单实例覆盖。
- * 输入／输出：由未来编辑界面或同步层提供，供 AttendanceResolver 解析。
- * 外部副作用：无，数据仅在内存中表示。
- * 不负责：从 TUMonline 识别 Fixplatz，也不生成重复实例。
+ * Aufgabe: Fixplatz-Zulassung, Standardstatus, Stichtag und Einzelterminausnahmen eines Kurses darstellen.
+ * Ein-/Ausgabe: Lokale Regelwerte -> von AttendanceResolver auswertbare Kursregel.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Fixplatz-Erkennung in TUMonline oder Erzeugung von Wiederholungsinstanzen.
  */
 package com.tequila.tumcalendarcontrol.domain
 

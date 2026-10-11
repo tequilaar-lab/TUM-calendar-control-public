@@ -1,8 +1,8 @@
 /*
- * 职责：验证缓存恢复、课次时间线、目标选择和旧日程清理边界。
- * 输入／输出：合成来源与纯内存状态；输出正确行为断言。
- * 外部副作用：无。
- * 不负责：真实来源、账户、日历、手机或截图验收。
+ * Aufgabe: synthetische Regressionstests für PreinstallBoundaryRegression.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.ui
 

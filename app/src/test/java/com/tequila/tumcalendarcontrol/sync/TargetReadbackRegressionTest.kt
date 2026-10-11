@@ -1,8 +1,8 @@
 /*
- * 职责：验证真实目标字段比较、恢复创建、检查点和陈旧映射的删除边界。
- * 输入／输出：合成 JSON、事件和内存网关；输出确定性断言。
- * 外部副作用：仅 Robolectric 本地 JVM，无网络或真实日历。
- * 不负责：OAuth、手机和实际同步延迟验收。
+ * Aufgabe: synthetische Regressionstests für TargetReadbackRegression.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

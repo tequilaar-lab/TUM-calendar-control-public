@@ -1,8 +1,8 @@
 /*
- * 职责：验证拆分后的导航、来源读取与受控输出状态模块。
- * 输入／输出：输入合成意图、令牌和失败回调；断言运行内状态及返回目标。
- * 外部副作用：无；不使用真实订阅、账户、权限、网络或日历。
- * 不负责：Compose 渲染、iCal 解析、OAuth 适配或真实同步验证。
+ * Aufgabe: synthetische Regressionstests für WorkflowState.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.ui
 

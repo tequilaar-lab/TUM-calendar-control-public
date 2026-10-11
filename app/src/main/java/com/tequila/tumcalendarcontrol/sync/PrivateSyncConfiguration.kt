@@ -1,10 +1,12 @@
 /*
- * 职责：表达用户未来亲自提供的私有来源与 Google 连接配置，并执行无网络格式校验。
- * 输入／输出：输入订阅地址、OAuth 客户端标识和目标日历名称；输出校验结果及脱敏摘要。
- * 外部副作用：无。
- * 不负责：保存秘密、发起 OAuth、联网读取订阅或创建任何日历。
+ * Aufgabe: Private Quellen-/Google-Konfiguration darstellen und ohne Netzwerk formatprüfen.
+ * Ein-/Ausgabe: Benutzerkonfiguration -> validierte Werte und reine Formatprobleme.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Geheimnisspeicherung, OAuth, Abonnementabruf oder Kalendererstellung.
  */
 package com.tequila.tumcalendarcontrol.sync
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import java.net.URI
 
@@ -14,7 +16,7 @@ data class PrivateSyncConfiguration(
     val sourceRangeEndDate: String = "",
     val googleOAuthClientId: String = "",
     val googleCalendarName: String = DEFAULT_GOOGLE_CALENDAR_NAME,
-    /** 仅保存本应用创建的目标标识；不会保存账户名、令牌或日历正文。 */
+    /** Nur Kennungen selbst erstellter Ziele speichern; keine Kontonamen, Token oder Kalenderinhalte. */
     val localCalendarId: String = "",
     val googleCalendarId: String = "",
 ) {
@@ -23,8 +25,8 @@ data class PrivateSyncConfiguration(
     val sourceOutputWindow: SourceOutputDateWindow?
         get() = SourceOutputDateWindow.parseOrNull(sourceRangeStartDate, sourceRangeEndDate)
 
-    /** 配置页不展示地址的任何组成部分，避免主机名也成为可观察的私有信息。 */
-    fun maskedTumSubscription(): String = if (hasTumSubscription) "•••••••• · 已加密保存在本机" else "尚未配置"
+    /** Konfiguration zeigt keine Adressbestandteile; auch Hostname ist private Information. */
+    fun maskedTumSubscription(): String = if (hasTumSubscription) message(110) else message(111)
 
     fun validate(): List<ConfigurationProblem> = buildList {
         if (hasTumSubscription) {
@@ -46,8 +48,8 @@ data class PrivateSyncConfiguration(
 }
 
 enum class ConfigurationProblem(val message: String) {
-    INVALID_TUM_SUBSCRIPTION("订阅地址必须是带主机名的 HTTPS 地址"),
-    INVALID_GOOGLE_CLIENT_ID("Google OAuth 客户端标识应以 .apps.googleusercontent.com 结尾"),
-    INVALID_SOURCE_OUTPUT_RANGE("来源输出范围须为有效 YYYY-MM-DD，且开始日期不能晚于结束日期"),
-    BLANK_GOOGLE_CALENDAR_NAME("Google 专用目标日历名称不能为空"),
+    INVALID_TUM_SUBSCRIPTION(message(112)),
+    INVALID_GOOGLE_CLIENT_ID(message(113)),
+    INVALID_SOURCE_OUTPUT_RANGE(message(114)),
+    BLANK_GOOGLE_CALENDAR_NAME(message(115)),
 }

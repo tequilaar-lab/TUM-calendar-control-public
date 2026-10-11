@@ -1,4 +1,4 @@
-# Android 与 Gradle 构建产物
+# Android- und Gradle-Buildartefakte
 .gradle/
 .kotlin/
 build/
@@ -7,7 +7,7 @@ local.properties
 .idea/
 *.iml
 
-# 密钥、私有配置与真实数据
+# Schlüssel, private Konfiguration und echte Daten
 *.jks
 *.keystore
 secrets.properties
@@ -15,10 +15,10 @@ private-config.properties
 *.ics
 *.ical
 
-# 系统文件
+# Systemdateien
 .DS_Store
 
-# 仅本机保存的计划、验收与审计记录；禁止提交或推送
+# Nur lokale Pläne, Abnahmen und Auditnachweise; niemals committen oder pushen
 .local-audit/
 .gradle/
 build/

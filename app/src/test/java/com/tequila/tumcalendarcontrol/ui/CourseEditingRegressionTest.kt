@@ -1,8 +1,8 @@
 /*
- * 职责：验证子类型别名、缓存继续与按课程设置的安全边界。
- * 输入／输出：合成快照与偏好，输出确定性断言。
- * 外部副作用：仅 Robolectric 沙盒偏好，不访问设备、网络或日历。
- * 不负责：真机布局与日历端验收。
+ * Aufgabe: synthetische Regressionstests für CourseEditingRegression.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.ui
 

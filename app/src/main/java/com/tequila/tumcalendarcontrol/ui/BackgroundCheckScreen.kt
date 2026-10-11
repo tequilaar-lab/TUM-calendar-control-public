@@ -1,10 +1,12 @@
 /*
- * 职责：让用户管理默认关闭的 iCal 后台只读检查频率和可见状态。
- * 输入／输出：输入本机检查设置／状态；输出明确的排程或取消意图。
- * 外部副作用：无；实际排程、网络读取和通知均由根界面与 Worker 在用户开启后执行。
- * 不负责：显示来源正文、自动同步、日历写入、Google 授权或范围配置。
+ * Aufgabe: Standardmäßig deaktivierte lesende Hintergrundprüfung und Status bedienen.
+ * Ein-/Ausgabe: Prüfeinstellungen und Status -> ausdrücklich betätigte Einstellungs-/Prüfabsichten.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Quelleninhalt, automatische Synchronisierung, Kalenderausgabe, Google-Autorisierung oder Bereichskonfiguration.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,35 +34,35 @@ fun BackgroundCheckScreen(state: CalendarControlState) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InformationCard("检查课程更新", "默认关闭。开启后会在网络可用时检查课程是否变化，不会自动写入或删除日历。省电模式可能推迟检查。")
-        InformationCard("当前频率", settings.cadence.label)
+        InformationCard(message(168), message(200))
+        InformationCard(message(201), settings.cadence.label)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             SourceCheckCadence.entries.forEach { cadence ->
                 Button(
                     onClick = { state.updateSourceCheck(settings.enabled, cadence) },
                     modifier = Modifier.weight(1f),
-                ) { Text(if (cadence == settings.cadence) "✓ ${cadence.label}" else cadence.label) }
+                ) { Text(tr(if (cadence == settings.cadence) message(202, (cadence.label)) else cadence.label)) }
             }
         }
         Button(
             onClick = { state.updateSourceCheck(!settings.enabled) },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text(if (settings.enabled) "关闭更新检查" else "开启更新检查") }
-        InformationCard("最近检查", state.sourceCheckStatus.toUserSummary())
-        InformationCard("通知与隐私", "检测到可能变化时只发送通用提醒，不包含课程名称、地点、链接或日程内容。拒绝通知权限不影响应用内状态查看。")
-        state.feedback?.let { Text(it, color = LocalTumPalette.current.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp)) }
+        ) { Text(tr(if (settings.enabled) message(203) else message(204))) }
+        InformationCard(message(205), state.sourceCheckStatus.toUserSummary())
+        InformationCard(message(206), message(207))
+        state.feedback?.let { Text(tr(it), color = LocalTumPalette.current.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp)) }
     }
 }
 
 private fun SourceCheckStatus.toUserSummary(): String {
-    val time = checkedAt?.atZone(ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) ?: "尚未检查"
+    val time = checkedAt?.atZone(ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) ?: message(208)
     val resultText = when (result) {
-        SourceCheckResult.NEVER -> "尚未执行"
-        SourceCheckResult.INITIAL -> "已建立首次只读摘要"
-        SourceCheckResult.UNCHANGED -> "未发现变化"
-        SourceCheckResult.CHANGED -> "发现课程可能变化。打开应用重新读取课程。"
-        SourceCheckResult.FAILED -> "检查失败；系统会按策略稍后重试"
-        SourceCheckResult.NEEDS_CONFIGURATION -> "还没有设置课程订阅地址"
+        SourceCheckResult.NEVER -> message(209)
+        SourceCheckResult.INITIAL -> message(210)
+        SourceCheckResult.UNCHANGED -> message(211)
+        SourceCheckResult.CHANGED -> message(212)
+        SourceCheckResult.FAILED -> message(213)
+        SourceCheckResult.NEEDS_CONFIGURATION -> message(214)
     }
-    return "$time · $resultText"
+    return message(147, (time), (resultText))
 }

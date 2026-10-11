@@ -1,8 +1,8 @@
 /*
- * 职责：验证规则业务保存与同步映射检查点共用串行提交边界。
- * 输入／输出：Robolectric 应用私有偏好与合成资料；输出原子性断言。
- * 外部副作用：仅测试沙盒 SharedPreferences，不访问真实文件、账户或日历。
- * 不负责：系统杀进程、磁盘硬件故障或跨进程并发。
+ * Aufgabe: synthetische Regressionstests für RuleLedgerPreferences.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

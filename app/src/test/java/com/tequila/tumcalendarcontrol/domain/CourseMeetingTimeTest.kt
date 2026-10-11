@@ -1,8 +1,8 @@
 /*
- * 职责：验证结构化课程时间的范围、显示和本机覆盖优先级。
- * 输入／输出：输入合成课程与星期／时分；输出合法性和显示断言。
- * 外部副作用：无。
- * 不负责：重复规则展开、日历写入或真实来源解析。
+ * Aufgabe: synthetische Regressionstests für CourseMeetingTime.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.domain
 

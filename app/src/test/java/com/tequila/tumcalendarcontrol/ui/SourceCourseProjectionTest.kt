@@ -1,8 +1,8 @@
 /*
- * 职责：验证来源课程投影的 UID 身份、显示字段与本机偏好保留规则。
- * 输入／输出：输入合成来源目录、实例、规则与旧课程；输出纯内存断言。
- * 外部副作用：无。
- * 不负责：真实 iCal、Compose 渲染、权限、Google 或本机日历写入。
+ * Aufgabe: synthetische Regressionstests für SourceCourseProjection.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.ui
 

@@ -1,8 +1,8 @@
 /*
- * 职责：表示源日历中已展开的一次课程实例。
- * 输入／输出：以源 UID 与原始实例键作为稳定身份，供规则和日历写入层使用。
- * 外部副作用：无。
- * 不负责：解析 ICS、推断实例身份或按标题去重。
+ * Aufgabe: Expandierten Einzeltermin der Kalenderquelle darstellen.
+ * Ein-/Ausgabe: Quell-UID und Originalinstanz -> stabile Einzelterminidentität für Regeln/Ausgabe.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: ICS-Parsing, Ableitung von Instanzidentitäten oder Deduplizierung anhand von Titeln.
  */
 package com.tequila.tumcalendarcontrol.domain
 

@@ -1,10 +1,13 @@
 /*
- * 职责：装配 Android 本机依赖，并把用户已确认的 UI 意图交给权限、文件、读取、授权和同步协调器。
- * 输入／输出：输入 Android Context 与内存中的 CalendarControlState；输出纯 Compose 外壳。
- * 外部副作用：保存私有偏好；仅在用户点按后读取 iCal、申请授权或执行已预览的受控输出。
- * 不负责：页面布局、导航栏、页面元数据、自动同步、访问用户主日历、保存 Google 令牌或替代真机验证。
+ * Aufgabe: Android-Abhängigkeiten und bestätigte Berechtigungs-, Datei-, Lese-, Autorisierungs- und Ausgabeabsichten koordinieren.
+ * Ein-/Ausgabe: Android Context und CalendarControlState -> Oberfläche und bestätigte Koordinationsaufträge.
+ * Nebenwirkungen: Private Präferenzen; Quelle, Autorisierung und Ausgabe nur nach bestätigter Absicht.
+ * Nicht zuständig: Seitenlayout, Navigationsleiste, Seitenmetadaten, automatische Synchronisierung, Hauptkalender, Google-Tokenspeicherung oder Ersatz der Geräteprüfung.
  */
 package com.tequila.tumcalendarcontrol.ui
+
+import com.tequila.tumcalendarcontrol.i18n.message
+import com.tequila.tumcalendarcontrol.i18n.AppLanguagePreferences
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -41,6 +44,8 @@ private const val SourceReadLogTag = "TumSourceRead"
 fun CalendarControlApp() {
     val context = LocalContext.current
     val session = androidx.lifecycle.ViewModelProvider(context as androidx.activity.ComponentActivity)[CalendarSessionModel::class.java]
+    val languagePreferences = remember(context) { AppLanguagePreferences(context) }
+    var language by remember { mutableStateOf(languagePreferences.load()) }
     val profilePreferences = remember(context) { ProfilePreferences(context) }
     val pageMemoryPreferences = remember(context) { PageMemoryPreferences(context) }
     val appearancePreferences = remember(context) { AppearancePreferences(context) }
@@ -90,7 +95,7 @@ fun CalendarControlApp() {
             runCatching {
                 context.contentResolver.openOutputStream(it)?.bufferedWriter()?.use { writer ->
                     writer.write(RuleLedgerBackupCodec.encode(state.ruleLedger))
-                } ?: error("无法打开备份文件")
+                } ?: error(message(215))
             }.isSuccess
         } == true
         state.resolveRuleBackupExport(saved)
@@ -100,7 +105,7 @@ fun CalendarControlApp() {
             runCatching {
                 context.contentResolver.openInputStream(it)?.bufferedReader()?.use { reader ->
                     reader.readText().also { text -> require(text.length <= MAX_RULE_BACKUP_CHARS) }
-                } ?: error("无法打开备份文件")
+                } ?: error(message(215))
             }.getOrNull()
         }
         state.resolveRuleBackupImport(backupText)
@@ -111,14 +116,14 @@ fun CalendarControlApp() {
     LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
     LaunchedEffect(state.persistedPageMemory) {
         runCatching { pageMemoryPreferences.save(state.persistedPageMemory) }
-            .onFailure { state.feedback = "页面选择未能保存，重启后可能需要重新选择。" }
+            .onFailure { state.feedback = message(216) }
     }
     LaunchedEffect(state.appearanceSettings) { appearancePreferences.save(state.appearanceSettings) }
     LaunchedEffect(state.courseTypeNames) { courseTypeNamesPreferences.save(state.courseTypeNames) }
     LaunchedEffect(state.syncDestinations) { syncDestinationPreferences.save(state.syncDestinations) }
     LaunchedEffect(state.privateSyncConfiguration) {
         if (privateConfigurationInitialized) runCatching { privateSyncConfigurationStore.save(state.privateSyncConfiguration) }
-            .onFailure { state.feedback = "配置未能保存，请检查本机存储后重试；当前配置仅在本次运行有效。" }
+            .onFailure { state.feedback = message(217) }
         else privateConfigurationInitialized = true
     }
     LaunchedEffect(state.sourceCheckSettings) { sourceCheckSettingsStore.saveSettings(state.sourceCheckSettings) }
@@ -215,10 +220,10 @@ fun CalendarControlApp() {
                 outcome.onSuccess {
                     state.resolveManagedOperation(token, it.result, it.configuration)
                     if (!ruleLedgerPreferences.save(state.ruleLedger)) {
-                        state.feedback = "日历操作已返回，但本机同步记录保存失败；请先核对目标日历再重试。"
+                        state.feedback = message(218)
                     }
                     runCatching { privateSyncConfigurationStore.save(state.privateSyncConfiguration) }
-                        .onFailure { state.feedback = "日历执行结果已返回，但配置保存失败；请先核对已写入日程。" }
+                        .onFailure { state.feedback = message(219) }
                     if (it.requiresGoogleReauthorization && !googleToken.isNullOrBlank()) {
                         state.invalidateGoogleAuthorizationAfterUnauthorized()
                         googleAuthorizationCoordinator.clearRejectedAccessToken(googleToken) { cleared ->
@@ -228,7 +233,7 @@ fun CalendarControlApp() {
                         }
                     }
                 }
-                    .onFailure { state.failManagedOperation(token, "写入日历未完成；请检查权限或网络后重试") }
+                    .onFailure { state.failManagedOperation(token, message(220)) }
             }
         }.start()
     }
@@ -245,16 +250,19 @@ fun CalendarControlApp() {
             Handler(Looper.getMainLooper()).post {
                 state.resolveCleanupCatalogRead(token, result)
                 if (result != null && !ruleLedgerPreferences.save(state.ruleLedger)) {
-                    state.feedback = "核对结果已返回，但本机记录保存失败；没有删除任何日程。"
+                    state.feedback = message(221)
                 }
             }
         }.start()
     }
     BackHandler(enabled = state.canHandleBack()) { state.handleBack() }
-    CalendarControlSurface(state)
+    androidx.compose.runtime.CompositionLocalProvider(LocalAppLanguage provides LanguageSelection(language) { chosen ->
+        languagePreferences.save(chosen)
+        language = chosen
+    }) { CalendarControlSurface(state) }
 }
 
-/** 组合纯 Compose 外壳，供应用入口与合成截图测试共享；不初始化偏好或触发外部操作。 */
+/** Reinen Compose-Rahmen für App und synthetische Bildtests kombinieren; keine Präferenzen oder externen Aktionen initialisieren. */
 @Composable
 internal fun CalendarControlSurface(state: CalendarControlState) {
     TumCalendarTheme(mode = state.themeMode, lightStyle = state.lightPaletteStyle, darkStyle = state.darkPaletteStyle) {

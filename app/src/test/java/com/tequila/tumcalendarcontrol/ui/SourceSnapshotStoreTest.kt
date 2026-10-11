@@ -1,8 +1,8 @@
 /*
- * 职责：验证来源快照的私有编码、旧／新选择和实例级差异说明。
- * 输入／输出：输入合成来源快照；输出纯内存断言。
- * 外部副作用：无；不使用真实订阅、账户、日历或 Android 偏好。
- * 不负责：iCal 解析、Compose 渲染、Google 授权或任何实际日历写入。
+ * Aufgabe: synthetische Regressionstests für SourceSnapshotStore.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.ui
 

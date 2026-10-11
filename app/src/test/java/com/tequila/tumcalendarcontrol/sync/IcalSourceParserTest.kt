@@ -1,8 +1,8 @@
 /*
- * 职责：以纯合成 RFC 5545 文本验证 iCal4j 解析、重复展开、EXDATE、RECURRENCE-ID 与取消事件。
- * 输入／输出：输入合成 ICS、时间窗口和可选 UID 清单；输出实例身份、状态与跳过原因断言。
- * 外部副作用：无；不读取私有订阅、不访问网络或日历。
- * 不负责：真实 TUM Fixplatz 识别、Android Provider 或 Google 写入验证。
+ * Aufgabe: synthetische Regressionstests für IcalSourceParser.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

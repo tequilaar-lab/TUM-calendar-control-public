@@ -1,35 +1,37 @@
 /*
- * 职责：在应用拥有的目标日历上执行已预览的差异，并维护稳定映射。
- * 输入／输出：输入目标、期望事件、资料库映射和拥有权网关；输出更新后的映射与脱敏结果。
- * 外部副作用：仅通过传入网关写入；本文件本身不访问 Android、Google、网络或账户。
- * 不负责：获取私有 iCal、OAuth、目标日历创建、用户确认 UI 或按标题识别事件。
+ * Aufgabe: Bestätigte Differenz ausschließlich in eigenen Kalendern ausführen und stabile Zuordnungen pflegen.
+ * Ein-/Ausgabe: Bestätigte Differenz, eigenes Ziel und Zuordnungen -> aktualisierte Zuordnungen/Ergebnisse.
+ * Nebenwirkungen: Nur bestätigte Aktionen im verifiziert eigenen Zielkalender.
+ * Nicht zuständig: Private iCal-Beschaffung, OAuth, Zielkalendererstellung, Bestätigungsoberfläche oder Titelerkennung.
  */
 package com.tequila.tumcalendarcontrol.sync
 
+import com.tequila.tumcalendarcontrol.i18n.message
+
 data class OwnedCalendarRef(val target: OutputTarget, val calendarId: String, val ownershipMarker: String)
 
-/** 目标事件已由用户或日历端删除；执行器可安全改为恢复创建。 */
+/** Termin extern gelöscht; Ausführung darf sicher zur Wiederherstellung wechseln. */
 class ManagedEventMissingException : IllegalStateException()
 
 interface OwnedCalendarGateway {
     fun verifyOwnership(calendar: OwnedCalendarRef): Boolean
     fun findEventIdsByIdentity(calendar: OwnedCalendarRef, identity: ManagedEventIdentity): List<String>
-    /** 仅清理页显式选择“全部”时使用；只返回应用标记的事件 ID，绝不返回日程正文。 */
+    /** Nur ausdrücklich vollständige Bereinigung; liefert App-markierte Termin-IDs, niemals Inhalte. */
     fun findAllManagedEventIds(calendar: OwnedCalendarRef): List<String>
-    /** 只读取已核对身份的应用事件字段；未知格式返回 null，绝不能用本机指纹冒充实际值。 */
+    /** Nur identitätsgeprüfte App-Felder lesen; unbekanntes Format ergibt null, niemals lokalen Fingerabdruck als Istwert ausgeben. */
     fun readEvent(calendar: OwnedCalendarRef, eventId: String, identity: ManagedEventIdentity): DesiredCalendarEvent? = null
     fun readFingerprint(calendar: OwnedCalendarRef, eventId: String, identity: ManagedEventIdentity): String? =
         readEvent(calendar, eventId, identity)?.let { SyncDiffPlanner().run { it.fingerprint() } }
     fun create(calendar: OwnedCalendarRef, event: DesiredCalendarEvent): String
     fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent)
-    /** 删除结果只描述本次请求，不泄露事件正文或 ID 给 UI／资料库。 */
+    /** Löschergebnis beschreibt nur diese Anfrage; keine Inhalte/IDs an Oberfläche oder Datenbank. */
     fun remove(calendar: OwnedCalendarRef, eventId: String): ManagedEventRemovalOutcome
 }
 
-/** 404／410 代表目标此前已不存在，不能伪装成本次真的删除。 */
+/** 404/410 bedeutet vorherige Abwesenheit, nicht eine erfolgreiche Löschung dieses Aufrufs. */
 enum class ManagedEventRemovalOutcome { REMOVED_NOW, ALREADY_ABSENT }
 
-/** 每个目标独立的脱敏清理证据；remaining 为 null 表示删除后复核本身失败。 */
+/** Bereinigungsnachweis je Ziel ohne private Daten; remaining=null bedeutet gescheiterte Nachprüfung. */
 data class ManagedCleanupSummary(
     val mappedCandidateCount: Int,
     val recoveredCandidateCount: Int,
@@ -40,7 +42,7 @@ data class ManagedCleanupSummary(
     val remainingManagedCount: Int?,
 )
 
-/** 脱敏失败分类供协调层做安全恢复；不保存 HTTP 响应、令牌或账户信息。 */
+/** Bereinigte Fehlerklassen ermöglichen sichere Wiederaufnahme; keine HTTP-Antworten, Token oder Konten speichern. */
 enum class TargetFailureCode {
     GOOGLE_AUTHORIZATION_EXPIRED,
 }
@@ -51,15 +53,15 @@ data class TargetSyncResult(
     val changes: List<SyncChange>,
     val failureSummary: String? = null,
     val failureCode: TargetFailureCode? = null,
-    /** 旧版映射已丢失、但仍保有应用标记的事件已被显式清除；不保存其正文或身份。 */
+    /** Alter App-markierter Termin ohne Zuordnung ausdrücklich gelöscht; Inhalt und Identität nicht speichern. */
     val recoveredRemovalCount: Int = 0,
-    /** 仅独立清理路径填充；按目标保存计数，不包含事件 ID 或日程正文。 */
+    /** Nur separater Bereinigungspfad; Zielzählwerte ohne Termin-IDs oder Inhalte. */
     val cleanupSummary: ManagedCleanupSummary? = null,
     val restoredMissingCount: Int = 0,
     val failedCount: Int = 0,
 )
 
-/** 清理必须由用户单独选择；常规写入绝不创建这个范围。 */
+/** Bereinigungsbereich separat wählen; normale Ausgabe erzeugt ihn niemals. */
 sealed interface ManagedEventCleanupScope {
     data object AllManagedEvents : ManagedEventCleanupScope
     data class SelectedIdentities(
@@ -70,7 +72,7 @@ sealed interface ManagedEventCleanupScope {
     }
 }
 
-/** 所有权先验失败时零写入；稳定映射严格以目标、UID 和原始实例键定位。 */
+/** Bei Eigentumsfehler null Schreibaktionen; Zuordnung ausschließlich nach Ziel, UID und Originalinstanz. */
 class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffPlanner()) {
     fun execute(
         calendar: OwnedCalendarRef,
@@ -79,18 +81,18 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
         gateway: OwnedCalendarGateway,
         onCheckpoint: (List<StoredEventMapping>) -> Unit = {},
     ): TargetSyncResult {
-        if (!gateway.verifyOwnership(calendar)) return TargetSyncResult(calendar.target, storedMappings, emptyList(), "目标日历不属于本应用，已拒绝写入。", failedCount = desired.size)
+        if (!gateway.verifyOwnership(calendar)) return TargetSyncResult(calendar.target, storedMappings, emptyList(), message(98), failedCount = desired.size)
         val targetMappings = storedMappings.filter { it.target == calendar.target }
         val otherMappings = storedMappings.filterNot { it.target == calendar.target }
         val next = targetMappings.associateBy { it.identity }.toMutableMap()
         val completed = mutableListOf<SyncChange>()
         val failures = mutableListOf<Throwable>()
         var restored = 0
-        // 每次确认都按实际目标内的应用身份定位；旧映射不是目标存在的证明。
+        // Jede Bestätigung prüft echte App-Identität im Ziel; alte Zuordnung beweist kein Vorhandensein.
         desired.distinctBy { it.identity }.forEach { event ->
             try {
                 val ids = gateway.findEventIdsByIdentity(calendar, event.identity)
-                check(ids.size <= 1) { "目标存在重复课次，未改动该课次；请先核对重复项。" }
+                check(ids.size <= 1) { message(99) }
                 var type = SyncChangeType.UPDATE
                 val id = ids.singleOrNull()?.let { existingId ->
                     try {
@@ -113,24 +115,21 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
         }
         return TargetSyncResult(
             calendar.target, otherMappings + next.values, completed,
-            failures.firstOrNull()?.googleSafeSummary("${calendar.target.safeLabel()}：已完成 ${completed.size} 条，失败 ${failures.size} 条"),
+            failures.firstOrNull()?.googleSafeSummary(message(100, (calendar.target.safeLabel()), (completed.size), (failures.size))),
             failures.firstNotNullOfOrNull { it.targetFailureCode() },
             restoredMissingCount = restored,
             failedCount = failures.size,
         )
     }
 
-    /**
-     * 只由独立清理操作调用。全量清理可恢复删除映射丢失但仍带应用标记的旧事件；
-     * 精确清理只读取用户已选 UID＋原始实例键对应的标记事件。两者均不按标题、时间或地点猜测。
-     */
+    /** Nur separater Bereinigungspfad. Vollständig: auch alte App-markierte Termine ohne Zuordnung entfernen. Präzise: nur gewählte UID/Originalinstanz prüfen. Nie nach Titel, Zeit oder Ort raten. */
     fun rollback(
         calendar: OwnedCalendarRef,
         storedMappings: List<StoredEventMapping>,
         gateway: OwnedCalendarGateway,
         scope: ManagedEventCleanupScope = ManagedEventCleanupScope.AllManagedEvents,
     ): TargetSyncResult {
-        if (!gateway.verifyOwnership(calendar)) return TargetSyncResult(calendar.target, storedMappings, emptyList(), "目标日历不属于本应用，已拒绝撤销。")
+        if (!gateway.verifyOwnership(calendar)) return TargetSyncResult(calendar.target, storedMappings, emptyList(), message(101))
         val targetMappings = storedMappings.filter { it.target == calendar.target }
         val otherMappings = storedMappings.filterNot { it.target == calendar.target }
         val selectedMappings = when (scope) {
@@ -141,7 +140,7 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
             ManagedEventCleanupScope.AllManagedEvents -> gateway.findAllManagedEventIds(calendar)
             is ManagedEventCleanupScope.SelectedIdentities -> scope.forTarget(calendar.target).flatMap { gateway.findEventIdsByIdentity(calendar, it) }
         }
-        // 陈旧映射不赋予删除权；仅删除这次在专用目标内找到的应用标记事件。
+        // Veraltete Zuordnung erlaubt kein Löschen; nur jetzt im eigenen Ziel gefundene App-markierte Termine löschen.
         val mappedIds = selectedMappings.map(StoredEventMapping::targetEventId)
         val idsToRemove = recoveredIds.distinct()
         var removedNowCount = 0
@@ -180,9 +179,9 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
         )
         val verificationFailed = remainingIds == null
         val failureSummary = when {
-            failedIds.isNotEmpty() -> "${calendar.target.safeLabel()} 清理未完成：${failedIds.size} 条删除失败。"
-            verificationFailed -> "${calendar.target.safeLabel()} 删除后核对未完成；请稍后只读检查。"
-            remainingIds.isNotEmpty() -> "${calendar.target.safeLabel()} 清理后仍有 ${remainingIds.size} 条应用日程。"
+            failedIds.isNotEmpty() -> message(102, (calendar.target.safeLabel()), (failedIds.size))
+            verificationFailed -> message(103, (calendar.target.safeLabel()))
+            remainingIds.isNotEmpty() -> message(104, (calendar.target.safeLabel()), (remainingIds.size))
             else -> null
         }
         return TargetSyncResult(
@@ -197,11 +196,11 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
 }
 
 private fun OutputTarget.safeLabel(): String = when (this) {
-    OutputTarget.LOCAL_CALENDAR -> "本机日历"
-    OutputTarget.GOOGLE_CALENDAR -> "Google 日历"
+    OutputTarget.LOCAL_CALENDAR -> message(89)
+    OutputTarget.GOOGLE_CALENDAR -> message(90)
 }
 
-/** 仅供单元测试的内存网关；可记录写入，不代表任何真实 Calendar Provider。 */
+/** Speicher-Gateway nur für Unit-Tests; simuliert Schreiben, keinen echten Calendar Provider. */
 class FakeOwnedCalendarGateway(
     private val ownedCalendarIds: Set<String>,
     private val recoveredIds: Map<ManagedEventIdentity, List<String>> = emptyMap(),
@@ -224,7 +223,7 @@ class FakeOwnedCalendarGateway(
     override fun readFingerprint(calendar: OwnedCalendarRef, eventId: String, identity: ManagedEventIdentity): String? = eventValues[calendar.calendarId to eventId]?.let { SyncDiffPlanner().run { it.fingerprint() } }
     override fun remove(calendar: OwnedCalendarRef, eventId: String): ManagedEventRemovalOutcome {
         operations += "remove:$eventId"
-        check(eventId !in failedRemovalIds) { "合成删除失败" }
+        check(eventId !in failedRemovalIds) { message(105) }
         val outcome = removalOutcomes[eventId] ?: ManagedEventRemovalOutcome.REMOVED_NOW
         if (outcome == ManagedEventRemovalOutcome.REMOVED_NOW && eventId !in retainedAfterRemovalIds) {
             currentManagedIds.remove(eventId)

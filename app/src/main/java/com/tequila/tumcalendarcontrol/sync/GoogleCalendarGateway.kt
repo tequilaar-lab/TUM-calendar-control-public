@@ -1,10 +1,12 @@
 /*
- * 职责：通过 Google Calendar REST API 定位／创建应用专用次级日历，并受映射约束增改删事件。
- * 输入／输出：输入短生命周期访问令牌、目标标识和期望事件；输出专用日历引用或事件 ID。
- * 外部副作用：仅在用户明确执行同步且已授权时，通过 HTTPS 调用 Google Calendar API。
- * 不负责：启动 OAuth、保存令牌、访问主日历、遍历用户其他日历或解析来源 iCal。
+ * Aufgabe: Eigenen Google-Zweitkalender über REST suchen/erstellen und zugeordnete Termine verwalten.
+ * Ein-/Ausgabe: Kurzlebiger Token, Ziel-ID und Solltermine -> Zielreferenz, Termin-ID oder bereinigter Fehler.
+ * Nebenwirkungen: HTTPS-Zugriffe nur im ausdrücklich bestätigten eigenen Ziel.
+ * Nicht zuständig: OAuth-Start, Tokenspeicherung, Hauptkalender, Auflistung fremder Kalender oder Quellen-Parsing.
  */
 package com.tequila.tumcalendarcontrol.sync
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import org.json.JSONObject
@@ -19,28 +21,23 @@ private const val GOOGLE_EVENT_IDENTITY_KEY = "tumEventKey"
 
 data class GoogleRemoteCalendar(val id: String, val description: String?)
 
-/**
- * 职责：为 Google Calendar 请求提供不含 URL、日历 ID 或令牌的稳定阶段标签。
- * 输入／输出：网络适配器写入阶段；界面只显示中文阶段说明。
- * 外部副作用：无。
- * 不负责：决定是否发起请求、保存诊断或读取响应正文。
- */
+/** Aufgabe: stabile Google-Anfragephasen ohne URL, Kalender-ID oder Token. Ein-/Ausgabe: Adapterphase -> Anzeigehinweis. Keine Nebenwirkungen; keine Anfrageentscheidung, Diagnoseablage oder Antworttexte. */
 enum class GoogleCalendarRequestStage(val label: String) {
-    CHECK_OWNED_CALENDAR("检查应用专用日历"),
-    CREATE_OWNED_CALENDAR("创建应用专用日历"),
-    FIND_MANAGED_EVENTS("核对应用已写入的日程"),
-    FIND_ALL_MANAGED_EVENTS("核对全部应用已写入的日程"),
-    CREATE_MANAGED_EVENT("写入新的应用日程"),
-    UPDATE_MANAGED_EVENT("更新应用已写入的日程"),
-    DELETE_MANAGED_EVENT("删除应用已写入的日程"),
+    CHECK_OWNED_CALENDAR(message(48)),
+    CREATE_OWNED_CALENDAR(message(49)),
+    FIND_MANAGED_EVENTS(message(50)),
+    FIND_ALL_MANAGED_EVENTS(message(51)),
+    CREATE_MANAGED_EVENT(message(52)),
+    UPDATE_MANAGED_EVENT(message(53)),
+    DELETE_MANAGED_EVENT(message(54)),
 }
 
-/** 只从标准 WWW-Authenticate 头提取固定错误关键字；不读取或保存响应正文。 */
+/** Nur feste Fehlerbegriffe aus WWW-Authenticate lesen; Antworttext weder lesen noch speichern. */
 enum class GoogleAuthorizationSignal(val label: String) {
-    INVALID_TOKEN("令牌无效"),
-    INSUFFICIENT_SCOPE("权限范围不足"),
-    INVALID_REQUEST("授权请求无效"),
-    UNSPECIFIED("Google 未提供更具体的授权原因"),
+    INVALID_TOKEN(message(55)),
+    INSUFFICIENT_SCOPE(message(56)),
+    INVALID_REQUEST(message(57)),
+    UNSPECIFIED(message(58)),
 }
 
 interface GoogleCalendarApi {
@@ -55,7 +52,7 @@ interface GoogleCalendarApi {
     fun readManagedEvent(calendarId: String, eventId: String, identity: ManagedEventIdentity): DesiredCalendarEvent? = null
 }
 
-/** 目标 ID 只接受先前创建且带固定标记的次级日历；失效时才创建新的专用日历，不修改侧栏显示设置。 */
+/** Nur zuvor erstellte Zweitkalender mit festem Marker akzeptieren; bei Ausfall eigenes Ziel erstellen, Seitenleistenanzeige unverändert. */
 class GoogleCalendarTarget(private val api: GoogleCalendarApi) {
     fun ensure(existingCalendarId: String, calendarName: String): CalendarTargetResolution = runCatching {
         val existing = existingCalendarId.takeIf(String::isNotBlank)?.let(api::getCalendar)
@@ -63,25 +60,25 @@ class GoogleCalendarTarget(private val api: GoogleCalendarApi) {
         CalendarTargetResolution.Success(OwnedCalendarRef(OutputTarget.GOOGLE_CALENDAR, calendar.id, AppOwnedCalendarContract.OWNERSHIP_MARKER))
     }.getOrElse { error ->
         CalendarTargetResolution.Failure(
-            summary = error.googleSafeSummary("Google 专用日历不可用"),
+            summary = error.googleSafeSummary(message(59)),
             failureCode = error.targetFailureCode(),
         )
     }
 
-    /** 显式清理只复用缓存的已拥有日历；空／失效 ID 只能报错，绝不创建新日历。 */
+    /** Bereinigung verwendet nur vorhandene eigene Kalender; leere/ungültige ID führt zum Fehler, nie zur Neuerstellung. */
     fun resolveExisting(existingCalendarId: String): CalendarTargetResolution = runCatching {
         val calendar = existingCalendarId.takeIf(String::isNotBlank)?.let(api::getCalendar)
-        require(calendar?.description == GOOGLE_OWNERSHIP_DESCRIPTION) { "找不到 Google 应用专用日历；没有创建新日历。" }
+        require(calendar?.description == GOOGLE_OWNERSHIP_DESCRIPTION) { message(60) }
         CalendarTargetResolution.Success(OwnedCalendarRef(OutputTarget.GOOGLE_CALENDAR, calendar.id, AppOwnedCalendarContract.OWNERSHIP_MARKER))
     }.getOrElse { error ->
         CalendarTargetResolution.Failure(
-            summary = error.googleSafeSummary("Google 应用专用日历不可用；没有创建新日历"),
+            summary = error.googleSafeSummary(message(61)),
             failureCode = error.targetFailureCode(),
         )
     }
 }
 
-/** 每次事件操作前验证专用日历的固定所有权标记，拒绝主日历和未标记日历。 */
+/** Vor jeder Aktion festen Eigentumsmarker prüfen; Hauptkalender und unmarkierte Kalender ablehnen. */
 class GoogleCalendarGateway(private val api: GoogleCalendarApi) : OwnedCalendarGateway {
     override fun readEvent(calendar: OwnedCalendarRef, eventId: String, identity: ManagedEventIdentity): DesiredCalendarEvent? {
         check(verifyOwnership(calendar))
@@ -96,32 +93,32 @@ class GoogleCalendarGateway(private val api: GoogleCalendarApi) : OwnedCalendarG
         api.getCalendar(calendar.calendarId)?.description == GOOGLE_OWNERSHIP_DESCRIPTION
 
     override fun findEventIdsByIdentity(calendar: OwnedCalendarRef, identity: ManagedEventIdentity): List<String> {
-        check(verifyOwnership(calendar)) { "拒绝读取非应用拥有的 Google 日历。" }
+        check(verifyOwnership(calendar)) { message(62) }
         return api.findEventIdsByIdentity(calendar.calendarId, identity.opaqueKey())
     }
 
     override fun findAllManagedEventIds(calendar: OwnedCalendarRef): List<String> {
-        check(verifyOwnership(calendar)) { "拒绝读取非应用拥有的 Google 日历。" }
+        check(verifyOwnership(calendar)) { message(62) }
         return api.findAllManagedEventIds(calendar.calendarId)
     }
 
     override fun create(calendar: OwnedCalendarRef, event: DesiredCalendarEvent): String {
-        check(verifyOwnership(calendar)) { "拒绝向非应用拥有的 Google 日历写入。" }
+        check(verifyOwnership(calendar)) { message(63) }
         return api.createEvent(calendar.calendarId, event)
     }
 
     override fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent) {
-        check(verifyOwnership(calendar)) { "拒绝向非应用拥有的 Google 日历更新。" }
+        check(verifyOwnership(calendar)) { message(64) }
         api.updateEvent(calendar.calendarId, eventId, event)
     }
 
     override fun remove(calendar: OwnedCalendarRef, eventId: String): ManagedEventRemovalOutcome {
-        check(verifyOwnership(calendar)) { "拒绝从非应用拥有的 Google 日历删除。" }
+        check(verifyOwnership(calendar)) { message(65) }
         return api.deleteEvent(calendar.calendarId, eventId)
     }
 }
 
-/** 短令牌仅由构造参数接收并留在进程内；错误摘要不包含 URL、响应体、账户或令牌。 */
+/** Kurzlebiger Token nur aus Konstruktor, nur im Prozess; Fehlermeldung ohne URL, Antworttext, Konto oder Token. */
 class GoogleCalendarRestApi(
     private val accessToken: String,
     private val transport: GoogleCalendarHttpTransport = GoogleCalendarHttpTransport(),
@@ -161,14 +158,14 @@ class GoogleCalendarRestApi(
         }.orEmpty()
     }
 
-    /** 全量清理只解析事件 ID 与不可见应用标记；日历正文不会进入日志、资料库或 UI。 */
+    /** Vollständige Bereinigung liest nur Termin-IDs und unsichtbare App-Marker; Kalenderinhalt nicht in Protokoll, Datenbank oder Oberfläche. */
     override fun findAllManagedEventIds(calendarId: String): List<String> {
         var pageToken: String? = null
         val ids = linkedSetOf<String>()
         val visitedPageTokens = mutableSetOf<String>()
         do {
             pageToken?.let { token ->
-                check(visitedPageTokens.add(token)) { "Google 日历分页令牌重复，已停止清理前核对。" }
+                check(visitedPageTokens.add(token)) { message(66) }
             }
             val page = transport.execute(
                 GoogleCalendarRequestStage.FIND_ALL_MANAGED_EVENTS,
@@ -219,7 +216,7 @@ class GoogleCalendarRestApi(
     private fun String.encodePath(): String = java.net.URLEncoder.encode(this, Charsets.UTF_8.name())
 }
 
-/** 只比较显式应用标记的真实字段；未知颜色／全天格式不得被判为“保持不变”。 */
+/** Nur echte markierte Zielfelder vergleichen; unbekannte Farbe/Ganztagsformate gelten nicht als unverändert. */
 internal fun googleEventFingerprint(body: String, identity: ManagedEventIdentity): String? {
     return googleManagedEvent(body, identity)?.let { SyncDiffPlanner().run { it.fingerprint() } }
 }
@@ -227,7 +224,7 @@ internal fun googleEventFingerprint(body: String, identity: ManagedEventIdentity
 private fun googleManagedEvent(body: String, identity: ManagedEventIdentity): DesiredCalendarEvent? {
     val event = JSONObject(body)
     if (event.optString("status") == "cancelled") throw ManagedEventMissingException()
-    check(event.optJSONObject("extendedProperties")?.optJSONObject("private")?.optString(GOOGLE_EVENT_IDENTITY_KEY) == identity.opaqueKey()) { "目标事件已不属于该课次，拒绝覆盖" }
+    check(event.optJSONObject("extendedProperties")?.optJSONObject("private")?.optString(GOOGLE_EVENT_IDENTITY_KEY) == identity.opaqueKey()) { message(67) }
     val state = when (event.optString("colorId")) {
         "10" -> AttendanceState.MUST_ATTEND
         "9" -> AttendanceState.CHOOSE_TO_ATTEND
@@ -239,7 +236,7 @@ private fun googleManagedEvent(body: String, identity: ManagedEventIdentity): De
     return DesiredCalendarEvent(identity, event.optString("summary"), java.time.OffsetDateTime.parse(start).toInstant(), java.time.OffsetDateTime.parse(end).toInstant(), state, event.optString("location"))
 }
 
-/** 全量读取仅在应用专用目标内分页；不会解析标题、地点、描述或日程时间。 */
+/** Vollständige Seitennavigation nur im eigenen Ziel; Titel, Ort, Beschreibung und Zeiten nicht auswerten. */
 internal fun googleManagedEventsPath(calendarId: String, pageToken: String?): String = buildString {
     append("/calendars/${java.net.URLEncoder.encode(calendarId, Charsets.UTF_8.name())}/events?singleEvents=true&showDeleted=false&maxResults=250&fields=nextPageToken,items(id,extendedProperties)")
     pageToken?.let { append("&pageToken=${java.net.URLEncoder.encode(it, Charsets.UTF_8.name())}") }
@@ -274,37 +271,37 @@ data class GoogleHttpResponse(
     }
 }
 
-/** 仅对应用已映射事件的删除：404／410 表示目标本已不存在，清理目标已经达成。 */
+/** Bei zugeordneten App-Terminen bedeutet 404/410: bereits abwesend; Bereinigungsziel erreicht. */
 internal fun GoogleHttpResponse.toManagedEventRemovalOutcome(): ManagedEventRemovalOutcome {
-    require(stage == GoogleCalendarRequestStage.DELETE_MANAGED_EVENT) { "删除结果只能来自删除请求" }
+    require(stage == GoogleCalendarRequestStage.DELETE_MANAGED_EVENT) { message(68) }
     return when {
         statusCode in 200..299 -> ManagedEventRemovalOutcome.REMOVED_NOW
         statusCode == HttpURLConnection.HTTP_NOT_FOUND || statusCode == HttpURLConnection.HTTP_GONE -> ManagedEventRemovalOutcome.ALREADY_ABSENT
         else -> {
             requireSuccess()
-            error("不可达")
+            error(message(69))
         }
     }
 }
 
-/** 只携带状态码，避免 Google 响应正文、账户或令牌进入界面和日志。 */
+/** Nur Statuscode weitergeben; Google-Antworttext, Konto und Token nicht in Anzeige oder Protokoll. */
 class GoogleCalendarRequestException(
     val stage: GoogleCalendarRequestStage = GoogleCalendarRequestStage.CHECK_OWNED_CALENDAR,
     val statusCode: Int,
     val authorizationSignal: GoogleAuthorizationSignal = GoogleAuthorizationSignal.UNSPECIFIED,
 ) : IllegalStateException("Google Calendar HTTP $statusCode")
 
-/** 只有 Google 明确拒绝访问令牌时才触发重新授权；403 等其他问题不清缓存。 */
+/** Neuauthorisierung nur bei ausdrücklich abgelehntem Token; 403 und andere Fehler leeren keinen Cache. */
 internal fun Throwable.targetFailureCode(): TargetFailureCode? =
     if (this is GoogleCalendarRequestException && statusCode == HttpURLConnection.HTTP_UNAUTHORIZED) TargetFailureCode.GOOGLE_AUTHORIZATION_EXPIRED else null
 
 internal fun Throwable.googleSafeSummary(prefix: String): String =
-    if (this is GoogleCalendarRequestException) "$prefix（${stage.label}时收到 HTTP $statusCode；${authorizationSignal.label}）" else "$prefix；请检查授权和网络后重试"
+    if (this is GoogleCalendarRequestException) message(70, (prefix), (stage.label), (statusCode), (authorizationSignal.label)) else message(71, (prefix))
 
-/** 最小 HTTPS 传输实现；限制响应大小，且不将请求、令牌或响应原文写入日志。 */
+/** Minimale HTTPS-Übertragung mit Größenlimit; keine Anfrage-, Token- oder Antwortprotokollierung. */
 class GoogleCalendarHttpTransport(private val maxResponseBytes: Int = 512 * 1024) {
     fun execute(stage: GoogleCalendarRequestStage, method: String, path: String, body: String?, accessToken: String): GoogleHttpResponse {
-        require(path.startsWith('/')) { "Google API 路径必须以 / 开头。" }
+        require(path.startsWith('/')) { message(72) }
         val connection = (URL(GOOGLE_API_BASE + path).openConnection() as HttpsURLConnection).apply {
             requestMethod = method
             connectTimeout = 15_000
@@ -325,7 +322,7 @@ class GoogleCalendarHttpTransport(private val maxResponseBytes: Int = 512 * 1024
                 while (true) {
                     val count = it.read(chunk)
                     if (count < 0) break
-                    require(buffer.size() + count <= maxResponseBytes) { "Google 响应超过大小限制" }
+                    require(buffer.size() + count <= maxResponseBytes) { message(73) }
                     buffer.write(chunk, 0, count)
                 }
                 buffer.toByteArray()
@@ -338,7 +335,7 @@ class GoogleCalendarHttpTransport(private val maxResponseBytes: Int = 512 * 1024
         }
     }
 
-    /** 头部仅识别 RFC 常见错误码，任何其他字段均丢弃。 */
+    /** Nur übliche RFC-Fehlercodes aus Header erkennen; andere Felder verwerfen. */
     private fun String?.toGoogleAuthorizationSignal(): GoogleAuthorizationSignal = when {
         this?.contains("invalid_token", ignoreCase = true) == true -> GoogleAuthorizationSignal.INVALID_TOKEN
         this?.contains("insufficient_scope", ignoreCase = true) == true -> GoogleAuthorizationSignal.INSUFFICIENT_SCOPE

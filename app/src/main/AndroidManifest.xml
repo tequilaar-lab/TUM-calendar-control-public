@@ -1,8 +1,8 @@
 <!--
-  职责：声明离线原型的 Android 应用入口。
-  输入／输出：系统读取 Activity、主题及未来本机日历写入所需权限声明。
-  外部副作用：用户点按预览或明确开启后台只读检查时才发起 HTTPS 请求；本机输出仍需另行申请日历权限。
-  不负责：自动写入、创建、修改或删除任何日历；权限本身不触发同步。
+  Aufgabe: Android-Anwendungseinstieg und benötigte Berechtigungen deklarieren.
+  Ein-/Ausgabe: System liest Activity, Thema und Berechtigungen für bestätigte lokale Kalenderausgabe.
+  Nebenwirkungen: HTTPS erst nach ausdrücklichem Lesen/Prüfen; Kalenderausgabe benötigt separate Berechtigungen.
+  Nicht zuständig: Automatisches Schreiben, Anlegen, Ändern oder Löschen von Kalendern; Berechtigungen lösen keine Synchronisierung aus.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />

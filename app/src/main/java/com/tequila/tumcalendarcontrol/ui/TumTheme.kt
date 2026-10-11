@@ -1,8 +1,8 @@
 /*
- * 职责：提供浅色、深色和跟随系统的 TUM 蓝 Compose-Miuix 色彩令牌。
- * 输入／输出：输入主题模式与系统明暗状态；向所有子界面提供统一主题和辅助色板。
- * 外部副作用：无。
- * 不负责：壁纸动态取色、持久化主题偏好或更改系统主题。
+ * Aufgabe: Helle/dunkle/systemabhängige TUM-Compose-Miuix-Farben bereitstellen.
+ * Ein-/Ausgabe: Themenmodus/Systemstatus -> gemeinsame Compose-Farben.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Hintergrundbildfarben, Themenpersistenz oder Systemthemaänderungen.
  */
 package com.tequila.tumcalendarcontrol.ui
 
@@ -48,7 +48,7 @@ object TumPalettes {
         gray = Color(0xFFB8C0CC),
     )
     val dark = TumPalette(
-        // Campus App 参考的中性近黑层级；TUM 蓝只承担强调与选中状态，不给整页染蓝灰。
+        // Neutrale nahezu schwarze Ebenen nach Campus-App-Vorbild; TUM-Blau nur für Akzente und Auswahl.
         primary = Color(0xFF75B8E2),
         primaryContainer = Color(0xFF005F96),
         secondary = Color(0xFFC7C7C7),
@@ -64,7 +64,7 @@ object TumPalettes {
         gray = Color(0xFFB8C0CC),
     )
 }
-/** 保持历史深蓝原值；三种出席语义色不随外观改变。 */
+/** Historische dunkelblaue Werte behalten; Teilnahmefarben unabhängig vom Erscheinungsbild. */
 val DeepBluePalette = TumPalettes.dark.copy(
     primary = Color(0xFFA8C8FF), primaryContainer = Color(0xFF004A85),
     secondary = Color(0xFFB7C8E1), secondaryContainer = Color(0xFF344A63),
@@ -85,7 +85,7 @@ fun appearancePalette(isDark: Boolean, light: LightPaletteStyle, dark: DarkPalet
 
 val LocalTumPalette = staticCompositionLocalOf { TumPalettes.light }
 
-/** 将本机保存的主题偏好解析为实际明暗值，供 Compose 与平台日期弹窗共用。 */
+/** Lokale Themenwahl für Compose und Plattform-Datumsdialog in tatsächlichen Hell/Dunkelmodus auflösen. */
 fun ThemeMode.usesDarkTheme(systemIsDark: Boolean): Boolean = when (this) {
     ThemeMode.LIGHT -> false
     ThemeMode.DARK -> true

@@ -1,8 +1,8 @@
 /*
- * 职责：验证 Google 专用目标的所有权标记、创建与拒绝路径。
- * 输入／输出：输入合成 API；输出目标引用及写入次数断言。
- * 外部副作用：无；不请求 Google、OAuth 或真实网络。
- * 不负责：Android 授权界面、HTTP 传输或真人账户验证。
+ * Aufgabe: synthetische Regressionstests für GoogleCalendarGateway.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

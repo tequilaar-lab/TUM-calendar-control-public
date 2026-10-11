@@ -1,17 +1,19 @@
 /*
- * 职责：定义用户可见的三类出席颜色与文案。
- * 输入／输出：规则解析与界面消费此枚举；输出为稳定的业务状态。
- * 外部副作用：无。
- * 不负责：判断 Fixplatz、日期截点或写入日历。
+ * Aufgabe: Drei sichtbare Teilnahmefarben und Erklärungstexte definieren.
+ * Ein-/Ausgabe: Regelauflösung -> stabile Statuswerte, Farben und Anzeigetexte.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Fixplatz-Entscheidungen, Datumsgrenzen oder Kalenderausgabe.
  */
 package com.tequila.tumcalendarcontrol.domain
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 enum class AttendanceState(
     val label: String,
     val colorLabel: String,
     val description: String,
 ) {
-    MUST_ATTEND("一定出席", "绿", "需要优先出席"),
-    CHOOSE_TO_ATTEND("选择出席", "蓝", "可根据实际情况决定是否出席"),
-    STOP_ATTENDING("从此不去", "灰", "从指定实例起不再出席；过去不变"),
+    MUST_ATTEND(message(1), message(2), message(3)),
+    CHOOSE_TO_ATTEND(message(4), message(5), message(6)),
+    STOP_ATTENDING(message(7), message(8), message(9)),
 }

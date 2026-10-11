@@ -1,10 +1,12 @@
 /*
- * 职责：将私有同步配置以 Android Keystore 加密后保存到应用私有偏好。
- * 输入／输出：输入 PrivateSyncConfiguration；输出配置或安全默认值。
- * 外部副作用：写应用私有 SharedPreferences 与 Android Keystore；不联网、不访问日历或账户。
- * 不负责：令牌交换、自动备份、导出私有地址或恢复到另一设备。
+ * Aufgabe: Private Synchronisierungskonfiguration Keystore-verschlüsselt in privaten Präferenzen speichern.
+ * Ein-/Ausgabe: Private Konfiguration -> verschlüsselte Wiederherstellung aus privaten Präferenzen.
+ * Nebenwirkungen: Nur Keystore-verschlüsselte app-private Speicherung.
+ * Nicht zuständig: Token-Austausch, automatische Sicherung, Export privater Adressen oder Wiederherstellung auf anderen Geräten.
  */
 package com.tequila.tumcalendarcontrol.sync
+
+import com.tequila.tumcalendarcontrol.i18n.message
 
 import android.content.Context
 
@@ -26,7 +28,7 @@ class PrivateSyncConfigurationStore(context: Context) {
     }.getOrElse { PrivateSyncConfiguration() }
 
     fun save(configuration: PrivateSyncConfiguration) {
-        require(configuration.validate().isEmpty()) { "私有同步配置格式无效，拒绝保存。" }
+        require(configuration.validate().isEmpty()) { message(116) }
         check(preferences.edit()
             .putString(KEY_TUM_URL, cipher.encrypt(configuration.tumSubscriptionUrl.trim()))
             .putString(KEY_SOURCE_RANGE_START, cipher.encrypt(configuration.sourceRangeStartDate.trim()))
@@ -35,7 +37,7 @@ class PrivateSyncConfigurationStore(context: Context) {
             .putString(KEY_GOOGLE_CALENDAR_NAME, cipher.encrypt(configuration.googleCalendarName.trim()))
             .putString(KEY_LOCAL_CALENDAR_ID, cipher.encrypt(configuration.localCalendarId.trim()))
             .putString(KEY_GOOGLE_CALENDAR_ID, cipher.encrypt(configuration.googleCalendarId.trim()))
-            .commit()) { "私有配置未能保存到应用本机存储。" }
+            .commit()) { message(117) }
     }
 
     private companion object {

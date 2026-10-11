@@ -1,8 +1,8 @@
 /*
- * 职责：验证应用映射与真实目标日历快照不一致时的诊断分类。
- * 输入／输出：输入合成期望事件、映射和目标快照；输出状态代码断言。
- * 外部副作用：无。
- * 不负责：Provider、Google、OAuth 或真实日历。
+ * Aufgabe: synthetische Regressionstests für TargetStateReconciler.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.sync
 

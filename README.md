@@ -1,43 +1,44 @@
-# TUM 日程控制
+# TUM Kalendersteuerung
 
-将 TUM iCal 课程按你的出席选择同步到应用自建的本机日历和／或 Google 次级日历；荣耀日历等系统日历只负责显示。
+Eine Android-App, die TUM-Kurstermine aus einem iCal-Abonnement entsprechend der eigenen Teilnahmeauswahl in einen app-eigenen lokalen Kalender und/oder einen Google-Zweitkalender überträgt. Systemkalender wie HONOR Kalender dienen als Anzeige.
 
-当前版本：`1.0.3`（构建号 `57`）。
+Version: **1.1.0**, Build **58**. Die Oberfläche unterstützt **Deutsch, Englisch und Chinesisch**. Unter **Einstellungen → Sprache** lässt sich die Sprache sofort wechseln; die Auswahl bleibt auf dem Gerät gespeichert. Beim ersten Start gilt die Systemsprache, für andere Sprachen Englisch.
 
-## 使用流程
+## Bedienung
 
-1. 在“设置与同步”填写 iCal 链接，选择下一次读取的时间范围并读取课程。
-2. 选择需要管理的具体课次；已保存课程可直接继续，不会被新的读取范围删减。
-3. 设置必去、选择出席或从某次开始不去，也可收藏课程。
-4. 在“确认写入日历”选择本机和／或 Google 目标，查看影响数量后确认。
+1. In **Einstellungen & Synchronisierung** die private iCal-Adresse eingeben. Den Lesezeitraum wählen und **Kurse lesen** antippen.
+2. Konkrete Termine auswählen. Bereits gespeicherte Kurse lassen sich ohne erneutes Lesen weiterverwenden; ein neuer Leseentwurf kürzt die bestehende Auswahl nicht.
+3. Teilnahme festlegen: **Grün** bedeutet verbindliche Teilnahme, **Blau** frei gewählte Teilnahme, **Grau** keine Teilnahme ab dem festgelegten Termin. Favoriten dienen nur der Anzeige.
+4. In der Ausgabevorschau lokale und/oder Google-Ziele wählen, die betroffenen Mengen prüfen und die Ausgabe ausdrücklich bestätigen.
 
-课程按“课程名 → 教学类型 → 课次”浏览。课程名称和教学类型只用于整理界面；同步身份始终是来源 UID 与原始课次键，因此同一时间的不同课程会分别写入。
+Der Browser ordnet Kurse nach **Kursname → Lehrtyp → Einzeltermin**. Namen und Typen strukturieren ausschließlich die Anzeige. Synchronisierung und Bereinigung verwenden immer **Quell-UID und ursprünglichen Instanzschlüssel**; gleichzeitige unterschiedliche Kurse bleiben getrennt.
 
-## 同步边界
+Eigene Kursnamen, Orte, Spitznamen und Eingaben werden beim Sprachwechsel nicht übersetzt. Die Darstellung enthält auch übersetzte Fehler-, Berechtigungs-, Sicherungs- und Bereinigungshinweise.
 
-- 仅管理应用自己创建的本机专用日历与 Google 次级日历，不会改动主日历、订阅日历或其他应用的日程。
-- 写入、清理、重新读取和 Google 授权都必须由用户明确触发；正常写入不会删除未选课程。
-- Google 与本机同时写入时，若荣耀日历同时显示两本，可能看到两份日程；可在荣耀日历中只显示其中一本。
-- 已保存的课程、选择和出席规则保存在本机。iCal 地址、OAuth 令牌和真实日程内容不会写入仓库。
+## Schutz der Kalender und Daten
 
-## 本地开发
+- Die App verwaltet ausschließlich eigene lokale Kalender und selbst erstellte Google-Zweitkalender. Hauptkalender, Abonnements und fremde Termine bleiben unberührt.
+- Lesen, Autorisieren, Schreiben und Bereinigen erfordern ausdrückliche Aktionen. Normale Ausgabe ergänzt oder aktualisiert nur die Auswahl; sie löscht keine abgewählten Kurse.
+- Werden lokaler und Google-Kalender gleichzeitig in HONOR angezeigt, können Termine doppelt erscheinen. In diesem Fall nur einen Kalender anzeigen.
+- Gespeicherte Kurse und Regeln liegen im privaten App-Speicher. Private iCal-Adressen, OAuth-Token und echte Kalenderdaten gehören niemals ins Repository.
+- Hintergrundprüfungen sind standardmäßig aus. Nach Aktivierung prüfen sie nur auf mögliche Änderungen; sie schreiben nicht automatisch und können durch Energiesparmaßnahmen verzögert werden.
 
-```bash
+## Entwicklung
+
+Die App verwendet Kotlin, Jetpack Compose mit Miuix, iCal4j, WorkManager und Google Play services. Erforderlich sind Android SDK 37 und ein mit den Gradle-Plugins kompatibles JDK; die Ausgabe bleibt Java-17-kompatibel. Die App benötigt mindestens Android 8 / API 26.
+
+```sh
 ./gradlew :app:testDebugUnitTest :app:assembleDebug
 ```
 
-本地构建和单元测试不能代替真机、Google 或荣耀日历验证。真实读取、授权和写入均应逐项确认。
+Dieses persönliche Lernprojekt entstand mit umfangreicher KI-Unterstützung bei Code und Fehlersuche. Projektentscheidungen, Anforderungen und die Bewertung möglicher Fehlerursachen lagen beim Entwickler.
 
-执行约束见 [AGENTS.md](AGENTS.md)。
+Lokale Tests und ein erfolgreicher Build ersetzen keine Prüfung auf einem echten Gerät oder der tatsächlichen Kalenderausgabe. Die Google-Verbindung erfordert eine passende Google-Cloud-Konfiguration für die verwendete App-/Signaturkombination.
+
+Ausführungsgrenzen stehen im verbindlichen [AGENTS.md](AGENTS.md). Eine [deutsche Leseübersetzung](AGENTS.de.md) erläutert dieselben Regeln. Hinweise zu den Sprachressourcen und bewusst beibehaltenen chinesischen Inhalten stehen in [Lokalisierung](docs/LOKALISIERUNG.md); die ursprüngliche vollständige Dateiliste steht im [Textinventar](docs/TEXTINVENTAR.md).
 
 ## Lizenz und Beiträge
 
-Der eigene Quellcode steht unter GPL-3.0-only mit einer zusätzlichen Erlaubnis
-für die benötigten Google-Play-services-Bibliotheken. Siehe [LICENSE](LICENSE) und
-[LICENSE-NOTICE.md](LICENSE-NOTICE.md). Wer geänderte Versionen weitergibt, muss den zugehörigen
-Quellcode entsprechend der GPLv3 bereitstellen. Fremdbibliotheken behalten
-ihre eigenen Lizenzbedingungen.
+Der eigene Quellcode steht unter **GPL-3.0-only** mit einer zusätzlichen Erlaubnis für die benötigten Google-Play-services-Bibliotheken. Siehe [LICENSE](LICENSE) und [LICENSE-NOTICE.md](LICENSE-NOTICE.md). Wer geänderte Versionen weitergibt, muss den zugehörigen Quellcode nach GPLv3 bereitstellen. Fremdbibliotheken behalten ihre eigenen Lizenzbedingungen; die verbindlichen Lizenztexte bleiben im Original.
 
-Beiträge können als Pull Request eingereicht werden. Die Entscheidung über
-die Aufnahme in main liegt beim Maintainer. Ein Fork oder Klon verleiht keine
-Schreibberechtigung für dieses Repository.
+Beiträge können als Pull Request eingereicht werden. Über die Aufnahme in `main` entscheidet der Maintainer. Ein Fork oder Klon verleiht keine Schreibberechtigung für dieses Repository.

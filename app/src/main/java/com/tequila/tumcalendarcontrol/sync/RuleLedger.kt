@@ -1,8 +1,8 @@
 /*
- * 职责：定义应用私有规则资料库及其稳定输出映射、手动事项和脱敏同步摘要。
- * 输入／输出：输入合成或未来已授权的规则资料；输出可持久化且不含连接凭据的不可变资料库。
- * 外部副作用：无。
- * 不负责：保存凭据、读取 iCal、访问 Android Calendar Provider 或写入 Google。
+ * Aufgabe: Privaten Regelbestand, Ausgabezuordnungen, eigene Termine und bereinigte Ergebnisse definieren.
+ * Ein-/Ausgabe: Regeln, Zuordnungen, eigene Termine und Ergebnisse -> privater unveränderlicher Regelbestand.
+ * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Zugangsdaten, iCal-Lesen, Android Calendar Provider oder Google-Ausgabe.
  */
 package com.tequila.tumcalendarcontrol.sync
 
@@ -14,11 +14,11 @@ data class RuleLedger(
     val manualEvents: List<ManualScheduleItem> = emptyList(),
     val mappings: List<StoredEventMapping> = emptyList(),
     val lastSummary: SyncRunSummary? = null,
-    /** 只含完整来源标题的不可逆组键与三态时间线；不包含标题正文。 */
+    /** Nur irreversibler Originaltitel-Gruppenschlüssel und Dreizustands-Zeitlinie; kein Titeltext. */
     val groupRules: List<GroupAttendanceRule> = emptyList(),
 )
 
-/** 手动校园事项拥有应用生成的稳定 ID，不与来源 UID 混淆。 */
+/** Eigene Campustermine haben generierte stabile IDs, getrennt von Quell-UIDs. */
 data class ManualScheduleItem(
     val id: String,
     val title: String,
@@ -29,18 +29,18 @@ data class ManualScheduleItem(
 
 enum class OutputTarget { LOCAL_CALENDAR, GOOGLE_CALENDAR }
 
-/** 映射只记录应用已拥有的目标事件，不记录日历正文或账户信息。 */
+/** Zuordnung speichert nur eigene Zieltermine, keine Kalenderinhalte oder Kontodaten. */
 data class StoredEventMapping(
     val target: OutputTarget,
     val identity: ManagedEventIdentity,
     val targetEventId: String,
     val fingerprint: String,
     val calendarId: String? = null,
-    /** 仅存应用私有资料库，供来源消失后按课程／日期清理；不导出备份。 */
+    /** Nur private lokale Datenbank für Kurs-/Datumsbereinigung nach Quellenverlust; nicht in Sicherung exportieren. */
     val writtenEvent: DesiredCalendarEvent? = null,
 )
 
-/** 失败信息只能是可显示的脱敏摘要，不能存放响应、账户或令牌。 */
+/** Fehler nur als bereinigte Anzeigezusammenfassung; keine Antworten, Konten oder Token. */
 data class SyncRunSummary(
     val completedAt: Instant,
     val createdCount: Int,
@@ -48,6 +48,6 @@ data class SyncRunSummary(
     val removedCount: Int,
     val skippedCount: Int,
     val failureSummary: String? = null,
-    /** 脱敏的按目标结果，例如“Google 已删除 N 条、复核剩余 0 条”。 */
+    /** Bereinigte Ergebnisse je Ziel, etwa Anzahl gelöscht und verbleibend. */
     val detailSummary: String? = null,
 )

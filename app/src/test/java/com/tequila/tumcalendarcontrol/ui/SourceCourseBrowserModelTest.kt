@@ -1,8 +1,8 @@
 /*
- * 职责：验证来源目录的视觉分组和筛选不改变“UID + 实例键”的课次身份。
- * 输入／输出：输入合成课次、选择和日期窗口；断言显示组与课次成员。
- * 外部副作用：无。
- * 不负责：网络读取、真实日历或 Compose 截图。
+ * Aufgabe: synthetische Regressionstests für SourceCourseBrowserModel.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.ui
 

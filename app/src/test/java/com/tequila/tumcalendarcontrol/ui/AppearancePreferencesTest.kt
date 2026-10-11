@@ -1,8 +1,8 @@
 /*
- * 职责：验证配色默认值、持久化、模式隔离与目录箭头方向。
- * 输入／输出：合成偏好与配色，输出确定性断言。
- * 外部副作用：仅 Robolectric 沙盒 SharedPreferences；无设备／网络。
- * 不负责：真机色差、系统任务栏与动画验收。
+ * Aufgabe: synthetische Regressionstests für AppearancePreferences.
+ * Ein-/Ausgabe: künstliche Zustände und Fixtures -> JUnit-Prüfergebnisse.
+ * Nebenwirkungen: nur lokaler Testprozess und gegebenenfalls Robolectric-Präferenzen.
+ * Nicht zuständig: echte Konten, private Quellen, Geräte oder reale Kalenderausgaben.
  */
 package com.tequila.tumcalendarcontrol.ui
 

@@ -1,8 +1,8 @@
 /*
- * 职责：在应用私有 SharedPreferences 中读写非敏感的昵称和头像颜色。
- * 输入／输出：输入 UserProfile；输出恢复的 UserProfile，缺失时返回中性默认资料。
- * 外部副作用：只写入本应用沙盒；不发送网络请求或访问日历、账户、相册。
- * 不负责：加密凭据、照片文件、跨设备同步或任何真实身份校验。
+ * Aufgabe: Lokalen Namen und Avatarfarbe in app-privaten SharedPreferences speichern.
+ * Ein-/Ausgabe: UserProfile -> wiederhergestelltes Profil oder neutraler Standard.
+ * Nebenwirkungen: Nur app-private Profilpräferenzen.
+ * Nicht zuständig: Zugangsdatenverschlüsselung, Bilddateien, geräteübergreifende Synchronisierung oder echte Identitätsprüfung.
  */
 package com.tequila.tumcalendarcontrol.ui
 

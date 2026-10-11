@@ -1,14 +1,14 @@
 /*
- * 职责：固定全项目 Android 与 Kotlin 构建插件版本。
- * 输入／输出：Gradle 插件坐标；输出为模块可引用的插件。
- * 外部副作用：首次构建下载公开插件。
- * 不负责：模块依赖、应用逻辑或日历访问。
+ * Aufgabe: Projektweite Android-/Kotlin-Pluginversionen festlegen.
+ * Ein-/Ausgabe: Plugin-Koordinaten -> projektweit verfügbare Plugins.
+ * Nebenwirkungen: Öffentliche Plugins beim ersten Build auflösen.
+ * Nicht zuständig: Modulabhängigkeiten, Anwendungslogik oder Kalenderzugriffe.
  */
 plugins {
     id("com.android.application") version "9.4.0" apply false
     id("org.jetbrains.kotlin.plugin.compose") version "2.3.21" apply false
     id("io.github.takahirom.roborazzi") version "1.74.0" apply false
-    // 仅用于 app 模块的报告型兼容性试验；不在根项目应用，也不接入 check。
+    // Nur berichtsorientierter Kompatibilitätsversuch im App-Modul; nicht im Rootprojekt oder check.
     id("org.jlleitschuh.gradle.ktlint") version "14.1.0" apply false
     id("dev.detekt") version "2.0.0-alpha.6" apply false
 }

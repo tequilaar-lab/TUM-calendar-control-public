@@ -1,8 +1,8 @@
 /*
- * 职责：启动离线的 Compose-Miuix 应用壳。
- * 输入／输出：无外部输入；输出为可交互的本地课程界面。
- * 外部副作用：仅渲染内存中的合成课程，进程结束后自动丢弃变更。
- * 不负责：持久化、网络、账户、iCal 或日历 Provider 访问。
+ * Aufgabe: Compose-Miuix-App über die Android-Activity starten.
+ * Ein-/Ausgabe: Android-Lebenszyklus -> interaktive lokale Compose-Oberfläche.
+ * Nebenwirkungen: Android-Oberfläche starten; bestätigte Operationen an CalendarControlApp delegieren.
+ * Nicht zuständig: Persistenz, Netzwerk-, Konto-, iCal- oder Calendar-Provider-Zugriffe.
  */
 package com.tequila.tumcalendarcontrol
 

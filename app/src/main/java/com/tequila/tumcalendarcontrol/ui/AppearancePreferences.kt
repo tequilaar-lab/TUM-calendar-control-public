@@ -1,15 +1,17 @@
 /*
- * 职责：定义并保存明暗模式各自的配色偏好。
- * 输入／输出：输入 AppearanceSettings；输出本机偏好，未知值恢复默认。
- * 外部副作用：仅应用私有 SharedPreferences，不联网。
- * 不负责：课程颜色、日历写入、账户或系统外观修改。
+ * Aufgabe: Helle/dunkle Darstellungspräferenzen definieren und privat speichern.
+ * Ein-/Ausgabe: Darstellungswahl -> getrennt gespeicherte helle/dunkle Präferenzen.
+ * Nebenwirkungen: Nur private Darstellungspräferenzen.
+ * Nicht zuständig: Kursfarben, Kalenderausgabe, Konten oder Systemdarstellung.
  */
 package com.tequila.tumcalendarcontrol.ui
 
+import com.tequila.tumcalendarcontrol.i18n.message
+
 import android.content.Context
 
-enum class LightPaletteStyle(val label: String) { COOL_WHITE("清爽白"), WARM_WHITE("暖米白") }
-enum class DarkPaletteStyle(val label: String) { NEUTRAL_BLACK("中性黑"), DEEP_BLUE("深蓝") }
+enum class LightPaletteStyle(val label: String) { COOL_WHITE(message(189)), WARM_WHITE(message(190)) }
+enum class DarkPaletteStyle(val label: String) { NEUTRAL_BLACK(message(191)), DEEP_BLUE(message(192)) }
 
 data class AppearanceSettings(
     val mode: ThemeMode = ThemeMode.SYSTEM,
