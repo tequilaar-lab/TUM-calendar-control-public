@@ -25,7 +25,7 @@ Eigene Kursnamen, Orte, Spitznamen und Eingaben werden beim Sprachwechsel nicht 
 
 ## Entwicklung
 
-Die App verwendet Kotlin, Jetpack Compose mit Miuix, iCal4j, WorkManager und Google Play services. Erforderlich sind Android SDK 37 und ein mit den Gradle-Plugins kompatibles JDK; die Ausgabe bleibt Java-17-kompatibel. Die App benötigt mindestens Android 8 / API 26.
+Die App verwendet Kotlin, Jetpack Compose mit Miuix, backdrop (Glaseffekte), iCal4j, WorkManager und Google Play services. Erforderlich sind Android SDK 37 und ein mit den Gradle-Plugins kompatibles JDK; die Ausgabe bleibt Java-17-kompatibel. Die App benötigt mindestens Android 8 / API 26.
 
 ```sh
 ./gradlew :app:testDebugUnitTest :app:assembleDebug

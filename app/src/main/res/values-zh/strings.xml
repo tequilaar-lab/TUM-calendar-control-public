@@ -689,4 +689,11 @@
     <string name="msg_0683" formatted="false">"已取消"</string>
     <string name="msg_0684" formatted="false">"被拒绝"</string>
     <string name="msg_0685" formatted="false">"已删除"</string>
+    <string name="msg_0686" formatted="false">"玻璃效果"</string>
+    <string name="msg_0687" formatted="false">"关闭"</string>
+    <string name="msg_0688" formatted="false">"柔光"</string>
+    <string name="msg_0689" formatted="false">"标准"</string>
+    <string name="msg_0690" formatted="false">"通透"</string>
+    <string name="msg_0691" formatted="false">"影响导航栏、浮动按钮与确认框。“关闭”时使用实色，适合需要更高对比度时。"</string>
+    <string name="msg_0692" formatted="false">"本设备只支持部分玻璃效果。"</string>
 </resources>

@@ -689,4 +689,11 @@
     <string name="msg_0683" formatted="false">"Cancelled"</string>
     <string name="msg_0684" formatted="false">"Rejected"</string>
     <string name="msg_0685" formatted="false">"Deleted"</string>
+    <string name="msg_0686" formatted="false">"Glass effect"</string>
+    <string name="msg_0687" formatted="false">"Off"</string>
+    <string name="msg_0688" formatted="false">"Soft"</string>
+    <string name="msg_0689" formatted="false">"Standard"</string>
+    <string name="msg_0690" formatted="false">"Clear"</string>
+    <string name="msg_0691" formatted="false">"Applies to the navigation bar, floating buttons and confirmations. “Off” uses solid surfaces for higher contrast."</string>
+    <string name="msg_0692" formatted="false">"This device supports glass effects only partially."</string>
 </resources>

@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.CompositionLocalProvider
+import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
+import com.tequila.tumcalendarcontrol.ui.design.designColorsFor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.darkColorScheme
 import top.yukonga.miuix.kmp.theme.lightColorScheme
@@ -109,7 +111,8 @@ fun TumCalendarTheme(mode: ThemeMode, lightStyle: LightPaletteStyle = LightPalet
         onSurfaceSecondary = palette.onSurfaceVariant,
         outline = palette.outline,
     )
-    CompositionLocalProvider(LocalTumPalette provides palette) {
+    // Farbrollen des neuen Erscheinungsbilds zusätzlich bereitstellen; bestehende Miuix-Farben bleiben bis zur Seitenmigration unverändert.
+    CompositionLocalProvider(LocalTumPalette provides palette, LocalDesignColors provides designColorsFor(usesDarkTheme, lightStyle, darkStyle)) {
         MiuixTheme(colors) { content() }
     }
 }

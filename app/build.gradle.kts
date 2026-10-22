@@ -110,6 +110,9 @@ dependencies {
     // Nur Rounded-Symbolvektoren; Oberflächenkomponenten weiterhin aus Compose-Miuix.
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.3")
+    // Glasflächen (Hintergrundunschärfe, Linsenbrechung) für schwebende Navigation und Schaltflächen; Miuix bietet keine.
+    // 1.0.6 setzt Compose 1.10.3 und Kotlin-Stdlib 2.3.10 voraus und hebt keine vorhandenen Versionen an.
+    implementation("io.github.kyant0:backdrop:1.0.6")
     // Bewährter RFC-5545-Parser; API 26 und Java 17 erfüllen seine Android-Voraussetzungen.
     implementation("org.mnode.ical4j:ical4j:3.1.0")
     // Offizieller Autorisierungsclient; minimaler app.created-Umfang erst nach ausdrücklichem Verbinden.

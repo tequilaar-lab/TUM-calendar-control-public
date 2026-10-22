@@ -21,6 +21,7 @@ Program's Corresponding Source or change the third-party libraries' own terms.
 
 - AndroidX / Jetpack Compose / WorkManager: Apache-2.0.
 - miuix-ui-android 0.9.3: Apache-2.0.
+- backdrop 1.0.6 (io.github.kyant0): Apache-2.0.
 - ical4j 3.1.0: BSD-3-Clause.
 - Google Play services Auth 21.6.0: Android Software Development Kit License;
   die zusätzliche Erlaubnis oben ändert diese SDK-Bedingungen nicht.

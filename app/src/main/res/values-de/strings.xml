@@ -689,4 +689,11 @@
     <string name="msg_0683" formatted="false">"Abgesagt"</string>
     <string name="msg_0684" formatted="false">"Abgelehnt"</string>
     <string name="msg_0685" formatted="false">"Gelöscht"</string>
+    <string name="msg_0686" formatted="false">"Glaseffekt"</string>
+    <string name="msg_0687" formatted="false">"Aus"</string>
+    <string name="msg_0688" formatted="false">"Weich"</string>
+    <string name="msg_0689" formatted="false">"Standard"</string>
+    <string name="msg_0690" formatted="false">"Klar"</string>
+    <string name="msg_0691" formatted="false">"Betrifft Navigationsleiste, schwebende Schaltflächen und Bestätigungen. „Aus“ nutzt deckende Flächen für höheren Kontrast."</string>
+    <string name="msg_0692" formatted="false">"Dieses Gerät unterstützt Glaseffekte nur teilweise."</string>
 </resources>
