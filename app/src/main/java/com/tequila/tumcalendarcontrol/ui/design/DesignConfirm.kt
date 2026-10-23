@@ -2,11 +2,17 @@
  * Aufgabe: Bestätigungsdialog als Glasfläche über der ganzen Seite (Kopf, Inhalt, Navigation) und dessen Wirt.
  * Ein-/Ausgabe: Lokalisierte Texte und Rückrufe einer Seite -> Überlagerung mit Abbrechen/Bestätigen.
  * Nebenwirkungen: Keine; Rückrufe entscheiden über Aktionen. Zurück-Taste gilt als Abbrechen.
+ * Bewegung: Schleier blendet ein, Fläche wächst federnd von 94 %; Schließen schneller (DesignMotion).
  * Nicht zuständig: Inhalt oder Auslösung der bestätigten Aktion, Übersetzung, Navigation.
  */
 package com.tequila.tumcalendarcontrol.ui.design
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -67,7 +73,24 @@ fun DesignConfirmHost(content: @Composable () -> Unit) {
         CompositionLocalProvider(LocalDesignConfirmController provides controller, LocalGlassHostBackdrop provides host) {
             Box(Modifier.fillMaxSize().layerBackdrop(host)) { content() }
         }
-        controller.request?.let { DesignConfirmOverlay(it, host) }
+        // Letzte Anfrage behalten, damit der Dialog beim Schließen noch ausblenden kann.
+        var shown by remember { mutableStateOf<DesignConfirmRequest?>(null) }
+        controller.request?.let { shown = it }
+        AnimatedVisibility(
+            visible = controller.request != null,
+            enter = fadeIn(DesignMotion.enter()),
+            exit = fadeOut(DesignMotion.exit()),
+        ) {
+            shown?.let { request ->
+                DesignConfirmOverlay(
+                    request, host, backEnabled = controller.request != null,
+                    panelModifier = Modifier.animateEnterExit(
+                        enter = scaleIn(DesignMotion.dialog(), initialScale = .94f),
+                        exit = scaleOut(DesignMotion.exit(), targetScale = .96f),
+                    ),
+                )
+            }
+        }
     }
 }
 
@@ -88,11 +111,11 @@ fun DesignConfirmDialog(request: DesignConfirmRequest?) {
 
 /** Leichter Schleier; Fläche mindestens 94 % deckend, damit der Text unabhängig von der Glasstufe lesbar bleibt. */
 @Composable
-private fun DesignConfirmOverlay(request: DesignConfirmRequest, host: LayerBackdrop?) {
+private fun DesignConfirmOverlay(request: DesignConfirmRequest, host: LayerBackdrop?, backEnabled: Boolean = true, panelModifier: Modifier = Modifier) {
     val colors = LocalDesignColors.current
     val spec = glassSpec(LocalGlassLevel.current, LocalGlassSupport.current)
     val glass = host != null && spec.enabled
-    BackHandler(onBack = request.onCancel)
+    BackHandler(enabled = backEnabled, onBack = request.onCancel)
     Box(
         Modifier.fillMaxSize().background(colors.ink.copy(alpha = if (glass) .16f else .36f))
             // Schleier fängt Berührungen ab (ohne Semantik, sonst verschmölze der Dialoginhalt zu einem Knopf).
@@ -101,7 +124,7 @@ private fun DesignConfirmOverlay(request: DesignConfirmRequest, host: LayerBackd
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            Modifier.padding(28.dp).widthIn(max = 400.dp).fillMaxWidth()
+            panelModifier.padding(28.dp).widthIn(max = 400.dp).fillMaxWidth()
                 .designGlass(colors, DesignRadii.Dialog, host, spec, tintScale = 1.6f, minAlpha = .94f).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {

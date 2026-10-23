@@ -12,6 +12,15 @@ import com.tequila.tumcalendarcontrol.i18n.message
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.offset
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import com.tequila.tumcalendarcontrol.ui.design.DesignMotion
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -84,15 +93,34 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                 // Untertitel entfallen gemäß bestätigtem Entwurf; die Übersicht zeigt ihre Listenüberschrift als Titel.
                 title = tr(contentScreen.pageTitle(state)),
                 navigation = {
-                    // Zurück: 48-dp-Tippfläche, um 4 dp nach links versetzt, damit der sichtbare 40-dp-Kreis bündig bleibt.
-                    if (contentScreen.usesBackArrow()) {
-                        GlassBackButton(onClick = state::handleBack)
-                        Spacer(Modifier.width(4.dp))
-                    } else {
-                                }
+                    // Zurück erscheint/verschwindet mit Skalierung; die Breite gleitet, damit „TUM“ nicht springt.
+                    // 48-dp-Tippfläche, um 4 dp nach links versetzt, damit der sichtbare 40-dp-Kreis bündig bleibt.
+                    AnimatedContent(
+                        targetState = contentScreen.usesBackArrow(),
+                        transitionSpec = {
+                            // Ohne Beschnitt, sonst wird der weiche Schatten des Knopfes während der Größenänderung abgeschnitten.
+                            ((fadeIn(DesignMotion.enter()) + scaleIn(DesignMotion.enter(), initialScale = .8f)) togetherWith
+                                (fadeOut(DesignMotion.exit()) + scaleOut(DesignMotion.exit(), targetScale = .8f))) using SizeTransform(clip = false)
+                        },
+                        label = "header-back",
+                    ) { back ->
+                        if (back) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                GlassBackButton(onClick = state::handleBack)
+                                Spacer(Modifier.width(4.dp))
+                            }
+                        } else {
+                            // Hauptseiten: Marke bündig mit dem Titel (wie im bestätigten Bild), kein Platzhalter.
+                            Spacer(Modifier.width(0.dp))
+                        }
+                    }
                 },
                 trailing = {
-                    if (!contentScreen.usesBackArrow()) TactileProfileButton(profile = state.profile, onClick = state::openProfile)
+                    AnimatedVisibility(
+                        visible = !contentScreen.usesBackArrow(),
+                        enter = fadeIn(DesignMotion.enter()) + scaleIn(DesignMotion.enter(), initialScale = .8f),
+                        exit = fadeOut(DesignMotion.exit()) + scaleOut(DesignMotion.exit(), targetScale = .8f),
+                    ) { TactileProfileButton(profile = state.profile, onClick = state::openProfile) }
                 },
             )
         },
@@ -119,12 +147,15 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                     AnimatedContent(
                         targetState = contentScreen,
                         transitionSpec = {
+                            // Hereinkommen mit Abbremskurve, alte Seite schneller ausblenden (DesignMotion).
+                            val enter = DesignMotion.enter<androidx.compose.ui.unit.IntOffset>()
+                            val leave = DesignMotion.exit<androidx.compose.ui.unit.IntOffset>()
                             when (state.navigationDirection) {
-                                NavigationDirection.FORWARD -> (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 3 } + fadeOut())
-                                NavigationDirection.BACKWARD -> (slideInHorizontally { -it / 3 } + fadeIn()) togetherWith (slideOutHorizontally { it } + fadeOut())
-                                NavigationDirection.PROFILE_ENTER -> (slideInHorizontally { -it } + fadeIn()) togetherWith (slideOutHorizontally { it / 3 } + fadeOut())
+                                NavigationDirection.FORWARD -> (slideInHorizontally(enter) { it } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { -it / 3 } + fadeOut(DesignMotion.exit()))
+                                NavigationDirection.BACKWARD -> (slideInHorizontally(enter) { -it / 3 } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { it } + fadeOut(DesignMotion.exit()))
+                                NavigationDirection.PROFILE_ENTER -> (slideInHorizontally(enter) { -it } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { it / 3 } + fadeOut(DesignMotion.exit()))
                                 // Profil nach links verlassen, vorige Hauptseite vollständig von rechts einblenden; keine vertikale Neuordnung.
-                                NavigationDirection.PROFILE_EXIT -> (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 3 } + fadeOut())
+                                NavigationDirection.PROFILE_EXIT -> (slideInHorizontally(enter) { it } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { -it / 3 } + fadeOut(DesignMotion.exit()))
                             }
                         },
                         label = message(139),
@@ -137,9 +168,15 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                     Modifier.align(Alignment.TopCenter).padding(top = innerPadding.calculateTopPadding()).fillMaxWidth().height(14.dp)
                         .background(Brush.verticalGradient(listOf(colors.paper, colors.paper.copy(alpha = 0f)))),
                 )
-                if (contentScreen.usesBottomNavigation()) {
-                    AppBottomNavigation(state, contentScreen, Modifier.align(Alignment.BottomCenter))
-                }
+                // Navigation gleitet nach unten weg bzw. herein; beim Ausblenden bleibt das zuletzt gewählte Ziel markiert.
+                val navigationScreen = remember { mutableStateOf(contentScreen) }
+                if (contentScreen.usesBottomNavigation()) navigationScreen.value = contentScreen
+                AnimatedVisibility(
+                    visible = contentScreen.usesBottomNavigation(),
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    enter = slideInVertically(DesignMotion.enter()) { it / 2 } + fadeIn(DesignMotion.enter()),
+                    exit = slideOutVertically(DesignMotion.exit()) { it / 2 } + fadeOut(DesignMotion.exit()),
+                ) { AppBottomNavigation(state, navigationScreen.value) }
             }
         }
     }
@@ -171,9 +208,16 @@ private fun AppPageHeader(
             DesignText("  /  " + tr(message(701)), 12, muted = true, modifier = Modifier.weight(1f), maxLines = 1)
             trailing()
         }
-        Column(Modifier.padding(start = 12.dp, top = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            DesignText(kicker, 10, muted = true, mono = true, tracking = .8f, modifier = Modifier.testTag("page-kicker"))
-            DesignText(title, 30, maxLines = 2, modifier = Modifier.testTag("page-title"))
+        // Kennzeichnung und Titel überblenden beim Seitenwechsel (leicht verzögert, mit dem Inhalt statt vor ihm).
+        AnimatedContent(
+            targetState = kicker to title,
+            transitionSpec = { fadeIn(DesignMotion.headerIn()) togetherWith fadeOut(DesignMotion.headerOut()) },
+            label = "header-title",
+        ) { (shownKicker, shownTitle) ->
+            Column(Modifier.padding(start = 12.dp, top = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                DesignText(shownKicker, 10, muted = true, mono = true, tracking = .8f, modifier = Modifier.testTag("page-kicker"))
+                DesignText(shownTitle, 30, maxLines = 2, modifier = Modifier.testTag("page-title"))
+            }
         }
     }
 }

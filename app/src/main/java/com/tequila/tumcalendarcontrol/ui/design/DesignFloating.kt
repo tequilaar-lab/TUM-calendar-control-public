@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -90,7 +91,7 @@ fun DesignGlassNavigation(items: List<DesignNavigationItem>, selected: Int, modi
     ) {
         items.forEachIndexed { index, item ->
             val active = index == selected
-            val tint = if (active) colors.accent else colors.muted
+            val tint by animatedSelectionColor(active, colors.accent, colors.muted, "nav-tint-$index")
             Column(
                 Modifier.width(64.dp).heightIn(min = 52.dp)
                     .selectable(active, role = Role.Tab, onClick = { if (!active) haptics.perform(HapticEvent.SELECTION); onSelect(index) }),

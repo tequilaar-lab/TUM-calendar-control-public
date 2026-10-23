@@ -7,6 +7,7 @@
 package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.ui.design.hapticSelectable
+import com.tequila.tumcalendarcontrol.ui.design.animatedSelectionColor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,9 +56,10 @@ internal fun PaletteTiles(dark: Boolean, state: CalendarControlState) {
 private fun PaletteTile(label: String, palette: DesignColors, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val current = LocalDesignColors.current
     val shape = RoundedCornerShape(DesignRadii.Field)
+    val borderColor by animatedSelectionColor(selected, current.ink, current.ink.copy(alpha = .14f), "palette-$label")
     Box(
         modifier.height(72.dp).clip(shape).background(palette.paper)
-            .border(if (selected) 2.dp else 1.dp, if (selected) current.ink else current.ink.copy(alpha = .14f), shape)
+            .border(if (selected) 2.dp else 1.dp, borderColor, shape)
             .hapticSelectable(selected, Role.RadioButton, onClick).padding(14.dp),
     ) {
         DesignText(label, 14, Modifier.align(Alignment.BottomStart), color = palette.ink, weight = if (selected) FontWeight.Medium else FontWeight.Normal)

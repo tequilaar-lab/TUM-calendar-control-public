@@ -9,6 +9,7 @@ package com.tequila.tumcalendarcontrol.ui
 import com.tequila.tumcalendarcontrol.i18n.message
 
 import com.tequila.tumcalendarcontrol.ui.design.hapticClickable
+import com.tequila.tumcalendarcontrol.ui.design.animatedSelectionColor
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -109,8 +110,10 @@ internal fun SourceFilterTabs(selected: SourceCourseFilter, onSelect: (SourceCou
                 Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).hapticClickable { onSelect(filter) }.testTag("source-filter-${filter.name}"),
                 verticalArrangement = Arrangement.Center,
             ) {
-                DesignText(tr(filter.label), 13, color = if (active) colors.accent else colors.muted, weight = if (active) FontWeight.Medium else FontWeight.Normal)
-                Box(Modifier.padding(top = 4.dp).width(32.dp).height(2.dp).background(if (active) colors.accent else Color.Transparent))
+                val ink by animatedSelectionColor(active, colors.accent, colors.muted, "filter-${filter.name}")
+                val line by animatedSelectionColor(active, colors.accent, Color.Transparent, "filter-line-${filter.name}")
+                DesignText(tr(filter.label), 13, color = ink, weight = if (active) FontWeight.Medium else FontWeight.Normal)
+                Box(Modifier.padding(top = 4.dp).width(32.dp).height(2.dp).background(line))
             }
         }
     }

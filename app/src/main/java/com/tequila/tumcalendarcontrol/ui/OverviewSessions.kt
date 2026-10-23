@@ -9,6 +9,7 @@ package com.tequila.tumcalendarcontrol.ui
 import com.tequila.tumcalendarcontrol.i18n.message
 
 import com.tequila.tumcalendarcontrol.ui.design.hapticClickable
+import com.tequila.tumcalendarcontrol.ui.design.animatedSelectionColor
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -64,8 +65,10 @@ internal fun OverviewCourseSessions(group: CourseDisplayGroup, compact: Boolean,
                 val isActive = type.key == active.key
                 // Tippfläche 48 dp hoch; Beschriftung und Unterstrich mittig darin.
                 Column(Modifier.hapticClickable { activeTypeKey = type.key; showAll = false }.heightIn(min = 48.dp), verticalArrangement = Arrangement.Center) {
-                    DesignText(tr(type.label), 12, color = if (isActive) colors.accent else colors.muted, weight = if (isActive) FontWeight.Medium else FontWeight.Normal)
-                    Box(Modifier.padding(top = 4.dp).width(48.dp).height(2.dp).background(if (isActive) colors.accent else Color.Transparent))
+                    val ink by animatedSelectionColor(isActive, colors.accent, colors.muted, "type-${type.key}")
+                    val line by animatedSelectionColor(isActive, colors.accent, Color.Transparent, "type-line-${type.key}")
+                    DesignText(tr(type.label), 12, color = ink, weight = if (isActive) FontWeight.Medium else FontWeight.Normal)
+                    Box(Modifier.padding(top = 4.dp).width(48.dp).height(2.dp).background(line))
                 }
             }
             // Umbenennen nur für den aktiven Typ; ändert ausschließlich die Anzeige, nie die Kursidentität.
