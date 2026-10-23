@@ -35,8 +35,6 @@ Die App verwendet Kotlin, Jetpack Compose mit Miuix, backdrop (Glaseffekte), iCa
 ./gradlew :app:testDebugUnitTest :app:assembleDebug
 ```
 
-Dieses persönliche Lernprojekt entstand mit umfangreicher KI-Unterstützung bei Code und Fehlersuche. Projektentscheidungen, Anforderungen und die Bewertung möglicher Fehlerursachen lagen beim Entwickler.
-
 Seit Version 1.2.0 hat **Claude** (Anthropic) die Weiterentwicklung übernommen und die Oberfläche neu gestaltet. Anforderungen, Abnahme und Freigaben liegen weiterhin beim Entwickler.
 
 Lokale Tests und ein erfolgreicher Build ersetzen keine Prüfung auf einem echten Gerät oder der tatsächlichen Kalenderausgabe. Die Google-Verbindung erfordert eine passende Google-Cloud-Konfiguration für die verwendete App-/Signaturkombination.
