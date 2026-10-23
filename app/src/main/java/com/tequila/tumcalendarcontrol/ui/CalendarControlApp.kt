@@ -49,8 +49,9 @@ fun CalendarControlApp() {
     val profilePreferences = remember(context) { ProfilePreferences(context) }
     val pageMemoryPreferences = remember(context) { PageMemoryPreferences(context) }
     val appearancePreferences = remember(context) { AppearancePreferences(context) }
-    // Glasstufe getrennt gespeichert; Änderung folgt mit der Darstellungsseite, hier nur gelesen.
-    val glassLevel = remember(context) { com.tequila.tumcalendarcontrol.ui.design.GlassPreferences(context).load() }
+    // Glasstufe getrennt gespeichert (eigener Schlüssel); die Darstellungsseite wählt über LocalGlassSelection.
+    val glassPreferences = remember(context) { com.tequila.tumcalendarcontrol.ui.design.GlassPreferences(context) }
+    var glassLevel by remember { mutableStateOf(glassPreferences.load()) }
     val courseTypeNamesPreferences = remember(context) { CourseTypeNamesPreferences(context) }
     val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
     val privateSyncConfigurationStore = remember(context) { PrivateSyncConfigurationStore(context) }
@@ -264,6 +265,10 @@ fun CalendarControlApp() {
             language = chosen
         },
         com.tequila.tumcalendarcontrol.ui.design.LocalGlassLevel provides glassLevel,
+        com.tequila.tumcalendarcontrol.ui.design.LocalGlassSelection provides com.tequila.tumcalendarcontrol.ui.design.GlassSelection(glassLevel) { chosen ->
+            glassPreferences.save(chosen)
+            glassLevel = chosen
+        },
     ) { CalendarControlSurface(state) }
 }
 

@@ -727,4 +727,10 @@
     <string name="msg_0721" formatted="false">"New"</string>
     <string name="msg_0722" formatted="false">"Check &amp; update"</string>
     <string name="msg_0723" formatted="false">"Cleanup scope"</string>
+    <string name="msg_0724" formatted="false">"Calendars"</string>
+    <string name="msg_0725" formatted="false">"Preferences &amp; data"</string>
+    <string name="msg_0726" formatted="false">"Display mode"</string>
+    <string name="msg_0727" formatted="false">"Glass preview"</string>
+    <string name="msg_0728" formatted="false">"Display mode, light and dark palettes, glass"</string>
+    <string name="msg_0729" formatted="false">"Floating buttons and navigation look like this"</string>
 </resources>

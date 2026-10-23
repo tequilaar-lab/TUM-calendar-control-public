@@ -1,56 +1,53 @@
 /*
- * Aufgabe: Standardmäßig deaktivierte lesende Hintergrundprüfung und Status bedienen.
+ * Aufgabe: Standardmäßig deaktivierte lesende Hintergrundprüfung und Status bedienen (neues Erscheinungsbild).
  * Ein-/Ausgabe: Prüfeinstellungen und Status -> ausdrücklich betätigte Einstellungs-/Prüfabsichten.
- * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nebenwirkungen: Keine externen Aktionen; Einstellungen über bestehenden Zustandsaufruf.
  * Nicht zuständig: Quelleninhalt, automatische Synchronisierung, Kalenderausgabe, Google-Autorisierung oder Bereichskonfiguration.
  */
 package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.sync.SourceCheckCadence
 import com.tequila.tumcalendarcontrol.sync.SourceCheckResult
 import com.tequila.tumcalendarcontrol.sync.SourceCheckStatus
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Text
+import com.tequila.tumcalendarcontrol.ui.design.DesignFrostCard
+import com.tequila.tumcalendarcontrol.ui.design.DesignNote
+import com.tequila.tumcalendarcontrol.ui.design.DesignPage
+import com.tequila.tumcalendarcontrol.ui.design.DesignPillButton
+import com.tequila.tumcalendarcontrol.ui.design.DesignSection
+import com.tequila.tumcalendarcontrol.ui.design.DesignSegmented
+import com.tequila.tumcalendarcontrol.ui.design.DesignText
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+/** Freier Text auf der Titellinie (4 dp innerhalb der Blockkanten). */
+private val TextInset = Modifier.padding(horizontal = 4.dp)
+
+/** Nur lesende Prüfung: Häufigkeit, Ein/Aus, letzter Stand, Hinweis zu Benachrichtigungen; schreibt nie in Kalender. */
 @Composable
 fun BackgroundCheckScreen(state: CalendarControlState) {
     val settings = state.sourceCheckSettings
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        InformationCard(message(168), message(200))
-        InformationCard(message(201), settings.cadence.label)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            SourceCheckCadence.entries.forEach { cadence ->
-                Button(
-                    onClick = { state.updateSourceCheck(settings.enabled, cadence) },
-                    modifier = Modifier.weight(1f),
-                ) { Text(tr(if (cadence == settings.cadence) message(202, (cadence.label)) else cadence.label)) }
-            }
+    DesignPage(contentTag = "background-content") {
+        DesignText(tr(message(200)), 13, TextInset)
+        DesignSection(tr(message(201)), TextInset)
+        DesignSegmented(SourceCheckCadence.entries.map { tr(it.label) }, settings.cadence.ordinal, Modifier.testTag("background-cadence")) {
+            state.updateSourceCheck(settings.enabled, SourceCheckCadence.entries[it])
         }
-        Button(
-            onClick = { state.updateSourceCheck(!settings.enabled) },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(tr(if (settings.enabled) message(203) else message(204))) }
-        InformationCard(message(205), state.sourceCheckStatus.toUserSummary())
-        InformationCard(message(206), message(207))
-        state.feedback?.let { Text(tr(it), color = LocalTumPalette.current.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp)) }
+        DesignPillButton(tr(if (settings.enabled) message(203) else message(204)), Modifier.testTag("background-toggle"), primary = !settings.enabled) {
+            state.updateSourceCheck(!settings.enabled)
+        }
+        DesignFrostCard(Modifier.testTag("background-status")) {
+            DesignSection(tr(message(205)))
+            DesignText(tr(state.sourceCheckStatus.toUserSummary()), 14)
+        }
+        DesignNote(tr(message(206)), tr(message(207)))
+        state.feedback?.let { DesignText(tr(it), 12, TextInset, muted = true) }
     }
 }
 

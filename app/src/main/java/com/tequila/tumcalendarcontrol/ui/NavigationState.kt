@@ -74,6 +74,7 @@ internal class NavigationState {
             AppScreen.OUTPUT_CLEANUP -> outputCleanupReturnScreen
             AppScreen.BACKGROUND_CHECK -> backgroundCheckReturnScreen
             AppScreen.RULE_BACKUP -> ruleBackupReturnScreen
+            AppScreen.APPEARANCE -> AppScreen.SETTINGS
             else -> return false
         }
         direction = if (closingProfile) NavigationDirection.PROFILE_EXIT else NavigationDirection.BACKWARD

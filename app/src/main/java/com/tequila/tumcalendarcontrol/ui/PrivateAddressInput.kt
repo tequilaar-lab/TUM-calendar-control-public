@@ -9,8 +9,8 @@ package com.tequila.tumcalendarcontrol.ui
 import com.tequila.tumcalendarcontrol.i18n.message
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,18 +19,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.tequila.tumcalendarcontrol.ui.design.DesignCheck
+import com.tequila.tumcalendarcontrol.ui.design.DesignField
 import kotlinx.coroutines.delay
-import top.yukonga.miuix.kmp.basic.Switch
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextField
 
 private const val LAST_CHARACTER_REVEAL_MILLIS = 1500L
 
+/** Verdeckt bis auf das zuletzt getippte Zeichen (kurz); „Adresse zeigen“ gilt nur für diese Eingabe. */
 @Composable
 fun PrivateAddressInput(value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
     var showAddress by remember { mutableStateOf(false) }
@@ -41,23 +42,20 @@ fun PrivateAddressInput(value: String, onValueChange: (String) -> Unit, modifier
             lastVisibleIndex = -1
         }
     }
-    TextField(
-        value = value,
-        onValueChange = { updated ->
-            lastVisibleIndex = if (!showAddress && updated.length > value.length) updated.length - 1 else -1
-            onValueChange(updated)
-        },
-        modifier = modifier.fillMaxWidth(),
-        label = tr(message(484)),
-        singleLine = true,
-        visualTransformation = PrivateAddressVisualTransformation(showAddress, lastVisibleIndex),
-    )
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Switch(checked = showAddress, onCheckedChange = { visible ->
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        DesignField(
+            label = tr(message(484)), value = value,
+            onValueChange = { updated ->
+                lastVisibleIndex = if (!showAddress && updated.length > value.length) updated.length - 1 else -1
+                onValueChange(updated)
+            },
+            modifier = Modifier.testTag("private-address"), singleLine = true,
+            visualTransformation = PrivateAddressVisualTransformation(showAddress, lastVisibleIndex),
+        )
+        DesignCheck(tr(if (showAddress) message(485) else message(486)), showAddress, Modifier.padding(start = 4.dp).testTag("private-address-show")) { visible ->
             showAddress = visible
             if (!visible) lastVisibleIndex = -1
-        })
-        Text(tr(if (showAddress) message(485) else message(486)))
+        }
     }
 }
 

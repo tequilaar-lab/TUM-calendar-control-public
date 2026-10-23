@@ -9,15 +9,16 @@ package com.tequila.tumcalendarcontrol.ui
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.R
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Text
+import androidx.compose.ui.platform.testTag
+import com.tequila.tumcalendarcontrol.ui.design.DesignSection
+import com.tequila.tumcalendarcontrol.ui.design.DesignSegmented
+import com.tequila.tumcalendarcontrol.ui.design.DesignText
 import com.tequila.tumcalendarcontrol.i18n.AppLanguage
 import com.tequila.tumcalendarcontrol.i18n.localizedAppContext
 import com.tequila.tumcalendarcontrol.i18n.localizedMessage
@@ -40,19 +41,16 @@ internal fun tr(value: String): String {
     return localizedMessage(context, value)
 }
 
+/** Sprache als Segmentsteuerung (Titel und Hinweis aus Sprachressourcen); Wechsel wirkt sofort und wird gespeichert. */
 @Composable
 internal fun LanguageSelector() {
     val selection = LocalAppLanguage.current
     val context = localizedContext()
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(context.getString(R.string.language_title))
-        Text(context.getString(R.string.language_note))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            AppLanguage.entries.forEach { language ->
-                Button(onClick = { selection.select(language) }, modifier = Modifier.weight(1f)) {
-                    Text((if (selection.language == language) "✓ " else "") + language.nativeName)
-                }
-            }
+        DesignSection(context.getString(R.string.language_title), Modifier.padding(start = 4.dp))
+        DesignText(context.getString(R.string.language_note), 12, Modifier.padding(horizontal = 4.dp), muted = true)
+        DesignSegmented(AppLanguage.entries.map { it.nativeName }, AppLanguage.entries.indexOf(selection.language), Modifier.testTag("settings-language")) {
+            selection.select(AppLanguage.entries[it])
         }
     }
 }

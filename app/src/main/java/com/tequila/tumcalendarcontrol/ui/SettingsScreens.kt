@@ -1,137 +1,209 @@
 /*
- * Aufgabe: Einstellungen, Ausgabeziele, private Konfiguration, Profil und Darstellung rendern.
- * Ein-/Ausgabe: CalendarControlState und Rückrufe -> scrollbare Einstellungsseiten.
- * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
- * Nicht zuständig: Seitenrouting, Kursansicht/-bearbeitung, Teilnahmeformulare, iCal-Abruf, Google-Netzwerk oder Calendar Provider.
+ * Aufgabe: Einstellungsseite (gruppierte Liste: Kurse, Kalender, Einstellungen & Daten) und alter „Mehr“-Einstieg.
+ * Ein-/Ausgabe: CalendarControlState und Rückrufe -> Navigations- und Einstellungsabsichten.
+ * Nebenwirkungen: Keine externen Aktionen; Zieländerungen erst nach Glasbestätigung, sonst bestehende Zustandsaufrufe.
+ * Nicht zuständig: Unterseiten (Darstellung, Profil, Verbindung, Prüfung, Sicherung, Termine), iCal-Abruf, Google-Netzwerk.
  */
 package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.testTag
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.BuildConfig
-import com.tequila.tumcalendarcontrol.domain.TumEventStatus
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.RadioButton
-import top.yukonga.miuix.kmp.basic.Switch
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import androidx.compose.ui.window.Dialog
+import com.tequila.tumcalendarcontrol.ui.design.DesignCheck
+import com.tequila.tumcalendarcontrol.ui.design.DesignConfirmDialog
+import com.tequila.tumcalendarcontrol.ui.design.DesignConfirmRequest
+import com.tequila.tumcalendarcontrol.ui.design.DesignFrostCard
+import com.tequila.tumcalendarcontrol.ui.design.DesignNote
+import com.tequila.tumcalendarcontrol.ui.design.DesignPage
+import com.tequila.tumcalendarcontrol.ui.design.DesignPillButton
+import com.tequila.tumcalendarcontrol.ui.design.DesignRow
+import com.tequila.tumcalendarcontrol.ui.design.DesignSection
+import com.tequila.tumcalendarcontrol.ui.design.DesignSegmented
+import com.tequila.tumcalendarcontrol.ui.design.DesignText
+import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
 
-/** Weitere Aktionen innerhalb vollständiger Überlagerung; keine eigene Überlagerungs- oder Rückkehranimation. */
+/** Freier Text auf der Titellinie (4 dp innerhalb der Blockkanten). */
+private val TextInset = Modifier.padding(horizontal = 4.dp)
+
+/** Alter „Mehr“-Einstieg: Zustandshinweise und Weg zu den Einstellungen; keine eigene Überlagerung. */
 @Composable
 internal fun MoreScreen(state: CalendarControlState) {
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        InformationCard(message(496), if (state.sourceCatalogLoaded) message(497) else message(498))
-        InformationCard(message(499), message(500))
-        InformationCard(message(501), message(502))
-        Button(onClick = { state.open(AppScreen.SETTINGS) }, modifier = Modifier.fillMaxWidth()) {
-            Text(tr(message(503)))
-        }
+    DesignPage(contentTag = "more-content") {
+        DesignNote(tr(message(496)), tr(if (state.sourceCatalogLoaded) message(497) else message(498)))
+        DesignNote(tr(message(499)), tr(message(500)))
+        DesignNote(tr(message(501)), tr(message(502)))
+        DesignPillButton(tr(message(503)), Modifier.testTag("more-open-settings"), primary = false) { state.open(AppScreen.SETTINGS) }
     }
 }
 
+/** Schmal eine Liste; breit links Liste, rechts Erklärungen (keine doppelten Aktionen). Zieländerung mit Glasbestätigung. */
 @Composable
 internal fun SettingsScreen(state: CalendarControlState) {
-    val palette = LocalTumPalette.current
     BoxWithConstraints(Modifier.fillMaxSize()) {
         if (maxWidth < 720.dp) {
-            SettingsList(state, palette, Modifier.fillMaxSize())
+            SettingsList(state, Modifier.fillMaxSize())
         } else {
-            Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SettingsList(state, palette, Modifier.weight(0.62f).fillMaxHeight())
-                SettingsWideSupportPane(state, Modifier.weight(0.38f).fillMaxHeight())
+            Row(Modifier.fillMaxSize()) {
+                SettingsList(state, Modifier.weight(0.6f).fillMaxHeight())
+                Box(Modifier.padding(top = 12.dp, bottom = 24.dp).width(1.dp).fillMaxHeight().background(LocalDesignColors.current.ink.copy(alpha = .10f)))
+                SettingsWideSupportPane(state, Modifier.weight(0.4f).fillMaxHeight())
             }
         }
     }
-    state.pendingSyncDestinationChange?.let { change ->
-        SyncDestinationChangeDialog(
-            change = change,
-            currentDestinations = state.syncDestinations,
-            onDismiss = state::cancelSyncDestinationChange,
-            onConfirm = state::confirmSyncDestinationChange,
+    DesignConfirmDialog(state.pendingSyncDestinationChange?.let { change ->
+        DesignConfirmRequest(
+            kicker = tr(message(719)), title = tr(change.title), body = tr(change.consequence(state.syncDestinations)), note = tr(message(571)),
+            cancelLabel = tr(message(197)), confirmLabel = tr(message(572)), danger = false,
+            onCancel = state::cancelSyncDestinationChange, onConfirm = state::confirmSyncDestinationChange,
         )
+    })
+}
+
+@Composable
+private fun SettingsList(state: CalendarControlState, modifier: Modifier) {
+    LazyColumn(
+        modifier = modifier.padding(horizontal = 8.dp).testTag("settings-list"),
+        contentPadding = PaddingValues(bottom = FloatingNavigationContentClearance),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        // Sprache zuerst (wie bisher): bei falscher Sprache muss der Wechsel ohne Suchen erreichbar sein.
+        item(key = "language") { Box(Modifier.padding(bottom = 16.dp)) { LanguageSelector() } }
+        courseItems(state)
+        calendarItems(state)
+        preferenceItems(state)
+        item(key = "footer") {
+            Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                DesignNote(tr(message(504)), tr(message(505)))
+                DesignNote(tr(message(514)), tr(message(515)))
+                DesignText(tr(message(520)) + " · " + tr(message(521, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE)), 11, TextInset, muted = true, mono = true)
+                state.feedback?.let { DesignText(tr(it), 12, TextInset.testTag("settings-feedback"), muted = true) }
+            }
+        }
     }
 }
 
-/** Breite Ansicht: Aktionen links, Status rechts; Einstellungsflächen nicht unnötig verbreitern. */
-@Composable
-private fun SettingsList(state: CalendarControlState, palette: TumPalette, modifier: Modifier) {
-    LazyColumn(
-        modifier = modifier.testTag("settings-list"),
-        contentPadding = PaddingValues(bottom = FloatingNavigationContentClearance),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item { InformationCard(message(504), message(505)) }
-        item { LanguageSelector() }
-        item { Button(onClick = state::openSourceRange, modifier = Modifier.fillMaxWidth()) { Text(tr(message(506))) } }
-        item {
-            val summary = state.privateSyncConfiguration.sourceOutputWindow?.let {
+/** Kurse: lesen, auswählen, Datenversion, Verbindung, eigene Campustermine. */
+private fun LazyListScope.courseItems(state: CalendarControlState) {
+    item(key = "courses") {
+        Column {
+            DesignSection(tr(message(146)), TextInset)
+            val range = state.privateSyncConfiguration.sourceOutputWindow?.let {
                 if (it.startsOn == null && it.endsOn == null) message(507) else message(508)
             } ?: message(509)
-            InformationCard(message(510), summary)
+            DesignRow(tr(message(506)), detail = tr(range), tag = "settings-read", inset = 4.dp, onClick = state::openSourceRange)
+            val courses = if (!state.sourceCatalogLoaded) message(511) else message(512, state.sourceSnapshotLabel, state.sourceCourses.size, state.selectedSourceOccurrences.size)
+            DesignRow(tr(message(163)), detail = tr(courses), tag = "settings-select", inset = 4.dp, onClick = state::openSourceCourseSelector)
+            if (state.sourceCatalogLoaded) SourceSnapshotSelection(state)
+            DesignRow(tr(message(160)), tag = "settings-connection", inset = 4.dp, onClick = state::openSyncConfiguration)
+            DesignRow(tr(message(165)), value = state.ruleLedger.manualEvents.size.toString(), tag = "settings-events", inset = 4.dp, onClick = state::openManualEvents)
         }
-        item {
-            val courseSummary = when {
-                !state.sourceCatalogLoaded -> message(511)
-                else -> message(512, (state.sourceSnapshotLabel), (state.sourceCourses.size), (state.selectedSourceOccurrences.size))
-            }
-            InformationCard(message(513), courseSummary)
-        }
-        if (state.sourceCatalogLoaded) {
-            item { SourceSnapshotSelectionCard(state) }
-        }
-        item { Button(onClick = state::openSourceCourseSelector, modifier = Modifier.fillMaxWidth()) { Text(tr(message(163))) } }
-        item { Button(onClick = state::openSyncConfiguration, modifier = Modifier.fillMaxWidth()) { Text(tr(message(160))) } }
-        item { InformationCard(message(514), message(515)) }
-        item { Button(onClick = state::openManualEvents, modifier = Modifier.fillMaxWidth()) { Text(tr(message(430))) } }
-        item { Button(onClick = state::openBackgroundCheck, modifier = Modifier.fillMaxWidth()) { Text(tr(message(168))) } }
-        item { Button(onClick = state::openRuleBackup, modifier = Modifier.fillMaxWidth()) { Text(tr(message(516))) } }
-        item { SyncDestinationSelector(state) }
-        item { InformationCard(message(517), message(518)) }
-        if (state.syncDestinations.googleCalendarEnabled) item { GoogleAuthorizationPanel(state) }
-        item { Button(onClick = state::prepareCalendarWrite, modifier = Modifier.fillMaxWidth()) { Text(tr(message(519))) } }
-        if (state.managedOutputTargetsForCleanup.isNotEmpty()) {
-            item { Button(onClick = state::openOutputCleanup, modifier = Modifier.fillMaxWidth()) { Text(tr(message(167))) } }
-        }
-        item { InformationCard(message(520), message(521, (BuildConfig.VERSION_NAME), (BuildConfig.VERSION_CODE))) }
-        item { ThemeModeSelector(state) }
-        item { AppearancePaletteSelector(state) }
-        item { Spacer(Modifier.height(4.dp)) }
-        state.feedback?.let { feedback -> item { Text(tr(feedback), color = palette.onSurfaceVariant) } }
     }
 }
 
-/** Rechts nur Erklärung, keine doppelten Aktionen; konsistenter Zustand beider Spalten. */
+/** Benutzer wählt erfolgreiche Datenversion; Wechsel ohne Netzwerk oder Kalenderänderung. */
+@Composable
+private fun SourceSnapshotSelection(state: CalendarControlState) {
+    Column(Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        DesignText(tr(message(536)), 12, TextInset, muted = true)
+        DesignText(tr(message(537, state.sourceSnapshotLabel)), 13, TextInset)
+        if (state.hasPreviousSourceSnapshot) {
+            val slots = listOf(SourceSnapshotSlot.LATEST, SourceSnapshotSlot.PREVIOUS)
+            DesignSegmented(listOf(tr(message(539)), tr(message(541))), slots.indexOf(state.activeSourceSnapshotSlot), Modifier.testTag("settings-snapshot")) {
+                state.selectSourceSnapshot(slots[it])
+            }
+            state.sourceSnapshotDifference?.let { DesignNote(tr(message(542)), tr(it.summary())) }
+        }
+    }
+}
+
+/** Kalender: Standardziele (Änderung mit Bestätigung), Google-Verbindung, Schreiben und getrennte Bereinigung. */
+private fun LazyListScope.calendarItems(state: CalendarControlState) {
+    item(key = "calendars") {
+        Column(Modifier.padding(top = 16.dp)) {
+            DesignSection(tr(message(724)), TextInset)
+            DesignText(tr(message(568)), 12, TextInset.padding(vertical = 8.dp), muted = true)
+            SyncDestination.entries.forEach { destination ->
+                val enabled = state.syncDestinations.isEnabled(destination)
+                DesignCheck(
+                    tr(destination.title), enabled, TextInset.testTag("settings-destination-${destination.name}"),
+                    detail = tr(if (enabled) destination.enabledSummary else destination.disabledSummary),
+                ) { state.requestSyncDestinationChange(destination, !enabled) }
+            }
+            DesignText(tr(message(518)), 12, TextInset.padding(vertical = 8.dp), muted = true)
+            if (state.syncDestinations.localCalendarEnabled) DesignNote(tr(message(569)), tr(message(570)))
+            if (state.syncDestinations.googleCalendarEnabled) GoogleAuthorizationPanel(state)
+            DesignRow(tr(message(519)), tag = "settings-write", inset = 4.dp, onClick = state::prepareCalendarWrite)
+            if (state.managedOutputTargetsForCleanup.isNotEmpty()) {
+                DesignRow(tr(message(167)), danger = true, tag = "settings-cleanup", inset = 4.dp, onClick = state::openOutputCleanup)
+            }
+        }
+    }
+}
+
+/** Google-Status direkt neben den Zielen, damit Rückmeldungen auf langen Seiten sichtbar bleiben. */
+@Composable
+private fun GoogleAuthorizationPanel(state: CalendarControlState) {
+    DesignFrostCard(Modifier.padding(vertical = 8.dp).testTag("settings-google")) {
+        DesignText(tr(state.googleAuthorizationStatus.title), 16)
+        DesignText(tr(state.googleAuthorizationDetail), 12, muted = true)
+        val label = when (state.googleAuthorizationStatus) {
+            GoogleAuthorizationStatus.NOT_CONNECTED -> message(423)
+            GoogleAuthorizationStatus.AUTHORIZING -> message(559)
+            GoogleAuthorizationStatus.AUTHORIZED -> message(560)
+            GoogleAuthorizationStatus.FAILED -> message(561)
+        }
+        DesignPillButton(tr(label), primary = false, onClick = state::requestGoogleAuthorization)
+        if (state.hasGoogleAuthorization) {
+            val checkTitle = when (state.googleConnectionVerification) {
+                GoogleConnectionVerification.NOT_CHECKED -> message(562)
+                GoogleConnectionVerification.CHECKING -> message(563)
+                GoogleConnectionVerification.VERIFIED -> message(564)
+                GoogleConnectionVerification.ACTION_REQUIRED -> message(565)
+                GoogleConnectionVerification.FAILED -> message(78)
+            }
+            DesignText(tr(checkTitle), 14)
+            DesignText(tr(state.googleConnectionCheckDetail), 12, muted = true)
+            DesignPillButton(
+                tr(if (state.googleConnectionCheckInProgress) message(566) else message(567)), primary = false,
+                enabled = !state.googleConnectionCheckInProgress, onClick = state::requestGoogleConnectionCheck,
+            )
+        }
+    }
+}
+
+/** Einstellungen & Daten: Darstellung, Hintergrundprüfung, Sicherung. */
+private fun LazyListScope.preferenceItems(state: CalendarControlState) {
+    item(key = "preferences") {
+        Column(Modifier.padding(top = 16.dp)) {
+            DesignSection(tr(message(725)), TextInset)
+            val palette = if (state.themeMode == ThemeMode.DARK) state.darkPaletteStyle.label else state.lightPaletteStyle.label
+            DesignRow(tr(message(580)), detail = tr(message(728)), value = tr(palette), tag = "settings-appearance", inset = 4.dp) { state.open(AppScreen.APPEARANCE) }
+            DesignRow(tr(message(168)), tag = "settings-background", inset = 4.dp, onClick = state::openBackgroundCheck)
+            DesignRow(tr(message(516)), tag = "settings-backup", inset = 4.dp, onClick = state::openRuleBackup)
+        }
+    }
+}
+
+/** Breit rechts: Lage und Schutzregeln als Erklärung; konsistent mit der linken Liste. */
 @Composable
 private fun SettingsWideSupportPane(state: CalendarControlState, modifier: Modifier) {
     val targets = buildList {
@@ -139,276 +211,12 @@ private fun SettingsWideSupportPane(state: CalendarControlState, modifier: Modif
         if (state.syncDestinations.googleCalendarEnabled) add(message(523))
     }.let { com.tequila.tumcalendarcontrol.i18n.joinMessages(it, "、") }.ifBlank { message(524) }
     Column(
-        modifier = modifier.verticalScroll(rememberScrollState()).padding(bottom = FloatingNavigationContentClearance),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = modifier.verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 8.dp).padding(bottom = FloatingNavigationContentClearance),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        InformationCard(message(525), message(526))
-        InformationCard(
-            message(527),
-            if (state.sourceCatalogLoaded) message(528, (state.sourceSnapshotLabel), (state.sourceCourses.size), (state.selectedSourceOccurrences.size)) else message(529),
-        )
-        InformationCard(message(530), targets)
-        InformationCard(message(531), message(532))
-    }
-}
-
-@Composable
-private fun SourceStatusSelector(state: CalendarControlState) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(tr(message(533)), style = MiuixTheme.textStyles.title3)
-        if (state.sourceCatalogLoaded) {
-            Text(tr(message(534, (state.sourceSnapshotLabel))), color = LocalTumPalette.current.onSurfaceVariant)
-        } else {
-            Text(tr(message(535)), color = LocalTumPalette.current.onSurfaceVariant)
-            TumEventStatus.entries.forEach { status ->
-                Switch(checked = status in state.visibleSourceStatuses, onCheckedChange = { state.toggleSourceStatusVisible(status) })
-                Text(tr(status.label), modifier = Modifier.padding(start = 8.dp))
-            }
-        }
-    }
-}
-
-/** Benutzer wählt erfolgreiche Datenversion; Wechsel ohne Netzwerk oder Kalenderänderung. */
-@Composable
-private fun SourceSnapshotSelectionCard(state: CalendarControlState) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        InformationCard(
-            message(536),
-            message(537, (state.sourceSnapshotLabel)),
-        )
-        if (state.hasPreviousSourceSnapshot) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(
-                    onClick = { state.selectSourceSnapshot(SourceSnapshotSlot.LATEST) },
-                    modifier = Modifier.weight(1f),
-                ) { Text(tr(if (state.activeSourceSnapshotSlot == SourceSnapshotSlot.LATEST) message(538) else message(539))) }
-                Button(
-                    onClick = { state.selectSourceSnapshot(SourceSnapshotSlot.PREVIOUS) },
-                    modifier = Modifier.weight(1f),
-                ) { Text(tr(if (state.activeSourceSnapshotSlot == SourceSnapshotSlot.PREVIOUS) message(540) else message(541))) }
-            }
-            state.sourceSnapshotDifference?.let { difference ->
-                InformationCard(message(542), difference.summary())
-            }
-        }
-    }
-}
-
-/** Privaten Konfigurationsentwurf bearbeiten; gespeicherte Abonnementadresse niemals vorausfüllen. */
-@Composable
-internal fun SyncConfigurationScreen(state: CalendarControlState) {
-    val current = state.privateSyncConfiguration
-    var replacementSubscriptionUrl by remember { mutableStateOf("") }
-    var replacingSubscription by remember { mutableStateOf(!current.hasTumSubscription) }
-    var calendarName by remember(current.googleCalendarName) { mutableStateOf(current.googleCalendarName) }
-    var validationMessage by remember { mutableStateOf<String?>(null) }
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        InformationCard(
-            message(550),
-            message(551, (current.maskedTumSubscription())),
-        )
-        if (replacingSubscription) {
-            PrivateAddressInput(
-                value = replacementSubscriptionUrl,
-                onValueChange = { replacementSubscriptionUrl = it },
-            )
-        } else {
-            Button(onClick = { replacingSubscription = true }, modifier = Modifier.fillMaxWidth()) { Text(tr(message(552))) }
-        }
-        InformationCard(message(510), message(553))
-        InformationCard(message(423), message(554))
-        InformationCard(message(555), message(556))
-        TextField(
-            value = calendarName,
-            onValueChange = { calendarName = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = tr(message(557)),
-        )
-        validationMessage?.let { Text(tr(it), color = LocalTumPalette.current.onSurfaceVariant) }
-        Button(
-            onClick = {
-                val updated = current.copy(
-                    tumSubscriptionUrl = replacementSubscriptionUrl.trim().ifBlank { current.tumSubscriptionUrl },
-                    googleOAuthClientId = "",
-                    googleCalendarName = calendarName,
-                )
-                val problems = updated.validate()
-                if (problems.isEmpty()) {
-                    state.updatePrivateSyncConfiguration(updated)
-                    state.handleBack()
-                } else {
-                    validationMessage = com.tequila.tumcalendarcontrol.i18n.joinMessages(problems.map { it.message })
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(tr(message(558))) }
-    }
-}
-
-/** Google-Status direkt neben Verbindung zeigen, damit Rückmeldungen auf langen Seiten sichtbar bleiben. */
-@Composable
-private fun GoogleAuthorizationPanel(state: CalendarControlState) {
-    InformationCard(state.googleAuthorizationStatus.title, state.googleAuthorizationDetail)
-    Button(onClick = state::requestGoogleAuthorization, modifier = Modifier.fillMaxWidth()) {
-        val label = when (state.googleAuthorizationStatus) {
-            GoogleAuthorizationStatus.NOT_CONNECTED -> message(423)
-            GoogleAuthorizationStatus.AUTHORIZING -> message(559)
-            GoogleAuthorizationStatus.AUTHORIZED -> message(560)
-            GoogleAuthorizationStatus.FAILED -> message(561)
-        }
-        Text(tr(label))
-    }
-    if (state.hasGoogleAuthorization) {
-        val checkTitle = when (state.googleConnectionVerification) {
-            GoogleConnectionVerification.NOT_CHECKED -> message(562)
-            GoogleConnectionVerification.CHECKING -> message(563)
-            GoogleConnectionVerification.VERIFIED -> message(564)
-            GoogleConnectionVerification.ACTION_REQUIRED -> message(565)
-            GoogleConnectionVerification.FAILED -> message(78)
-        }
-        InformationCard(checkTitle, state.googleConnectionCheckDetail)
-        Button(
-            onClick = state::requestGoogleConnectionCheck,
-            enabled = !state.googleConnectionCheckInProgress,
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(tr(if (state.googleConnectionCheckInProgress) message(566) else message(567))) }
-    }
-}
-
-/** Ausgabeziele unabhängig; Schalter speichert nur Zukunftserlaubnis und startet keine unkonfigurierte Synchronisierung. */
-@Composable
-private fun SyncDestinationSelector(state: CalendarControlState) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(tr(message(530)), style = MiuixTheme.textStyles.title3)
-        Text(tr(message(568)), color = LocalTumPalette.current.onSurfaceVariant)
-        SyncDestination.entries.forEach { destination ->
-            val enabled = state.syncDestinations.isEnabled(destination)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                insideMargin = PaddingValues(14.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(tr(destination.title), style = MiuixTheme.textStyles.body1)
-                        Text(
-                            tr(if (enabled) destination.enabledSummary else destination.disabledSummary),
-                            color = LocalTumPalette.current.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = enabled,
-                        onCheckedChange = { requested ->
-                            state.requestSyncDestinationChange(destination, requested)
-                        },
-                    )
-                }
-            }
-        }
-        InformationCard(message(569), message(570))
-    }
-}
-
-@Composable
-private fun SyncDestinationChangeDialog(
-    change: PendingSyncDestinationChange,
-    currentDestinations: SyncDestinations,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(modifier = Modifier.fillMaxWidth(), insideMargin = PaddingValues(20.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(tr(change.title), style = MiuixTheme.textStyles.title2)
-                Text(tr(change.consequence(currentDestinations)))
-                Text(tr(message(571)), color = LocalTumPalette.current.onSurfaceVariant)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    Button(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text(tr(message(197))) }
-                    Button(onClick = onConfirm, modifier = Modifier.weight(1f)) { Text(tr(message(572))) }
-                }
-            }
-        }
-    }
-}
-
-/** Profil zunächst als Entwurf; erst Speichern aktualisiert Zustand, App-Einstieg persistiert private Präferenzen. */
-@Composable
-internal fun ProfileScreen(state: CalendarControlState) {
-    var draftName by androidx.compose.runtime.saveable.rememberSaveable(state.profile) { mutableStateOf(state.profile.displayName) }
-    var draftTone by androidx.compose.runtime.saveable.rememberSaveable(state.profile) { mutableStateOf(state.profile.avatarTone) }
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        InformationCard(message(573), message(574))
-        TextField(
-            value = draftName,
-            onValueChange = { draftName = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = tr(message(575)),
-        )
-        Text(tr(message(576)), style = MiuixTheme.textStyles.title3)
-        AvatarTone.entries.forEach { tone ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { draftTone = tone },
-                insideMargin = PaddingValues(14.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    ProfileAvatar(UserProfile(draftName, tone), modifier = Modifier.size(40.dp))
-                    Column(modifier = Modifier.padding(start = 12.dp)) {
-                        Text(tr(tone.label), style = MiuixTheme.textStyles.body1)
-                        Text(
-                            tr(if (tone == draftTone) message(577) else message(578)),
-                            color = LocalTumPalette.current.onSurfaceVariant,
-                        )
-                    }
-                    RadioButton(
-                        selected = tone == draftTone,
-                        onClick = { draftTone = tone },
-                        modifier = Modifier.padding(start = 12.dp),
-                    )
-                }
-            }
-        }
-        Button(
-            onClick = {
-                state.updateProfile(UserProfile(draftName, draftTone))
-                state.handleBack()
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(tr(message(579))) }
-    }
-}
-
-@Composable
-private fun ThemeModeSelector(state: CalendarControlState) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(tr(message(580)), style = MiuixTheme.textStyles.title3)
-        ThemeMode.entries.forEach { mode ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { state.themeMode = mode },
-                insideMargin = PaddingValues(14.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(
-                        selected = state.themeMode == mode,
-                        onClick = { state.themeMode = mode },
-                    )
-                    Column(modifier = Modifier.padding(start = 8.dp)) {
-                        Text(tr(mode.label), style = MiuixTheme.textStyles.body1)
-                        Text(
-                            tr(if (mode == ThemeMode.SYSTEM) message(581) else message(582)),
-                            color = LocalTumPalette.current.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-        }
+        DesignNote(tr(message(525)), tr(message(526)))
+        DesignNote(tr(message(527)), tr(if (state.sourceCatalogLoaded) message(528, state.sourceSnapshotLabel, state.sourceCourses.size, state.selectedSourceOccurrences.size) else message(529)))
+        DesignNote(tr(message(530)), tr(targets))
+        DesignNote(tr(message(531)), tr(message(532)))
     }
 }

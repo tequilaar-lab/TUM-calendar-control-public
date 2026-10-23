@@ -48,4 +48,9 @@ fun glassSpec(level: GlassLevel, support: GlassSupport): GlassSpec = when {
 }
 
 val LocalGlassLevel = staticCompositionLocalOf { GlassLevel.STANDARD }
+
+/** Aktuelle Glasstufe und Auswahlrückruf (App speichert; Bildtests ohne Wirkung), analog zur Sprachauswahl. */
+data class GlassSelection(val level: GlassLevel, val select: (GlassLevel) -> Unit)
+
+val LocalGlassSelection = staticCompositionLocalOf { GlassSelection(GlassLevel.STANDARD) {} }
 val LocalGlassSupport = staticCompositionLocalOf { GlassSupport.forSdk(Build.VERSION.SDK_INT) }

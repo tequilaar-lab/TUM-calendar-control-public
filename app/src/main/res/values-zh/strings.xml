@@ -727,4 +727,10 @@
     <string name="msg_0721" formatted="false">"新建"</string>
     <string name="msg_0722" formatted="false">"核对并更新"</string>
     <string name="msg_0723" formatted="false">"清理范围"</string>
+    <string name="msg_0724" formatted="false">"日历"</string>
+    <string name="msg_0725" formatted="false">"偏好与数据"</string>
+    <string name="msg_0726" formatted="false">"显示模式"</string>
+    <string name="msg_0727" formatted="false">"玻璃预览"</string>
+    <string name="msg_0728" formatted="false">"显示模式、浅色与深色配色、玻璃效果"</string>
+    <string name="msg_0729" formatted="false">"浮动按钮与导航栏会这样显示"</string>
 </resources>

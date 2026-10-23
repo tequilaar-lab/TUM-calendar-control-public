@@ -727,4 +727,10 @@
     <string name="msg_0721" formatted="false">"Neu"</string>
     <string name="msg_0722" formatted="false">"Prüfen &amp; aktualisieren"</string>
     <string name="msg_0723" formatted="false">"Bereinigungsumfang"</string>
+    <string name="msg_0724" formatted="false">"Kalender"</string>
+    <string name="msg_0725" formatted="false">"Einstellungen &amp; Daten"</string>
+    <string name="msg_0726" formatted="false">"Darstellung"</string>
+    <string name="msg_0727" formatted="false">"Glasvorschau"</string>
+    <string name="msg_0728" formatted="false">"Darstellung, helle und dunkle Farben, Glaseffekt"</string>
+    <string name="msg_0729" formatted="false">"So erscheinen schwebende Schaltflächen und Navigation"</string>
 </resources>

@@ -1,77 +1,90 @@
 /*
- * Aufgabe: Eigene Campustermine für nächste bestätigte Ausgabe erfassen oder entfernen.
+ * Aufgabe: Eigene Campustermine für nächste bestätigte Ausgabe erfassen oder entfernen (neues Erscheinungsbild).
  * Ein-/Ausgabe: Titel, Datum, Uhrzeit und Status -> lokale Regelbestands-Änderungsabsicht.
- * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nebenwirkungen: Keine externen Aktionen; Speichern/Löschen über bestehende Zustandsaufrufe.
  * Nicht zuständig: Quellenkursbearbeitung, echte Datumsdialoge, OAuth oder Synchronisierungsausführung.
  */
 package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import com.tequila.tumcalendarcontrol.sync.ManualScheduleItem
+import com.tequila.tumcalendarcontrol.ui.design.DesignActionPage
+import com.tequila.tumcalendarcontrol.ui.design.DesignChoice
+import com.tequila.tumcalendarcontrol.ui.design.DesignField
+import com.tequila.tumcalendarcontrol.ui.design.DesignFrostCard
+import com.tequila.tumcalendarcontrol.ui.design.DesignNote
+import com.tequila.tumcalendarcontrol.ui.design.DesignPillButton
+import com.tequila.tumcalendarcontrol.ui.design.DesignSection
+import com.tequila.tumcalendarcontrol.ui.design.DesignText
+import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextField
 
+/** Freier Text auf der Titellinie (4 dp innerhalb der Blockkanten). */
+private val TextInset = Modifier.padding(horizontal = 4.dp)
+
+/** Formular (Name, Datum, Zeit, Teilnahme mit Statusfarbe), schwebend „speichern“; darunter vorhandene Termine mit Löschen. */
 @Composable
 fun ManualEventsScreen(state: CalendarControlState) {
-    var title by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
-    var date by androidx.compose.runtime.saveable.rememberSaveable {
-        mutableStateOf(java.time.LocalDate.now(ZoneId.of("Europe/Berlin")).toString())
-    }
-    var startHour by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("9") }
-    var startMinute by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("0") }
-    var endHour by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("10") }
-    var endMinute by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("0") }
-    var attendance by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(AttendanceState.CHOOSE_TO_ATTEND) }
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+    val colors = LocalDesignColors.current
+    var title by rememberSaveable { mutableStateOf("") }
+    var date by rememberSaveable { mutableStateOf(java.time.LocalDate.now(ZoneId.of("Europe/Berlin")).toString()) }
+    var startHour by rememberSaveable { mutableStateOf("9") }
+    var startMinute by rememberSaveable { mutableStateOf("0") }
+    var endHour by rememberSaveable { mutableStateOf("10") }
+    var endMinute by rememberSaveable { mutableStateOf("0") }
+    var attendance by rememberSaveable { mutableStateOf(AttendanceState.CHOOSE_TO_ATTEND) }
+    DesignActionPage(
+        tr(message(437)),
+        onAction = {
+            state.addManualEvent(title, date, startHour, startMinute, endHour, endMinute, attendance)
+            if (state.feedback?.startsWith(message(436)) == true) title = ""
+        },
+        actionTag = "events-save", contentTag = "events-content",
     ) {
-        InformationCard(message(430), message(431))
-        TextField(title, { title = it }, Modifier.fillMaxWidth(), label = tr(message(432)))
-        TextField(date, { date = it }, Modifier.fillMaxWidth(), label = tr(message(433)))
+        DesignNote(tr(message(430)), tr(message(431)))
+        DesignField(tr(message(432)), title, { title = it }, Modifier.testTag("events-title"), singleLine = true)
+        DesignField(tr(message(433)), date, { date = it }, Modifier.testTag("events-date"), singleLine = true)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextField(startHour, { startHour = it }, Modifier.weight(1f), label = tr(message(349)))
-            TextField(startMinute, { startMinute = it }, Modifier.weight(1f), label = tr(message(350)))
-            TextField(endHour, { endHour = it }, Modifier.weight(1f), label = tr(message(351)))
-            TextField(endMinute, { endMinute = it }, Modifier.weight(1f), label = tr(message(352)))
+            DesignField(tr(message(349)), startHour, { startHour = it }, Modifier.weight(1f))
+            DesignField(tr(message(350)), startMinute, { startMinute = it }, Modifier.weight(1f))
+            DesignField(tr(message(351)), endHour, { endHour = it }, Modifier.weight(1f))
+            DesignField(tr(message(352)), endMinute, { endMinute = it }, Modifier.weight(1f))
         }
+        // Sichtbare Regeln: Grün verbindlich, Blau auswählen, Grau nicht teilnehmen; Punkt in der Statusfarbe.
+        DesignSection(tr(message(589)), TextInset)
         AttendanceState.entries.forEach { option ->
-            Button(onClick = { attendance = option }, modifier = Modifier.fillMaxWidth()) {
-                Text(tr(if (attendance == option) message(434, (option.label), (option.colorLabel)) else message(435, (option.label), (option.colorLabel))))
+            DesignChoice(
+                tr(option.label), option == attendance, Modifier.testTag("events-attendance-${option.name}"), detail = tr(option.colorLabel),
+                trailing = { Box(Modifier.size(10.dp).clip(CircleShape).background(attendanceInk(option, colors))) },
+            ) { attendance = option }
+        }
+        state.feedback?.let { DesignText(tr(it), 12, TextInset.testTag("events-feedback"), muted = true) }
+        state.ruleLedger.manualEvents.forEach { item ->
+            DesignFrostCard(Modifier.testTag("events-item")) {
+                DesignText(tr(message(147, item.title, item.attendanceState.label)), 15)
+                DesignText(tr(item.berlinTimeSummary()), 12, muted = true)
+                DesignPillButton(tr(message(438)), primary = false) { state.removeManualEvent(item.id) }
             }
         }
-        Button(
-            onClick = {
-                state.addManualEvent(title, date, startHour, startMinute, endHour, endMinute, attendance)
-                if (state.feedback?.startsWith(message(436)) == true) title = ""
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(tr(message(437))) }
-        state.ruleLedger.manualEvents.forEach { item ->
-            InformationCard(message(147, (item.title), (item.attendanceState.label)), item.berlinTimeSummary())
-            Button(onClick = { state.removeManualEvent(item.id) }, modifier = Modifier.fillMaxWidth()) { Text(tr(message(438))) }
-        }
-        state.feedback?.let { Text(tr(it), color = LocalTumPalette.current.onSurfaceVariant) }
     }
 }
 

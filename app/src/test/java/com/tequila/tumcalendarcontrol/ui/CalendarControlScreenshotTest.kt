@@ -110,10 +110,11 @@ class CalendarControlScreenshotTest {
     @Test
     @Config(sdk = [36], qualifiers = "w412dp-h892dp-420dpi")
     fun `外观颜色选择可滚动到达`() {
-        val state = CalendarControlState().also { it.open(AppScreen.SETTINGS) }
+        // Farben liegen seit dem neuen Erscheinungsbild auf der eigenen Darstellungsseite.
+        val state = CalendarControlState().also { it.open(AppScreen.APPEARANCE) }
         render(state)
-        composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText("深蓝"))
-        composeRule.onNodeWithTag("settings-list").performTouchInput { swipeUp() }
+        composeRule.onNodeWithTag("appearance-content").performScrollToNode(hasText("深蓝"))
+        composeRule.onNodeWithTag("appearance-content").performTouchInput { swipeUp() }
         capture("appearance_choices_412x892")
     }
 

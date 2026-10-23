@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -151,7 +152,8 @@ fun DesignChips(options: List<String>, selected: Int, modifier: Modifier = Modif
 
 /**
  * Eingabefeld mit Beschriftung darüber; in Ruhe feine Kante (Miuix zeichnet nur beim Fokus eine),
- * beim Fokus Akzentkante von Miuix. search=true ergänzt die Lupe und eine einzeilige Eingabe.
+ * beim Fokus Akzentkante von Miuix. search=true ergänzt die Lupe und eine einzeilige Eingabe;
+ * visualTransformation z. B. zum Verdecken privater Adressen.
  */
 @Composable
 fun DesignField(
@@ -161,6 +163,8 @@ fun DesignField(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     search: Boolean = false,
+    singleLine: Boolean = search,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
     val colors = LocalDesignColors.current
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -173,7 +177,7 @@ fun DesignField(
                 modifier = Modifier.fillMaxWidth(),
                 cornerRadius = DesignRadii.Field,
                 colors = TextFieldDefaults.textFieldColors(backgroundColor = colors.wash, labelColor = colors.muted, borderColor = colors.accent.copy(alpha = .6f)),
-                label = placeholder, useLabelAsPlaceholder = true, singleLine = search,
+                label = placeholder, useLabelAsPlaceholder = true, singleLine = singleLine, visualTransformation = visualTransformation,
                 // Eingabetext in Tinte; Miuix-Standard wäre im Dunkelschema zu dunkel.
                 textStyle = MiuixTheme.textStyles.main.copy(color = colors.ink, fontSize = 15.sp),
                 leadingIcon = if (search) { { Icon(Icons.Rounded.Search, contentDescription = null, tint = colors.muted, modifier = Modifier.padding(start = 14.dp).size(20.dp)) } } else null,

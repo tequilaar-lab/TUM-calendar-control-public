@@ -32,6 +32,7 @@ internal val routedAppScreens: Set<AppScreen> =
     AppScreen.OUTPUT_CLEANUP,
     AppScreen.BACKGROUND_CHECK,
     AppScreen.RULE_BACKUP,
+    AppScreen.APPEARANCE,
     )
 
 @Composable
@@ -52,6 +53,7 @@ fun AppScreenContent(
         AppScreen.PROFILE,
         AppScreen.SYNC_CONFIGURATION,
         AppScreen.SYNC_PREVIEW,
+        AppScreen.APPEARANCE,
         -> SettingsScreenContent(state, screen)
 
         AppScreen.ATTENDANCE,
@@ -87,6 +89,7 @@ private fun SettingsScreenContent(state: CalendarControlState, screen: AppScreen
         AppScreen.PROFILE -> ProfileScreen(state)
         AppScreen.SYNC_CONFIGURATION -> SyncConfigurationScreen(state)
         AppScreen.SYNC_PREVIEW -> SyncPreviewScreen(state)
+        AppScreen.APPEARANCE -> AppearanceScreen(state)
         else -> error(message(183))
     }
 }
