@@ -35,7 +35,9 @@ internal object CourseDisplayGroupModel {
         .map { course -> course to parseTitle(course.displayTitle) }
         .groupBy { (_, parsed) -> normalizedKey(parsed.courseName) }
         .map { (key, members) ->
-            val title = members.first().second.courseName.ifBlank { message(328) }
+            // Unveränderter Name behält das Originalobjekt: tr() erkennt Übersetzungen über die Objektidentität von message().
+            val (firstCourse, firstParsed) = members.first()
+            val title = if (firstParsed.courseName == firstCourse.displayTitle) firstCourse.displayTitle else firstParsed.courseName.ifBlank { message(328) }
             val types = members
                 .groupBy { (_, parsed) -> parsed.type }
                 .map { (type, typeMembers) ->

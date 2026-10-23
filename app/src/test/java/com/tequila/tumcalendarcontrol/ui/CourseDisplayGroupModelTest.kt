@@ -8,7 +8,9 @@ package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import com.tequila.tumcalendarcontrol.domain.Course
+import com.tequila.tumcalendarcontrol.domain.displayTitle
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Test
 
 class CourseDisplayGroupModelTest {
@@ -24,6 +26,16 @@ class CourseDisplayGroupModelTest {
 
         assertEquals(2, groups.size)
         assertEquals(listOf("a", "b"), groups.first { it.displayTitle.contains("VHDL", ignoreCase = true) }.courses.map(Course::id))
+    }
+
+    /** Übersetzbare Beispielnamen bleiben dasselbe Objekt, sonst zeigte die deutsche Übersicht „课程 A“ statt „Kurs A“. */
+    @Test
+    fun `未改动的课名保留原字符串对象以便翻译`() {
+        val sample = com.tequila.tumcalendarcontrol.domain.SampleCourses.all().first()
+
+        val group = CourseDisplayGroupModel.groups(listOf(sample)).single()
+
+        assertSame(sample.displayTitle, group.displayTitle)
     }
 
     @Test
