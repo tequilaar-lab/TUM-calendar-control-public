@@ -8,6 +8,9 @@
  */
 package com.tequila.tumcalendarcontrol.ui.design
 
+import com.tequila.tumcalendarcontrol.i18n.message
+import com.tequila.tumcalendarcontrol.ui.tr
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +21,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,8 +30,10 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,8 +56,6 @@ import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.RadioButton
 import top.yukonga.miuix.kmp.basic.RadioButtonDefaults
-import top.yukonga.miuix.kmp.basic.TabRowDefaults
-import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.TextFieldDefaults
 import top.yukonga.miuix.kmp.squircle.squircleBorder
@@ -115,19 +119,22 @@ private fun DesignLabel(label: String, detail: String) {
     }
 }
 
-/** Segmentsteuerung: helle Rinne, gewähltes Segment hebt sich als Fläche ab (dunkel: Tinte 14 %). Höhe 58 dp, damit jedes Segment ≥ 48 dp hoch tippbar ist. */
+/**
+ * Segmentsteuerung als Schwebeblock: zarte Rinne mit leichtem Schatten, gewähltes Segment als hervortretender
+ * abgerundeter Block, der federnd gleitet und sich seitlich ziehen lässt (DesignSlidingSelector). Höhe 58 dp (Tippfläche ≥ 48 dp).
+ */
 @Composable
 fun DesignSegmented(options: List<String>, selected: Int, modifier: Modifier = Modifier, onSelect: (Int) -> Unit) {
     val colors = LocalDesignColors.current
-    val haptics = LocalDesignHaptics.current
-    TabRowWithContour(
-        tabs = options, selectedTabIndex = selected, onTabSelected = { if (it != selected) haptics.perform(HapticEvent.SELECTION); onSelect(it) },
-        modifier = modifier.fillMaxWidth(), cornerRadius = DesignRadii.Field, height = 58.dp,
-        colors = TabRowDefaults.tabRowColors(
-            backgroundColor = colors.wash, contentColor = colors.muted,
-            selectedBackgroundColor = if (colors.isDark) colors.ink.copy(alpha = .14f) else colors.floating, selectedContentColor = colors.ink,
-        ),
-    )
+    val shape = RoundedCornerShape(DesignRadii.Field)
+    DesignSlidingSelector(
+        count = options.size, selected = selected, onSelect = onSelect,
+        modifier = modifier.fillMaxWidth().height(58.dp).designGlow(DesignRadii.Field, colors, strength = .12f).clip(shape).background(colors.wash),
+        corner = DesignRadii.Field - 4.dp,
+    ) { index, active ->
+        val ink by animatedSelectionColor(active, colors.ink, colors.muted, "segment-$index")
+        DesignText(options[index], 14, color = ink, weight = if (active) FontWeight.Medium else FontWeight.Normal, maxLines = 1)
+    }
 }
 
 /**
@@ -141,10 +148,10 @@ fun DesignChips(options: List<String>, selected: Int, modifier: Modifier = Modif
     FlowRow(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         options.forEachIndexed { index, option ->
             val active = index == selected
+            val progress = animatedSelectionProgress(active, "chip-$index")
             Box(
-                Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(DesignRadii.Field))
-                    .background(if (!active) colors.wash else if (colors.isDark) colors.ink.copy(alpha = .14f) else colors.floating)
-                    .then(if (active) Modifier.squircleBorder(1.dp, colors.ink.copy(alpha = .14f), DesignRadii.Field) else Modifier)
+                Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(DesignRadii.Field)).background(colors.wash)
+                    .designSelectionBlock(colors, DesignRadii.Field, progress)
                     .selectable(active, role = Role.RadioButton) { haptics.perform(HapticEvent.SELECTION); onSelect(index) }.padding(horizontal = 16.dp),
                 contentAlignment = Alignment.Center,
             ) {
@@ -169,6 +176,7 @@ fun DesignField(
     search: Boolean = false,
     singleLine: Boolean = search,
     visualTransformation: VisualTransformation = VisualTransformation.None,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     val colors = LocalDesignColors.current
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -185,6 +193,17 @@ fun DesignField(
                 // Eingabetext in Tinte; Miuix-Standard wäre im Dunkelschema zu dunkel.
                 textStyle = MiuixTheme.textStyles.main.copy(color = colors.ink, fontSize = 15.sp),
                 leadingIcon = if (search) { { Icon(Icons.Rounded.Search, contentDescription = null, tint = colors.muted, modifier = Modifier.padding(start = 14.dp).size(20.dp)) } } else null,
+                // Suche: Leeren-Knopf, sobald etwas eingegeben ist; sonst optionaler eigener Abschluss (z. B. Datumswahl).
+                trailingIcon = when {
+                    search && value.isNotEmpty() -> { {
+                        Icon(
+                            Icons.Rounded.Close, contentDescription = tr(message(754)), tint = colors.muted,
+                            modifier = Modifier.padding(end = 8.dp).size(48.dp).designPressable(corner = 24.dp) { onValueChange("") }.padding(14.dp).testTag("field-clear"),
+                        )
+                    } }
+                    trailing != null -> trailing
+                    else -> null
+                },
             )
             Box(Modifier.matchParentSize().squircleBorder(1.dp, colors.ink.copy(alpha = .14f), DesignRadii.Field))
         }
@@ -229,7 +248,6 @@ fun DesignRow(
     onClick: () -> Unit = {},
 ) {
     val colors = LocalDesignColors.current
-    val haptics = LocalDesignHaptics.current
     Column(modifier.fillMaxWidth().then(if (tag.isNotEmpty()) Modifier.testTag(tag) else Modifier)) {
         BasicComponent(
             title = title, summary = detail.ifEmpty { null },
@@ -237,7 +255,8 @@ fun DesignRow(
             summaryColor = BasicComponentDefaults.summaryColor(color = colors.muted),
             // inset: Text auf der Titellinie, Trennlinie bleibt an der Blockkante (frei stehende Listen auf Seiten).
             insideMargin = PaddingValues(start = inset, top = 12.dp, bottom = 12.dp),
-            onClick = { haptics.perform(HapticEvent.SELECTION); onClick() },
+            // Klick über designPressable: Druck als abgerundeter Schwebeblock statt Rechteckblitz.
+            modifier = Modifier.designPressable(onClick = onClick),
             endActions = {
                 if (value.isNotEmpty()) DesignText(value, 12, muted = true)
                 Spacer(Modifier.width(6.dp))

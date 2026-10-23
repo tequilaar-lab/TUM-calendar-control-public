@@ -34,6 +34,7 @@ import com.tequila.tumcalendarcontrol.ui.design.DesignChips
 import com.tequila.tumcalendarcontrol.ui.design.DesignField
 import com.tequila.tumcalendarcontrol.ui.design.DesignFrostCard
 import com.tequila.tumcalendarcontrol.ui.design.DesignNote
+import com.tequila.tumcalendarcontrol.ui.design.DesignPillButton
 import com.tequila.tumcalendarcontrol.ui.design.DesignRow
 import com.tequila.tumcalendarcontrol.ui.design.DesignSection
 import com.tequila.tumcalendarcontrol.ui.design.DesignText
@@ -135,6 +136,13 @@ internal fun CourseEditScreen(state: CalendarControlState) {
             DesignField(tr(message(352)), endMinute, { endMinute = it }, Modifier.weight(1f))
         }
         validation?.let { DesignText(tr(it), 12, color = LocalDesignColors.current.danger, modifier = Modifier.padding(horizontal = 4.dp).testTag("edit-validation")) }
+        // Gegenstück zum Bearbeiten: alle lokalen Änderungen auf einmal verwerfen (auch die Zeit), dann zurück.
+        if (course.localOverride != CourseLocalOverride()) {
+            DesignPillButton(tr(message(752)), Modifier.testTag("edit-restore"), primary = false) {
+                state.updateSelectedCourseOverride(CourseLocalOverride())
+                state.handleBack()
+            }
+        }
     }
 }
 

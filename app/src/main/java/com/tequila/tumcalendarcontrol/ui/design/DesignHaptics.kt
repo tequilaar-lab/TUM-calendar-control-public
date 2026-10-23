@@ -13,7 +13,6 @@ import android.view.HapticFeedbackConstants
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -77,11 +76,8 @@ fun rememberViewHaptics(settings: HapticSettings): DesignHaptics {
     return remember(view, settings) { DesignHaptics(settings) { view.performHapticFeedback(it) } }
 }
 
-/** Eigene klickbare Fläche mit Rückmeldung (Standard: Auswahl). */
-fun Modifier.hapticClickable(event: HapticEvent = HapticEvent.SELECTION, onClick: () -> Unit): Modifier = composed {
-    val haptics = LocalDesignHaptics.current
-    clickable { haptics.perform(event); onClick() }
-}
+/** Eigene klickbare Fläche mit Rückmeldung (Standard: Auswahl); Druck als abgerundeter Schwebeblock (designPressable). */
+fun Modifier.hapticClickable(event: HapticEvent = HapticEvent.SELECTION, onClick: () -> Unit): Modifier = designPressable(event, onClick = onClick)
 
 /** Auswählbare Fläche mit Auswahlrückmeldung; erneutes Antippen des gewählten Elements bleibt still. */
 fun Modifier.hapticSelectable(selected: Boolean, role: Role, onClick: () -> Unit): Modifier = composed {

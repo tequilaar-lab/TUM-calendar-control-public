@@ -21,7 +21,8 @@ import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import com.tequila.tumcalendarcontrol.sync.SourceOccurrenceIdentity
 import com.tequila.tumcalendarcontrol.ui.design.DesignChoice
 import com.tequila.tumcalendarcontrol.ui.design.DesignFrostCard
-import com.tequila.tumcalendarcontrol.ui.design.DesignRow
+import com.tequila.tumcalendarcontrol.ui.design.DesignDisclosureRow
+import com.tequila.tumcalendarcontrol.ui.design.DesignExpandable
 import com.tequila.tumcalendarcontrol.ui.design.DesignSection
 import com.tequila.tumcalendarcontrol.ui.design.DesignText
 
@@ -40,8 +41,9 @@ internal fun IndividualSourceAttendance(state: CalendarControlState) {
             DesignText(tr(group.title), 17, serif = true)
             DesignText(tr(state.currentSelectionSummary(group.selection)), 12, muted = true)
             DesignText(tr(message(399, group.selection.size, draft.attendance?.label ?: message(400), draft.favorite.label)), 12, muted = true)
-            DesignRow(tr(if (expanded) message(401) else message(402))) { expanded = !expanded }
-            if (expanded) {
+            // Aufklappzeile (Pfeil links -> gegen den Uhrzeigersinn nach unten), Einstellungen ziehen sich wie eine Schublade auf.
+            DesignDisclosureRow(tr(if (expanded) message(401) else message(402)), expanded, Modifier.testTag("individual-toggle-${group.key}")) { expanded = !expanded }
+            DesignExpandable(expanded) {
                 // Leere Wahl = Teilnahme dieses Kurses unverändert lassen.
                 (listOf<AttendanceState?>(null) + AttendanceState.entries).forEach { option ->
                     DesignChoice(tr(option?.label ?: message(400)), option == draft.attendance) { update(draft.copy(attendance = option)) }

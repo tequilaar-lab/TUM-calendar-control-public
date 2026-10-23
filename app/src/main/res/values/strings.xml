@@ -749,4 +749,13 @@
     <string name="msg_0743" formatted="false">"Light"</string>
     <string name="msg_0744" formatted="false">"Strength"</string>
     <string name="msg_0745" formatted="false">"Strong"</string>
+    <string name="msg_0746" formatted="false">"Clear all · {0} sessions"</string>
+    <string name="msg_0747" formatted="false">"Deselect course · {0} sessions"</string>
+    <string name="msg_0748" formatted="false">"Attendance &amp; favorites · {0} selected"</string>
+    <string name="msg_0749" formatted="false">"{0}/{1} selected"</string>
+    <string name="msg_0750" formatted="false">"Review output · {0} sessions"</string>
+    <string name="msg_0751" formatted="false">"Attendance &amp; favorites"</string>
+    <string name="msg_0752" formatted="false">"Restore source details"</string>
+    <string name="msg_0753" formatted="false">"Select all courses"</string>
+    <string name="msg_0754" formatted="false">"Clear"</string>
 </resources>

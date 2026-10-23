@@ -7,8 +7,21 @@
  */
 package com.tequila.tumcalendarcontrol.ui.design
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.ColumnScope
@@ -48,24 +61,25 @@ import top.yukonga.miuix.kmp.basic.Icon
  * Die Lichtkante entfällt auf Wunsch des Nutzers; Unschärfe, Brechung, Tönung und Schatten bleiben.
  */
 @Composable
-fun DesignFloatingButton(label: String, enabled: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun DesignFloatingButton(label: String, enabled: Boolean, modifier: Modifier = Modifier, secondary: Boolean = false, onClick: () -> Unit) {
     val colors = LocalDesignColors.current
     val haptics = LocalDesignHaptics.current
     val spec = glassSpec(LocalGlassLevel.current, LocalGlassSupport.current)
     val solid = !spec.enabled || LocalGlassBackdrop.current == null
     val surface = when {
-        solid && enabled -> Modifier.designGlass(colors, DesignRadii.Pill, null, spec, tint = colors.accent)
+        solid && enabled && !secondary -> Modifier.designGlass(colors, DesignRadii.Pill, null, spec, tint = colors.accent)
         solid -> Modifier.designGlass(colors, DesignRadii.Pill, null, spec)
-        else -> Modifier.designGlass(colors, DesignRadii.Pill, LocalGlassBackdrop.current, spec, tintScale = 1.15f,
-            accent = if (enabled) colors.accent.copy(alpha = if (colors.isDark) .16f else .10f) else null)
+        // Glas mit eigenem weichen Schatten, damit die Schaltfläche wie die übrigen Schwebeblöcke abgehoben wirkt.
+        else -> Modifier.designGlow(DesignRadii.Pill, colors, strength = .8f).designGlass(colors, DesignRadii.Pill, LocalGlassBackdrop.current, spec, tintScale = 1.15f,
+            accent = if (enabled && !secondary) colors.accent.copy(alpha = if (colors.isDark) .16f else .10f) else null)
     }
-    val ink = when { !enabled -> colors.muted; solid -> colors.paper; else -> colors.accent }
+    val ink = when { !enabled -> colors.muted; secondary -> colors.ink; solid -> colors.paper; else -> colors.accent }
     Button(
         onClick = { haptics.perform(HapticEvent.ACTION); onClick() }, enabled = enabled, cornerRadius = DesignRadii.Pill, minHeight = 56.dp,
         modifier = modifier.heightIn(min = 56.dp).then(surface),
         colors = ButtonDefaults.buttonColors(color = Color.Transparent, disabledColor = Color.Transparent, contentColor = ink, disabledContentColor = colors.muted),
     ) {
-        DesignText(label, 15, color = ink, weight = if (solid) FontWeight.Medium else FontWeight.SemiBold)
+        DesignText(label, 15, color = ink, weight = if (solid || secondary) FontWeight.Medium else FontWeight.SemiBold, maxLines = 1)
     }
 }
 
@@ -75,13 +89,12 @@ data class DesignNavigationItem(val icon: ImageVector, val label: String)
 /**
  * Untere Navigation: Miuix FloatingNavigationBar als Behälter mit transparenter Eigenfläche,
  * Glasfläche (Unschärfe der Inhaltsebene, Tönung, Lichtkante) über designGlass.
- * Ziele mit Symbol und Beschriftung, aktives Ziel im Akzent wie im bestätigten Entwurf;
+ * Ziele mit Symbol und Beschriftung, aktives Ziel im Akzent; dahinter ein halbtransparenter Gleitblock (ziehbar).
  * Miuix' eigene Ziele zeigen nur Symbole und unterscheiden die Auswahl lediglich über Deckkraft.
  */
 @Composable
 fun DesignGlassNavigation(items: List<DesignNavigationItem>, selected: Int, modifier: Modifier = Modifier, onSelect: (Int) -> Unit) {
     val colors = LocalDesignColors.current
-    val haptics = LocalDesignHaptics.current
     val spec = glassSpec(LocalGlassLevel.current, LocalGlassSupport.current)
     FloatingNavigationBar(
         modifier = modifier.designGlass(colors, DesignRadii.Navigation, LocalGlassBackdrop.current, spec, rim = true),
@@ -89,14 +102,16 @@ fun DesignGlassNavigation(items: List<DesignNavigationItem>, selected: Int, modi
         cornerRadius = DesignRadii.Navigation,
         shadowElevation = 0.dp,
     ) {
-        items.forEachIndexed { index, item ->
-            val active = index == selected
+        // Gewähltes Ziel als halbtransparenter, abgerundeter Block, der zum Ziel gleitet und sich ziehen lässt.
+        DesignSlidingSelector(
+            count = items.size, selected = selected, onSelect = onSelect,
+            modifier = Modifier.width(64.dp * items.size).height(56.dp),
+            corner = 18.dp, inset = 3.dp,
+            block = { Box(Modifier.matchParentSize().clip(RoundedCornerShape(18.dp)).background(if (colors.isDark) Color.White.copy(alpha = .12f) else colors.ink.copy(alpha = .07f))) },
+        ) { index, active ->
+            val item = items[index]
             val tint by animatedSelectionColor(active, colors.accent, colors.muted, "nav-tint-$index")
-            Column(
-                Modifier.width(64.dp).heightIn(min = 52.dp)
-                    .selectable(active, role = Role.Tab, onClick = { if (!active) haptics.perform(HapticEvent.SELECTION); onSelect(index) }),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
-            ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Icon(item.icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
                 DesignText(item.label, 10, color = tint, maxLines = 1)
             }
@@ -145,18 +160,33 @@ fun DesignActionFrame(
     modifier: Modifier = Modifier,
     actionEnabled: Boolean = true,
     actionTag: String = "floating-action",
+    secondaryLabel: String? = null,
+    onSecondary: () -> Unit = {},
+    secondaryTag: String = "floating-secondary",
     content: @Composable BoxScope.() -> Unit,
 ) {
     val pageLayer = rememberLayerBackdrop()
     Box(modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().layerBackdrop(pageLayer).background(LocalDesignColors.current.paper), content = content)
         CompositionLocalProvider(LocalGlassBackdrop provides pageLayer) {
-            DesignFloatingButton(
-                actionLabel, actionEnabled,
-                Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 8.dp, vertical = 16.dp)
-                    .widthIn(max = 420.dp).fillMaxWidth().testTag(actionTag),
-                onClick = onAction,
-            )
+            // Optionale Nebenaktion links (ca. 40 %) gleitet heraus; die Hauptaktion rückt dafür nach rechts zusammen.
+            BoxWithConstraints(
+                Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 8.dp, vertical = 16.dp).widthIn(max = 420.dp).fillMaxWidth(),
+            ) {
+                val secondaryWidth = maxWidth * .4f
+                var lastSecondary by remember { mutableStateOf(secondaryLabel.orEmpty()) }
+                if (secondaryLabel != null) lastSecondary = secondaryLabel
+                Row(Modifier.fillMaxWidth()) {
+                    AnimatedVisibility(
+                        visible = secondaryLabel != null,
+                        enter = expandHorizontally(DesignMotion.enter()) + fadeIn(DesignMotion.enter()),
+                        exit = shrinkHorizontally(DesignMotion.exit()) + fadeOut(DesignMotion.exit()),
+                    ) {
+                        DesignFloatingButton(lastSecondary, true, Modifier.width(secondaryWidth).padding(end = 10.dp).testTag(secondaryTag), secondary = true, onClick = onSecondary)
+                    }
+                    DesignFloatingButton(actionLabel, actionEnabled, Modifier.weight(1f).testTag(actionTag), onClick = onAction)
+                }
+            }
         }
     }
 }

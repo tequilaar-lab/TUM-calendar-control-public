@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import com.tequila.tumcalendarcontrol.ui.design.DesignActionPage
 import com.tequila.tumcalendarcontrol.ui.design.DesignChoice
-import com.tequila.tumcalendarcontrol.ui.design.DesignField
 import com.tequila.tumcalendarcontrol.ui.design.DesignPillButton
 import com.tequila.tumcalendarcontrol.ui.design.DesignSection
 import com.tequila.tumcalendarcontrol.ui.design.DesignText
@@ -52,7 +51,7 @@ fun AttendanceScreen(state: CalendarControlState) {
             }
         }
         if (state.pendingAttendanceScope == AttendanceEditScope.SPECIFIED_AND_FUTURE) {
-            DesignField(tr(message(196)), state.pendingEffectiveDate, { state.pendingEffectiveDate = it }, Modifier.testTag("attendance-date"))
+            DateInputField(tr(message(196)), state.pendingEffectiveDate, appUsesDarkTheme(state), { state.pendingEffectiveDate = it }, Modifier.testTag("attendance-date"))
         }
         state.feedback?.let { DesignText(tr(it), 12, text, muted = true) }
         // Abbrechen bleibt als Nebenaktion im Inhalt; die Bestätigung schwebt.

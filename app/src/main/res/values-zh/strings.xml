@@ -749,4 +749,13 @@
     <string name="msg_0743" formatted="false">"轻"</string>
     <string name="msg_0744" formatted="false">"强度"</string>
     <string name="msg_0745" formatted="false">"强"</string>
+    <string name="msg_0746" formatted="false">"取消全选 · {0} 个课次"</string>
+    <string name="msg_0747" formatted="false">"取消本课选择 · {0} 个课次"</string>
+    <string name="msg_0748" formatted="false">"出席与收藏 · 已选 {0} 个课次"</string>
+    <string name="msg_0749" formatted="false">"已选 {0}/{1}"</string>
+    <string name="msg_0750" formatted="false">"查看写入内容 · {0} 个课次"</string>
+    <string name="msg_0751" formatted="false">"出席与收藏"</string>
+    <string name="msg_0752" formatted="false">"恢复为来源信息"</string>
+    <string name="msg_0753" formatted="false">"全选课程"</string>
+    <string name="msg_0754" formatted="false">"清空"</string>
 </resources>

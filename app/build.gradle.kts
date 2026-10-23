@@ -39,6 +39,14 @@ android {
                 "proguard-rules.pro",
             )
         }
+        // Optimierter Testbau für das eigene Gerät: nicht debugbar (ART kompiliert, Compose-Profile wirken),
+        // mit dem lokalen Debug-Schlüssel signiert, damit er Debug-Installationen samt Daten überschreiben kann.
+        create("staging") {
+            initWith(getByName("release"))
+            isDebuggable = false
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+        }
     }
 
     compileOptions {

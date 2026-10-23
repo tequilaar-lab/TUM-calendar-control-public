@@ -79,6 +79,7 @@ class EndToEndFlowTest {
         assertEquals(AppScreen.SOURCE_PREVIEW, state.screen)
         assertTrue(!state.sourceReadRequested)
 
+        composeRule.onNodeWithTag("source-quick").performClick()
         composeRule.onNodeWithTag("source-select-all").performClick()
         assertEquals(items.size, state.selectedSourceOccurrences.size)
         composeRule.onNodeWithTag("source-next").performClick()
@@ -93,8 +94,9 @@ class EndToEndFlowTest {
         assertTrue("Regeln gespeichert", state.ruleLedger.rules.isNotEmpty())
         assertEquals("Auswahl bleibt nach dem Speichern", items.size, state.selectedSourceOccurrences.size)
 
-        composeRule.onNodeWithTag("source-selection-list").performScrollToIndex(0)
-        clickRow("source-write-preview")
+        // Teilnahme gespeichert: Hauptaktion wird „Ausgabe prüfen“, Teilnahme rückt als Nebenaktion nach links.
+        composeRule.onNodeWithTag("source-attendance-again").assertIsDisplayed()
+        composeRule.onNodeWithTag("source-next").performClick()
         assertEquals(AppScreen.MANAGED_SYNC_PREVIEW, state.screen)
         composeRule.onNodeWithTag("write-count").assertTextEquals(items.size.toString())
 

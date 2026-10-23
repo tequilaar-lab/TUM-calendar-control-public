@@ -153,9 +153,9 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                             when (state.navigationDirection) {
                                 NavigationDirection.FORWARD -> (slideInHorizontally(enter) { it } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { -it / 3 } + fadeOut(DesignMotion.exit()))
                                 NavigationDirection.BACKWARD -> (slideInHorizontally(enter) { -it / 3 } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { it } + fadeOut(DesignMotion.exit()))
-                                NavigationDirection.PROFILE_ENTER -> (slideInHorizontally(enter) { -it } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { it / 3 } + fadeOut(DesignMotion.exit()))
-                                // Profil nach links verlassen, vorige Hauptseite vollständig von rechts einblenden; keine vertikale Neuordnung.
-                                NavigationDirection.PROFILE_EXIT -> (slideInHorizontally(enter) { it } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { -it / 3 } + fadeOut(DesignMotion.exit()))
+                                // Profil (Knopf oben rechts) kommt wie eine Unterseite von rechts und verlässt nach rechts (Rückmeldung vom Gerät).
+                                NavigationDirection.PROFILE_ENTER -> (slideInHorizontally(enter) { it } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { -it / 3 } + fadeOut(DesignMotion.exit()))
+                                NavigationDirection.PROFILE_EXIT -> (slideInHorizontally(enter) { -it / 3 } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { it } + fadeOut(DesignMotion.exit()))
                             }
                         },
                         label = message(139),

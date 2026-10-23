@@ -8,7 +8,6 @@ package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -22,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.tequila.tumcalendarcontrol.R
 import com.tequila.tumcalendarcontrol.ui.design.DesignActionPage
 import com.tequila.tumcalendarcontrol.ui.design.DesignConfirmDialog
 import com.tequila.tumcalendarcontrol.ui.design.DesignConfirmRequest
@@ -68,10 +66,10 @@ fun SourceRangeScreen(state: CalendarControlState) {
         // Nächster Lesezeitraum: wirkt nur auf neues Lesen, kürzt keine gespeicherten Kurse.
         DesignSection(tr(message(711)), TextInset)
         DesignRow(tr(message(465)), detail = tr(startDate.ifBlank { message(474) }), value = tr(message(475)), tag = "source-range-start", inset = 4.dp) {
-            showDatePicker(context, startDate, usesDarkTheme) { startDate = it }
+            showDatePicker(context, runCatching { LocalDate.parse(startDate) }.getOrNull(), usesDarkTheme) { startDate = it.format(DateText) }
         }
         DesignRow(tr(message(466)), detail = tr(endDate.ifBlank { message(474) }), value = tr(message(475)), tag = "source-range-end", inset = 4.dp) {
-            showDatePicker(context, endDate, usesDarkTheme) { endDate = it }
+            showDatePicker(context, runCatching { LocalDate.parse(endDate) }.getOrNull(), usesDarkTheme) { endDate = it.format(DateText) }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             DesignPillButton(tr(message(642)), Modifier.weight(1f), primary = false) { startDate = LocalDate.now(BerlinZone).format(DateText); endDate = "" }
@@ -123,16 +121,3 @@ private fun SavedCoursesCard(state: CalendarControlState) {
 }
 
 private fun Instant?.toLocalDateText(): String = this?.atZone(BerlinZone)?.toLocalDate()?.format(DateText) ?: message(648)
-
-/** Plattform-Datumsdialog verwendet aufgelösten App-Hell/Dunkelmodus. */
-private fun showDatePicker(context: android.content.Context, it: String, usesDarkTheme: Boolean, onPicked: (String) -> Unit) {
-    val initial = runCatching { LocalDate.parse(it) }.getOrElse { LocalDate.now(BerlinZone) }
-    DatePickerDialog(
-        context,
-        if (usesDarkTheme) R.style.Theme_TumCalendarControl_DatePicker_Dark else R.style.Theme_TumCalendarControl_DatePicker_Light,
-        { _, year, month, day -> onPicked(LocalDate.of(year, month + 1, day).format(DateText)) },
-        initial.year,
-        initial.monthValue - 1,
-        initial.dayOfMonth,
-    ).show()
-}

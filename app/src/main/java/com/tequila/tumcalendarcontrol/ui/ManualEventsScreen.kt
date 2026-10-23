@@ -62,7 +62,7 @@ fun ManualEventsScreen(state: CalendarControlState) {
     ) {
         DesignNote(tr(message(430)), tr(message(431)))
         DesignField(tr(message(432)), title, { title = it }, Modifier.testTag("events-title"), singleLine = true)
-        DesignField(tr(message(433)), date, { date = it }, Modifier.testTag("events-date"), singleLine = true)
+        DateInputField(tr(message(433)), date, appUsesDarkTheme(state), { date = it }, Modifier.testTag("events-date"))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             DesignField(tr(message(349)), startHour, { startHour = it }, Modifier.weight(1f))
             DesignField(tr(message(350)), startMinute, { startMinute = it }, Modifier.weight(1f))

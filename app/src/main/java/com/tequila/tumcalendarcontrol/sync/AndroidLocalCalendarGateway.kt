@@ -84,7 +84,16 @@ class AndroidLocalCalendarTarget(private val resolver: ContentResolver) {
 
 /** Termin-API prüft erneut Eigentum; keine Löschentscheidung nach Titel, Farbe oder Ort. */
 class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : OwnedCalendarGateway {
+    /** Gateway lebt nur für eine Ausgabe; bestätigtes Eigentum wird darin nicht vor jedem Aufruf erneut abgefragt. */
+    private val verifiedCalendars = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
     override fun verifyOwnership(calendar: OwnedCalendarRef): Boolean {
+        if (calendar.calendarId in verifiedCalendars && calendar.target == OutputTarget.LOCAL_CALENDAR &&
+            calendar.ownershipMarker == AppOwnedCalendarContract.OWNERSHIP_MARKER) return true
+        return queryOwnership(calendar).also { if (it) verifiedCalendars += calendar.calendarId }
+    }
+
+    private fun queryOwnership(calendar: OwnedCalendarRef): Boolean {
         if (calendar.target != OutputTarget.LOCAL_CALENDAR || calendar.ownershipMarker != AppOwnedCalendarContract.OWNERSHIP_MARKER) return false
         val id = calendar.calendarId.toLongOrNull() ?: return false
         return resolver.query(
@@ -104,6 +113,28 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
         check(verifyOwnership(calendar)) { message(39) }
         val uri = resolver.insert(asSyncAdapter(CalendarContract.Events.CONTENT_URI), eventValues(calendar, event)) ?: error(message(40))
         return ContentUris.parseId(uri).toString()
+    }
+
+    /** Ein Abfragedurchlauf über alle App-markierten Termine des eigenen Kalenders (Identitätsschlüssel -> Einträge). */
+    override fun snapshotManagedEvents(calendar: OwnedCalendarRef): Map<String, List<ManagedEventSnapshot>> {
+        check(verifyOwnership(calendar)) { message(41) }
+        val result = mutableMapOf<String, MutableList<ManagedEventSnapshot>>()
+        resolver.query(
+            CalendarContract.Events.CONTENT_URI,
+            arrayOf(CalendarContract.Events._ID, CalendarContract.Events.SYNC_DATA1, CalendarContract.Events.TITLE, CalendarContract.Events.DTSTART,
+                CalendarContract.Events.DTEND, CalendarContract.Events.EVENT_LOCATION, CalendarContract.Events.EVENT_COLOR),
+            "${CalendarContract.Events.CALENDAR_ID}=? AND ${CalendarContract.Events.DELETED}=0 AND ${CalendarContract.Events.SYNC_DATA1} IS NOT NULL",
+            arrayOf(calendar.calendarId), null,
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                val state = AttendanceState.entries.firstOrNull { it.androidColor() == cursor.getInt(6) }
+                val content = state?.let {
+                    ManagedEventContent(cursor.getString(2).orEmpty(), java.time.Instant.ofEpochMilli(cursor.getLong(3)), java.time.Instant.ofEpochMilli(cursor.getLong(4)), it, cursor.getString(5).orEmpty())
+                }
+                result.getOrPut(cursor.getString(1)) { mutableListOf() } += ManagedEventSnapshot(cursor.getLong(0).toString(), content)
+            }
+        } ?: error(message(42))
+        return result
     }
 
     override fun findEventIdsByIdentity(calendar: OwnedCalendarRef, identity: ManagedEventIdentity): List<String> {

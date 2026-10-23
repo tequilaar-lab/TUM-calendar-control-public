@@ -749,4 +749,13 @@
     <string name="msg_0743" formatted="false">"Leicht"</string>
     <string name="msg_0744" formatted="false">"Stärke"</string>
     <string name="msg_0745" formatted="false">"Stark"</string>
+    <string name="msg_0746" formatted="false">"Auswahl aufheben · {0} Termine"</string>
+    <string name="msg_0747" formatted="false">"Kursauswahl aufheben · {0} Termine"</string>
+    <string name="msg_0748" formatted="false">"Teilnahme &amp; Favoriten · {0} gewählt"</string>
+    <string name="msg_0749" formatted="false">"{0}/{1} gewählt"</string>
+    <string name="msg_0750" formatted="false">"Ausgabe prüfen · {0} Termine"</string>
+    <string name="msg_0751" formatted="false">"Teilnahme &amp; Favoriten"</string>
+    <string name="msg_0752" formatted="false">"Quelldaten wiederherstellen"</string>
+    <string name="msg_0753" formatted="false">"Alle Kurse wählen"</string>
+    <string name="msg_0754" formatted="false">"Leeren"</string>
 </resources>

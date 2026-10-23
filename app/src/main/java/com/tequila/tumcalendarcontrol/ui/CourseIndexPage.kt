@@ -10,16 +10,15 @@ package com.tequila.tumcalendarcontrol.ui
 import com.tequila.tumcalendarcontrol.i18n.message
 import com.tequila.tumcalendarcontrol.domain.browseKey
 
+import com.tequila.tumcalendarcontrol.ui.design.designSelectionBlock
+import com.tequila.tumcalendarcontrol.ui.design.animatedSelectionProgress
+import com.tequila.tumcalendarcontrol.ui.design.DesignRadii
+import com.tequila.tumcalendarcontrol.ui.design.DesignMotion
+import com.tequila.tumcalendarcontrol.ui.design.DesignExpandable
 import com.tequila.tumcalendarcontrol.ui.design.hapticClickable
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -127,19 +126,18 @@ private fun OverviewIndex(
             }
         }
         itemsIndexed(groups, key = { _, group -> group.key }) { index, group ->
-            Column {
+            // Gewählter bzw. aufgeklappter Kurs als abgerundeter Schwebeblock (blendet weich ein), wie die übrige Auswahl.
+            val progress = animatedSelectionProgress(selected(group), "index-${group.key}")
+            Column(Modifier.padding(vertical = 2.dp).designSelectionBlock(colors, DesignRadii.Block, progress)) {
                 OverviewIndexRow(index, group, selected(group), expanded(group)) { onCourse(group) }
-                AnimatedVisibility(
-                    visible = expanded(group),
-                    enter = expandVertically(tween(260)) + fadeIn(tween(180)),
-                    exit = shrinkVertically(tween(220)) + fadeOut(tween(140)),
-                ) {
-                    Column(Modifier.padding(start = 40.dp, top = 8.dp, bottom = 16.dp)) {
+                DesignExpandable(expanded(group)) {
+                    Column(Modifier.padding(start = 40.dp, end = 12.dp, top = 8.dp, bottom = 16.dp)) {
                         OverviewCourseSessions(group, compact = true, onOpenCourse = { state.openCourse(it.browseKey) })
                     }
                 }
-                DesignLine()
             }
+            // Trennlinie nur zwischen nicht hervorgehobenen Kursen; der Block trägt selbst seine Kante.
+            if (progress < .5f) DesignLine()
         }
         if (showRefresh) item {
             Spacer(Modifier.height(16.dp))
@@ -151,18 +149,17 @@ private fun OverviewIndex(
     }
 }
 
-/** Zeile: Markierungsleiste, Nummer, Kursname, Typen und Terminzahl; Pfeil zeigt geschlossen nach links, offen nach unten. */
+/** Zeile: Nummer (gewählt im Akzent), Kursname, Typen und Terminzahl; Pfeil geschlossen nach links, offen 90° gegen den Uhrzeigersinn nach unten. */
 @Composable
 private fun OverviewIndexRow(index: Int, group: CourseDisplayGroup, selected: Boolean, expanded: Boolean, onClick: () -> Unit) {
     val colors = LocalDesignColors.current
-    val rotation by animateFloatAsState(if (expanded) -90f else 0f, label = "overview-arrow")
+    val rotation by animateFloatAsState(if (expanded) -90f else 0f, DesignMotion.enter(), label = "overview-arrow")
     val favorite = group.courses.any { it.isFavorite }
     Row(
-        Modifier.fillMaxWidth().background(if (selected) colors.wash else colors.paper).hapticClickable(onClick = onClick),
+        Modifier.fillMaxWidth().hapticClickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.width(2.dp).height(54.dp).background(if (selected) colors.accent else colors.paper))
-        DesignText("%02d".format(index + 1), 11, muted = true, mono = true, modifier = Modifier.padding(start = 10.dp, end = 14.dp))
+        DesignText("%02d".format(index + 1), 11, color = if (selected) colors.accent else colors.muted, mono = true, modifier = Modifier.padding(start = 12.dp, end = 14.dp))
         Column(Modifier.weight(1f).padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             DesignText(tr(group.displayTitle), 15, weight = FontWeight.Medium)
             // map ist inline und erlaubt tr(); joinToString-Lambdas wären nicht @Composable.
@@ -171,7 +168,7 @@ private fun OverviewIndexRow(index: Int, group: CourseDisplayGroup, selected: Bo
         }
         Icon(
             Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = tr(message(702, group.displayTitle)),
-            tint = colors.muted, modifier = Modifier.padding(horizontal = 6.dp).size(20.dp).rotate(rotation),
+            tint = colors.muted, modifier = Modifier.padding(horizontal = 10.dp).size(20.dp).rotate(rotation),
         )
     }
 }

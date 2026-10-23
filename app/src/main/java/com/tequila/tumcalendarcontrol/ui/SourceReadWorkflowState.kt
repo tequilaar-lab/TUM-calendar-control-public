@@ -179,6 +179,7 @@ internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = 
     fun clearSelection() { selectedOccurrences = emptySet() }
 
     fun includeInSelection(identities: Set<SourceOccurrenceIdentity>) { selectedOccurrences = selectedOccurrences + identities }
+    fun excludeFromSelection(identities: Set<SourceOccurrenceIdentity>) { selectedOccurrences = selectedOccurrences - identities }
 
     fun attendanceScopeCount(): Int? = SourceAttendanceScope.resolve(occurrences, selectedOccurrences, pendingAttendanceScope, pendingEffectiveDate)?.size
 

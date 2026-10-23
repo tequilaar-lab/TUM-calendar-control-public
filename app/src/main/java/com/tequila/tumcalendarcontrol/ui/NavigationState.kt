@@ -39,7 +39,7 @@ internal class NavigationState {
 
     fun openDetail() { detailReturnScreen = contentScreen; open(AppScreen.DETAIL) }
     fun openCourseEdit() { courseEditReturnScreen = AppScreen.DETAIL; open(AppScreen.COURSE_EDIT) }
-    /** Profil links öffnen/verlassen; vorige Seite bei Rückkehr von rechts einblenden. */
+    /** Profil mit eigener Richtungskennung öffnen/verlassen (Darstellung: von rechts herein, nach rechts hinaus). */
     fun openProfile() { profileReturnScreen = contentScreen; direction = NavigationDirection.PROFILE_ENTER; screen = AppScreen.PROFILE }
     fun openSyncConfiguration() { syncConfigurationReturnScreen = contentScreen; openChild(AppScreen.SYNC_CONFIGURATION) }
     fun openSourceRange() { sourceRangeReturnScreen = contentScreen; direction = NavigationDirection.FORWARD; screen = AppScreen.SOURCE_RANGE }

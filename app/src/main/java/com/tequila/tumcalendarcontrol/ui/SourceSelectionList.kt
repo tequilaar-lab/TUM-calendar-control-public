@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
 import com.tequila.tumcalendarcontrol.ui.design.DesignLine
+import com.tequila.tumcalendarcontrol.ui.design.DesignMotion
 import com.tequila.tumcalendarcontrol.ui.design.DesignNote
 import com.tequila.tumcalendarcontrol.ui.design.DesignText
 import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
@@ -59,39 +60,50 @@ internal fun LazyListScope.sourceGroupItems(
         val key = SourceBulkSelection.keyOf(group)
         val expanded = key in expandedKeys
         item(key = "group:$key") {
-            SourceGroupHeader(group, expanded) { onExpand(key); onCurrent(key) }
+            SourceGroupHeader(group, expanded, Modifier.animateItem()) { onExpand(key); onCurrent(key) }
         }
+        // Aufgeklappt: Kennzahlen, dann Termine; Einträge blenden ein und schieben die Liste weich (animateItem).
         if (expanded) {
+            item(key = "info:$key") {
+                Column(Modifier.animateItem().padding(start = 16.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    DesignText(tr(message(619, group.sourceUidCount, group.totalOccurrenceCount, group.selectedOccurrenceCount)), 11, muted = true)
+                    DesignText(tr(message(620, group.inOutputRangeOccurrenceCount)), 11, muted = true)
+                }
+            }
             group.occurrences.forEach { occurrence ->
                 item(key = "occ:${occurrence.itemKey()}") {
                     SourceOccurrenceChoiceRow(
                         occurrence = occurrence,
                         selected = occurrence.identity in state.selectedSourceOccurrences,
                         showTitle = false,
-                        modifier = Modifier.padding(start = 16.dp),
+                        modifier = Modifier.animateItem().padding(start = 16.dp),
                         onToggle = { onCurrent(key); state.toggleSourceOccurrenceSelection(occurrence.identity) },
                     )
                 }
             }
         }
-        item(key = "line:$key") { DesignLine() }
+        item(key = "line:$key") { DesignLine(Modifier.animateItem()) }
     }
 }
 
-/** Kopfzeile: Kursname (Serif), Quell- und Terminzahlen, Anzahl im Lesezeitraum; Pfeil links geschlossen, unten offen. */
+/**
+ * Kompakte Kopfzeile (eine Zeile, damit viele Kurse auf einen Blick passen): Kursname, rechts „gewählt x/y“ und Pfeil;
+ * Pfeil geschlossen nach links, offen 90° gegen den Uhrzeigersinn nach unten. Druck als Schwebeblock.
+ */
 @Composable
-private fun SourceGroupHeader(group: SourceCourseDisplayGroup, expanded: Boolean, onClick: () -> Unit) {
+private fun SourceGroupHeader(group: SourceCourseDisplayGroup, expanded: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val colors = LocalDesignColors.current
-    val rotation by animateFloatAsState(if (expanded) -90f else 0f, label = "source-group-arrow")
+    val rotation by animateFloatAsState(if (expanded) -90f else 0f, DesignMotion.enter(), label = "source-group-arrow")
+    val anySelected = group.selectedOccurrenceCount > 0
     Row(
-        Modifier.fillMaxWidth().hapticClickable(onClick = onClick).padding(start = 4.dp, top = 14.dp, bottom = 14.dp).testTag("source-group"),
+        modifier.fillMaxWidth().heightIn(min = 52.dp).hapticClickable(onClick = onClick).padding(start = 4.dp, top = 10.dp, bottom = 10.dp).testTag("source-group"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            DesignText(tr(group.displayTitle), 18, serif = true)
-            DesignText(tr(message(619, group.sourceUidCount, group.totalOccurrenceCount, group.selectedOccurrenceCount)), 11, muted = true)
-            DesignText(tr(message(620, group.inOutputRangeOccurrenceCount)), 11, muted = true)
-        }
+        DesignText(tr(group.displayTitle), 16, Modifier.weight(1f), serif = true, maxLines = 2)
+        DesignText(
+            tr(message(749, group.selectedOccurrenceCount, group.totalOccurrenceCount)), 11, Modifier.padding(start = 12.dp),
+            color = if (anySelected) colors.accent else colors.muted, weight = if (anySelected) FontWeight.Medium else FontWeight.Normal,
+        )
         Icon(
             Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = tr(if (expanded) message(621) else message(622)),
             tint = colors.muted, modifier = Modifier.padding(horizontal = 6.dp).size(20.dp).rotate(rotation),

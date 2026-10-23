@@ -96,6 +96,8 @@ class SourcePagesTest {
         val state = loaded()
         render(state)
         composeRule.onNodeWithTag("source-next").assertIsNotEnabled()
+        // Schnellauswahl liegt seit der Geräte-Rückmeldung in einer zugeklappten Schublade.
+        composeRule.onNodeWithTag("source-quick").performClick()
         composeRule.onNodeWithTag("source-current-course").assertTextEquals("当前课程：Synthetik Messtechnik")
         composeRule.onNodeWithTag("source-selection-list").performScrollToNode(hasText("Synthetik Regelung"))
         composeRule.onNodeWithText("Synthetik Regelung").performClick()

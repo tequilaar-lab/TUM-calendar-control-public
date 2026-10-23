@@ -50,6 +50,8 @@ interface GoogleCalendarApi {
     fun deleteEvent(calendarId: String, eventId: String): ManagedEventRemovalOutcome
     fun readEventFingerprint(calendarId: String, eventId: String, identity: ManagedEventIdentity): String? = null
     fun readManagedEvent(calendarId: String, eventId: String, identity: ManagedEventIdentity): DesiredCalendarEvent? = null
+    /** Alle App-markierten Termine mit vergleichbaren Feldern, seitenweise; null = nicht unterstützt. */
+    fun snapshotManagedEvents(calendarId: String): Map<String, List<ManagedEventSnapshot>>? = null
 }
 
 /** Nur zuvor erstellte Zweitkalender mit festem Marker akzeptieren; bei Ausfall eigenes Ziel erstellen, Seitenleistenanzeige unverändert. */
@@ -88,9 +90,19 @@ class GoogleCalendarGateway(private val api: GoogleCalendarApi) : OwnedCalendarG
         check(verifyOwnership(calendar))
         return api.readEventFingerprint(calendar.calendarId, eventId, identity)
     }
-    override fun verifyOwnership(calendar: OwnedCalendarRef): Boolean = calendar.target == OutputTarget.GOOGLE_CALENDAR &&
-        calendar.ownershipMarker == AppOwnedCalendarContract.OWNERSHIP_MARKER &&
-        api.getCalendar(calendar.calendarId)?.description == GOOGLE_OWNERSHIP_DESCRIPTION
+    /** Gateway lebt nur für eine Ausgabe; ein bestätigtes Eigentum muss darin nicht vor jedem Aufruf erneut abgefragt werden. */
+    private val verifiedCalendars = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
+    override fun verifyOwnership(calendar: OwnedCalendarRef): Boolean {
+        if (calendar.target != OutputTarget.GOOGLE_CALENDAR || calendar.ownershipMarker != AppOwnedCalendarContract.OWNERSHIP_MARKER) return false
+        if (calendar.calendarId in verifiedCalendars) return true
+        return (api.getCalendar(calendar.calendarId)?.description == GOOGLE_OWNERSHIP_DESCRIPTION).also { if (it) verifiedCalendars += calendar.calendarId }
+    }
+
+    override fun snapshotManagedEvents(calendar: OwnedCalendarRef): Map<String, List<ManagedEventSnapshot>>? {
+        check(verifyOwnership(calendar)) { message(62) }
+        return api.snapshotManagedEvents(calendar.calendarId)
+    }
 
     override fun findEventIdsByIdentity(calendar: OwnedCalendarRef, identity: ManagedEventIdentity): List<String> {
         check(verifyOwnership(calendar)) { message(62) }
@@ -158,6 +170,32 @@ class GoogleCalendarRestApi(
         }.orEmpty()
     }
 
+    /** Ausgabe-Schnellweg: Bestand seitenweise (250 je Seite) mit Vergleichsfeldern; Inhalte bleiben im Speicher dieser Ausgabe. */
+    override fun snapshotManagedEvents(calendarId: String): Map<String, List<ManagedEventSnapshot>> {
+        var pageToken: String? = null
+        val visited = mutableSetOf<String>()
+        val result = mutableMapOf<String, MutableList<ManagedEventSnapshot>>()
+        do {
+            pageToken?.let { check(visited.add(it)) { message(66) } }
+            val path = buildString {
+                append("/calendars/${calendarId.encodePath()}/events?singleEvents=true&showDeleted=false&maxResults=250")
+                append("&fields=nextPageToken,items(id,status,summary,location,start,end,colorId,extendedProperties)")
+                pageToken?.let { append("&pageToken=${it.encodePath()}") }
+            }
+            val json = JSONObject(transport.execute(GoogleCalendarRequestStage.FIND_ALL_MANAGED_EVENTS, "GET", path, null, accessToken).requireSuccess().body)
+            json.optJSONArray("items")?.let { items ->
+                for (index in 0 until items.length()) {
+                    val item = items.getJSONObject(index)
+                    val key = item.optJSONObject("extendedProperties")?.optJSONObject("private")?.optString(GOOGLE_EVENT_IDENTITY_KEY)?.takeIf(String::isNotBlank) ?: continue
+                    if (item.optString("status") == "cancelled") continue
+                    result.getOrPut(key) { mutableListOf() } += ManagedEventSnapshot(item.getString("id"), googleEventContent(item))
+                }
+            }
+            pageToken = json.optString("nextPageToken").takeIf(String::isNotBlank)
+        } while (pageToken != null)
+        return result
+    }
+
     /** Vollständige Bereinigung liest nur Termin-IDs und unsichtbare App-Marker; Kalenderinhalt nicht in Protokoll, Datenbank oder Oberfläche. */
     override fun findAllManagedEventIds(calendarId: String): List<String> {
         var pageToken: String? = null
@@ -219,6 +257,19 @@ class GoogleCalendarRestApi(
 /** Nur echte markierte Zielfelder vergleichen; unbekannte Farbe/Ganztagsformate gelten nicht als unverändert. */
 internal fun googleEventFingerprint(body: String, identity: ManagedEventIdentity): String? {
     return googleManagedEvent(body, identity)?.let { SyncDiffPlanner().run { it.fingerprint() } }
+}
+
+/** Vergleichsfelder eines gelisteten Termins; unbekannte Farbe oder Ganztagsformat -> null (gilt als geändert). */
+internal fun googleEventContent(event: JSONObject): ManagedEventContent? {
+    val state = when (event.optString("colorId")) {
+        "10" -> AttendanceState.MUST_ATTEND
+        "9" -> AttendanceState.CHOOSE_TO_ATTEND
+        "8" -> AttendanceState.STOP_ATTENDING
+        else -> return null
+    }
+    val start = event.optJSONObject("start")?.optString("dateTime")?.takeIf(String::isNotBlank) ?: return null
+    val end = event.optJSONObject("end")?.optString("dateTime")?.takeIf(String::isNotBlank) ?: return null
+    return ManagedEventContent(event.optString("summary"), java.time.OffsetDateTime.parse(start).toInstant(), java.time.OffsetDateTime.parse(end).toInstant(), state, event.optString("location"))
 }
 
 private fun googleManagedEvent(body: String, identity: ManagedEventIdentity): DesiredCalendarEvent? {

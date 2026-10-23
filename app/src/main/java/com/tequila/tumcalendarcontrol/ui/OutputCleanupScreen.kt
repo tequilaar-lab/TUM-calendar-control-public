@@ -8,7 +8,6 @@ package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -21,7 +20,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.tequila.tumcalendarcontrol.R
 import com.tequila.tumcalendarcontrol.sync.ManagedEventCleanupScope
 import com.tequila.tumcalendarcontrol.sync.OutputTarget
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
@@ -124,8 +122,8 @@ internal fun OutputCleanupScreen(state: CalendarControlState) {
             }
         }
         CleanupModeContent(mode, sourceLoaded, catalogue, selectedSourceUids, { selectedSourceUids = it }, startDate, endDate,
-            onPickStart = { showCleanupDatePicker(context, startDate, darkTheme) { startDate = it } },
-            onPickEnd = { showCleanupDatePicker(context, endDate, darkTheme) { endDate = it } },
+            onPickStart = { showDatePicker(context, startDate, darkTheme) { startDate = it } },
+            onPickEnd = { showDatePicker(context, endDate, darkTheme) { endDate = it } },
             onClearDates = { startDate = null; endDate = null })
         if (selectedCount != null) DesignNote(tr(message(468)), tr(message(469, selectedCount)), Modifier.testTag("cleanup-count"))
         localMessage?.let { DesignText(tr(it), 12, TextInset, muted = true) }
@@ -167,8 +165,14 @@ private fun CleanupModeContent(
         OutputCleanupMode.ALL -> DesignNote(tr(message(454)), tr(message(455)))
         OutputCleanupMode.COURSES -> if (!sourceLoaded) DesignNote(tr(message(456)), tr(message(457))) else {
             DesignText(tr(message(458)), 12, TextInset, muted = true)
+            val groups = cleanupCourseGroups(catalogue)
+            val allUids = groups.flatMap { it.sourceUids }.toSet()
             Column {
-                cleanupCourseGroups(catalogue).forEach { group ->
+                // Umschaltbar: alle Kurse wählen bzw. alle abwählen; danach einzeln anpassen.
+                DesignCheck(tr(message(753)), allUids.isNotEmpty() && selectedSourceUids.containsAll(allUids), TextInset.testTag("cleanup-all-courses")) { all ->
+                    onSelectedChange(if (all) selectedSourceUids + allUids else selectedSourceUids - allUids)
+                }
+                groups.forEach { group ->
                     val selected = group.sourceUids.all { it in selectedSourceUids }
                     DesignCheck(tr(group.label), selected, TextInset.testTag("cleanup-course"), detail = tr(message(459, group.occurrenceCount))) {
                         onSelectedChange(if (selected) selectedSourceUids - group.sourceUids else selectedSourceUids + group.sourceUids)
@@ -198,15 +202,3 @@ private fun Set<OutputTarget>.cleanupTargetLabel(): String = buildList {
     if (OutputTarget.LOCAL_CALENDAR in this@cleanupTargetLabel) add(message(480))
     if (OutputTarget.GOOGLE_CALENDAR in this@cleanupTargetLabel) add(message(481))
 }.let { com.tequila.tumcalendarcontrol.i18n.joinMessages(it, "、") }.ifBlank { message(482) }
-
-private fun showCleanupDatePicker(context: android.content.Context, current: LocalDate?, darkTheme: Boolean, onPicked: (LocalDate) -> Unit) {
-    val seed = current ?: LocalDate.now(CleanupBerlinZone)
-    DatePickerDialog(
-        context,
-        if (darkTheme) R.style.Theme_TumCalendarControl_DatePicker_Dark else R.style.Theme_TumCalendarControl_DatePicker_Light,
-        { _, year, month, day -> onPicked(LocalDate.of(year, month + 1, day)) },
-        seed.year,
-        seed.monthValue - 1,
-        seed.dayOfMonth,
-    ).show()
-}

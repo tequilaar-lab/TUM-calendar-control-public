@@ -6,6 +6,8 @@
  */
 package com.tequila.tumcalendarcontrol.sync
 
+import com.tequila.tumcalendarcontrol.domain.AttendanceState
+
 import com.tequila.tumcalendarcontrol.i18n.message
 
 data class OwnedCalendarRef(val target: OutputTarget, val calendarId: String, val ownershipMarker: String)
@@ -26,6 +28,19 @@ interface OwnedCalendarGateway {
     fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent)
     /** Löschergebnis beschreibt nur diese Anfrage; keine Inhalte/IDs an Oberfläche oder Datenbank. */
     fun remove(calendar: OwnedCalendarRef, eventId: String): ManagedEventRemovalOutcome
+    /**
+     * Ein Lesedurchlauf über alle App-markierten Termine des eigenen Ziels (Identitätsschlüssel -> Einträge), damit die
+     * Ausgabe nicht je Termin suchen und lesen muss. null = nicht unterstützt; dann gelten die Einzelabfragen.
+     */
+    fun snapshotManagedEvents(calendar: OwnedCalendarRef): Map<String, List<ManagedEventSnapshot>>? = null
+}
+
+/** Gelesener Zustand eines App-markierten Termins; content=null bei unbekanntem Format (gilt dann als geändert). */
+data class ManagedEventSnapshot(val eventId: String, val content: ManagedEventContent?)
+
+/** Vergleichbare Inhalte ohne Identität; Identität kommt aus dem Schlüssel des Durchlaufs. */
+data class ManagedEventContent(val title: String, val startsAt: java.time.Instant, val endsAt: java.time.Instant, val state: AttendanceState, val location: String) {
+    fun toEvent(identity: ManagedEventIdentity) = DesiredCalendarEvent(identity, title, startsAt, endsAt, state, location)
 }
 
 /** 404/410 bedeutet vorherige Abwesenheit, nicht eine erfolgreiche Löschung dieses Aufrufs. */
@@ -89,14 +104,18 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
         val failures = mutableListOf<Throwable>()
         var restored = 0
         // Jede Bestätigung prüft echte App-Identität im Ziel; alte Zuordnung beweist kein Vorhandensein.
+        // Schnellweg: einmal den ganzen Zielbestand lesen (zu Beginn dieser Ausgabe) statt je Termin suchen und lesen.
+        val snapshot = runCatching { gateway.snapshotManagedEvents(calendar) }.getOrNull()
         desired.distinctBy { it.identity }.forEach { event ->
             try {
-                val ids = gateway.findEventIdsByIdentity(calendar, event.identity)
+                val found = snapshot?.let { it[event.identity.opaqueKey()].orEmpty() }
+                val ids = found?.map(ManagedEventSnapshot::eventId) ?: gateway.findEventIdsByIdentity(calendar, event.identity)
                 check(ids.size <= 1) { message(99) }
                 var type = SyncChangeType.UPDATE
                 val id = ids.singleOrNull()?.let { existingId ->
                     try {
-                        val actual = gateway.readFingerprint(calendar, existingId, event.identity)
+                        val actual = if (found != null) found.single().content?.let { planner.run { it.toEvent(event.identity).fingerprint() } }
+                        else gateway.readFingerprint(calendar, existingId, event.identity)
                         if (actual == planner.run { event.fingerprint() }) type = SyncChangeType.KEEP
                         else gateway.update(calendar, existingId, event)
                         existingId

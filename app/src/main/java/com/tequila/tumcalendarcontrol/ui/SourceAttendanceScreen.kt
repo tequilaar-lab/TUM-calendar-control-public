@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import com.tequila.tumcalendarcontrol.ui.design.DesignActionPage
 import com.tequila.tumcalendarcontrol.ui.design.DesignChoice
-import com.tequila.tumcalendarcontrol.ui.design.DesignField
 import com.tequila.tumcalendarcontrol.ui.design.DesignLine
 import com.tequila.tumcalendarcontrol.ui.design.DesignMetrics
 import com.tequila.tumcalendarcontrol.ui.design.DesignPillButton
@@ -83,7 +82,7 @@ fun SourceAttendanceScreen(state: CalendarControlState) {
             }
         }
         if (state.pendingSourceAttendanceScope == AttendanceEditScope.SPECIFIED_AND_FUTURE) {
-            DesignField(tr(message(196)), state.pendingSourceEffectiveDate, { state.pendingSourceEffectiveDate = it }, Modifier.testTag("source-attendance-date"))
+            DateInputField(tr(message(196)), state.pendingSourceEffectiveDate, appUsesDarkTheme(state), { state.pendingSourceEffectiveDate = it }, Modifier.testTag("source-attendance-date"))
         }
         state.feedback?.let { DesignText(tr(it), 12, TextInset, muted = true) }
         DesignText(tr(message(590, state.sourceAttendanceAffectedCount?.toString() ?: message(591))), 12, TextInset.testTag("source-attendance-count"), muted = true)
