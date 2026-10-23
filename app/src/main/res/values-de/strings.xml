@@ -706,4 +706,5 @@
     <string name="msg_0700" formatted="false">"Kurse aktualisieren"</string>
     <string name="msg_0701" formatted="false">"Kalendersteuerung"</string>
     <string name="msg_0702" formatted="false">"{0} anzeigen"</string>
+    <string name="msg_0703" formatted="false">"Diesen Kurs favorisieren"</string>
 </resources>

@@ -1,5 +1,5 @@
 /*
- * Aufgabe: Lehrtyp-Anzeigenamen speichern und Umbenennungsdialog bereitstellen.
+ * Aufgabe: Lehrtyp-Anzeigenamen speichern und Umbenennungslink mit Dialog im neuen Erscheinungsbild bereitstellen.
  * Ein-/Ausgabe: Visuelle Gruppenschlüssel und Namen -> gemeinsame Anzeigenamen.
  * Nebenwirkungen: Nur private Namenspräferenzen; Oberfläche meldet Auswahl über Rückrufe.
  * Nicht zuständig: Quellentitel, Kurszugehörigkeit, Teilnahmestatus oder Kalenderänderungen.
@@ -17,8 +17,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.platform.LocalConfiguration
-import top.yukonga.miuix.kmp.basic.*
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import com.tequila.tumcalendarcontrol.ui.design.DesignField
+import com.tequila.tumcalendarcontrol.ui.design.DesignPillButton
+import com.tequila.tumcalendarcontrol.ui.design.DesignRadii
+import com.tequila.tumcalendarcontrol.ui.design.DesignText
+import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CardDefaults
 
 internal class CourseTypeNamesPreferences(context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences("course_type_names", Context.MODE_PRIVATE)
@@ -36,22 +45,36 @@ internal fun validCourseTypeName(value: String): Boolean = value.trim().isNotEmp
 internal data class CourseTypeNames(val names: Map<String, String> = emptyMap(), val change: (String, String?) -> Unit = { _, _ -> })
 internal val LocalCourseTypeNames = staticCompositionLocalOf { CourseTypeNames() }
 
+/**
+ * Umbenennen als kleiner Akzent-Textlink (Tippfläche ≥ 48 dp hoch); der Dialog nutzt die Bausteine des Designsystems.
+ * Ändert nur den Anzeigenamen des Lehrtyps, nie Kursidentität oder Quelle.
+ */
 @Composable
 internal fun CourseTypeRenameButton(type: CourseTeachingTypeGroup) {
     val names = LocalCourseTypeNames.current
+    val colors = LocalDesignColors.current
     var editing by remember { mutableStateOf(false) }
     var value by remember(type.label) { mutableStateOf(type.label) }
     val configuration = LocalConfiguration.current
-    Button(onClick = { value = type.label; editing = true }) { Text(tr(message(383))) }
+    DesignText(
+        tr(message(383)), 12, color = colors.accent, weight = FontWeight.Medium,
+        modifier = Modifier.heightIn(min = 48.dp).clickable { value = type.label; editing = true }
+            .wrapContentHeight().padding(horizontal = 4.dp).testTag("course-type-rename"),
+    )
     if (editing) Dialog(onDismissRequest = { editing = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Card(Modifier.width((configuration.screenWidthDp - 48).coerceIn(200, 480).dp).height((configuration.screenHeightDp * 0.72f).coerceAtMost(480f).dp), insideMargin = PaddingValues(16.dp)) {
+        // Fester Papiergrund statt Glas: über dem Abdunkelungsschleier gibt es nichts abzutasten.
+        Card(
+            Modifier.width((configuration.screenWidthDp - 48).coerceIn(200, 480).dp).heightIn(max = (configuration.screenHeightDp * 0.72f).coerceAtMost(480f).dp),
+            cornerRadius = DesignRadii.Block, insideMargin = PaddingValues(horizontal = 20.dp, vertical = 18.dp),
+            colors = CardDefaults.defaultColors(color = colors.paper, contentColor = colors.ink),
+        ) {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(tr(message(384)))
-                Text(tr(message(385)))
-                TextField(value, { value = it }, Modifier.fillMaxWidth(), label = tr(message(386)))
-                Button(onClick = { names.change(type.key, value.trim()); editing = false }, enabled = validCourseTypeName(value), modifier = Modifier.fillMaxWidth()) { Text(tr(message(387))) }
-                Button(onClick = { names.change(type.key, null); editing = false }, modifier = Modifier.fillMaxWidth()) { Text(tr(message(388))) }
-                Button(onClick = { editing = false }, modifier = Modifier.fillMaxWidth()) { Text(tr(message(197))) }
+                DesignText(tr(message(384)), 18, serif = true)
+                DesignText(tr(message(385)), 12, muted = true)
+                DesignField(tr(message(386)), value, { value = it })
+                DesignPillButton(tr(message(387)), enabled = validCourseTypeName(value)) { names.change(type.key, value.trim()); editing = false }
+                DesignPillButton(tr(message(388)), primary = false) { names.change(type.key, null); editing = false }
+                DesignPillButton(tr(message(197)), primary = false) { editing = false }
             }
         }
     }

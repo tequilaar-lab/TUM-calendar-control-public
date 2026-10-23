@@ -706,4 +706,5 @@
     <string name="msg_0700" formatted="false">"Refresh courses"</string>
     <string name="msg_0701" formatted="false">"Calendar control"</string>
     <string name="msg_0702" formatted="false">"Show {0}"</string>
+    <string name="msg_0703" formatted="false">"Favorite this course"</string>
 </resources>

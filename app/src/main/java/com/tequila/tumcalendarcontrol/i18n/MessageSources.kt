@@ -709,4 +709,5 @@ internal val messageSources = mapOf(
     700 to "读取更新",
     701 to "日程控制",
     702 to "浏览 {0}",
+    703 to "收藏这门课程",
 )

@@ -1,15 +1,18 @@
 /*
  * Aufgabe: Eingabe- und Auswahlsteuerelemente des neuen Erscheinungsbilds als Hüllen um Miuix-Komponenten.
  * Ein-/Ausgabe: Lokalisierte Beschriftungen, Werte und Rückrufe -> Miuix RadioButton, Checkbox, TabRowWithContour,
+ *   umbrechende Auswahlchips,
  *   TextField, Button und BasicComponent mit den Farbrollen und Radien des Designs.
  * Nebenwirkungen: Keine; Rückrufe entscheiden über Zustandsänderungen.
  * Nicht zuständig: Fachlogik, Übersetzung, Speicherung oder Navigation.
  */
 package com.tequila.tumcalendarcontrol.ui.design
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,6 +30,7 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -60,12 +64,24 @@ fun DesignLine(modifier: Modifier = Modifier) {
 // —— Auswahl: Tinte statt Akzent, damit Blau eindeutig „Teilnahme auswählen“ bleibt ——
 
 @Composable
-fun DesignChoice(label: String, selected: Boolean, modifier: Modifier = Modifier, detail: String = "", onClick: () -> Unit) {
+fun DesignChoice(
+    label: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    detail: String = "",
+    trailing: (@Composable () -> Unit)? = null,
+    onClick: () -> Unit,
+) {
     val colors = LocalDesignColors.current
     Row(modifier.fillMaxWidth().heightIn(min = 52.dp).selectable(selected, role = Role.RadioButton, onClick = onClick).padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        RadioButton(selected, onClick = null, colors = RadioButtonDefaults.radioButtonColors(selectedColor = colors.ink))
-        DesignLabel(label, detail)
+        // Miuix-Auswahl zeigt nur beim gewählten Eintrag ein Häkchen; fester Platz hält die Beschriftungen bündig.
+        Box(Modifier.size(26.dp), contentAlignment = Alignment.Center) {
+            RadioButton(selected, onClick = null, colors = RadioButtonDefaults.radioButtonColors(selectedColor = colors.ink))
+        }
+        Box(Modifier.weight(1f)) { DesignLabel(label, detail) }
+        // Optionaler Abschluss rechts, z. B. Farbpunkt des Teilnahmestatus.
+        trailing?.invoke()
     }
 }
 
@@ -77,7 +93,11 @@ fun DesignCheck(label: String, checked: Boolean, modifier: Modifier = Modifier, 
         // Miuix fixiert das Kästchen auf 26 dp (requiredSize); auf Wunsch etwas kleiner: 22-dp-Rahmen, 0,85 skaliert.
         Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
             Checkbox(ToggleableState(checked), onClick = null, modifier = Modifier.scale(.85f),
-                colors = CheckboxDefaults.checkboxColors(checkedBackgroundColor = colors.ink, checkedForegroundColor = colors.paper))
+                // Ungewählt: zarte Tintenfläche statt Miuix-Standard (der auf dem Papiergrund als schwerer Punkt wirkt).
+                colors = CheckboxDefaults.checkboxColors(
+                    checkedBackgroundColor = colors.ink, checkedForegroundColor = colors.paper,
+                    uncheckedBackgroundColor = colors.ink.copy(alpha = .10f), uncheckedForegroundColor = colors.paper,
+                ))
         }
         DesignLabel(label, detail)
     }
@@ -103,6 +123,29 @@ fun DesignSegmented(options: List<String>, selected: Int, modifier: Modifier = M
             selectedBackgroundColor = if (colors.isDark) colors.ink.copy(alpha = .14f) else colors.floating, selectedContentColor = colors.ink,
         ),
     )
+}
+
+/**
+ * Auswahlchips für viele oder lange Optionen (z. B. sieben Wochentage), die in einer Segmentsteuerung abgeschnitten
+ * würden: umbrechende Reihe, gleiche Farbrollen wie DesignSegmented, Tippfläche je Chip ≥ 48 dp hoch.
+ */
+@Composable
+fun DesignChips(options: List<String>, selected: Int, modifier: Modifier = Modifier, onSelect: (Int) -> Unit) {
+    val colors = LocalDesignColors.current
+    FlowRow(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        options.forEachIndexed { index, option ->
+            val active = index == selected
+            Box(
+                Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(DesignRadii.Field))
+                    .background(if (!active) colors.wash else if (colors.isDark) colors.ink.copy(alpha = .14f) else colors.floating)
+                    .then(if (active) Modifier.squircleBorder(1.dp, colors.ink.copy(alpha = .14f), DesignRadii.Field) else Modifier)
+                    .selectable(active, role = Role.RadioButton) { onSelect(index) }.padding(horizontal = 16.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                DesignText(option, 14, color = if (active) colors.ink else colors.muted, weight = if (active) FontWeight.Medium else FontWeight.Normal)
+            }
+        }
+    }
 }
 
 /**

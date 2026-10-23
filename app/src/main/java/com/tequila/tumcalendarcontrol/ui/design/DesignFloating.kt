@@ -1,25 +1,40 @@
 /*
- * Aufgabe: Schwebende Glaselemente: Hauptschaltfläche (Miuix Button) und untere Navigation (Miuix FloatingNavigationBar).
+ * Aufgabe: Schwebende Glaselemente: Hauptschaltfläche (Miuix Button), Seite mit schwebender Hauptaktion
+ *   und untere Navigation (Miuix FloatingNavigationBar).
  * Ein-/Ausgabe: Beschriftungen, Symbole, Auswahl und Rückrufe -> Glasflächen über der Inhaltsebene der Seite.
  * Nebenwirkungen: Keine; Rückrufe lösen Aktionen aus.
  * Nicht zuständig: Seitenlayout, Abtastebenen (GlassSurfaces/Seitenrahmen) oder Fachaktionen.
  */
 package com.tequila.tumcalendarcontrol.ui.design
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.FloatingNavigationBar
@@ -81,6 +96,46 @@ fun DesignGlassNavigation(items: List<DesignNavigationItem>, selected: Int, modi
                 Icon(item.icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
                 DesignText(item.label, 10, color = tint, maxLines = 1)
             }
+        }
+    }
+}
+
+/** Platz am Ende scrollbarer Seiten, damit der letzte Inhalt über die schwebende Hauptaktion scrollen kann. */
+val FloatingActionContentClearance = 120.dp
+
+/**
+ * Seite mit schwebender Glas-Hauptaktion: Inhalt scrollt unter der Aktion hindurch, am Ende bleibt Platz,
+ * damit nichts verdeckt bleibt. Aktion schwebt über der Systemnavigation.
+ * Eigene Abtastebene nur für den Seiteninhalt: Läge die Aktion in der Ebene, die sie abtastet (Inhaltsebene
+ * des Rahmens), zeichnete sie sich rekursiv selbst (nativer Absturz beim Rendern).
+ */
+@Composable
+fun DesignActionPage(
+    actionLabel: String,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier,
+    actionEnabled: Boolean = true,
+    actionTag: String = "floating-action",
+    contentTag: String = "action-page-content",
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val pageLayer = rememberLayerBackdrop()
+    Box(modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().layerBackdrop(pageLayer).background(LocalDesignColors.current.paper)) {
+            Column(
+                Modifier.fillMaxSize().testTag(contentTag).verticalScroll(rememberScrollState())
+                    .padding(horizontal = 8.dp).padding(bottom = FloatingActionContentClearance),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                content = content,
+            )
+        }
+        CompositionLocalProvider(LocalGlassBackdrop provides pageLayer) {
+            DesignFloatingButton(
+                actionLabel, actionEnabled,
+                Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 8.dp, vertical = 16.dp)
+                    .widthIn(max = 420.dp).fillMaxWidth().testTag(actionTag),
+                onClick = onAction,
+            )
         }
     }
 }

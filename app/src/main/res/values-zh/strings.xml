@@ -706,4 +706,5 @@
     <string name="msg_0700" formatted="false">"读取更新"</string>
     <string name="msg_0701" formatted="false">"日程控制"</string>
     <string name="msg_0702" formatted="false">"浏览 {0}"</string>
+    <string name="msg_0703" formatted="false">"收藏这门课程"</string>
 </resources>

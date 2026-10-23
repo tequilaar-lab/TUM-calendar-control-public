@@ -2,7 +2,7 @@
  * Aufgabe: Inhalt eines aufgeklappten Kurses in der Übersicht: Lehrtyp-Umschalter mit Umbenennen und Terminliste.
  * Ein-/Ausgabe: Kursgruppe und Rückruf -> Termine (Datum, Zeit, Ort, Teilnahmestatus); Antippen öffnet den Termin.
  * Nebenwirkungen: Keine; Umbenennen läuft über den bestehenden CourseTypeRenameButton.
- * Nicht zuständig: Verzeichnisaufbau (OverviewHome), Teilnahmeänderung oder Kursidentität.
+ * Nicht zuständig: Verzeichnisaufbau (CourseIndexPage), Teilnahmeänderung oder Kursidentität.
  */
 package com.tequila.tumcalendarcontrol.ui
 
@@ -109,7 +109,7 @@ private fun OverviewSessionRow(course: Course, compact: Boolean, colors: DesignC
 }
 
 /** Sichtbare Regeln: Grün verbindlich, Blau auswählen, Grau nicht teilnehmen. */
-private fun attendanceInk(state: AttendanceState, colors: DesignColors): Color = when (state) {
+internal fun attendanceInk(state: AttendanceState, colors: DesignColors): Color = when (state) {
     AttendanceState.MUST_ATTEND -> colors.success
     AttendanceState.CHOOSE_TO_ATTEND -> colors.accent
     AttendanceState.STOP_ATTENDING -> colors.muted

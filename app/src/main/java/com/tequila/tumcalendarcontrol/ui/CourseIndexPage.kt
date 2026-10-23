@@ -1,9 +1,9 @@
 /*
- * Aufgabe: Übersicht im neuen Erscheinungsbild: nummeriertes Kursverzeichnis; schmal mit Aufklappen,
+ * Aufgabe: Gemeinsames Kursverzeichnis für Übersicht, Suche und Favoriten: nummerierte Kurse; schmal mit Aufklappen,
  *   breit links Verzeichnis und rechts aktueller Kurs.
- * Ein-/Ausgabe: CalendarControlState (angezeigte Kurse, Typnamen) -> Compose-Seite; Antippen eines Termins öffnet die Details.
+ * Ein-/Ausgabe: Kursliste der Seite, Kopfinhalt und Typnamen -> Compose-Seite; Antippen eines Termins öffnet die Details.
  * Nebenwirkungen: Keine externen Aktionen; nur bestehende Navigationsaufrufe.
- * Nicht zuständig: Termindarstellung innerhalb eines Kurses (OverviewSessions), Kursidentität, Lesen oder Kalenderausgabe.
+ * Nicht zuständig: Seitenkopf-Inhalte (CourseBrowsePages), Termindarstellung (OverviewSessions), Filterlogik oder Kursidentität.
  */
 package com.tequila.tumcalendarcontrol.ui
 
@@ -60,10 +60,20 @@ import top.yukonga.miuix.kmp.basic.Icon
 /** Ab dieser Breite Verzeichnis und Detail nebeneinander statt ein gestreckter Telefonaufbau. */
 private val WideOverviewBreakpoint = 700.dp
 
+/**
+ * Verzeichnisseite: header erhält die Gruppen (z. B. für Zähler), indexTitle beschriftet die Liste,
+ * showRefresh zeigt den Einstieg zum erneuten Lesen am Listenende (nur Übersicht).
+ * Seitenzustand bleibt je Route getrennt, da der Rahmen jede Route in einem eigenen SaveableStateProvider zeigt.
+ */
 @Composable
-internal fun OverviewHome(state: CalendarControlState) {
+internal fun CourseIndexPage(
+    state: CalendarControlState,
+    courses: List<com.tequila.tumcalendarcontrol.domain.Course>,
+    indexTitle: String,
+    showRefresh: Boolean,
+    header: @Composable (List<CourseDisplayGroup>) -> Unit,
+) {
     val typeNames = LocalCourseTypeNames.current.names
-    val courses = state.displayedCourses
     val groups = remember(courses, typeNames) { CourseDisplayGroupModel.groups(courses, typeNames) }
     // Seitenzustand: aktueller Kurs (breit) und aufgeklappte Kurse (schmal); kein Einfluss auf Kursdaten.
     var currentKey by rememberSaveable { mutableStateOf<String?>(null) }
@@ -72,37 +82,23 @@ internal fun OverviewHome(state: CalendarControlState) {
     BoxWithConstraints(Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
         val wide = maxWidth >= WideOverviewBreakpoint
         Column(Modifier.fillMaxSize()) {
-            OverviewSummary(state, groups)
+            header(groups)
             if (groups.isEmpty()) {
                 DesignNote(tr(message(364)), tr(message(365)), Modifier.padding(top = 12.dp))
             } else if (wide) {
                 Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                    OverviewIndex(state, groups, Modifier.weight(.40f).fillMaxHeight(), selected = { it.key == current?.key }, expanded = { false }) {
+                    OverviewIndex(state, groups, indexTitle, showRefresh, Modifier.weight(.40f).fillMaxHeight(), selected = { it.key == current?.key }, expanded = { false }) {
                         currentKey = it.key
                     }
                     Box(Modifier.padding(top = 12.dp, bottom = 24.dp).width(1.dp).fillMaxHeight().background(LocalDesignColors.current.ink.copy(alpha = .10f)))
                     current?.let { OverviewDetailPane(state, it, groups.indexOf(it), groups.size, Modifier.weight(.60f).fillMaxHeight()) }
                 }
             } else {
-                OverviewIndex(state, groups, Modifier.fillMaxSize(), selected = { it.key in openKeys }, expanded = { it.key in openKeys }) {
+                OverviewIndex(state, groups, indexTitle, showRefresh, Modifier.fillMaxSize(), selected = { it.key in openKeys }, expanded = { it.key in openKeys }) {
                     openKeys = if (it.key in openKeys) openKeys - it.key else openKeys + it.key
                 }
             }
         }
-    }
-}
-
-/** Zählerzeile mit Einstieg in die Kursauswahl (gelesene Kurse) bzw. in den Lesezeitraum. */
-@Composable
-private fun OverviewSummary(state: CalendarControlState, groups: List<CourseDisplayGroup>) {
-    val colors = LocalDesignColors.current
-    Row(Modifier.fillMaxWidth().padding(start = 4.dp, bottom = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-        DesignText(tr(message(693, groups.size, groups.sumOf { it.courses.size })), 12, muted = true, modifier = Modifier.weight(1f))
-        DesignText(
-            tr(message(694)) + "  ↗", 14, color = colors.accent, weight = FontWeight.Medium,
-            modifier = Modifier.clickable { if (state.sourceCatalogLoaded) state.openSourceCourseSelector() else state.openSourceRange() }
-                .padding(vertical = 10.dp, horizontal = 4.dp).testTag("overview-select"),
-        )
     }
 }
 
@@ -111,6 +107,8 @@ private fun OverviewSummary(state: CalendarControlState, groups: List<CourseDisp
 private fun OverviewIndex(
     state: CalendarControlState,
     groups: List<CourseDisplayGroup>,
+    indexTitle: String,
+    showRefresh: Boolean,
     modifier: Modifier,
     selected: (CourseDisplayGroup) -> Boolean,
     expanded: (CourseDisplayGroup) -> Boolean,
@@ -121,7 +119,7 @@ private fun OverviewIndex(
         item {
             DesignLine()
             Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                DesignText(tr(message(360)), 11, muted = true, tracking = 1f)
+                DesignText(tr(indexTitle), 11, muted = true, tracking = 1f)
                 if (state.sourceCatalogLoaded) DesignText(tr(message(695)), 10, muted = true)
             }
         }
@@ -140,7 +138,7 @@ private fun OverviewIndex(
                 DesignLine()
             }
         }
-        item {
+        if (showRefresh) item {
             Spacer(Modifier.height(22.dp))
             DesignText(
                 tr(message(700)) + "  ↗", 12, color = colors.accent,
