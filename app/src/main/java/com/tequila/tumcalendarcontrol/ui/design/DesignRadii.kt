@@ -19,4 +19,6 @@ object DesignRadii {
     val Thumb = 11.dp
     val Pill = 28.dp
     val Navigation = 24.dp
+    /** Bestätigungsdialog (wie im bestätigten Entwurf). */
+    val Dialog = 28.dp
 }

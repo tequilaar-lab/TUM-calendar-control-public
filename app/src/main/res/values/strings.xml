@@ -722,4 +722,9 @@
     <string name="msg_0716" formatted="false">"Each course can have its own attendance and favorites"</string>
     <string name="msg_0717" formatted="false">"By course"</string>
     <string name="msg_0718" formatted="false">"By date"</string>
+    <string name="msg_0719" formatted="false">"Please confirm"</string>
+    <string name="msg_0720" formatted="false">"Expected changes"</string>
+    <string name="msg_0721" formatted="false">"New"</string>
+    <string name="msg_0722" formatted="false">"Check &amp; update"</string>
+    <string name="msg_0723" formatted="false">"Cleanup scope"</string>
 </resources>

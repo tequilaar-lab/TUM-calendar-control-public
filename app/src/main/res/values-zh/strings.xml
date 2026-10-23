@@ -722,4 +722,9 @@
     <string name="msg_0716" formatted="false">"每门课程可以有不同的出席与收藏"</string>
     <string name="msg_0717" formatted="false">"按课程"</string>
     <string name="msg_0718" formatted="false">"按日期"</string>
+    <string name="msg_0719" formatted="false">"请确认"</string>
+    <string name="msg_0720" formatted="false">"预计变化"</string>
+    <string name="msg_0721" formatted="false">"新建"</string>
+    <string name="msg_0722" formatted="false">"核对并更新"</string>
+    <string name="msg_0723" formatted="false">"清理范围"</string>
 </resources>

@@ -1,7 +1,7 @@
 /*
- * Aufgabe: Kalenderauswirkungen vor Ausgabe anzeigen und Bestätigung einholen.
- * Ein-/Ausgabe: Interne Vorschauzusammenfassung -> ausdrückliche Ausgabebestätigung.
- * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Aufgabe: Kalenderauswirkungen vor Ausgabe anzeigen, Bestätigung einholen und letztes Ergebnis zeigen.
+ * Ein-/Ausgabe: Interne Vorschauzusammenfassung -> ausdrückliche Ausgabebestätigung (schwebende Hauptaktion).
+ * Nebenwirkungen: Keine externen Aktionen; Ausgabe, Autorisierung und Berechtigung nur über bestehende Zustandsaufrufe.
  * Nicht zuständig: iCal-Lesen, OAuth-Details, Calendar-Provider-Aufrufe oder echte Termininhalte.
  */
 package com.tequila.tumcalendarcontrol.ui
@@ -9,78 +9,101 @@ package com.tequila.tumcalendarcontrol.ui
 import com.tequila.tumcalendarcontrol.i18n.message
 import com.tequila.tumcalendarcontrol.i18n.restoreOwnedMessage
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.sync.OutputTarget
 import com.tequila.tumcalendarcontrol.sync.SyncChangeType
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Text
+import com.tequila.tumcalendarcontrol.ui.design.DesignActionPage
+import com.tequila.tumcalendarcontrol.ui.design.DesignFrostCard
+import com.tequila.tumcalendarcontrol.ui.design.DesignLine
+import com.tequila.tumcalendarcontrol.ui.design.DesignMetrics
+import com.tequila.tumcalendarcontrol.ui.design.DesignNote
+import com.tequila.tumcalendarcontrol.ui.design.DesignPage
+import com.tequila.tumcalendarcontrol.ui.design.DesignPillButton
+import com.tequila.tumcalendarcontrol.ui.design.DesignSection
+import com.tequila.tumcalendarcontrol.ui.design.DesignText
+import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
 
+/** Freier Text auf der Titellinie (4 dp innerhalb der Blockkanten). */
+private val TextInset = Modifier.padding(horizontal = 4.dp)
+
+/**
+ * Ohne Vorschau: Hinweis ohne Hauptaktion. Mit Vorschau: Umfang, Ziele, Datenstand, je Kalender erwartete Änderungen,
+ * nötige Verbindungen und letztes Ergebnis; schwebende Hauptaktion „Bestätigen und schreiben“.
+ */
 @Composable
 fun ManagedSyncPreviewScreen(state: CalendarControlState) {
     val preview = state.managedSyncPreview
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+    if (preview == null) {
+        DesignPage(contentTag = "write-content") {
+            DesignNote(tr(message(411)), tr(message(412)))
+            LastResultCard(state)
+            state.feedback?.let { DesignText(tr(it), 12, TextInset, muted = true) }
+        }
+        return
+    }
+    DesignActionPage(
+        tr(if (state.managedSyncInProgress) message(304) else message(426)), onAction = state::requestManagedSyncExecution,
+        actionEnabled = !state.managedSyncInProgress, actionTag = "write-confirm", contentTag = "write-content",
     ) {
-        InformationCard(message(166), message(410))
-        if (preview == null) {
-            InformationCard(message(411), message(412))
-            state.feedback?.let { Text(tr(it), color = LocalTumPalette.current.onSurfaceVariant) }
-            return
-        }
-        InformationCard(message(413), message(414, (preview.desiredEventCount), (state.managedSourceCandidateCount), (state.managedManualCandidateCount)))
-        if (state.managedCancelledMappedCount > 0) {
-            InformationCard(
-                message(415),
-                message(416, (state.managedCancelledMappedCount)),
-            )
-            Button(onClick = state::openOutputCleanup, modifier = Modifier.fillMaxWidth()) { Text(tr(message(417))) }
-        }
+        // Umfang: große Zahl, darunter Aufteilung nach Kursen und Campus-Terminen.
+        DesignSection(tr(message(413)), TextInset)
+        DesignText(preview.desiredEventCount.toString(), 56, TextInset.testTag("write-count"), weight = FontWeight.Light)
+        DesignText(tr(message(414, preview.desiredEventCount, state.managedSourceCandidateCount, state.managedManualCandidateCount)), 14, TextInset)
+        DesignText(tr(message(410)), 12, TextInset, muted = true)
+        DesignLine()
         WriteTargetSelector(state)
-        if (state.sourceCatalogLoaded) InformationCard(message(418), message(419, (state.sourceSnapshotLabel), (state.sourceSnapshotSavedAt)))
+        if (state.sourceCatalogLoaded) {
+            DesignSection(tr(message(418)), TextInset)
+            DesignText(tr(message(419, state.sourceSnapshotLabel, state.sourceSnapshotSavedAt)), 13, TextInset, muted = true)
+        }
+        // Je Zielkalender getrennt: neu, prüfen/aktualisieren, Bereitschaft.
+        DesignSection(tr(message(720)), TextInset)
         preview.targetChanges.toSortedMap(compareBy(OutputTarget::name)).forEach { (target, changes) ->
-            InformationCard(
-                target.label(),
-                message(420, (changes.count { it.type == SyncChangeType.CREATE }), (changes.count { it.type != SyncChangeType.CREATE }), (if (target in state.readyWriteTargets) message(421) else message(422))),
-            )
-        }
-        if (OutputTarget.GOOGLE_CALENDAR in state.currentWriteTargets && !state.hasGoogleAuthorization) {
-            Button(onClick = state::requestGoogleAuthorization, modifier = Modifier.fillMaxWidth()) { Text(tr(message(423))) }
-        }
-        if (OutputTarget.LOCAL_CALENDAR in state.currentWriteTargets && !state.localCalendarPermissionGranted) {
-            Button(onClick = state::requestCurrentWriteLocalPermission, modifier = Modifier.fillMaxWidth()) { Text(tr(message(424))) }
-        }
-        if (state.readyWriteTargets.isNotEmpty() && state.readyWriteTargets != preview.targetChanges.keys) {
-            Button(onClick = state::requestReadyManagedSyncExecution, enabled = !state.managedSyncInProgress, modifier = Modifier.fillMaxWidth()) {
-                Text(tr(message(425, (com.tequila.tumcalendarcontrol.i18n.joinMessages(state.readyWriteTargets.map { it.label() }, "、")))))
+            DesignFrostCard(Modifier.testTag("write-target-card-${target.name}")) {
+                DesignText(tr(target.outputLabel()), 17, serif = true)
+                DesignMetrics(
+                    tr(message(721)) to changes.count { it.type == SyncChangeType.CREATE }.toString(),
+                    tr(message(722)) to changes.count { it.type != SyncChangeType.CREATE }.toString(),
+                )
+                DesignText(tr(message(420, changes.count { it.type == SyncChangeType.CREATE }, changes.count { it.type != SyncChangeType.CREATE },
+                    if (target in state.readyWriteTargets) message(421) else message(422))), 12, muted = true)
             }
         }
-        Button(
-            onClick = state::requestManagedSyncExecution,
-            enabled = !state.managedSyncInProgress,
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(tr(if (state.managedSyncInProgress) message(304) else message(426))) }
-        state.ruleLedger.lastSummary?.let { summary ->
-            InformationCard(
-                message(427),
-                com.tequila.tumcalendarcontrol.i18n.concatenateMessages((summary.detailSummary?.let(::restoreOwnedMessage) ?: message(428, (summary.createdCount), (summary.updatedCount), (summary.removedCount))),
-                    (summary.failureSummary?.let { message(429, (restoreOwnedMessage(it))) } ?: "")),
+        // Verbindungen nachholen; „nur bereite Kalender“ schreibt die übrigen später.
+        if (OutputTarget.GOOGLE_CALENDAR in state.currentWriteTargets && !state.hasGoogleAuthorization) {
+            DesignPillButton(tr(message(423)), Modifier.testTag("write-connect-google"), primary = false, onClick = state::requestGoogleAuthorization)
+        }
+        if (OutputTarget.LOCAL_CALENDAR in state.currentWriteTargets && !state.localCalendarPermissionGranted) {
+            DesignPillButton(tr(message(424)), Modifier.testTag("write-allow-local"), primary = false, onClick = state::requestCurrentWriteLocalPermission)
+        }
+        if (state.readyWriteTargets.isNotEmpty() && state.readyWriteTargets != preview.targetChanges.keys) {
+            DesignPillButton(
+                tr(message(425, com.tequila.tumcalendarcontrol.i18n.joinMessages(state.readyWriteTargets.map { it.outputLabel() }, "、"))),
+                Modifier.testTag("write-ready-only"), primary = false, enabled = !state.managedSyncInProgress, onClick = state::requestReadyManagedSyncExecution,
             )
         }
-        state.feedback?.let { Text(tr(it), color = LocalTumPalette.current.onSurfaceVariant) }
+        // Vom Schreiben unabhängig: abgesagte Quelltermine werden nie automatisch gelöscht.
+        if (state.managedCancelledMappedCount > 0) {
+            DesignNote(tr(message(415)), tr(message(416, state.managedCancelledMappedCount)), error = true)
+            DesignPillButton(tr(message(417)), Modifier.testTag("write-open-cleanup"), primary = false, onClick = state::openOutputCleanup)
+        }
+        LastResultCard(state)
+        state.feedback?.let { DesignText(tr(it), 12, TextInset.testTag("write-feedback"), muted = true) }
     }
 }
 
-private fun OutputTarget.label(): String = when (this) {
-    OutputTarget.LOCAL_CALENDAR -> message(89)
-    OutputTarget.GOOGLE_CALENDAR -> message(90)
+/** Letztes Schreib-/Bereinigungsergebnis je Ziel; Fehlerteil in gedämpftem Rot. */
+@Composable
+private fun LastResultCard(state: CalendarControlState) {
+    val summary = state.ruleLedger.lastSummary ?: return
+    DesignFrostCard(Modifier.testTag("write-last-result")) {
+        DesignSection(tr(message(427)))
+        DesignText(tr(summary.detailSummary?.let(::restoreOwnedMessage) ?: message(428, summary.createdCount, summary.updatedCount, summary.removedCount)), 13)
+        summary.failureSummary?.let { DesignText(tr(restoreOwnedMessage(it)), 12, color = LocalDesignColors.current.danger) }
+    }
 }

@@ -722,4 +722,9 @@
     <string name="msg_0716" formatted="false">"Je Kurs eigene Teilnahme und Favoriten"</string>
     <string name="msg_0717" formatted="false">"Nach Kurs"</string>
     <string name="msg_0718" formatted="false">"Nach Datum"</string>
+    <string name="msg_0719" formatted="false">"Bitte bestätigen"</string>
+    <string name="msg_0720" formatted="false">"Erwartete Änderungen"</string>
+    <string name="msg_0721" formatted="false">"Neu"</string>
+    <string name="msg_0722" formatted="false">"Prüfen &amp; aktualisieren"</string>
+    <string name="msg_0723" formatted="false">"Bereinigungsumfang"</string>
 </resources>

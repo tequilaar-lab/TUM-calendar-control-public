@@ -24,6 +24,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.R
 import com.tequila.tumcalendarcontrol.ui.design.DesignActionPage
+import com.tequila.tumcalendarcontrol.ui.design.DesignConfirmDialog
+import com.tequila.tumcalendarcontrol.ui.design.DesignConfirmRequest
 import com.tequila.tumcalendarcontrol.ui.design.DesignFrostCard
 import com.tequila.tumcalendarcontrol.ui.design.DesignMetrics
 import com.tequila.tumcalendarcontrol.ui.design.DesignNote
@@ -84,16 +86,20 @@ fun SourceRangeScreen(state: CalendarControlState) {
         validation.forEach { DesignText(tr(it), 12, TextInset.testTag("source-range-validation"), color = LocalDesignColors.current.danger) }
         DesignText(tr(message(631)), 12, TextInset, muted = true)
         SavedCoursesCard(state)
-        // Erneut lesen nur mit Bestätigung: neue Datenversion, aktuelle Auswahl wird geleert.
-        if (state.sourceReloadConfirmationPending) {
-            SourceReloadConfirmationCard(state)
-        } else if (hasSaved) {
+        // Erneut lesen nur mit Bestätigung (Glasdialog): neue Datenversion, aktuelle Auswahl wird geleert.
+        if (hasSaved) {
             DesignPillButton(tr(message(638)), Modifier.testTag("source-reload"), primary = false, enabled = !state.sourceReadInProgress) {
                 validation = state.requestSourceReadForRange(startDate, endDate)
             }
         }
         DesignNote(tr(message(636)), tr(message(637)))
     }
+    // Neulesebestätigung speichert nur eine neue Datenversion; eine frühere bleibt wählbar. Fortfahren ist keine Synchronisierung.
+    DesignConfirmDialog(if (!state.sourceReloadConfirmationPending) null else DesignConfirmRequest(
+        kicker = tr(message(719)), title = tr(message(638)), body = tr(message(639)), note = "",
+        cancelLabel = tr(message(197)), confirmLabel = tr(message(640)), danger = false,
+        onCancel = { state.resolveSourceReloadConfirmation(false) }, onConfirm = { state.resolveSourceReloadConfirmation(true) },
+    ))
 }
 
 /** Gespeicherte Kurse: Version, Kurs- und Terminzahl, gelesener Zeitraum; ohne Daten ein Hinweis. */
@@ -112,19 +118,6 @@ private fun SavedCoursesCard(state: CalendarControlState) {
             )
             DesignText(tr(message(646, preview.firstManageableStart.toLocalDateText(), preview.lastManageableEnd.toLocalDateText(), preview.manageableOccurrenceCount)), 13, muted = true)
             DesignText(tr(message(634, state.sourceSnapshotLabel)), 12, muted = true)
-        }
-    }
-}
-
-/** Neulesebestätigung speichert nur neue Datenversion; eine frühere bleibt wählbar. Fortfahren ist keine Synchronisierung. */
-@Composable
-private fun SourceReloadConfirmationCard(state: CalendarControlState) {
-    DesignFrostCard(Modifier.testTag("source-reload-confirmation")) {
-        DesignText(tr(message(638)), 16)
-        DesignText(tr(message(639)), 12, muted = true)
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            DesignPillButton(tr(message(197)), Modifier.weight(1f), primary = false) { state.resolveSourceReloadConfirmation(false) }
-            DesignPillButton(tr(message(640)), Modifier.weight(1f)) { state.resolveSourceReloadConfirmation(true) }
         }
     }
 }

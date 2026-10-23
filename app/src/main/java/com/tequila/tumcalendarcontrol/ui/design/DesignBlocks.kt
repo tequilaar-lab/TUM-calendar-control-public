@@ -1,5 +1,5 @@
 /*
- * Aufgabe: Inhaltsbausteine des neuen Erscheinungsbilds: Abschnittstitel, Hinweise, Milchglaskarten und Kennzahlen.
+ * Aufgabe: Inhaltsbausteine des neuen Erscheinungsbilds: Abschnittstitel, Hinweise, Milchglaskarten, Kennzahlen und einfache Seite.
  * Ein-/Ausgabe: Lokalisierte Texte und Inhalte -> Miuix Card mit Milchglasmaterial und typografische Bausteine.
  * Nebenwirkungen: Keine.
  * Nicht zuständig: Schwebende Glasflächen (DesignFloating), Fachdaten oder Übersetzung.
@@ -18,6 +18,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.platform.testTag
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -83,4 +87,17 @@ fun DesignMetrics(vararg items: Pair<String, String>, modifier: Modifier = Modif
             }
         }
     }
+}
+
+/**
+ * Scrollbare Seite ohne schwebende Hauptaktion (z. B. Hinweise, Beispiele): gleiche Ränder und Abstände wie
+ * DesignActionPage, unten nur der normale Abstand zum Seitenende.
+ */
+@Composable
+fun DesignPage(modifier: Modifier = Modifier, contentTag: String = "page-content", content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier.fillMaxSize().testTag(contentTag).verticalScroll(rememberScrollState()).padding(horizontal = 8.dp).padding(bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        content = content,
+    )
 }

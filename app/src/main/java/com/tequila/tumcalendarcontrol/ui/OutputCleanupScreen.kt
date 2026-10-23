@@ -1,7 +1,7 @@
 /*
- * Aufgabe: Bereinigung nach Gesamtbestand, Kurs oder Datum mit zweiter Bestätigung darstellen.
+ * Aufgabe: Bereinigung nach Gesamtbestand, Kurs oder Datum mit zweiter Bestätigung (Glasdialog) darstellen.
  * Ein-/Ausgabe: Laufzeitquelle, Zuordnungen und Auswahl -> genauer bestätigter Bereinigungsbereich.
- * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nebenwirkungen: Keine externen Aktionen; Löschen erst nach Bestätigung über bestehenden Zustandsaufruf.
  * Nicht zuständig: iCal-Lesen, Quelleninhaltsspeicherung, Titelerkennung, Berechtigungen oder direktes Löschen von Kalenderterminen.
  */
 package com.tequila.tumcalendarcontrol.ui
@@ -9,39 +9,40 @@ package com.tequila.tumcalendarcontrol.ui
 import com.tequila.tumcalendarcontrol.i18n.message
 
 import android.app.DatePickerDialog
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.R
 import com.tequila.tumcalendarcontrol.sync.ManagedEventCleanupScope
+import com.tequila.tumcalendarcontrol.sync.OutputTarget
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
+import com.tequila.tumcalendarcontrol.ui.design.DesignActionPage
+import com.tequila.tumcalendarcontrol.ui.design.DesignCheck
+import com.tequila.tumcalendarcontrol.ui.design.DesignChoice
+import com.tequila.tumcalendarcontrol.ui.design.DesignConfirmDialog
+import com.tequila.tumcalendarcontrol.ui.design.DesignConfirmRequest
+import com.tequila.tumcalendarcontrol.ui.design.DesignLine
+import com.tequila.tumcalendarcontrol.ui.design.DesignNote
+import com.tequila.tumcalendarcontrol.ui.design.DesignPillButton
+import com.tequila.tumcalendarcontrol.ui.design.DesignRow
+import com.tequila.tumcalendarcontrol.ui.design.DesignSection
+import com.tequila.tumcalendarcontrol.ui.design.DesignText
 import java.time.LocalDate
 import java.time.ZoneId
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.RadioButton
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import androidx.compose.ui.window.Dialog
 
 private val CleanupBerlinZone = ZoneId.of("Europe/Berlin")
+
+/** Freier Text auf der Titellinie (4 dp innerhalb der Blockkanten). */
+private val TextInset = Modifier.padding(horizontal = 4.dp)
 
 private enum class OutputCleanupMode(val label: String, val description: String) {
     ALL(message(440), message(441)),
@@ -55,6 +56,10 @@ private data class CleanupCourseGroup(
     val occurrenceCount: Int,
 )
 
+/**
+ * Ziele wählen und (nur lesend) prüfen, Umfang wählen, Treffer zählen; „Weiter“ öffnet die zweite Bestätigung.
+ * Seitenzustand bleibt in pageMemory, damit Rückkehr dieselbe Auswahl zeigt.
+ */
 @Composable
 internal fun OutputCleanupScreen(state: CalendarControlState) {
     var mode by remember { mutableStateOf(runCatching { OutputCleanupMode.valueOf(state.pageMemory.cleanupMode) }.getOrDefault(OutputCleanupMode.COURSES)) }
@@ -67,169 +72,116 @@ internal fun OutputCleanupScreen(state: CalendarControlState) {
     val darkTheme = state.themeMode.usesDarkTheme(isSystemInDarkTheme())
     val targets = state.managedOutputTargetsForCleanup
     var selectedTargets by remember(targets) { mutableStateOf(targets.filter { it.name in state.pageMemory.cleanupTargets }.toSet()) }
-    androidx.compose.runtime.LaunchedEffect(mode, selectedSourceUids, startDate, endDate, selectedTargets) {
+    LaunchedEffect(mode, selectedSourceUids, startDate, endDate, selectedTargets) {
         state.pageMemory = state.pageMemory.copy(cleanupMode = mode.name, cleanupCourses = selectedSourceUids,
             cleanupStart = startDate?.toString().orEmpty(), cleanupEnd = endDate?.toString().orEmpty(), cleanupTargets = selectedTargets.map { it.name }.toSet())
     }
     val catalogue = state.cleanupOccurrencesForTargets(selectedTargets)
     val sourceLoaded = catalogue.isNotEmpty()
-    val courseGroups = cleanupCourseGroups(catalogue)
+    val selectedCount = when (mode) {
+        OutputCleanupMode.ALL -> null
+        OutputCleanupMode.COURSES -> state.cleanupIdentities(selectedSourceUids, null, null, selectedTargets).size
+        OutputCleanupMode.DATES -> state.cleanupIdentities(null, startDate, endDate, selectedTargets).size
+    }
+    val canContinue = !state.managedSyncInProgress && state.cleanupCatalogReadTargets.isEmpty() && selectedTargets.isNotEmpty() &&
+        (selectedCount == null || selectedCount > 0) && (startDate == null || endDate == null || startDate!! <= endDate!!)
 
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+    DesignActionPage(
+        tr(message(471)),
+        onAction = {
+            val scope = when (mode) {
+                OutputCleanupMode.ALL -> ManagedEventCleanupScope.AllManagedEvents
+                OutputCleanupMode.COURSES -> state.selectedCleanupScope(selectedSourceUids, null, null, selectedTargets)
+                OutputCleanupMode.DATES -> state.selectedCleanupScope(null, startDate, endDate, selectedTargets)
+            }
+            if (scope is ManagedEventCleanupScope.SelectedIdentities && scope.identities.isEmpty()) localMessage = message(470) else pendingScope = scope
+        },
+        actionEnabled = canContinue, actionTag = "cleanup-continue", contentTag = "cleanup-content",
     ) {
-        InformationCard(
-            message(167),
-            message(446),
-        )
-        InformationCard(message(447), message(448))
-        targets.forEach { target ->
-            Button(onClick = { selectedTargets = if (target in selectedTargets) selectedTargets - target else selectedTargets + target }, modifier = Modifier.fillMaxWidth()) {
-                Text(tr(message(449, (if (target in selectedTargets) "✓ " else ""), (setOf(target).cleanupTargetLabel()))))
+        // Seitentitel nennt die Aufgabe schon; hier nur die Abgrenzung zum normalen Schreiben.
+        DesignText(tr(message(446)), 13, TextInset)
+        // Ziele: nur angehakte Kalender; Prüfen liest nur App-eigene Einträge und löscht nichts.
+        DesignSection(tr(message(447)), TextInset)
+        Column {
+            targets.forEach { target ->
+                DesignCheck(tr(setOf(target).cleanupTargetLabel()), target in selectedTargets, TextInset.testTag("cleanup-target-${target.name}")) {
+                    selectedTargets = if (target in selectedTargets) selectedTargets - target else selectedTargets + target
+                }
             }
         }
-        Button(onClick = { state.requestCleanupCatalogRead(selectedTargets) }, enabled = !state.managedSyncInProgress && state.cleanupCatalogReadTargets.isEmpty(), modifier = Modifier.fillMaxWidth()) {
-            Text(tr(if (state.cleanupCatalogReadTargets.isEmpty()) message(450) else message(451)))
-        }
-        InformationCard(message(452), message(453))
+        DesignText(tr(message(448)), 12, TextInset, muted = true)
+        DesignPillButton(
+            tr(if (state.cleanupCatalogReadTargets.isEmpty()) message(450) else message(451)), Modifier.testTag("cleanup-read-catalog"), primary = false,
+            enabled = !state.managedSyncInProgress && state.cleanupCatalogReadTargets.isEmpty(),
+        ) { state.requestCleanupCatalogRead(selectedTargets) }
+        DesignText(tr(message(453)), 12, TextInset, muted = true)
+        DesignLine()
+        DesignSection(tr(message(723)), TextInset)
         OutputCleanupMode.entries.forEach { choice ->
-            CleanupModeRow(mode = choice, selected = mode == choice) {
+            DesignChoice(tr(choice.label), mode == choice, Modifier.testTag("cleanup-mode-${choice.name}"), detail = tr(choice.description)) {
                 mode = choice
                 localMessage = null
             }
         }
-        when (mode) {
-            OutputCleanupMode.ALL -> InformationCard(
-                message(454),
-                message(455),
-            )
-            OutputCleanupMode.COURSES -> {
-                if (!sourceLoaded) {
-                    InformationCard(message(456), message(457))
-                } else {
-                    InformationCard(message(163), message(458))
-                    courseGroups.forEach { group ->
-                        val selected = group.sourceUids.all { it in selectedSourceUids }
-                        Card(
-                            modifier = Modifier.fillMaxWidth().clickable {
-                                selectedSourceUids = if (selected) selectedSourceUids - group.sourceUids else selectedSourceUids + group.sourceUids
-                            },
-                            insideMargin = PaddingValues(14.dp),
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(tr(group.label), style = MiuixTheme.textStyles.body1)
-                                    Text(tr(message(459, (group.occurrenceCount))), color = LocalTumPalette.current.onSurfaceVariant)
-                                }
-                                Text(
-                                    tr(if (selected) message(188) else message(460)),
-                                    color = if (selected) {
-                                        LocalTumPalette.current.primary
-                                    } else {
-                                        LocalTumPalette.current.onSurfaceVariant
-                                    },
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            OutputCleanupMode.DATES -> {
-                if (!sourceLoaded) {
-                    InformationCard(message(461), message(462))
-                } else {
-                    InformationCard(message(463), message(464))
-                    CleanupDateField(message(465), startDate) {
-                        showCleanupDatePicker(context, startDate, darkTheme) { startDate = it }
-                    }
-                    CleanupDateField(message(466), endDate) {
-                        showCleanupDatePicker(context, endDate, darkTheme) { endDate = it }
-                    }
-                    Button(onClick = { startDate = null; endDate = null }, modifier = Modifier.fillMaxWidth()) { Text(tr(message(467))) }
-                }
-            }
-        }
-        val selectedCount = when (mode) {
-            OutputCleanupMode.ALL -> null
-            OutputCleanupMode.COURSES -> state.cleanupIdentities(selectedSourceUids, null, null, selectedTargets).size
-            OutputCleanupMode.DATES -> state.cleanupIdentities(null, startDate, endDate, selectedTargets).size
-        }
-        if (selectedCount != null) InformationCard(message(468), message(469, (selectedCount)))
-        localMessage?.let { Text(tr(it), color = LocalTumPalette.current.onSurfaceVariant) }
-        Button(
-            onClick = {
-                val scope = when (mode) {
-                    OutputCleanupMode.ALL -> ManagedEventCleanupScope.AllManagedEvents
-                    OutputCleanupMode.COURSES -> state.selectedCleanupScope(selectedSourceUids, null, null, selectedTargets)
-                    OutputCleanupMode.DATES -> state.selectedCleanupScope(null, startDate, endDate, selectedTargets)
-                }
-                if (scope is ManagedEventCleanupScope.SelectedIdentities && scope.identities.isEmpty()) {
-                    localMessage = message(470)
-                } else {
-                    pendingScope = scope
-                }
-            },
-            enabled = !state.managedSyncInProgress && state.cleanupCatalogReadTargets.isEmpty() && selectedTargets.isNotEmpty() && (selectedCount == null || selectedCount > 0) && (startDate == null || endDate == null || startDate!! <= endDate!!),
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(tr(message(471))) }
-        state.feedback?.let { Text(tr(it), color = LocalTumPalette.current.onSurfaceVariant) }
+        CleanupModeContent(mode, sourceLoaded, catalogue, selectedSourceUids, { selectedSourceUids = it }, startDate, endDate,
+            onPickStart = { showCleanupDatePicker(context, startDate, darkTheme) { startDate = it } },
+            onPickEnd = { showCleanupDatePicker(context, endDate, darkTheme) { endDate = it } },
+            onClearDates = { startDate = null; endDate = null })
+        if (selectedCount != null) DesignNote(tr(message(468)), tr(message(469, selectedCount)), Modifier.testTag("cleanup-count"))
+        localMessage?.let { DesignText(tr(it), 12, TextInset, muted = true) }
+        state.feedback?.let { DesignText(tr(it), 12, TextInset.testTag("cleanup-feedback"), muted = true) }
     }
-    pendingScope?.let { scope ->
-        CleanupConfirmationDialog(
-            summary = when (scope) {
+    // Zweite Bestätigung als Glasdialog über der ganzen Seite; erst „Bereinigen bestätigen“ löst das Löschen aus.
+    DesignConfirmDialog(pendingScope?.let { scope ->
+        DesignConfirmRequest(
+            kicker = tr(message(719)), title = tr(message(476)),
+            body = tr(when (scope) {
                 ManagedEventCleanupScope.AllManagedEvents -> message(472)
-                is ManagedEventCleanupScope.SelectedIdentities -> message(473, (scope.identities.size))
-            },
-            targets = selectedTargets.cleanupTargetLabel(),
-            onDismiss = { pendingScope = null },
+                is ManagedEventCleanupScope.SelectedIdentities -> message(473, scope.identities.size)
+            }) + "\n" + tr(message(477, selectedTargets.cleanupTargetLabel())),
+            note = tr(message(478)), cancelLabel = tr(message(197)), confirmLabel = tr(message(479)), danger = true,
+            onCancel = { pendingScope = null },
             onConfirm = {
                 pendingScope = null
                 state.requestManagedRollback(scope, selectedTargets)
             },
         )
-    }
+    })
 }
 
+/** Inhalt je Umfang: Schutzhinweis (alle), Kurse zum Anhaken oder Datumsbereich; ohne geprüften Bestand ein Hinweis. */
 @Composable
-private fun CleanupModeRow(mode: OutputCleanupMode, selected: Boolean, onClick: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick), insideMargin = PaddingValues(14.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(tr(mode.label), style = MiuixTheme.textStyles.body1)
-                Text(tr(mode.description), color = LocalTumPalette.current.onSurfaceVariant)
-            }
-            RadioButton(selected = selected, onClick = onClick)
-        }
-    }
-}
-
-@Composable
-private fun CleanupDateField(label: String, date: LocalDate?, onClick: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick), insideMargin = PaddingValues(14.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(tr(label), style = MiuixTheme.textStyles.body1)
-                Text(tr(date?.toString() ?: message(474)), color = LocalTumPalette.current.onSurfaceVariant)
-            }
-            Text(tr(message(475)))
-        }
-    }
-}
-
-@Composable
-private fun CleanupConfirmationDialog(summary: String, targets: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(modifier = Modifier.fillMaxWidth(), insideMargin = PaddingValues(20.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(tr(message(476)), style = MiuixTheme.textStyles.title2)
-                Text(tr(summary))
-                Text(tr(message(477, (targets))), color = LocalTumPalette.current.onSurfaceVariant)
-                Text(tr(message(478)), color = LocalTumPalette.current.onSurfaceVariant)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    Button(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text(tr(message(197))) }
-                    Button(onClick = onConfirm, modifier = Modifier.weight(1f)) { Text(tr(message(479))) }
+private fun CleanupModeContent(
+    mode: OutputCleanupMode,
+    sourceLoaded: Boolean,
+    catalogue: List<SourceCalendarOccurrence>,
+    selectedSourceUids: Set<String>,
+    onSelectedChange: (Set<String>) -> Unit,
+    startDate: LocalDate?,
+    endDate: LocalDate?,
+    onPickStart: () -> Unit,
+    onPickEnd: () -> Unit,
+    onClearDates: () -> Unit,
+) {
+    when (mode) {
+        OutputCleanupMode.ALL -> DesignNote(tr(message(454)), tr(message(455)))
+        OutputCleanupMode.COURSES -> if (!sourceLoaded) DesignNote(tr(message(456)), tr(message(457))) else {
+            DesignText(tr(message(458)), 12, TextInset, muted = true)
+            Column {
+                cleanupCourseGroups(catalogue).forEach { group ->
+                    val selected = group.sourceUids.all { it in selectedSourceUids }
+                    DesignCheck(tr(group.label), selected, TextInset.testTag("cleanup-course"), detail = tr(message(459, group.occurrenceCount))) {
+                        onSelectedChange(if (selected) selectedSourceUids - group.sourceUids else selectedSourceUids + group.sourceUids)
+                    }
                 }
+            }
+        }
+        OutputCleanupMode.DATES -> if (!sourceLoaded) DesignNote(tr(message(461)), tr(message(462))) else {
+            DesignText(tr(message(464)), 12, TextInset, muted = true)
+            Column {
+                DesignRow(tr(message(465)), detail = tr(startDate?.toString() ?: message(474)), value = tr(message(475)), tag = "cleanup-start", inset = 4.dp, onClick = onPickStart)
+                DesignRow(tr(message(466)), detail = tr(endDate?.toString() ?: message(474)), value = tr(message(475)), tag = "cleanup-end", inset = 4.dp, onClick = onPickEnd)
+                DesignRow(tr(message(467)), tag = "cleanup-clear-dates", inset = 4.dp, onClick = onClearDates)
             }
         }
     }
@@ -242,9 +194,9 @@ private fun cleanupCourseGroups(occurrences: List<SourceCalendarOccurrence>): Li
     .sortedBy(CleanupCourseGroup::label)
     .toList()
 
-private fun Set<com.tequila.tumcalendarcontrol.sync.OutputTarget>.cleanupTargetLabel(): String = buildList {
-    if (com.tequila.tumcalendarcontrol.sync.OutputTarget.LOCAL_CALENDAR in this@cleanupTargetLabel) add(message(480))
-    if (com.tequila.tumcalendarcontrol.sync.OutputTarget.GOOGLE_CALENDAR in this@cleanupTargetLabel) add(message(481))
+private fun Set<OutputTarget>.cleanupTargetLabel(): String = buildList {
+    if (OutputTarget.LOCAL_CALENDAR in this@cleanupTargetLabel) add(message(480))
+    if (OutputTarget.GOOGLE_CALENDAR in this@cleanupTargetLabel) add(message(481))
 }.let { com.tequila.tumcalendarcontrol.i18n.joinMessages(it, "、") }.ifBlank { message(482) }
 
 private fun showCleanupDatePicker(context: android.content.Context, current: LocalDate?, darkTheme: Boolean, onPicked: (LocalDate) -> Unit) {

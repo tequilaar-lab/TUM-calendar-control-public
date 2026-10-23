@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -192,22 +191,6 @@ private fun SourceSnapshotSelectionCard(state: CalendarControlState) {
                 InformationCard(message(542), difference.summary())
             }
         }
-    }
-}
-
-/** Nur feste synthetische Differenz; kein Schreibbestätigungsknopf und keine echte Synchronisierung. */
-@Composable
-internal fun SyncPreviewScreen(state: CalendarControlState) {
-    val preview = state.offlinePreview
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        item { InformationCard(message(543), message(544)) }
-        item { InformationCard(message(545), message(546, (preview.createCount), (preview.updateCount), (preview.removeCount), (preview.keepCount), (preview.skipCount))) }
-        items(preview.changes) { change -> InformationCard(change.type.label, message(547)) }
-        items(preview.skipped) { InformationCard(message(548), message(549)) }
     }
 }
 

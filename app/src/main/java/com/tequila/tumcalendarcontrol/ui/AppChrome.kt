@@ -53,6 +53,7 @@ import com.tequila.tumcalendarcontrol.ui.design.DesignGlassNavigation
 import com.tequila.tumcalendarcontrol.ui.design.DesignNavigationItem
 import com.tequila.tumcalendarcontrol.ui.design.DesignText
 import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
+import com.tequila.tumcalendarcontrol.ui.design.DesignConfirmHost
 import com.tequila.tumcalendarcontrol.ui.design.LocalGlassBackdrop
 import com.tequila.tumcalendarcontrol.ui.design.designGlow
 import top.yukonga.miuix.kmp.basic.Icon
@@ -65,7 +66,8 @@ internal val FloatingNavigationContentClearance = 100.dp
 /** Keine funktionslose weitere Aktion im Hauptseitenrahmen. */
 @Composable
 internal fun CalendarControlChrome(state: CalendarControlState) {
-    CalendarControlScaffold(state)
+    // Bestätigungsdialoge der Seiten legen sich als Glas über den ganzen Rahmen (Kopf, Inhalt, Navigation).
+    DesignConfirmHost { CalendarControlScaffold(state) }
 }
 
 @Composable
