@@ -2,7 +2,7 @@
 
 Eine Android-App, die TUM-Kurstermine aus einem iCal-Abonnement entsprechend der eigenen Teilnahmeauswahl in einen app-eigenen lokalen Kalender und/oder einen Google-Zweitkalender überträgt. Systemkalender wie HONOR Kalender dienen als Anzeige.
 
-Version: **1.1.0**, Build **58**. Die Oberfläche unterstützt **Deutsch, Englisch und Chinesisch**. Unter **Einstellungen → Sprache** lässt sich die Sprache sofort wechseln; die Auswahl bleibt auf dem Gerät gespeichert. Beim ersten Start gilt die Systemsprache, für andere Sprachen Englisch.
+Version: **1.2.0**, Build **59**. Die Oberfläche unterstützt **Deutsch, Englisch und Chinesisch**. Unter **Einstellungen → Sprache** lässt sich die Sprache sofort wechseln; die Auswahl bleibt auf dem Gerät gespeichert. Beim ersten Start gilt die Systemsprache, für andere Sprachen Englisch.
 
 ## Bedienung
 
@@ -10,6 +10,10 @@ Version: **1.1.0**, Build **58**. Die Oberfläche unterstützt **Deutsch, Englis
 2. Konkrete Termine auswählen. Bereits gespeicherte Kurse lassen sich ohne erneutes Lesen weiterverwenden; ein neuer Leseentwurf kürzt die bestehende Auswahl nicht.
 3. Teilnahme festlegen: **Grün** bedeutet verbindliche Teilnahme, **Blau** frei gewählte Teilnahme, **Grau** keine Teilnahme ab dem festgelegten Termin. Favoriten dienen nur der Anzeige.
 4. In der Ausgabevorschau lokale und/oder Google-Ziele wählen, die betroffenen Mengen prüfen und die Ausgabe ausdrücklich bestätigen.
+
+## Oberfläche
+
+Seit 1.2.0 hat die App ein ruhiges, akademisches Erscheinungsbild: große Seitentitel, Milchglaskarten und schwebende Hauptaktionen sowie eine untere Navigation aus Glas. Alle Bedienelemente basieren auf Miuix; den Glaseffekt liefert backdrop. Unter **Einstellungen → Darstellung** lassen sich Hell/Dunkel, je zwei Farbpaletten und die Glasstufe (**Aus, Weich, Standard, Klar**) wählen. Android 12 zeigt nur Unschärfe, erst ab Android 13 kommt die Linsenbrechung hinzu; ältere Geräte verwenden deckende Flächen. Bestätigungen wie Neulesen, Bereinigen, Zieländerung und Wiederherstellen erscheinen als Glasdialog über der ganzen Seite. In der Kursauswahl wählen **Alle Kurse auswählen** und **Ganzen Kurs auswählen** schnell aus; beide fügen nur hinzu und hängen weder von der Suche noch vom Anzeigefilter ab.
 
 Der Browser ordnet Kurse nach **Kursname → Lehrtyp → Einzeltermin**. Namen und Typen strukturieren ausschließlich die Anzeige. Synchronisierung und Bereinigung verwenden immer **Quell-UID und ursprünglichen Instanzschlüssel**; gleichzeitige unterschiedliche Kurse bleiben getrennt.
 

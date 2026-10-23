@@ -17,7 +17,6 @@ internal class NavigationState {
         private set
 
     private var detailReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
-    private var moreReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
     private var profileReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
     private var syncConfigurationReturnScreen by mutableStateOf(AppScreen.SETTINGS)
     private var sourceRangeReturnScreen by mutableStateOf(AppScreen.SETTINGS)
@@ -31,8 +30,7 @@ internal class NavigationState {
     private var ruleBackupReturnScreen by mutableStateOf(AppScreen.SETTINGS)
 
     val contentScreen: AppScreen
-        get() = if (screen == AppScreen.MORE) moreReturnScreen else screen
-    val isMoreOpen: Boolean get() = screen == AppScreen.MORE
+        get() = screen
 
     fun open(destination: AppScreen) {
         direction = directionBetween(contentScreen, destination)
@@ -41,7 +39,6 @@ internal class NavigationState {
 
     fun openDetail() { detailReturnScreen = contentScreen; open(AppScreen.DETAIL) }
     fun openCourseEdit() { courseEditReturnScreen = AppScreen.DETAIL; open(AppScreen.COURSE_EDIT) }
-    fun openMore() { moreReturnScreen = contentScreen; screen = AppScreen.MORE }
     /** Profil links öffnen/verlassen; vorige Seite bei Rückkehr von rechts einblenden. */
     fun openProfile() { profileReturnScreen = contentScreen; direction = NavigationDirection.PROFILE_ENTER; screen = AppScreen.PROFILE }
     fun openSyncConfiguration() { syncConfigurationReturnScreen = contentScreen; openChild(AppScreen.SYNC_CONFIGURATION) }
@@ -62,7 +59,6 @@ internal class NavigationState {
             AppScreen.ATTENDANCE -> AppScreen.DETAIL
             AppScreen.COURSE_EDIT -> courseEditReturnScreen
             AppScreen.DETAIL -> detailReturnScreen
-            AppScreen.MORE -> moreReturnScreen
             AppScreen.PROFILE -> profileReturnScreen
             AppScreen.SYNC_CONFIGURATION -> syncConfigurationReturnScreen
             AppScreen.SYNC_PREVIEW -> syncPreviewReturnScreen

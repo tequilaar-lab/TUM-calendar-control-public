@@ -14,19 +14,6 @@ import org.junit.Test
 
 class WorkflowStateTest {
     @Test
-    fun `导航模块保留更多操作的稳定背景并可返回`() {
-        val navigation = NavigationState()
-
-        navigation.open(AppScreen.FAVORITES)
-        navigation.openMore()
-
-        assertEquals(AppScreen.FAVORITES, navigation.contentScreen)
-        assertTrue(navigation.handleBack())
-        assertEquals(AppScreen.FAVORITES, navigation.screen)
-        assertEquals(NavigationDirection.BACKWARD, navigation.direction)
-    }
-
-    @Test
     fun `子页面始终从右侧进入且返回向右侧退出`() {
         val navigation = NavigationState()
 

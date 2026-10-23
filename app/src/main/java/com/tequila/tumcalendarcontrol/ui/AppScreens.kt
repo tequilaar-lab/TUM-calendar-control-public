@@ -19,7 +19,6 @@ internal val routedAppScreens: Set<AppScreen> =
     AppScreen.COURSE_EDIT,
     AppScreen.SEARCH,
     AppScreen.FAVORITES,
-    AppScreen.MORE,
     AppScreen.SETTINGS,
     AppScreen.PROFILE,
     AppScreen.SYNC_CONFIGURATION,
@@ -48,7 +47,6 @@ fun AppScreenContent(
         AppScreen.FAVORITES,
         -> CourseScreenContent(state, screen)
 
-        AppScreen.MORE,
         AppScreen.SETTINGS,
         AppScreen.PROFILE,
         AppScreen.SYNC_CONFIGURATION,
@@ -84,7 +82,6 @@ private fun CourseScreenContent(state: CalendarControlState, screen: AppScreen) 
 @Composable
 private fun SettingsScreenContent(state: CalendarControlState, screen: AppScreen) {
     when (screen) {
-        AppScreen.MORE -> MoreScreen(state)
         AppScreen.SETTINGS -> SettingsScreen(state)
         AppScreen.PROFILE -> ProfileScreen(state)
         AppScreen.SYNC_CONFIGURATION -> SyncConfigurationScreen(state)

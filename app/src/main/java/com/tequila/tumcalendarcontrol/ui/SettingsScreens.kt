@@ -1,5 +1,5 @@
 /*
- * Aufgabe: Einstellungsseite (gruppierte Liste: Kurse, Kalender, Einstellungen & Daten) und alter „Mehr“-Einstieg.
+ * Aufgabe: Einstellungsseite (gruppierte Liste: Sprache, Kurse, Kalender, Einstellungen & Daten).
  * Ein-/Ausgabe: CalendarControlState und Rückrufe -> Navigations- und Einstellungsabsichten.
  * Nebenwirkungen: Keine externen Aktionen; Zieländerungen erst nach Glasbestätigung, sonst bestehende Zustandsaufrufe.
  * Nicht zuständig: Unterseiten (Darstellung, Profil, Verbindung, Prüfung, Sicherung, Termine), iCal-Abruf, Google-Netzwerk.
@@ -33,7 +33,6 @@ import com.tequila.tumcalendarcontrol.ui.design.DesignConfirmDialog
 import com.tequila.tumcalendarcontrol.ui.design.DesignConfirmRequest
 import com.tequila.tumcalendarcontrol.ui.design.DesignFrostCard
 import com.tequila.tumcalendarcontrol.ui.design.DesignNote
-import com.tequila.tumcalendarcontrol.ui.design.DesignPage
 import com.tequila.tumcalendarcontrol.ui.design.DesignPillButton
 import com.tequila.tumcalendarcontrol.ui.design.DesignRow
 import com.tequila.tumcalendarcontrol.ui.design.DesignSection
@@ -43,17 +42,6 @@ import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
 
 /** Freier Text auf der Titellinie (4 dp innerhalb der Blockkanten). */
 private val TextInset = Modifier.padding(horizontal = 4.dp)
-
-/** Alter „Mehr“-Einstieg: Zustandshinweise und Weg zu den Einstellungen; keine eigene Überlagerung. */
-@Composable
-internal fun MoreScreen(state: CalendarControlState) {
-    DesignPage(contentTag = "more-content") {
-        DesignNote(tr(message(496)), tr(if (state.sourceCatalogLoaded) message(497) else message(498)))
-        DesignNote(tr(message(499)), tr(message(500)))
-        DesignNote(tr(message(501)), tr(message(502)))
-        DesignPillButton(tr(message(503)), Modifier.testTag("more-open-settings"), primary = false) { state.open(AppScreen.SETTINGS) }
-    }
-}
 
 /** Schmal eine Liste; breit links Liste, rechts Erklärungen (keine doppelten Aktionen). Zieländerung mit Glasbestätigung. */
 @Composable

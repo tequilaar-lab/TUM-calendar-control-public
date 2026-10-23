@@ -1,6 +1,6 @@
 /*
- * Aufgabe: Wiederverwendbare Druckrückmeldung für Symbole und Navigation mit Compose-Miuix-Farben bieten.
- * Ein-/Ausgabe: Symbole, Texte, Auswahl und Rückrufe -> Druckfarbe und Skalierungsrückmeldung.
+ * Aufgabe: Profileinstieg im Kopf (Druckrückmeldung) und Avatar aus lokaler Farbe und Anfangszeichen.
+ * Ein-/Ausgabe: Lokales Profil und Rückruf -> runder Profilknopf bzw. Avatar.
  * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
  * Nicht zuständig: Navigationsentscheidungen, Themenpersistenz, Material-UI-Komponenten oder echte Kalenderaktionen.
  */
@@ -39,26 +39,6 @@ import top.yukonga.miuix.kmp.theme.LocalContentColor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.runtime.CompositionLocalProvider
 
-/** Runder Druckknopf im Kopfbereich: beim Drücken kleiner und deutlich eingefärbt. */
-@Composable
-fun TactileIconButton(
-    icon: ImageVector,
-    contentDescription: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val palette = LocalTumPalette.current
-    TactileSurface(
-        modifier = modifier.size(48.dp),
-        onClick = onClick,
-        shape = CircleShape,
-        restingColor = Color.Transparent,
-        pressedColor = palette.primary.copy(alpha = 0.18f),
-    ) {
-        Icon(icon, tr(contentDescription))
-    }
-}
-
 /** Lokaler Profileinstieg mit wiederherstellbarem Anfangszeichen/Farbe; kein angemeldetes Konto. */
 @Composable
 fun TactileProfileButton(profile: UserProfile, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -90,35 +70,6 @@ fun ProfileAvatar(profile: UserProfile, modifier: Modifier = Modifier) {
             color = Color.White,
             style = MiuixTheme.textStyles.body1,
         )
-    }
-}
-
-/** Navigationspunkt mit getrenntem Auswahl-/Druckzustand für sichtbare Bestätigung. */
-@Composable
-fun TactileNavigationItem(
-    icon: ImageVector,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val palette = LocalTumPalette.current
-    val contentColor = if (selected) palette.primary else palette.onSurfaceVariant
-    TactileSurface(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(60.dp),
-        onClick = onClick,
-        shape = RoundedCornerShape(22.dp),
-        restingColor = Color.Transparent,
-        pressedColor = palette.primary.copy(alpha = 0.18f),
-    ) {
-        CompositionLocalProvider(LocalContentColor provides contentColor) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(icon, tr(label))
-                Text(tr(label), color = contentColor, style = MiuixTheme.textStyles.body2)
-            }
-        }
     }
 }
 

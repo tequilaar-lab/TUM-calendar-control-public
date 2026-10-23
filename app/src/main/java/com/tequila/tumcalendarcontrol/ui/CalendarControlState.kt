@@ -58,7 +58,7 @@ import java.util.UUID
 import java.time.LocalDate
 
 enum class AppScreen {
-    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, MORE, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_RANGE, SOURCE_PREVIEW, SOURCE_ATTENDANCE, MANUAL_EVENTS, MANAGED_SYNC_PREVIEW, OUTPUT_CLEANUP, BACKGROUND_CHECK, RULE_BACKUP, APPEARANCE,
+    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_RANGE, SOURCE_PREVIEW, SOURCE_ATTENDANCE, MANUAL_EVENTS, MANAGED_SYNC_PREVIEW, OUTPUT_CLEANUP, BACKGROUND_CHECK, RULE_BACKUP, APPEARANCE,
 }
 
 enum class ThemeMode(val label: String) {
@@ -330,9 +330,6 @@ class CalendarControlState(
     val contentScreen: AppScreen
         get() = navigation.contentScreen
 
-    val isMoreOpen: Boolean
-        get() = navigation.isMoreOpen
-
     val selectedCourse: Course
         get() = courses.firstOrNull { it.id == selectedCourseId && it.instanceKey == selectedInstanceKey }
             ?: courses.first { it.id == selectedCourseId }
@@ -382,8 +379,6 @@ class CalendarControlState(
     fun toggleSourceStatusVisible(status: TumEventStatus) {
         visibleSourceStatuses = if (status in visibleSourceStatuses) visibleSourceStatuses - status else visibleSourceStatuses + status
     }
-
-    fun openMore() = navigation.openMore()
 
     fun openProfile() = navigation.openProfile()
 

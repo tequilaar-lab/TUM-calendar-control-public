@@ -48,7 +48,6 @@ internal fun AppScreen.title(): String = when (this) {
     AppScreen.COURSE_EDIT -> message(154)
     AppScreen.SEARCH -> message(155)
     AppScreen.FAVORITES -> message(156)
-    AppScreen.MORE -> message(157)
     AppScreen.SETTINGS -> message(158)
     AppScreen.PROFILE -> message(159)
     AppScreen.SYNC_CONFIGURATION -> message(160)
@@ -91,7 +90,6 @@ internal fun AppScreen.kicker(): String = when (this) {
     AppScreen.COURSE_EDIT -> "COURSE / EDIT"
     AppScreen.SEARCH -> "FIND A COURSE"
     AppScreen.FAVORITES -> "COLLECTION"
-    AppScreen.MORE -> "LEGACY / ENTRY"
     AppScreen.SETTINGS -> "PREFERENCES"
     AppScreen.PROFILE -> "PROFILE"
     AppScreen.SYNC_CONFIGURATION -> "CONNECTIONS"

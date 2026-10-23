@@ -6,9 +6,11 @@ Die App bietet Deutsch, Englisch und Chinesisch unter **Einstellungen → Sprach
 
 Die deutsche README ist die zentrale Projektbeschreibung. Quellkommentare, Buildkommentare und die ergänzende Leseübersetzung der Ausführungsgrenzen sind deutsch. Die verbindliche chinesische AGENTS.md sowie die ursprünglichen Lizenztexte bleiben unverändert.
 
+Die kleinen englischen Kennzeichnungen über den Seitentiteln (zum Beispiel „02 / COURSES“ oder „APPEARANCE“) sind eine bewusste Gestaltungsentscheidung. Sie erscheinen in allen drei Sprachen gleich und sind deshalb nicht Teil der Sprachressourcen. Die Übersicht leitet ihre Kennzeichnung aus den Kursterminen ab (Semester).
+
 ## Ressourcen und bestehende Modelle
 
-`values/strings.xml` enthält Englisch als Rückfall, `values-de/strings.xml` Deutsch und `values-zh/strings.xml` Chinesisch. Nummerierte Nachrichtenschlüssel sind über alle Sprachen stabil; Platzhalter dürfen beim Übersetzen umgestellt, aber nicht entfernt werden.
+`values/strings.xml` enthält Englisch als Rückfall, `values-de/strings.xml` Deutsch und `values-zh/strings.xml` Chinesisch. Nummerierte Nachrichtenschlüssel sind über alle Sprachen stabil; Platzhalter dürfen beim Übersetzen umgestellt, aber nicht entfernt werden. Nicht mehr verwendete Schlüssel (etwa vom entfernten „Mehr“-Einstieg) bleiben erhalten, damit die Nummerierung stabil bleibt.
 
 Bestehende Modelle und gespeicherte Werte verwenden weiterhin ihre kanonischen String-Verträge. `i18n/AppMessage.kt` verfolgt ausschließlich von der App erzeugte Nachrichten über schwache Objektidentitäten bis zur Anzeige. Compose löst dann Schlüssel und Argumente in der gewählten Sprache auf. Gleichlautende eigene Texte bleiben unverändert; es findet keine globale Textersetzung statt. Nachrichtenteile müssen mit `joinMessages` beziehungsweise `concatenateMessages` verbunden werden, damit ihre Herkunft erhalten bleibt.
 
