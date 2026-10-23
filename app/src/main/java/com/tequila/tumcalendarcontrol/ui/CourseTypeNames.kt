@@ -46,7 +46,7 @@ internal data class CourseTypeNames(val names: Map<String, String> = emptyMap(),
 internal val LocalCourseTypeNames = staticCompositionLocalOf { CourseTypeNames() }
 
 /**
- * Umbenennen als kleiner Akzent-Textlink (Tippfläche ≥ 48 dp hoch); der Dialog nutzt die Bausteine des Designsystems.
+ * Umbenennen als kleiner Akzent-Textlink (Tippfläche mindestens 48 × 48 dp); der Dialog nutzt die Bausteine des Designsystems.
  * Ändert nur den Anzeigenamen des Lehrtyps, nie Kursidentität oder Quelle.
  */
 @Composable
@@ -58,8 +58,8 @@ internal fun CourseTypeRenameButton(type: CourseTeachingTypeGroup) {
     val configuration = LocalConfiguration.current
     DesignText(
         tr(message(383)), 12, color = colors.accent, weight = FontWeight.Medium,
-        modifier = Modifier.heightIn(min = 48.dp).clickable { value = type.label; editing = true }
-            .wrapContentHeight().padding(horizontal = 4.dp).testTag("course-type-rename"),
+        modifier = Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).clickable { value = type.label; editing = true }
+            .wrapContentSize().padding(horizontal = 4.dp).testTag("course-type-rename"),
     )
     if (editing) Dialog(onDismissRequest = { editing = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         // Fester Papiergrund statt Glas: über dem Abdunkelungsschleier gibt es nichts abzutasten.

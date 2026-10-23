@@ -8,6 +8,7 @@ package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -30,8 +31,10 @@ import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
 fun AttendanceScreen(state: CalendarControlState) {
     val colors = LocalDesignColors.current
     DesignActionPage(tr(message(198)), onAction = state::confirmAttendance, actionTag = "attendance-confirm", contentTag = "attendance-content") {
-        DesignText(tr(message(193, state.selectedCourse.title)), 20)
-        DesignText(tr(message(194)), 12, muted = true)
+        // Freier Text auf der Titellinie (4 dp innerhalb der Blockkanten).
+        val text = Modifier.padding(horizontal = 4.dp)
+        DesignText(tr(message(193, state.selectedCourse.title)), 20, text)
+        DesignText(tr(message(194)), 12, text, muted = true)
         // Sichtbare Regeln: Grün verbindlich, Blau auswählen, Grau ab Termin nicht teilnehmen; Punkt in der Statusfarbe.
         AttendanceState.entries.forEach { option ->
             DesignChoice(
@@ -42,7 +45,7 @@ fun AttendanceScreen(state: CalendarControlState) {
                 trailing = { Box(Modifier.size(10.dp).clip(CircleShape).background(attendanceInk(option, colors))) },
             ) { state.pendingAttendance = option }
         }
-        DesignSection(tr(message(195)))
+        DesignSection(tr(message(195)), text)
         AttendanceEditScope.entries.forEach { scope ->
             DesignChoice(tr(scope.label), scope == state.pendingAttendanceScope, Modifier.testTag("scope-${scope.name}"), detail = tr(scope.description)) {
                 state.pendingAttendanceScope = scope
@@ -51,7 +54,7 @@ fun AttendanceScreen(state: CalendarControlState) {
         if (state.pendingAttendanceScope == AttendanceEditScope.SPECIFIED_AND_FUTURE) {
             DesignField(tr(message(196)), state.pendingEffectiveDate, { state.pendingEffectiveDate = it }, Modifier.testTag("attendance-date"))
         }
-        state.feedback?.let { DesignText(tr(it), 12, muted = true) }
+        state.feedback?.let { DesignText(tr(it), 12, text, muted = true) }
         // Abbrechen bleibt als Nebenaktion im Inhalt; die Bestätigung schwebt.
         DesignPillButton(tr(message(197)), Modifier.testTag("attendance-cancel"), primary = false) { state.open(AppScreen.DETAIL) }
     }

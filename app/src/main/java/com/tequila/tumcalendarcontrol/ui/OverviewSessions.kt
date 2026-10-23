@@ -8,6 +8,7 @@ package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -60,7 +61,8 @@ internal fun OverviewCourseSessions(group: CourseDisplayGroup, compact: Boolean,
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(20.dp), verticalAlignment = Alignment.CenterVertically) {
             group.teachingTypes.forEach { type ->
                 val isActive = type.key == active.key
-                Column(Modifier.clickable { activeTypeKey = type.key; showAll = false }.padding(vertical = 6.dp)) {
+                // Tippfläche 48 dp hoch; Beschriftung und Unterstrich mittig darin.
+                Column(Modifier.clickable { activeTypeKey = type.key; showAll = false }.heightIn(min = 48.dp), verticalArrangement = Arrangement.Center) {
                     DesignText(tr(type.label), 12, color = if (isActive) colors.accent else colors.muted, weight = if (isActive) FontWeight.Medium else FontWeight.Normal)
                     Box(Modifier.padding(top = 4.dp).width(48.dp).height(2.dp).background(if (isActive) colors.accent else Color.Transparent))
                 }

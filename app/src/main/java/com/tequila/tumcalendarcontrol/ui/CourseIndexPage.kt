@@ -10,6 +10,8 @@ package com.tequila.tumcalendarcontrol.ui
 import com.tequila.tumcalendarcontrol.i18n.message
 import com.tequila.tumcalendarcontrol.domain.browseKey
 
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -139,10 +141,10 @@ private fun OverviewIndex(
             }
         }
         if (showRefresh) item {
-            Spacer(Modifier.height(22.dp))
+            Spacer(Modifier.height(16.dp))
             DesignText(
                 tr(message(700)) + "  ↗", 12, color = colors.accent,
-                modifier = Modifier.clickable { state.openSourceRange() }.padding(vertical = 10.dp, horizontal = 4.dp),
+                modifier = Modifier.clickable { state.openSourceRange() }.heightIn(min = 48.dp).wrapContentHeight().padding(horizontal = 4.dp),
             )
         }
     }

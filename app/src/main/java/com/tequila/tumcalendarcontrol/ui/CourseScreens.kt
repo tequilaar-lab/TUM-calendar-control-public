@@ -9,6 +9,7 @@ package com.tequila.tumcalendarcontrol.ui
 import com.tequila.tumcalendarcontrol.i18n.message
 import com.tequila.tumcalendarcontrol.domain.TumEventStatus
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
@@ -84,7 +85,7 @@ internal fun DetailScreen(state: CalendarControlState) {
             DesignText(tr(if (course.localOverride == CourseLocalOverride()) message(336) else message(337)), 13, muted = true)
             DesignRow(tr(message(338)), tag = "detail-edit", onClick = state::openCourseEdit)
         }
-        state.feedback?.let { DesignText(tr(it), 12, muted = true) }
+        state.feedback?.let { DesignText(tr(it), 12, Modifier.padding(horizontal = 4.dp), muted = true) }
     }
 }
 
@@ -123,16 +124,17 @@ internal fun CourseEditScreen(state: CalendarControlState) {
         DesignNote(tr(message(343)), tr(message(344)))
         DesignField(tr(message(345, course.title)), title, { title = it }, Modifier.testTag("edit-title"))
         DesignField(tr(message(346, course.location)), location, { location = it }, Modifier.testTag("edit-location"))
-        DesignSection(tr(message(347)))
+        // Freier Text auf der Titellinie (4 dp innerhalb der Blockkanten).
+        DesignSection(tr(message(347)), Modifier.padding(start = 4.dp))
         DesignChips(CourseWeekday.entries.map { tr(it.label) }, weekday.ordinal, Modifier.testTag("edit-weekday")) { weekday = CourseWeekday.entries[it] }
-        DesignSection(tr(message(348)))
+        DesignSection(tr(message(348)), Modifier.padding(start = 4.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             DesignField(tr(message(349)), startHour, { startHour = it }, Modifier.weight(1f))
             DesignField(tr(message(350)), startMinute, { startMinute = it }, Modifier.weight(1f))
             DesignField(tr(message(351)), endHour, { endHour = it }, Modifier.weight(1f))
             DesignField(tr(message(352)), endMinute, { endMinute = it }, Modifier.weight(1f))
         }
-        validation?.let { DesignText(tr(it), 12, color = LocalDesignColors.current.danger, modifier = Modifier.testTag("edit-validation")) }
+        validation?.let { DesignText(tr(it), 12, color = LocalDesignColors.current.danger, modifier = Modifier.padding(horizontal = 4.dp).testTag("edit-validation")) }
     }
 }
 

@@ -163,7 +163,8 @@ fun DesignField(
 ) {
     val colors = LocalDesignColors.current
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (label.isNotEmpty()) DesignText(label, 12, muted = true)
+        // Beschriftung als freier Text auf der Titellinie, 4 dp innerhalb der Feldkante.
+        if (label.isNotEmpty()) DesignText(label, 12, muted = true, modifier = Modifier.padding(start = 4.dp))
         // squircleBorder zeichnet hinter dem Inhalt; die Feldfläche würde sie überdecken, daher als eigene Ebene darüber.
         Box {
             TextField(

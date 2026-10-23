@@ -8,6 +8,8 @@ package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,12 +30,13 @@ import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
 internal fun OverviewHome(state: CalendarControlState) {
     CourseIndexPage(state, state.displayedCourses, message(360), showRefresh = true) { groups ->
         val colors = LocalDesignColors.current
-        Row(Modifier.fillMaxWidth().padding(start = 4.dp, bottom = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(start = 4.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             DesignText(tr(message(693, groups.size, groups.sumOf { it.courses.size })), 12, muted = true, modifier = Modifier.weight(1f))
             DesignText(
                 tr(message(694)) + "  ↗", 14, color = colors.accent, weight = FontWeight.Medium,
+                // Tippfläche 48 dp hoch; Zeilenabstand darunter entsprechend verringert, Lage bleibt gleich.
                 modifier = Modifier.clickable { if (state.sourceCatalogLoaded) state.openSourceCourseSelector() else state.openSourceRange() }
-                    .padding(vertical = 10.dp, horizontal = 4.dp).testTag("overview-select"),
+                    .heightIn(min = 48.dp).wrapContentHeight().padding(horizontal = 4.dp).testTag("overview-select"),
             )
         }
     }

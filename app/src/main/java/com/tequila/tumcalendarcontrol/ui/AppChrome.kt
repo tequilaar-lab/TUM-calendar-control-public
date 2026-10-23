@@ -9,6 +9,8 @@ package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.offset
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -40,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -79,7 +82,12 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                 // Untertitel entfallen gemäß bestätigtem Entwurf; die Übersicht zeigt ihre Listenüberschrift als Titel.
                 title = tr(contentScreen.pageTitle(state)),
                 navigation = {
-                    if (contentScreen.usesBackArrow()) GlassBackButton(onClick = state::handleBack)
+                    // Zurück: 48-dp-Tippfläche, um 4 dp nach links versetzt, damit der sichtbare 40-dp-Kreis bündig bleibt.
+                    if (contentScreen.usesBackArrow()) {
+                        GlassBackButton(onClick = state::handleBack)
+                        Spacer(Modifier.width(4.dp))
+                    } else {
+                                }
                 },
                 trailing = {
                     if (!contentScreen.usesBackArrow()) TactileProfileButton(profile = state.profile, onClick = state::openProfile)
@@ -168,19 +176,23 @@ private fun AppPageHeader(
     }
 }
 
-/** Runde Glas-Zurück-Schaltfläche (Miuix IconButton) mit heller Fläche und weichem Schatten. */
+/**
+ * Runde Glas-Zurück-Schaltfläche (Miuix IconButton): Tippfläche 48 dp, sichtbarer heller Kreis 40 dp mit weichem Schatten.
+ * Der Kreis sitzt mittig; der Aufrufer gleicht den Versatz aus, damit der Kreis am Seitenrand bündig bleibt.
+ */
 @Composable
 private fun GlassBackButton(onClick: () -> Unit) {
     val colors = LocalDesignColors.current
     IconButton(
         onClick = onClick,
-        modifier = Modifier.designGlow(20.dp, colors, strength = .7f).testTag("back-button"),
-        backgroundColor = colors.floating,
-        cornerRadius = 20.dp,
-        minHeight = 40.dp,
-        minWidth = 40.dp,
+        modifier = Modifier.offset(x = (-4).dp).testTag("back-button"),
+        backgroundColor = Color.Transparent,
+        minHeight = 48.dp,
+        minWidth = 48.dp,
     ) {
-        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = tr(message(138)), tint = colors.ink, modifier = Modifier.size(20.dp))
+        Box(Modifier.size(40.dp).designGlow(20.dp, colors, strength = .7f).background(colors.floating, CircleShape), contentAlignment = Alignment.Center) {
+            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = tr(message(138)), tint = colors.ink, modifier = Modifier.size(20.dp))
+        }
     }
 }
 

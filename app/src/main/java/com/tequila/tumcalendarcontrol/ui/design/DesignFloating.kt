@@ -106,6 +106,7 @@ val FloatingActionContentClearance = 120.dp
 /**
  * Seite mit schwebender Glas-Hauptaktion: Inhalt scrollt unter der Aktion hindurch, am Ende bleibt Platz,
  * damit nichts verdeckt bleibt. Aktion schwebt über der Systemnavigation.
+ * Ausrichtung wie auf allen Seiten: Blockkanten (Karten, Felder) bei 24 dp, freier Text 4 dp weiter innen auf der Titellinie.
  * Eigene Abtastebene nur für den Seiteninhalt: Läge die Aktion in der Ebene, die sie abtastet (Inhaltsebene
  * des Rahmens), zeichnete sie sich rekursiv selbst (nativer Absturz beim Rendern).
  */
@@ -125,7 +126,7 @@ fun DesignActionPage(
             Column(
                 Modifier.fillMaxSize().testTag(contentTag).verticalScroll(rememberScrollState())
                     .padding(horizontal = 8.dp).padding(bottom = FloatingActionContentClearance),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 content = content,
             )
         }
