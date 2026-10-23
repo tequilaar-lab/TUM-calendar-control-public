@@ -27,6 +27,7 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.state.ToggleableState
@@ -73,8 +74,11 @@ fun DesignCheck(label: String, checked: Boolean, modifier: Modifier = Modifier, 
     val colors = LocalDesignColors.current
     Row(modifier.fillMaxWidth().heightIn(min = 52.dp).toggleable(checked, role = Role.Checkbox, onValueChange = onChange).padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Checkbox(ToggleableState(checked), onClick = null,
-            colors = CheckboxDefaults.checkboxColors(checkedBackgroundColor = colors.ink, checkedForegroundColor = colors.paper))
+        // Miuix fixiert das Kästchen auf 26 dp (requiredSize); auf Wunsch etwas kleiner: 22-dp-Rahmen, 0,85 skaliert.
+        Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
+            Checkbox(ToggleableState(checked), onClick = null, modifier = Modifier.scale(.85f),
+                colors = CheckboxDefaults.checkboxColors(checkedBackgroundColor = colors.ink, checkedForegroundColor = colors.paper))
+        }
         DesignLabel(label, detail)
     }
 }
