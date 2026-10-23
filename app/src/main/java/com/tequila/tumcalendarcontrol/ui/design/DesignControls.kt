@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import top.yukonga.miuix.kmp.basic.BasicComponent
@@ -111,13 +112,13 @@ private fun DesignLabel(label: String, detail: String) {
     }
 }
 
-/** Segmentsteuerung: helle Rinne, gewähltes Segment hebt sich als Fläche ab (dunkel: Tinte 14 %). */
+/** Segmentsteuerung: helle Rinne, gewähltes Segment hebt sich als Fläche ab (dunkel: Tinte 14 %). Höhe 58 dp, damit jedes Segment ≥ 48 dp hoch tippbar ist. */
 @Composable
 fun DesignSegmented(options: List<String>, selected: Int, modifier: Modifier = Modifier, onSelect: (Int) -> Unit) {
     val colors = LocalDesignColors.current
     TabRowWithContour(
         tabs = options, selectedTabIndex = selected, onTabSelected = onSelect,
-        modifier = modifier.fillMaxWidth(), cornerRadius = DesignRadii.Field, height = 52.dp,
+        modifier = modifier.fillMaxWidth(), cornerRadius = DesignRadii.Field, height = 58.dp,
         colors = TabRowDefaults.tabRowColors(
             backgroundColor = colors.wash, contentColor = colors.muted,
             selectedBackgroundColor = if (colors.isDark) colors.ink.copy(alpha = .14f) else colors.floating, selectedContentColor = colors.ink,
@@ -198,16 +199,26 @@ fun DesignPillButton(label: String, modifier: Modifier = Modifier, primary: Bool
     }
 }
 
-/** Listenzeile auf Basis von Miuix BasicComponent: Titel, Erläuterung, optionaler Wert und Pfeil, darunter feine Linie. */
+/** Listenzeile auf Basis von Miuix BasicComponent: Titel, Erläuterung, optionaler Wert und Pfeil, darunter feine Linie (inset: Textversatz). */
 @Composable
-fun DesignRow(title: String, modifier: Modifier = Modifier, detail: String = "", value: String = "", danger: Boolean = false, tag: String = "", onClick: () -> Unit = {}) {
+fun DesignRow(
+    title: String,
+    modifier: Modifier = Modifier,
+    detail: String = "",
+    value: String = "",
+    danger: Boolean = false,
+    tag: String = "",
+    inset: Dp = 0.dp,
+    onClick: () -> Unit = {},
+) {
     val colors = LocalDesignColors.current
     Column(modifier.fillMaxWidth().then(if (tag.isNotEmpty()) Modifier.testTag(tag) else Modifier)) {
         BasicComponent(
             title = title, summary = detail.ifEmpty { null },
             titleColor = BasicComponentDefaults.titleColor(color = if (danger) colors.danger else colors.ink),
             summaryColor = BasicComponentDefaults.summaryColor(color = colors.muted),
-            insideMargin = PaddingValues(vertical = 12.dp),
+            // inset: Text auf der Titellinie, Trennlinie bleibt an der Blockkante (frei stehende Listen auf Seiten).
+            insideMargin = PaddingValues(start = inset, top = 12.dp, bottom = 12.dp),
             onClick = onClick,
             endActions = {
                 if (value.isNotEmpty()) DesignText(value, 12, muted = true)

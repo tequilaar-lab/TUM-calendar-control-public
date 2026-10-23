@@ -73,5 +73,6 @@ object SourceCourseBrowserModel {
             .toList()
     }
 
-    private fun normalizedDisplayKey(title: String): String = title.trim().replace(Regex("\\s+"), " ").lowercase()
+    /** Gruppenschlüssel der Anzeige (auch für den „aktuellen Kurs“ der Schnellauswahl). */
+    internal fun normalizedDisplayKey(title: String): String = title.trim().replace(Regex("\\s+"), " ").lowercase()
 }

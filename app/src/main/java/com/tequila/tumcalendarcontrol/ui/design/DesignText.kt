@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.unit.sp
@@ -34,6 +35,7 @@ fun DesignText(
     color: Color? = null,
     tracking: Float = 0f,
     maxLines: Int = Int.MAX_VALUE,
+    align: TextAlign = TextAlign.Start,
 ) {
     val colors = LocalDesignColors.current
     Text(
@@ -50,6 +52,7 @@ fun DesignText(
             fontFeatureSettings = "tnum",
             lineBreak = if (size >= 22) LineBreak.Heading else LineBreak.Paragraph,
             hyphens = Hyphens.Auto,
+            textAlign = align,
         ),
     )
 }

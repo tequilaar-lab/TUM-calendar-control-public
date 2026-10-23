@@ -607,6 +607,9 @@ class CalendarControlState(
 
     fun selectAllSourceOccurrences() { invalidateWritePreview(); sourceWorkflow.selectAllOccurrences() }
 
+    /** Nur hinzufügen (z. B. ganzer aktueller Kurs); bestehende Auswahl bleibt, wiederholter Aufruf ändert nichts. */
+    fun includeSourceOccurrences(identities: Set<SourceOccurrenceIdentity>) { invalidateWritePreview(); sourceWorkflow.includeInSelection(identities) }
+
     fun clearSourceCourseSelection() { invalidateWritePreview(); sourceWorkflow.clearSelection() }
 
     fun updateSourceBrowserQuery(query: String) { sourceBrowserQuery = query }

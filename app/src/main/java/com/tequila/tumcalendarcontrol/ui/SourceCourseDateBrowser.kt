@@ -1,7 +1,7 @@
 /*
- * Aufgabe: Quelltermine im lesenden Monatsraster anzeigen und Tagesauswahl anbieten.
+ * Aufgabe: Quelltermine im lesenden Monatsraster anzeigen und Tagesauswahl anbieten (neues Erscheinungsbild).
  * Ein-/Ausgabe: Laufzeitinstanzen, Zeitraum und Auswahl -> Monatsraster und Tagesauswahlabsicht.
- * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nebenwirkungen: Keine externen Aktionen; Auswahl nur über bestehende Zustandsaufrufe.
  * Nicht zuständig: Calendar Provider, Wiederholungsauflösung, Bereichsspeicherung oder Kandidatenberechnung.
  */
 package com.tequila.tumcalendarcontrol.ui
@@ -16,104 +16,129 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
 import com.tequila.tumcalendarcontrol.sync.SourceOutputDateWindow
+import com.tequila.tumcalendarcontrol.ui.design.DesignNote
+import com.tequila.tumcalendarcontrol.ui.design.DesignRadii
+import com.tequila.tumcalendarcontrol.ui.design.DesignSection
+import com.tequila.tumcalendarcontrol.ui.design.DesignText
+import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val BrowserZone = ZoneId.of("Europe/Berlin")
 
+/** Sichtbare Termine nach Tag sowie gespeicherter Monat und Tag (als Text, damit rememberSaveable genügt). */
+internal class SourceDateBrowserModel(
+    val byDate: Map<LocalDate, List<SourceCalendarOccurrence>>,
+    private val monthText: MutableState<String>,
+    private val dateText: MutableState<String>,
+) {
+    val month: YearMonth get() = YearMonth.parse(monthText.value)
+    val chosenDate: LocalDate? get() = dateText.value.takeIf { it.isNotBlank() }?.let(LocalDate::parse)
+    fun shiftMonth(by: Long) { monthText.value = month.plusMonths(by).toString() }
+    fun choose(day: LocalDate) { dateText.value = day.toString() }
+}
+
+/** Startmonat: erster sichtbarer Termin, sonst der aktuelle Monat. Abgesagte und Termine außerhalb des Zeitraums fehlen. */
 @Composable
-fun SourceCourseDateBrowser(state: CalendarControlState, outputWindow: SourceOutputDateWindow, modifier: Modifier = Modifier, bottomClearance: androidx.compose.ui.unit.Dp = 16.dp) {
-    val visibleOccurrences = state.currentSourceOccurrences.filter {
-        !it.isCancelled && outputWindow.includes(it.startsAt, it.endsAt, BrowserZone)
+internal fun rememberSourceDateBrowser(state: CalendarControlState, outputWindow: SourceOutputDateWindow): SourceDateBrowserModel {
+    val visible = state.currentSourceOccurrences.filter { !it.isCancelled && outputWindow.includes(it.startsAt, it.endsAt, BrowserZone) }
+    val initialMonth = visible.minByOrNull(SourceCalendarOccurrence::startsAt)?.startsAt?.atZone(BrowserZone)?.let(YearMonth::from) ?: YearMonth.now(BrowserZone)
+    val monthText = rememberSaveable { mutableStateOf(initialMonth.toString()) }
+    val dateText = rememberSaveable { mutableStateOf("") }
+    return SourceDateBrowserModel(visible.groupBy { it.startsAt.atZone(BrowserZone).toLocalDate() }, monthText, dateText)
+}
+
+/** Eigenständige Datumsansicht (z. B. für Bildtests); auf der Auswahlseite stehen dieselben Einträge in der Hauptliste. */
+@Composable
+fun SourceCourseDateBrowser(state: CalendarControlState, outputWindow: SourceOutputDateWindow, modifier: Modifier = Modifier, bottomClearance: Dp = 16.dp) {
+    val model = rememberSourceDateBrowser(state, outputWindow)
+    LazyColumn(modifier.padding(horizontal = 8.dp), contentPadding = PaddingValues(bottom = bottomClearance), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        sourceDateItems(state, model)
     }
-    val initialMonth = visibleOccurrences.minByOrNull(SourceCalendarOccurrence::startsAt)
-        ?.startsAt?.atZone(BrowserZone)?.let(YearMonth::from)
-        ?: YearMonth.now(BrowserZone)
-    var monthText by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(initialMonth.toString()) }
-    var dateText by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
-    val month = YearMonth.parse(monthText)
-    val chosenDate = dateText.takeIf { it.isNotBlank() }?.let(LocalDate::parse)
-    val byDate = visibleOccurrences.groupBy { it.startsAt.atZone(BrowserZone).toLocalDate() }
-    val selectedDay = chosenDate
-    val occurrencesOnDate = selectedDay?.let(byDate::get).orEmpty()
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(bottom = bottomClearance),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        item { InformationCard(message(596), message(597)) }
-        item { MonthNavigation(month, onPrevious = { monthText = month.minusMonths(1).toString() }, onNext = { monthText = month.plusMonths(1).toString() }) }
-        item { SourceMonthGrid(month, byDate, chosenDate, onDateSelected = { dateText = it.toString() }) }
-        if (selectedDay == null) {
-            item { InformationCard(message(475), message(598)) }
-        } else {
-            item { Text(tr(message(599, (selectedDay.monthValue), (selectedDay.dayOfMonth), (occurrencesOnDate.size))), style = MiuixTheme.textStyles.title3) }
-            if (occurrencesOnDate.isEmpty()) item { InformationCard(message(600), message(601)) }
-            items(occurrencesOnDate, key = { "${it.sourceUid}|${it.instanceKey}" }) { occurrence ->
-                Card(modifier = Modifier.fillMaxWidth(), insideMargin = PaddingValues(10.dp)) {
-                    SourceOccurrenceChoiceRow(
-                        occurrence = occurrence,
-                        selected = occurrence.identity in state.selectedSourceOccurrences,
-                        onToggle = { state.toggleSourceOccurrenceSelection(occurrence.identity) },
-                    )
-                }
-            }
+}
+
+/** Monatsnavigation, Raster und Termine des gewählten Tages als Listeneinträge. */
+internal fun LazyListScope.sourceDateItems(state: CalendarControlState, model: SourceDateBrowserModel, onCurrent: (String) -> Unit = {}) {
+    item(key = "date-hint") { DesignText(tr(message(597)), 12, Modifier.padding(horizontal = 4.dp), muted = true) }
+    item(key = "date-month") { MonthNavigation(model.month, onPrevious = { model.shiftMonth(-1) }, onNext = { model.shiftMonth(1) }) }
+    item(key = "date-grid") { SourceMonthGrid(model.month, model.byDate, model.chosenDate, model::choose) }
+    val day = model.chosenDate
+    if (day == null) {
+        item(key = "date-none") { DesignNote(tr(message(475)), tr(message(598))) }
+        return
+    }
+    val onDay = model.byDate[day].orEmpty()
+    item(key = "date-title") { DesignSection(tr(message(599, day.monthValue, day.dayOfMonth, onDay.size)), Modifier.padding(start = 4.dp)) }
+    if (onDay.isEmpty()) item(key = "date-empty") { DesignNote(tr(message(600)), tr(message(601))) }
+    onDay.forEach { occurrence ->
+        item(key = "date-occ:${occurrence.itemKey()}") {
+            SourceOccurrenceChoiceRow(
+                occurrence = occurrence,
+                selected = occurrence.identity in state.selectedSourceOccurrences,
+                onToggle = { onCurrent(SourceBulkSelection.keyOf(occurrence)); state.toggleSourceOccurrenceSelection(occurrence.identity) },
+            )
         }
     }
 }
 
+/** Vorheriger/nächster Monat als Akzent-Textlinks (Tippfläche 48 dp), Monatsname mittig. */
 @Composable
 private fun MonthNavigation(month: YearMonth, onPrevious: () -> Unit, onNext: () -> Unit) {
+    val colors = LocalDesignColors.current
     val monthTitle = DateTimeFormatter.ofPattern(tr(message(595)), java.util.Locale.forLanguageTag(LocalAppLanguage.current.language.tag))
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        Button(onClick = onPrevious, modifier = Modifier.weight(1f)) { Text(tr(message(602))) }
-        Text(tr(month.format(monthTitle)), style = MiuixTheme.textStyles.title3, modifier = Modifier.weight(1f).padding(horizontal = 8.dp))
-        Button(onClick = onNext, modifier = Modifier.weight(1f)) { Text(tr(message(603))) }
+    val link = Modifier.heightIn(min = 48.dp).wrapContentHeight().padding(horizontal = 4.dp)
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        DesignText("‹  " + tr(message(602)), 13, Modifier.clickable(onClick = onPrevious).then(link).testTag("date-previous"), color = colors.accent)
+        DesignText(tr(month.format(monthTitle)), 18, Modifier.weight(1f), serif = true, align = TextAlign.Center)
+        DesignText(tr(message(603)) + "  ›", 13, Modifier.clickable(onClick = onNext).then(link).testTag("date-next"), color = colors.accent)
     }
 }
 
+/** Montag als erster Tag; gewählter Tag in Tinte, Tage mit Terminen mit Akzentpunkt. */
 @Composable
-private fun SourceMonthGrid(
-    month: YearMonth,
-    byDate: Map<LocalDate, List<SourceCalendarOccurrence>>,
-    chosenDate: LocalDate?,
-    onDateSelected: (LocalDate) -> Unit,
-) {
+private fun SourceMonthGrid(month: YearMonth, byDate: Map<LocalDate, List<SourceCalendarOccurrence>>, chosenDate: LocalDate?, onDateSelected: (LocalDate) -> Unit) {
     val firstOffset = month.atDay(1).dayOfWeek.mondayOffset()
     val cells = List(firstOffset) { null } + (1..month.lengthOfMonth()).map(month::atDay)
-    val rows = cells.chunked(7)
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(Modifier.fillMaxWidth()) { listOf(message(604), message(605), message(606), message(607), message(608), message(609), message(610)).forEach { day -> Text(tr(day), modifier = Modifier.weight(1f), style = MiuixTheme.textStyles.body2) } }
-        rows.forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth()) {
+            listOf(604, 605, 606, 607, 608, 609, 610).forEach { key ->
+                DesignText(tr(message(key)), 11, Modifier.weight(1f), muted = true, align = TextAlign.Center)
+            }
+        }
+        cells.chunked(7).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 row.forEach { day ->
-                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         if (day != null) SourceDayCell(day, byDate[day].orEmpty().size, day == chosenDate, onDateSelected)
                     }
                 }
-                repeat(7 - row.size) { Box(Modifier.weight(1f).size(38.dp)) }
+                repeat(7 - row.size) { Box(Modifier.weight(1f).height(48.dp)) }
             }
         }
     }
@@ -121,19 +146,19 @@ private fun SourceMonthGrid(
 
 @Composable
 private fun SourceDayCell(day: LocalDate, occurrenceCount: Int, selected: Boolean, onDateSelected: (LocalDate) -> Unit) {
-    val palette = LocalTumPalette.current
-    val background = if (selected) palette.primaryContainer else palette.surfaceContainer
+    val colors = LocalDesignColors.current
+    val ink = if (selected) colors.paper else colors.ink
     Column(
-        modifier = Modifier
-            .size(38.dp)
-            .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-            .background(background)
-            .clickable { onDateSelected(day) },
+        Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(DesignRadii.Tile))
+            .background(if (selected) colors.ink else Color.Transparent).clickable { onDateSelected(day) }.testTag("date-day-${day.dayOfMonth}"),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(tr(day.dayOfMonth.toString()), style = MiuixTheme.textStyles.body2)
-        if (occurrenceCount > 0) Text(tr("●"), color = palette.primary, style = MiuixTheme.textStyles.body2)
+        DesignText(day.dayOfMonth.toString(), 14, color = ink, weight = if (selected) FontWeight.Medium else FontWeight.Normal)
+        Box(
+            Modifier.padding(top = 3.dp).size(4.dp).clip(RoundedCornerShape(2.dp))
+                .background(if (occurrenceCount == 0) Color.Transparent else if (selected) colors.paper else colors.accent),
+        )
     }
 }
 

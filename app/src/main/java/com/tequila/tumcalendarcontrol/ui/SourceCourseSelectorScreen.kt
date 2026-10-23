@@ -1,7 +1,8 @@
 /*
- * Aufgabe: Gruppierte/datumsbezogene Terminauswahl mit responsiver Faltbildschirmansicht darstellen.
- * Ein-/Ausgabe: Aktive Momentaufnahme und Browserbedingungen -> genaue Auswahl oder Vorschauabsicht.
- * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Aufgabe: Kursauswahl darstellen: Steuerung (Suche, Filter, Schnellauswahl, Ansicht), Kurs- oder Datumsliste
+ *   und schwebende Hauptaktion; Faltbildschirm zweispaltig.
+ * Ein-/Ausgabe: Aktive Momentaufnahme und Browserbedingungen -> genaue Auswahl, Schnellauswahl oder Weiter zur Teilnahme.
+ * Nebenwirkungen: Keine externen Aktionen; nur bestehende Zustandsaufrufe.
  * Nicht zuständig: Synchronisierungsidentität anhand von Titeln, Änderung der Parsergebnisse oder Ersatz der abschließenden Schreibbestätigung.
  */
 package com.tequila.tumcalendarcontrol.ui
@@ -9,8 +10,6 @@ package com.tequila.tumcalendarcontrol.ui
 import com.tequila.tumcalendarcontrol.i18n.message
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -21,38 +20,48 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.sync.SourceOutputDateWindow
+import com.tequila.tumcalendarcontrol.ui.design.DesignActionFrame
+import com.tequila.tumcalendarcontrol.ui.design.DesignField
+import com.tequila.tumcalendarcontrol.ui.design.DesignLine
+import com.tequila.tumcalendarcontrol.ui.design.DesignPillButton
+import com.tequila.tumcalendarcontrol.ui.design.DesignRow
+import com.tequila.tumcalendarcontrol.ui.design.DesignSection
+import com.tequila.tumcalendarcontrol.ui.design.DesignSegmented
+import com.tequila.tumcalendarcontrol.ui.design.DesignText
+import com.tequila.tumcalendarcontrol.ui.design.FloatingActionContentClearance
+import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
 import java.time.ZoneId
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-private val SourceSelectionBarShape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
 private val ExpandedSelectorBreakpoint = 720.dp
 private val CourseBrowserZone = ZoneId.of("Europe/Berlin")
 
-private enum class SourceBrowserMode(val label: String) { GROUPS(message(613)), DATES(message(596)) }
+/** Freier Text auf der Titellinie (4 dp innerhalb der Blockkanten). */
+private val TextInset = Modifier.padding(horizontal = 4.dp)
+
+/** Kurze Segmentbeschriftungen; lange Varianten würden im Deutschen gekürzt. */
+private enum class SourceBrowserMode(val label: String) { GROUPS(message(717)), DATES(message(718)) }
+
+/** Seitenzustand: Ansicht, aufgeklappte Kurse (zeilengetrennte Schlüssel) und „aktueller Kurs“ der Schnellauswahl; alles speicherbar. */
+private class SelectorUi(mode: MutableState<String>, expanded: MutableState<String>, current: MutableState<String>) {
+    var mode by mode
+    var expanded by expanded
+    var current by current
+}
 
 @Composable
 fun SourceCourseSelectorScreen(state: CalendarControlState) {
@@ -66,204 +75,97 @@ fun SourceCourseSelectorScreen(state: CalendarControlState) {
         outputWindow = outputWindow,
         zoneId = CourseBrowserZone,
     )
-    var mode by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(SourceBrowserMode.GROUPS) }
+    val ui = SelectorUi(
+        rememberSaveable { mutableStateOf(SourceBrowserMode.GROUPS.name) },
+        // Anfangs wie bisher: Kurse mit gewählten Terminen aufgeklappt.
+        rememberSaveable { mutableStateOf(groups.filter { it.selectedOccurrenceCount > 0 }.joinToString("\n", transform = SourceBulkSelection::keyOf)) },
+        rememberSaveable { mutableStateOf("") },
+    )
+    val dates = rememberSourceDateBrowser(state, outputWindow)
+    val expandedKeys = ui.expanded.split("\n").filter(String::isNotEmpty).toSet()
+    val list: LazyListScope.() -> Unit = {
+        if (SourceBrowserMode.valueOf(ui.mode) == SourceBrowserMode.GROUPS) {
+            sourceGroupItems(
+                state, groups, expandedKeys,
+                onExpand = { key -> ui.expanded = (if (key in expandedKeys) expandedKeys - key else expandedKeys + key).joinToString("\n") },
+                onCurrent = { ui.current = it },
+            )
+        } else {
+            sourceDateItems(state, dates, onCurrent = { ui.current = it })
+        }
+    }
+    val hasSelection = state.selectedSourceOccurrences.isNotEmpty()
     BoxWithConstraints(Modifier.fillMaxSize()) {
         if (maxWidth >= ExpandedSelectorBreakpoint) {
-            ExpandedSourceCourseSelector(state, outputWindow, groups, mode, onModeChange = { mode = it })
-        } else {
-            CompactSourceCourseSelector(state, outputWindow, groups, mode, onModeChange = { mode = it })
-        }
-    }
-}
-
-/** Breite Ansicht: links Steuerung, rechts vollständige unabhängig scrollbare Kurse/Termine. */
-@Composable
-private fun ExpandedSourceCourseSelector(
-    state: CalendarControlState,
-    outputWindow: SourceOutputDateWindow,
-    groups: List<SourceCourseDisplayGroup>,
-    mode: SourceBrowserMode,
-    onModeChange: (SourceBrowserMode) -> Unit,
-) {
-    Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Box(Modifier.weight(0.39f).fillMaxHeight()) {
-            var floatingHeight by remember { mutableStateOf(184.dp) }
-            val density = LocalDensity.current
-            SourceSelectorControls(
-                state = state,
-                mode = mode,
-                onModeChange = onModeChange,
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp, 12.dp, 12.dp, floatingHeight + 12.dp),
-            )
-            SourceSelectionBottomBar(
-                selectedCount = state.selectedSourceOccurrences.size,
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().onSizeChanged { floatingHeight = with(density) { it.height.toDp() } }.padding(12.dp),
-                onClear = state::clearSourceCourseSelection,
-                onAttendance = state::openSourceAttendanceEditor,
-                onWrite = state::prepareCalendarWrite,
-            )
-        }
-        Box(Modifier.weight(0.61f).fillMaxHeight().padding(end = 12.dp).testTag("source-list-viewport")) {
-            SourceCourseSelectionList(state, outputWindow, groups, mode, Modifier.fillMaxSize())
-        }
-    }
-}
-
-/** Schmale Ansicht einspaltig; Liste unabhängig scrollen, Aktionskarte schwebt nur unten. */
-@Composable
-private fun CompactSourceCourseSelector(
-    state: CalendarControlState,
-    outputWindow: SourceOutputDateWindow,
-    groups: List<SourceCourseDisplayGroup>,
-    mode: SourceBrowserMode,
-    onModeChange: (SourceBrowserMode) -> Unit,
-) {
-    var floatingHeight by remember { mutableStateOf(184.dp) }
-    val density = LocalDensity.current
-    Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            SourceSelectorControls(state, mode, onModeChange, Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp))
-            SourceCourseSelectionList(state, outputWindow, groups, mode, Modifier.weight(1f).padding(horizontal = 12.dp), floatingHeight + 12.dp)
-        }
-        SourceSelectionBottomBar(
-            selectedCount = state.selectedSourceOccurrences.size,
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().widthIn(max = 560.dp).onSizeChanged { floatingHeight = with(density) { it.height.toDp() } }.padding(12.dp),
-            onClear = state::clearSourceCourseSelection,
-            onAttendance = state::openSourceAttendanceEditor,
-            onWrite = state::prepareCalendarWrite,
-        )
-    }
-}
-
-@Composable
-private fun SourceSelectorControls(
-    state: CalendarControlState,
-    mode: SourceBrowserMode,
-    onModeChange: (SourceBrowserMode) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        InformationCard(message(614), message(615))
-        TextField(
-            value = state.sourceBrowserQuery,
-            onValueChange = state::updateSourceBrowserQuery,
-            modifier = Modifier.fillMaxWidth(),
-            label = tr(message(616)),
-        )
-        SourceFilterRow(state)
-        SourceModeRow(mode = mode, onChange = onModeChange)
-    }
-}
-
-@Composable
-private fun SourceCourseSelectionList(
-    state: CalendarControlState,
-    outputWindow: SourceOutputDateWindow,
-    groups: List<SourceCourseDisplayGroup>,
-    mode: SourceBrowserMode,
-    modifier: Modifier,
-    bottomClearance: Dp = 16.dp,
-) {
-    when (mode) {
-        SourceBrowserMode.GROUPS -> SourceGroupList(state, groups, modifier, bottomClearance)
-        SourceBrowserMode.DATES -> SourceCourseDateBrowser(state, outputWindow, modifier, bottomClearance)
-    }
-}
-
-@Composable
-private fun SourceFilterRow(state: CalendarControlState) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-        SourceCourseFilter.entries.forEach { filter ->
-            val selected = state.sourceBrowserFilter == filter
-            Button(onClick = { state.updateSourceBrowserFilter(filter) }, modifier = Modifier.weight(1f)) {
-                Text(tr(if (selected) message(202, (filter.label)) else filter.label))
-            }
-        }
-    }
-}
-
-@Composable
-private fun SourceModeRow(mode: SourceBrowserMode, onChange: (SourceBrowserMode) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        SourceBrowserMode.entries.forEach { item ->
-            Button(onClick = { onChange(item) }, modifier = Modifier.weight(1f)) {
-                Text(tr(if (item == mode) message(202, (item.label)) else item.label))
-            }
-        }
-    }
-}
-
-@Composable
-private fun SourceGroupList(state: CalendarControlState, groups: List<SourceCourseDisplayGroup>, modifier: Modifier, bottomClearance: Dp) {
-    LazyColumn(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-        contentPadding = PaddingValues(bottom = bottomClearance),
-    ) {
-        if (groups.isEmpty()) item { InformationCard(message(617), message(618)) }
-        items(groups, key = { it.displayTitle + it.earliestStart }) { group -> SourceGroupRow(state, group) }
-    }
-}
-
-@Composable
-private fun SourceGroupRow(state: CalendarControlState, group: SourceCourseDisplayGroup) {
-    var expanded by androidx.compose.runtime.saveable.rememberSaveable(group.displayTitle) { mutableStateOf(group.selectedOccurrenceCount > 0) }
-    Card(modifier = Modifier.fillMaxWidth(), insideMargin = PaddingValues(14.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(tr(group.displayTitle), style = MiuixTheme.textStyles.title3)
-                    Text(
-                        tr(message(619, (group.sourceUidCount), (group.totalOccurrenceCount), (group.selectedOccurrenceCount))),
-                        color = LocalTumPalette.current.onSurfaceVariant,
-                    )
-                    Text(
-                        tr(message(620, (group.inOutputRangeOccurrenceCount))),
-                        color = LocalTumPalette.current.onSurfaceVariant,
-                    )
+            // Breit: links Steuerung mit schwebender Aktion, rechts unabhängig scrollende Kurse/Termine.
+            Row(Modifier.fillMaxSize()) {
+                Box(Modifier.weight(0.4f).fillMaxHeight()) {
+                    DesignActionFrame(tr(message(709)), state::openSourceAttendanceEditor, actionEnabled = hasSelection, actionTag = "source-next") {
+                        Column(
+                            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 8.dp).padding(bottom = FloatingActionContentClearance),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                        ) { SourceSelectorControls(state, ui) }
+                    }
                 }
-                Text(tr(if (expanded) message(621) else message(622)))
-            }
-            if (expanded) group.occurrences.forEach { occurrence ->
-                SourceOccurrenceChoiceRow(
-                    occurrence = occurrence,
-                    selected = occurrence.identity in state.selectedSourceOccurrences,
-                    onToggle = { state.toggleSourceOccurrenceSelection(occurrence.identity) },
+                Box(Modifier.padding(top = 12.dp, bottom = 24.dp).width(1.dp).fillMaxHeight().background(LocalDesignColors.current.ink.copy(alpha = .10f)))
+                LazyColumn(
+                    Modifier.weight(0.6f).fillMaxHeight().padding(start = 16.dp, end = 8.dp).testTag("source-list-viewport"),
+                    contentPadding = PaddingValues(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    content = list,
                 )
             }
+        } else {
+            // Schmal: eine Liste mit Steuerung oben; Aktion schwebt über dem Listenende.
+            DesignActionFrame(tr(message(709)), state::openSourceAttendanceEditor, actionEnabled = hasSelection, actionTag = "source-next") {
+                LazyColumn(
+                    Modifier.fillMaxSize().padding(horizontal = 8.dp).testTag("source-selection-list"),
+                    contentPadding = PaddingValues(bottom = FloatingActionContentClearance),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    item(key = "controls") { Column(Modifier.padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) { SourceSelectorControls(state, ui) } }
+                    list()
+                }
+            }
         }
     }
 }
 
-/** Schwebende Karte umfasst nur Aktionen; färbt weder Seitenhintergrund noch rechte Liste. */
+/**
+ * Steuerung: Datenstand mit Kurs-/Terminzahl, Suche, Anzeigefilter, Schnellauswahl (alle bzw. ganzer aktueller Kurs,
+ * beide unabhängig von Suche und Filter), Ansicht, Auswahlzähler, Leeren und Schreibvorschau.
+ */
 @Composable
-private fun SourceSelectionBottomBar(
-    selectedCount: Int,
-    modifier: Modifier = Modifier,
-    onClear: () -> Unit,
-    onAttendance: () -> Unit,
-    onWrite: () -> Unit,
-) {
-    val palette = LocalTumPalette.current
-    Card(
-        modifier = modifier
-            .shadow(elevation = 16.dp, shape = SourceSelectionBarShape, clip = false)
-            .clip(SourceSelectionBarShape)
-            .background(palette.surfaceHighest)
-            .border(width = 1.dp, color = palette.outline.copy(alpha = 0.52f), shape = SourceSelectionBarShape),
-        insideMargin = PaddingValues(12.dp),
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(tr(message(623, (selectedCount))), style = MiuixTheme.textStyles.title3)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = onClear, enabled = selectedCount > 0, modifier = Modifier.weight(1f)) { Text(tr(message(624))) }
-                Button(onClick = onAttendance, enabled = selectedCount > 0, modifier = Modifier.weight(1f)) { Text(tr(message(625))) }
-            }
-            Button(onClick = onWrite, enabled = selectedCount > 0, modifier = Modifier.fillMaxWidth()) { Text(tr(message(626))) }
-            Text(tr(message(627)), color = palette.onSurfaceVariant)
+private fun SourceSelectorControls(state: CalendarControlState, ui: SelectorUi) {
+    val occurrences = state.currentSourceOccurrences
+    val unfiltered = SourceBulkSelection.unfilteredGroups(occurrences, state.selectedSourceOccurrences)
+    val allCount = SourceBulkSelection.allSelectable(occurrences).size
+    val current = SourceBulkSelection.currentGroup(unfiltered, ui.current)
+    val selectedCount = state.selectedSourceOccurrences.size
+    DesignSection(tr(state.sourceSnapshotLabel), TextInset)
+    DesignText(tr(message(693, unfiltered.size, allCount)), 19, TextInset)
+    DesignField("", state.sourceBrowserQuery, state::updateSourceBrowserQuery, Modifier.testTag("source-search"), placeholder = tr(message(616)), search = true)
+    SourceFilterTabs(state.sourceBrowserFilter, state::updateSourceBrowserFilter)
+    DesignLine()
+    DesignSection(tr(message(704)), TextInset)
+    DesignPillButton(tr(message(705, allCount)), Modifier.testTag("source-select-all"), primary = false, enabled = allCount > 0) { state.selectAllSourceOccurrences() }
+    if (current != null) {
+        DesignPillButton(tr(message(706, current.totalOccurrenceCount)), Modifier.testTag("source-select-course"), primary = false) {
+            state.includeSourceOccurrences(SourceBulkSelection.courseAdditions(current))
+        }
+        DesignText(tr(message(707, current.displayTitle)), 12, TextInset.testTag("source-current-course"), muted = true)
+    }
+    DesignText(tr(message(708)), 11, TextInset, muted = true)
+    DesignLine()
+    val mode = SourceBrowserMode.valueOf(ui.mode)
+    DesignSegmented(SourceBrowserMode.entries.map { tr(it.label) }, mode.ordinal, Modifier.testTag("source-mode")) { ui.mode = SourceBrowserMode.entries[it].name }
+    DesignText(tr(message(623, selectedCount)), 22, TextInset.testTag("source-selection-count"))
+    DesignText(tr(message(615)), 12, TextInset, muted = true)
+    // Leeren und Schreibvorschau nur mit Auswahl; beides ändert keine Kalender.
+    if (selectedCount > 0) {
+        Column {
+            DesignRow(tr(message(624)), detail = tr(message(710)), tag = "source-clear", inset = 4.dp, onClick = state::clearSourceCourseSelection)
+            DesignRow(tr(message(626)), detail = tr(message(627)), tag = "source-write-preview", inset = 4.dp, onClick = state::prepareCalendarWrite)
         }
     }
 }

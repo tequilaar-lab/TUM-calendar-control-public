@@ -707,4 +707,19 @@
     <string name="msg_0701" formatted="false">"Kalendersteuerung"</string>
     <string name="msg_0702" formatted="false">"{0} anzeigen"</string>
     <string name="msg_0703" formatted="false">"Diesen Kurs favorisieren"</string>
+    <string name="msg_0704" formatted="false">"Schnellauswahl"</string>
+    <string name="msg_0705" formatted="false">"Alle Kurse auswählen · {0} Termine"</string>
+    <string name="msg_0706" formatted="false">"Ganzen Kurs auswählen · {0} Termine"</string>
+    <string name="msg_0707" formatted="false">"Aktueller Kurs: {0}"</string>
+    <string name="msg_0708" formatted="false">"Andere Auswahl bleibt erhalten; Suche und Filter ändern sie nicht."</string>
+    <string name="msg_0709" formatted="false">"Weiter · Teilnahme &amp; Favoriten"</string>
+    <string name="msg_0710" formatted="false">"Bereits geschriebene Termine bleiben"</string>
+    <string name="msg_0711" formatted="false">"Nächster Lesezeitraum"</string>
+    <string name="msg_0712" formatted="false">"Termine"</string>
+    <string name="msg_0713" formatted="false">"Bearbeitungsart"</string>
+    <string name="msg_0714" formatted="false">"Aktuelle Auswahl"</string>
+    <string name="msg_0715" formatted="false">"Eine Einstellung für alle gewählten Termine"</string>
+    <string name="msg_0716" formatted="false">"Je Kurs eigene Teilnahme und Favoriten"</string>
+    <string name="msg_0717" formatted="false">"Nach Kurs"</string>
+    <string name="msg_0718" formatted="false">"Nach Datum"</string>
 </resources>

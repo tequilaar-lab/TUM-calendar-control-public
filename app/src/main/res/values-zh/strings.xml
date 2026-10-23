@@ -707,4 +707,19 @@
     <string name="msg_0701" formatted="false">"日程控制"</string>
     <string name="msg_0702" formatted="false">"浏览 {0}"</string>
     <string name="msg_0703" formatted="false">"收藏这门课程"</string>
+    <string name="msg_0704" formatted="false">"快捷选择"</string>
+    <string name="msg_0705" formatted="false">"全选所有课程 · {0} 个课次"</string>
+    <string name="msg_0706" formatted="false">"选中本课全部 · {0} 个课次"</string>
+    <string name="msg_0707" formatted="false">"当前课程：{0}"</string>
+    <string name="msg_0708" formatted="false">"保留其他已选课次，不受搜索和显示筛选影响。"</string>
+    <string name="msg_0709" formatted="false">"下一步 · 出席与收藏"</string>
+    <string name="msg_0710" formatted="false">"不删除已写入日程"</string>
+    <string name="msg_0711" formatted="false">"下次读取时间"</string>
+    <string name="msg_0712" formatted="false">"课次"</string>
+    <string name="msg_0713" formatted="false">"编辑方式"</string>
+    <string name="msg_0714" formatted="false">"本次选择"</string>
+    <string name="msg_0715" formatted="false">"对所选课次使用同一组设置"</string>
+    <string name="msg_0716" formatted="false">"每门课程可以有不同的出席与收藏"</string>
+    <string name="msg_0717" formatted="false">"按课程"</string>
+    <string name="msg_0718" formatted="false">"按日期"</string>
 </resources>

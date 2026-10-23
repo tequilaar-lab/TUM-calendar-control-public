@@ -707,4 +707,19 @@
     <string name="msg_0701" formatted="false">"Calendar control"</string>
     <string name="msg_0702" formatted="false">"Show {0}"</string>
     <string name="msg_0703" formatted="false">"Favorite this course"</string>
+    <string name="msg_0704" formatted="false">"Quick selection"</string>
+    <string name="msg_0705" formatted="false">"Select all courses · {0} sessions"</string>
+    <string name="msg_0706" formatted="false">"Select whole course · {0} sessions"</string>
+    <string name="msg_0707" formatted="false">"Current course: {0}"</string>
+    <string name="msg_0708" formatted="false">"Other selections stay; search and filters do not change them."</string>
+    <string name="msg_0709" formatted="false">"Next · attendance &amp; favorites"</string>
+    <string name="msg_0710" formatted="false">"Events already written stay"</string>
+    <string name="msg_0711" formatted="false">"Next reading period"</string>
+    <string name="msg_0712" formatted="false">"Sessions"</string>
+    <string name="msg_0713" formatted="false">"Editing mode"</string>
+    <string name="msg_0714" formatted="false">"Current selection"</string>
+    <string name="msg_0715" formatted="false">"One setting for all selected sessions"</string>
+    <string name="msg_0716" formatted="false">"Each course can have its own attendance and favorites"</string>
+    <string name="msg_0717" formatted="false">"By course"</string>
+    <string name="msg_0718" formatted="false">"By date"</string>
 </resources>

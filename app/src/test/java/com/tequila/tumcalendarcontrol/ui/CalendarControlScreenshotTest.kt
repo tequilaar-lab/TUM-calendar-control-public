@@ -8,6 +8,7 @@ package com.tequila.tumcalendarcontrol.ui
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -168,7 +169,8 @@ class CalendarControlScreenshotTest {
         val state = loadedSourceState()
         state.openSourceRange()
         render(state)
-        composeRule.onNodeWithText("使用已保存课程 · 下一步").performScrollTo()
+        // Seit dem neuen Erscheinungsbild schwebt „weiter“ als Hauptaktion und ist ohne Scrollen sichtbar.
+        composeRule.onNodeWithText("使用已保存课程 · 下一步").assertIsDisplayed()
         capture("source_range_cached_next_412x892")
         composeRule.onNodeWithText("使用已保存课程 · 下一步").performClick()
         assertEquals(AppScreen.SOURCE_PREVIEW, state.screen)

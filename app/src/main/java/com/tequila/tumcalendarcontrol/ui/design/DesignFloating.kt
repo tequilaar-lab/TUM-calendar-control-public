@@ -10,6 +10,7 @@ package com.tequila.tumcalendarcontrol.ui.design
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -120,16 +121,32 @@ fun DesignActionPage(
     contentTag: String = "action-page-content",
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    DesignActionFrame(actionLabel, onAction, modifier, actionEnabled, actionTag) {
+        Column(
+            Modifier.fillMaxSize().testTag(contentTag).verticalScroll(rememberScrollState())
+                .padding(horizontal = 8.dp).padding(bottom = FloatingActionContentClearance),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            content = content,
+        )
+    }
+}
+
+/**
+ * Rahmen mit schwebender Glas-Hauptaktion für beliebigen Inhalt (z. B. LazyColumn): Inhalt liegt in einer eigenen
+ * Abtastebene auf Papiergrund und muss selbst FloatingActionContentClearance als unteren Abstand vorsehen.
+ */
+@Composable
+fun DesignActionFrame(
+    actionLabel: String,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier,
+    actionEnabled: Boolean = true,
+    actionTag: String = "floating-action",
+    content: @Composable BoxScope.() -> Unit,
+) {
     val pageLayer = rememberLayerBackdrop()
     Box(modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize().layerBackdrop(pageLayer).background(LocalDesignColors.current.paper)) {
-            Column(
-                Modifier.fillMaxSize().testTag(contentTag).verticalScroll(rememberScrollState())
-                    .padding(horizontal = 8.dp).padding(bottom = FloatingActionContentClearance),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                content = content,
-            )
-        }
+        Box(Modifier.fillMaxSize().layerBackdrop(pageLayer).background(LocalDesignColors.current.paper), content = content)
         CompositionLocalProvider(LocalGlassBackdrop provides pageLayer) {
             DesignFloatingButton(
                 actionLabel, actionEnabled,

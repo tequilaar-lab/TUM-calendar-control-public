@@ -1,132 +1,92 @@
 /*
- * Aufgabe: Teilnahme, Favoriten und Bereich für gewählte Einzeltermine bearbeiten.
+ * Aufgabe: Teilnahme, Favoriten und Bereich für gewählte Einzeltermine bearbeiten (neues Erscheinungsbild).
  * Ein-/Ausgabe: Ausgewählte Termine und Entwürfe -> ausdrücklich gespeicherte Teilnahme-/Favoritenwerte.
- * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
+ * Nebenwirkungen: Keine externen Aktionen; Speichern erst über die schwebende Hauptaktion.
  * Nicht zuständig: iCal-Lesen, Anzeige interner Identitäten, Berechtigungen oder Kalenderausgabe.
  */
 package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.RadioButton
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.tequila.tumcalendarcontrol.ui.design.DesignActionPage
+import com.tequila.tumcalendarcontrol.ui.design.DesignChoice
+import com.tequila.tumcalendarcontrol.ui.design.DesignField
+import com.tequila.tumcalendarcontrol.ui.design.DesignLine
+import com.tequila.tumcalendarcontrol.ui.design.DesignMetrics
+import com.tequila.tumcalendarcontrol.ui.design.DesignPillButton
+import com.tequila.tumcalendarcontrol.ui.design.DesignSection
+import com.tequila.tumcalendarcontrol.ui.design.DesignText
+import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
 
+/** Freier Text auf der Titellinie (4 dp innerhalb der Blockkanten). */
+private val TextInset = Modifier.padding(horizontal = 4.dp)
+
+/**
+ * Bearbeitungsart (gemeinsam oder je Kurs), Umfang der Auswahl, Teilnahme mit Statusfarbe, Favoriten, Geltungsbereich.
+ * Schwebende Hauptaktion speichert; „Abbrechen“ kehrt ohne Speichern zurück.
+ */
 @Composable
 fun SourceAttendanceScreen(state: CalendarControlState) {
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Text(tr(message(583, (state.selectedSourceOccurrences.size))), style = MiuixTheme.textStyles.title3)
-        Text(tr(state.currentSelectionSummary(state.selectedSourceOccurrences)))
-        Text(tr(message(584)), color = LocalTumPalette.current.onSurfaceVariant)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { state.individualAttendanceMode = false }, modifier = Modifier.weight(1f)) { Text(tr(if (!state.individualAttendanceMode) message(585) else message(586))) }
-            Button(onClick = { state.individualAttendanceMode = true }, modifier = Modifier.weight(1f)) { Text(tr(if (state.individualAttendanceMode) message(587) else message(588))) }
+    val colors = LocalDesignColors.current
+    val selection = state.selectedSourceOccurrences
+    DesignActionPage(tr(message(592)), onAction = state::confirmSourceAttendance, actionTag = "source-attendance-save", contentTag = "source-attendance-content") {
+        DesignText(tr(message(583, selection.size)), 20, TextInset)
+        DesignText(tr(message(584)), 12, TextInset, muted = true)
+        DesignSection(tr(message(713)), TextInset)
+        DesignChoice(tr(message(586)), !state.individualAttendanceMode, Modifier.testTag("source-mode-unified"), detail = tr(message(715))) { state.individualAttendanceMode = false }
+        DesignChoice(tr(message(588)), state.individualAttendanceMode, Modifier.testTag("source-mode-individual"), detail = tr(message(716))) { state.individualAttendanceMode = true }
+        DesignLine()
+        DesignSection(tr(message(714)), TextInset)
+        val chosen = state.currentSourceOccurrences.filter { it.identity in selection }
+        DesignMetrics(
+            tr(message(146)) to chosen.map(SourceBulkSelection::keyOf).distinct().size.toString(),
+            tr(message(712)) to selection.size.toString(),
+            modifier = TextInset,
+        )
+        DesignText(tr(state.currentSelectionSummary(selection)), 12, TextInset, muted = true)
+        if (state.individualAttendanceMode) {
+            IndividualSourceAttendance(state)
+        } else {
+            // Sichtbare Regeln: Grün verbindlich, Blau auswählen, Grau ab Termin nicht teilnehmen; Punkt in der Statusfarbe.
+            DesignSection(tr(message(589)), TextInset)
+            AttendanceState.entries.forEach { option ->
+                DesignChoice(
+                    label = tr(option.label), selected = option == state.pendingSourceAttendance,
+                    modifier = Modifier.testTag("source-attendance-${option.name}"),
+                    detail = tr(message(199, option.colorLabel, option.description)),
+                    trailing = { Box(Modifier.size(10.dp).clip(CircleShape).background(attendanceInk(option, colors))) },
+                ) { state.pendingSourceAttendance = option }
+            }
+            DesignSection(tr(message(143)), TextInset)
+            SourceFavoriteAction.entries.forEach { action ->
+                DesignChoice(tr(action.label), action == state.pendingSourceFavoriteAction, Modifier.testTag("source-favorite-${action.name}"), detail = tr(action.description)) {
+                    state.pendingSourceFavoriteAction = action
+                }
+            }
         }
-        if (state.individualAttendanceMode) IndividualSourceAttendance(state) else {
-        Text(tr(message(589)), style = MiuixTheme.textStyles.title3)
-        AttendanceState.entries.forEach { option -> SourceAttendanceOption(option, state) }
-        Text(tr(message(143)), style = MiuixTheme.textStyles.title3)
-        SourceFavoriteAction.entries.forEach { action -> SourceFavoriteActionOption(action, state) }
+        // Bereich gilt für beide Bearbeitungsarten; Resolver verhindert rückwirkende graue Regeln.
+        DesignSection(tr(message(195)), TextInset)
+        AttendanceEditScope.entries.forEach { scope ->
+            DesignChoice(tr(scope.label), scope == state.pendingSourceAttendanceScope, Modifier.testTag("source-scope-${scope.name}"), detail = tr(scope.description)) {
+                state.pendingSourceAttendanceScope = scope
+            }
         }
-        Text(tr(message(195)), style = MiuixTheme.textStyles.title3)
-        AttendanceEditScope.entries.forEach { scope -> SourceAttendanceScopeOption(scope, state) }
         if (state.pendingSourceAttendanceScope == AttendanceEditScope.SPECIFIED_AND_FUTURE) {
-            TextField(
-                value = state.pendingSourceEffectiveDate,
-                onValueChange = { state.pendingSourceEffectiveDate = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = tr(message(196)),
-            )
+            DesignField(tr(message(196)), state.pendingSourceEffectiveDate, { state.pendingSourceEffectiveDate = it }, Modifier.testTag("source-attendance-date"))
         }
-        state.feedback?.let { Text(tr(it), color = LocalTumPalette.current.onSurfaceVariant) }
-        Text(tr(message(590, (state.sourceAttendanceAffectedCount?.toString() ?: message(591)))), color = LocalTumPalette.current.onSurfaceVariant)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            TextButton(
-                text = tr(message(197)),
-                onClick = state::handleBack,
-                modifier = Modifier.width(112.dp),
-            )
-            Button(onClick = state::confirmSourceAttendance, modifier = Modifier.weight(1f)) { Text(tr(message(592))) }
-        }
-    }
-}
-
-/** Favoriten als optionale Sammelaktion; Standard behält bisherigen Zustand. */
-@Composable
-private fun SourceFavoriteActionOption(action: SourceFavoriteAction, state: CalendarControlState) {
-    val selected = action == state.pendingSourceFavoriteAction
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { state.pendingSourceFavoriteAction = action },
-        insideMargin = androidx.compose.foundation.layout.PaddingValues(12.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            RadioButton(selected = selected, onClick = { state.pendingSourceFavoriteAction = action })
-            Column(modifier = Modifier.padding(start = 8.dp)) {
-                Text(tr(action.label), style = MiuixTheme.textStyles.body1)
-                Text(tr(action.description), color = LocalTumPalette.current.onSurfaceVariant)
-            }
-        }
-    }
-}
-
-/** Dreizustandskarte ändert nur Entwurf; vor Bestätigung keine Regeln speichern. */
-@Composable
-private fun SourceAttendanceOption(option: AttendanceState, state: CalendarControlState) {
-    val selected = option == state.pendingSourceAttendance
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { state.pendingSourceAttendance = option },
-        insideMargin = androidx.compose.foundation.layout.PaddingValues(14.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            RadioButton(selected = selected, onClick = { state.pendingSourceAttendance = option })
-            Column(modifier = Modifier.padding(start = 8.dp)) {
-                Text(tr(option.label), style = MiuixTheme.textStyles.title3)
-                Text(tr(message(199, (option.colorLabel), (option.description))), color = LocalTumPalette.current.onSurfaceVariant)
-            }
-        }
-    }
-}
-
-/** Bereichskarte ändert nur Entwurf; Resolver verhindert rückwirkende graue Regeln. */
-@Composable
-private fun SourceAttendanceScopeOption(scope: AttendanceEditScope, state: CalendarControlState) {
-    val selected = scope == state.pendingSourceAttendanceScope
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { state.pendingSourceAttendanceScope = scope },
-        insideMargin = androidx.compose.foundation.layout.PaddingValues(12.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            RadioButton(selected = selected, onClick = { state.pendingSourceAttendanceScope = scope })
-            Column(modifier = Modifier.padding(start = 8.dp)) {
-                Text(tr(scope.label), style = MiuixTheme.textStyles.body1)
-                Text(tr(scope.description), color = LocalTumPalette.current.onSurfaceVariant)
-            }
-        }
+        state.feedback?.let { DesignText(tr(it), 12, TextInset, muted = true) }
+        DesignText(tr(message(590, state.sourceAttendanceAffectedCount?.toString() ?: message(591))), 12, TextInset.testTag("source-attendance-count"), muted = true)
+        DesignPillButton(tr(message(197)), Modifier.testTag("source-attendance-cancel"), primary = false, onClick = state::handleBack)
     }
 }
