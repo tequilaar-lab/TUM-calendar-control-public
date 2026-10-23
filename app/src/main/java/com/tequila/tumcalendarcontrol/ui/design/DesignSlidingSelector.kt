@@ -14,6 +14,8 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -47,14 +49,26 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
 /**
- * Schwebematerial für ausgewählte Elemente: hellste Fläche mit weichem Schatten und Glanzkante (dunkel: zarte Aufhellung).
+ * Glasmaterial für ausgewählte Elemente: durchscheinender Verlauf (oben heller), zarter Akzentschimmer und
+ * Lichtkante, ohne Schatten – die Seite bleibt sichtbar, statt von einer deckenden grauen Fläche verdeckt zu werden.
  * progress 0..1 blendet das Material sanft ein (für Auswahlwechsel ohne Sprung).
  */
 fun Modifier.designSelectionBlock(colors: DesignColors, corner: Dp, progress: Float = 1f): Modifier {
     if (progress <= 0f) return this
     val shape = RoundedCornerShape(corner)
-    val fill = if (colors.isDark) Color.White.copy(alpha = .12f * progress) else colors.floating.copy(alpha = progress)
-    return designGlow(corner, colors, strength = .55f * progress).clip(shape).background(fill).designSheen(shape, colors, progress > .5f)
+    val (top, bottom) = if (colors.isDark) .10f to .04f else .55f to .22f
+    val glass = Brush.verticalGradient(listOf(Color.White.copy(alpha = top * progress), Color.White.copy(alpha = bottom * progress)))
+    val tint = colors.accent.copy(alpha = (if (colors.isDark) .06f else .04f) * progress)
+    // Lichtkante oben hell, unten als zarte Tintenlinie: gibt der durchscheinenden Fläche eine Form ohne Schatten
+    // (ein Schatten schiene durch die Fläche und machte sie grau).
+    val rim = Brush.verticalGradient(listOf(
+        Color.White.copy(alpha = (if (colors.isDark) .30f else 1f) * progress),
+        (if (colors.isDark) Color.White.copy(alpha = .06f) else colors.ink.copy(alpha = .10f)).let { it.copy(alpha = it.alpha * progress) },
+    ))
+    return clip(shape)
+        .background(tint)
+        .background(glass)
+        .border(1.dp, rim, shape)
 }
 
 /**
