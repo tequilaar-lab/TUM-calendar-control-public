@@ -13,7 +13,7 @@ Version: **1.2.0**, Build **59**. Die Oberfläche unterstützt **Deutsch, Englis
 
 ## Oberfläche
 
-Seit 1.2.0 hat die App ein ruhiges, akademisches Erscheinungsbild: große Seitentitel, Milchglaskarten und schwebende Hauptaktionen sowie eine untere Navigation aus Glas. Alle Bedienelemente basieren auf Miuix; den Glaseffekt liefert backdrop. Unter **Einstellungen → Darstellung** lassen sich Hell/Dunkel, je zwei Farbpaletten und die Glasstufe (**Aus, Weich, Standard, Klar**) wählen. Android 12 zeigt nur Unschärfe, erst ab Android 13 kommt die Linsenbrechung hinzu; ältere Geräte verwenden deckende Flächen. Bestätigungen wie Neulesen, Bereinigen, Zieländerung und Wiederherstellen erscheinen als Glasdialog über der ganzen Seite. In der Kursauswahl wählen **Alle Kurse auswählen** und **Ganzen Kurs auswählen** schnell aus; beide fügen nur hinzu und hängen weder von der Suche noch vom Anzeigefilter ab.
+Seit 1.2.0 hat die App ein ruhiges, akademisches Erscheinungsbild: große Seitentitel, Milchglaskarten und schwebende Hauptaktionen sowie eine untere Navigation aus Glas. Alle Bedienelemente basieren auf Miuix; den Glaseffekt liefert backdrop. Unter **Einstellungen → Darstellung** lassen sich Hell/Dunkel, je zwei Farbpaletten und die Glasstufe (**Aus, Weich, Standard, Klar**) wählen. Android 12 zeigt nur Unschärfe, erst ab Android 13 kommt die Linsenbrechung hinzu; ältere Geräte verwenden deckende Flächen. Bestätigungen wie Neulesen, Bereinigen, Zieländerung und Wiederherstellen erscheinen als Glasdialog über der ganzen Seite. In der Kursauswahl wählen **Alle Kurse auswählen** und **Ganzen Kurs auswählen** schnell aus. Ist bereits alles gewählt, heben dieselben Schaltflächen die Auswahl wieder auf. Beide hängen weder von der Suche noch vom Anzeigefilter ab.
 
 Der Browser ordnet Kurse nach **Kursname → Lehrtyp → Einzeltermin**. Namen und Typen strukturieren ausschließlich die Anzeige. Synchronisierung und Bereinigung verwenden immer **Quell-UID und ursprünglichen Instanzschlüssel**; gleichzeitige unterschiedliche Kurse bleiben getrennt.
 
@@ -35,7 +35,7 @@ Die App verwendet Kotlin, Jetpack Compose mit Miuix, backdrop (Glaseffekte), iCa
 ./gradlew :app:testDebugUnitTest :app:assembleDebug
 ```
 
-Dieses persönliche Lernprojekt entstand mit umfangreicher KI-Unterstützung bei Code und Fehlersuche. Projektentscheidungen, Anforderungen und die Bewertung möglicher Fehlerursachen lagen beim Entwickler.
+Seit Version 1.2.0 hat **Claude** (Anthropic) die Weiterentwicklung übernommen und die Oberfläche neu gestaltet. Anforderungen, Abnahme und Freigaben liegen weiterhin beim Entwickler.
 
 Lokale Tests und ein erfolgreicher Build ersetzen keine Prüfung auf einem echten Gerät oder der tatsächlichen Kalenderausgabe. Die Google-Verbindung erfordert eine passende Google-Cloud-Konfiguration für die verwendete App-/Signaturkombination.
 
