@@ -64,12 +64,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 internal fun OverviewScreen(state: CalendarControlState) {
-    CourseList(
-        courses = state.displayedCourses,
-        heading = if (state.sourceCatalogLoaded) message(333) else message(334),
-        browserStateKey = "overview",
-        onCourseClick = state::openCourse,
-    )
+    // Neues Erscheinungsbild der Übersicht (Verzeichnis + Detail); Suche und Favoriten folgen in eigener Migration.
+    OverviewHome(state)
 }
 
 @Composable
@@ -205,11 +201,6 @@ internal fun FavoritesScreen(state: CalendarControlState) {
         onCourseClick = state::openCourse,
         leadingItems = { item { InformationCard(message(358), message(359)) } },
     )
-}
-
-@Composable
-private fun CourseList(courses: List<Course>, heading: String, browserStateKey: String, onCourseClick: (String) -> Unit) {
-    AdaptiveCourseBrowser(courses, heading, browserStateKey, onCourseClick)
 }
 
 /** Breite Ansicht mit Liste und Zusatzbereich; schmale Ansicht als einzelne scrollbare Liste. */

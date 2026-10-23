@@ -77,3 +77,29 @@ internal fun AppScreen.subtitle(): String? = when (this) {
     AppScreen.RULE_BACKUP -> message(181)
     else -> null
 }
+
+/**
+ * Englische Kleinbeschriftung über dem Seitentitel; auf Nutzerwunsch in allen Sprachen gleich und daher keine Übersetzungsressource.
+ * Die Übersicht leitet ihre Kennzeichnung aus den Kursterminen ab (homeSemesterKicker).
+ */
+internal fun AppScreen.kicker(): String = when (this) {
+    AppScreen.OVERVIEW -> NeutralOverviewKicker
+    AppScreen.DETAIL -> "COURSE / DETAIL"
+    AppScreen.ATTENDANCE -> "COURSE / PREFERENCES"
+    AppScreen.COURSE_EDIT -> "COURSE / EDIT"
+    AppScreen.SEARCH -> "FIND A COURSE"
+    AppScreen.FAVORITES -> "COLLECTION"
+    AppScreen.MORE -> "LEGACY / ENTRY"
+    AppScreen.SETTINGS -> "PREFERENCES"
+    AppScreen.PROFILE -> "PROFILE"
+    AppScreen.SYNC_CONFIGURATION -> "CONNECTIONS"
+    AppScreen.SYNC_PREVIEW -> "DEMO / OFFLINE"
+    AppScreen.SOURCE_RANGE -> "01 / SOURCE"
+    AppScreen.SOURCE_PREVIEW -> "02 / COURSES"
+    AppScreen.SOURCE_ATTENDANCE -> "03 / PREFERENCES"
+    AppScreen.MANUAL_EVENTS -> "PERSONAL / EVENTS"
+    AppScreen.MANAGED_SYNC_PREVIEW -> "04 / REVIEW"
+    AppScreen.OUTPUT_CLEANUP -> "CALENDARS / CLEANUP"
+    AppScreen.BACKGROUND_CHECK -> "UPDATES / READ ONLY"
+    AppScreen.RULE_BACKUP -> "DATA / BACKUP"
+}

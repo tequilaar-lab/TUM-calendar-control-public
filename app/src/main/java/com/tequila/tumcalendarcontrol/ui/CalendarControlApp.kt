@@ -49,6 +49,8 @@ fun CalendarControlApp() {
     val profilePreferences = remember(context) { ProfilePreferences(context) }
     val pageMemoryPreferences = remember(context) { PageMemoryPreferences(context) }
     val appearancePreferences = remember(context) { AppearancePreferences(context) }
+    // Glasstufe getrennt gespeichert; Änderung folgt mit der Darstellungsseite, hier nur gelesen.
+    val glassLevel = remember(context) { com.tequila.tumcalendarcontrol.ui.design.GlassPreferences(context).load() }
     val courseTypeNamesPreferences = remember(context) { CourseTypeNamesPreferences(context) }
     val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
     val privateSyncConfigurationStore = remember(context) { PrivateSyncConfigurationStore(context) }
@@ -256,10 +258,13 @@ fun CalendarControlApp() {
         }.start()
     }
     BackHandler(enabled = state.canHandleBack()) { state.handleBack() }
-    androidx.compose.runtime.CompositionLocalProvider(LocalAppLanguage provides LanguageSelection(language) { chosen ->
-        languagePreferences.save(chosen)
-        language = chosen
-    }) { CalendarControlSurface(state) }
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalAppLanguage provides LanguageSelection(language) { chosen ->
+            languagePreferences.save(chosen)
+            language = chosen
+        },
+        com.tequila.tumcalendarcontrol.ui.design.LocalGlassLevel provides glassLevel,
+    ) { CalendarControlSurface(state) }
 }
 
 /** Reinen Compose-Rahmen für App und synthetische Bildtests kombinieren; keine Präferenzen oder externen Aktionen initialisieren. */

@@ -696,4 +696,14 @@
     <string name="msg_0690" formatted="false">"Clear"</string>
     <string name="msg_0691" formatted="false">"Applies to the navigation bar, floating buttons and confirmations. “Off” uses solid surfaces for higher contrast."</string>
     <string name="msg_0692" formatted="false">"This device supports glass effects only partially."</string>
+    <string name="msg_0693" formatted="false">"Courses: {0}  /  Sessions: {1}"</string>
+    <string name="msg_0694" formatted="false">"Select courses"</string>
+    <string name="msg_0695" formatted="false">"Saved on this device"</string>
+    <string name="msg_0696" formatted="false">"Current course"</string>
+    <string name="msg_0697" formatted="false">"{0} sessions · next 3 first"</string>
+    <string name="msg_0698" formatted="false">"Show all {0} sessions"</string>
+    <string name="msg_0699" formatted="false">"Show fewer"</string>
+    <string name="msg_0700" formatted="false">"Refresh courses"</string>
+    <string name="msg_0701" formatted="false">"Calendar control"</string>
+    <string name="msg_0702" formatted="false">"Show {0}"</string>
 </resources>

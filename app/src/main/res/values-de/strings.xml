@@ -696,4 +696,14 @@
     <string name="msg_0690" formatted="false">"Klar"</string>
     <string name="msg_0691" formatted="false">"Betrifft Navigationsleiste, schwebende Schaltflächen und Bestätigungen. „Aus“ nutzt deckende Flächen für höheren Kontrast."</string>
     <string name="msg_0692" formatted="false">"Dieses Gerät unterstützt Glaseffekte nur teilweise."</string>
+    <string name="msg_0693" formatted="false">"Kurse: {0}  /  Termine: {1}"</string>
+    <string name="msg_0694" formatted="false">"Kurse wählen"</string>
+    <string name="msg_0695" formatted="false">"Lokal gespeichert"</string>
+    <string name="msg_0696" formatted="false">"Aktueller Kurs"</string>
+    <string name="msg_0697" formatted="false">"{0} Termine · zuerst die nächsten 3"</string>
+    <string name="msg_0698" formatted="false">"Alle {0} Termine zeigen"</string>
+    <string name="msg_0699" formatted="false">"Weniger zeigen"</string>
+    <string name="msg_0700" formatted="false">"Kurse aktualisieren"</string>
+    <string name="msg_0701" formatted="false">"Kalendersteuerung"</string>
+    <string name="msg_0702" formatted="false">"{0} anzeigen"</string>
 </resources>

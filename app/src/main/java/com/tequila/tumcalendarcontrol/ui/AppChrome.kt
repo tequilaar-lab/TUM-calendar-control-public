@@ -1,55 +1,61 @@
 /*
- * Aufgabe: Kopfleiste, Hauptseitenanimation, schwebende Navigation und Aktionsüberlagerung rendern.
+ * Aufgabe: Seitenrahmen rendern: Kopf (Marke, gläserne Zurück-Schaltfläche oder Profil, englische Kleinbeschriftung, Titel),
+ *   Hauptseitenanimation, Inhaltsebene als Glasquelle und schwebende Glasnavigation.
  * Ein-/Ausgabe: Navigation und bestehender Zustand -> fester Compose-Rahmen mit Animationen.
- * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
- * Nicht zuständig: Android-Berechtigungs-/Datei-/Netzwerkkoordination, iCal-Lesen, Google-Autorisierung oder Kalenderausgabe.
+ * Nebenwirkungen: Keine externen Aktionen; reine Darstellung und bestehende Aufrufrückmeldung.
+ * Nicht zuständig: Seiteninhalte, Android-Berechtigungs-/Datei-/Netzwerkkoordination, iCal-Lesen, Google-Autorisierung oder Kalenderausgabe.
  */
 package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
-import androidx.compose.ui.platform.testTag
-
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.tequila.tumcalendarcontrol.ui.design.DesignGlassNavigation
+import com.tequila.tumcalendarcontrol.ui.design.DesignNavigationItem
+import com.tequila.tumcalendarcontrol.ui.design.DesignText
+import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
+import com.tequila.tumcalendarcontrol.ui.design.LocalGlassBackdrop
+import com.tequila.tumcalendarcontrol.ui.design.designGlow
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.TopAppBar
 
-private val FixedTopBarHeight = 136.dp
-private val FloatingNavigationShape = RoundedCornerShape(30.dp)
 /** Nur am Ende scrollbarer Inhalte; kein äußeres Viewport-Padding. Systemsicherheitsbereich getrennt. */
 internal val FloatingNavigationContentClearance = 100.dp
 
@@ -63,202 +69,136 @@ internal fun CalendarControlChrome(state: CalendarControlState) {
 private fun CalendarControlScaffold(state: CalendarControlState) {
     val savedPages = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     val contentScreen = state.contentScreen
-    val showsFloatingNavigation = contentScreen.usesBottomNavigation()
+    val colors = LocalDesignColors.current
+    // Inhaltsebene: schwebende Navigation tastet sie für Unschärfe und Brechung ab.
+    val contentLayer = rememberLayerBackdrop()
     Scaffold(
         topBar = {
-            FixedAppTopBar(
-                title = contentScreen.title(),
-                subtitle = contentScreen.subtitle() ?: "\u00A0",
-                navigationIcon = {
-                    if (contentScreen.usesBackArrow()) {
-                        TactileIconButton(
-                            icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = tr(message(138)),
-                            onClick = state::handleBack,
-                        )
-                    } else {
-                        TactileProfileButton(
-                            profile = state.profile,
-                            onClick = state::openProfile,
-                        )
-                    }
+            AppPageHeader(
+                kicker = if (contentScreen == AppScreen.OVERVIEW) homeSemesterKicker(state.displayedCourses) else contentScreen.kicker(),
+                // Untertitel entfallen gemäß bestätigtem Entwurf; die Übersicht zeigt ihre Listenüberschrift als Titel.
+                title = tr(contentScreen.pageTitle(state)),
+                navigation = {
+                    if (contentScreen.usesBackArrow()) GlassBackButton(onClick = state::handleBack)
                 },
-                actions = {},
+                trailing = {
+                    if (!contentScreen.usesBackArrow()) TactileProfileButton(profile = state.profile, onClick = state::openProfile)
+                },
             )
         },
         // Navigation über Inhalt legen; keine breite dunkle Scaffold-Fläche oder Höhenänderung bei Profilrückkehr.
         bottomBar = {},
     ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    PaddingValues(
-                        start = 16.dp,
-                        top = innerPadding.calculateTopPadding() + 16.dp,
-                        end = 16.dp,
-                        // Scaffold berücksichtigt Systemnavigation; kein zusätzliches navigationBarsPadding für schwebende Navigation.
-                        bottom = innerPadding.calculateBottomPadding() + 8.dp,
-                    ),
-                ),
-        ) {
-            Box(
-                modifier = Modifier
-                    // Vollständiger Viewport; Navigationsabstand nur am Inhaltende, niemals gesamte Seite kürzen.
-                    .fillMaxSize(),
-            ) {
-                AnimatedContent(
-                    targetState = contentScreen,
-                    transitionSpec = {
-                        when (state.navigationDirection) {
-                            NavigationDirection.FORWARD -> (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 3 } + fadeOut())
-                            NavigationDirection.BACKWARD -> (slideInHorizontally { -it / 3 } + fadeIn()) togetherWith (slideOutHorizontally { it } + fadeOut())
-                            NavigationDirection.PROFILE_ENTER -> (slideInHorizontally { -it } + fadeIn()) togetherWith (slideOutHorizontally { it / 3 } + fadeOut())
-                            // Profil nach links verlassen, vorige Hauptseite vollständig von rechts einblenden; keine vertikale Neuordnung.
-                            NavigationDirection.PROFILE_EXIT -> (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 3 } + fadeOut())
-                        }
-                    },
-                    label = message(139),
-                ) { screen ->
-                    savedPages.SaveableStateProvider(screen.name) { AppScreenContent(state, screen) }
+        CompositionLocalProvider(LocalGlassBackdrop provides contentLayer) {
+            Box(Modifier.fillMaxSize().background(colors.paper)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .layerBackdrop(contentLayer)
+                        .background(colors.paper)
+                        .padding(
+                            PaddingValues(
+                                start = 16.dp,
+                                top = innerPadding.calculateTopPadding() + 8.dp,
+                                end = 16.dp,
+                                // Scaffold berücksichtigt Systemnavigation; Navigationsabstand nur am Inhaltsende.
+                                bottom = innerPadding.calculateBottomPadding(),
+                            ),
+                        ),
+                ) {
+                    AnimatedContent(
+                        targetState = contentScreen,
+                        transitionSpec = {
+                            when (state.navigationDirection) {
+                                NavigationDirection.FORWARD -> (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 3 } + fadeOut())
+                                NavigationDirection.BACKWARD -> (slideInHorizontally { -it / 3 } + fadeIn()) togetherWith (slideOutHorizontally { it } + fadeOut())
+                                NavigationDirection.PROFILE_ENTER -> (slideInHorizontally { -it } + fadeIn()) togetherWith (slideOutHorizontally { it / 3 } + fadeOut())
+                                // Profil nach links verlassen, vorige Hauptseite vollständig von rechts einblenden; keine vertikale Neuordnung.
+                                NavigationDirection.PROFILE_EXIT -> (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 3 } + fadeOut())
+                            }
+                        },
+                        label = message(139),
+                    ) { screen ->
+                        savedPages.SaveableStateProvider(screen.name) { AppScreenContent(state, screen) }
+                    }
+                }
+                // Scrollkante: Inhalt läuft unter dem Kopf weich aus statt hart abgeschnitten.
+                Box(
+                    Modifier.align(Alignment.TopCenter).padding(top = innerPadding.calculateTopPadding()).fillMaxWidth().height(14.dp)
+                        .background(Brush.verticalGradient(listOf(colors.paper, colors.paper.copy(alpha = 0f)))),
+                )
+                if (contentScreen.usesBottomNavigation()) {
+                    AppBottomNavigation(state, contentScreen, Modifier.align(Alignment.BottomCenter))
                 }
             }
-            if (showsFloatingNavigation) {
-                AppBottomNavigation(
-                    state = state,
-                    selectedScreen = contentScreen,
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                )
-            }
         }
     }
 }
 
-/** Statusleistenabstand und feste Kopfhöhe reservieren; Symbole und Untertitel überlappen nicht. */
+/** Titel je Seite; die Übersicht nennt ihre Liste, weil die Marke bereits in der Kopfzeile steht. */
+private fun AppScreen.pageTitle(state: CalendarControlState): String = when (this) {
+    AppScreen.OVERVIEW -> if (state.sourceCatalogLoaded) message(333) else message(334)
+    else -> title()
+}
+
+/**
+ * Kopf wie im bestätigten Entwurf: Markenzeile (TUM fett im Akzent, Produktname gedämpft) mit Zurück links oder Profil rechts,
+ * darunter englische Kleinbeschriftung und großer Titel. Gleiche Zeilenhöhe mit/ohne Zurück, damit Titel nicht springen.
+ */
 @Composable
-private fun FixedAppTopBar(
+private fun AppPageHeader(
+    kicker: String,
     title: String,
-    subtitle: String,
-    navigationIcon: @Composable () -> Unit,
-    actions: @Composable RowScope.() -> Unit,
+    navigation: @Composable () -> Unit,
+    trailing: @Composable () -> Unit,
 ) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(FixedTopBarHeight)
-            .statusBarsPadding(),
+    val colors = LocalDesignColors.current
+    Column(Modifier.fillMaxWidth().background(colors.paper).statusBarsPadding().padding(start = 16.dp, end = 20.dp, top = 6.dp, bottom = 10.dp)) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 52.dp), verticalAlignment = Alignment.CenterVertically) {
+            navigation()
+            Spacer(Modifier.width(12.dp))
+            DesignText("TUM", 15, weight = FontWeight.Bold, color = colors.accent, tracking = 1f)
+            DesignText("  /  " + tr(message(701)), 12, muted = true, modifier = Modifier.weight(1f), maxLines = 1)
+            trailing()
+        }
+        Column(Modifier.padding(start = 12.dp, top = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            DesignText(kicker, 10, muted = true, mono = true, tracking = .8f, modifier = Modifier.testTag("page-kicker"))
+            DesignText(title, 30, maxLines = 2, modifier = Modifier.testTag("page-title"))
+        }
+    }
+}
+
+/** Runde Glas-Zurück-Schaltfläche (Miuix IconButton) mit heller Fläche und weichem Schatten. */
+@Composable
+private fun GlassBackButton(onClick: () -> Unit) {
+    val colors = LocalDesignColors.current
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.designGlow(20.dp, colors, strength = .7f).testTag("back-button"),
+        backgroundColor = colors.floating,
+        cornerRadius = 20.dp,
+        minHeight = 40.dp,
+        minWidth = 40.dp,
     ) {
-        TopAppBar(
-            title = tr(title),
-            subtitle = tr(subtitle),
-            navigationIcon = navigationIcon,
-            actions = actions,
-            modifier = Modifier.fillMaxSize(),
+        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = tr(message(138)), tint = colors.ink, modifier = Modifier.size(20.dp))
+    }
+}
+
+/** Vier Hauptziele als Glasnavigation (Miuix FloatingNavigationBar); Beschriftungen lokalisiert. */
+@Composable
+private fun AppBottomNavigation(state: CalendarControlState, selectedScreen: AppScreen, modifier: Modifier = Modifier) {
+    val targets = listOf(AppScreen.OVERVIEW, AppScreen.SEARCH, AppScreen.FAVORITES, AppScreen.SETTINGS)
+    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
+        DesignGlassNavigation(
+            items = listOf(
+                DesignNavigationItem(Icons.Rounded.Home, tr(message(141))),
+                DesignNavigationItem(Icons.Rounded.Search, tr(message(142))),
+                DesignNavigationItem(Icons.Rounded.FavoriteBorder, tr(message(143))),
+                DesignNavigationItem(Icons.Rounded.Settings, tr(message(144))),
+            ),
+            selected = selectedScreen.bottomNavigationIndex(),
+            modifier = Modifier.testTag("floating-navigation"),
+            onSelect = { index -> state.open(targets[index]) },
         )
-    }
-}
-
-@Composable
-private fun AppBottomNavigation(
-    state: CalendarControlState,
-    selectedScreen: AppScreen,
-    modifier: Modifier = Modifier,
-) {
-    val palette = LocalTumPalette.current
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .testTag("floating-navigation")
-            .shadow(12.dp, FloatingNavigationShape)
-            .clip(FloatingNavigationShape)
-            .background(palette.surfaceContainer)
-            .border(1.dp, palette.outline.copy(alpha = 0.35f), FloatingNavigationShape)
-            .padding(horizontal = 6.dp, vertical = 4.dp),
-    ) {
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val itemWidth = maxWidth / 4
-            val selectedOffset = animateDpAsState(
-                targetValue = itemWidth * selectedScreen.bottomNavigationIndex(),
-                label = message(140),
-            ).value
-            Box(
-                modifier = Modifier
-                    .offset(x = selectedOffset)
-                    .width(itemWidth)
-                    .height(60.dp)
-                    .padding(horizontal = 4.dp)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(palette.primaryContainer.copy(alpha = 0.82f)),
-            )
-            Box(Modifier.fillMaxWidth()) {
-                // Vier gleiche Slots und Indikator teilen itemWidth; keine Ausrichtungsverschiebung.
-                TactileNavigationItem(
-                    Icons.Rounded.Home,
-                    message(141),
-                    selectedScreen == AppScreen.OVERVIEW,
-                    onClick = { state.open(AppScreen.OVERVIEW) },
-                    modifier = Modifier.width(itemWidth).offset(x = itemWidth * 0),
-                )
-                TactileNavigationItem(
-                    Icons.Rounded.Search,
-                    message(142),
-                    selectedScreen == AppScreen.SEARCH,
-                    onClick = { state.open(AppScreen.SEARCH) },
-                    modifier = Modifier.width(itemWidth).offset(x = itemWidth * 1),
-                )
-                TactileNavigationItem(
-                    Icons.Rounded.Favorite,
-                    message(143),
-                    selectedScreen == AppScreen.FAVORITES,
-                    onClick = { state.open(AppScreen.FAVORITES) },
-                    modifier = Modifier.width(itemWidth).offset(x = itemWidth * 2),
-                )
-                TactileNavigationItem(
-                    Icons.Rounded.Settings,
-                    message(144),
-                    selectedScreen == AppScreen.SETTINGS,
-                    onClick = { state.open(AppScreen.SETTINGS) },
-                    modifier = Modifier.width(itemWidth).offset(x = itemWidth * 3),
-                )
-            }
-        }
-    }
-}
-
-/** Weitere Aktionen als eigene vollständige Überlagerung; getrennt von Navigationsanimation. */
-@Composable
-private fun MoreOverlay(state: CalendarControlState) {
-    val palette = LocalTumPalette.current
-    AnimatedVisibility(
-        visible = state.isMoreOpen,
-        enter = slideInHorizontally { it } + fadeIn(),
-        exit = slideOutHorizontally { it } + fadeOut(),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(palette.surface),
-        ) {
-            FixedAppTopBar(
-                title = AppScreen.MORE.title(),
-                subtitle = "\u00A0",
-                navigationIcon = {
-                    TactileIconButton(
-                        icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = tr(message(145)),
-                        onClick = state::handleBack,
-                    )
-                },
-                actions = {},
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
-            ) {
-                MoreScreen(state)
-            }
-        }
     }
 }

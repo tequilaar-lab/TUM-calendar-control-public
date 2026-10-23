@@ -18,6 +18,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.performTextReplacement
 import org.junit.Assert.*
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -88,10 +89,12 @@ class CalendarControlScreenshotTest {
 
     @Test
     @Config(sdk = [36], qualifiers = "w840dp-h892dp-420dpi")
-    fun `深蓝配色与右侧展开目录`() {
+    fun `深蓝配色与展开屏右侧课程详情`() {
+        // Neue Übersicht: breit links Verzeichnis, rechts aktueller Kurs (früher rechter Klappbaum „展开课程目录“).
         val state = CalendarControlState().also { it.themeMode = ThemeMode.DARK; it.darkPaletteStyle = DarkPaletteStyle.DEEP_BLUE }
         render(state)
-        composeRule.onAllNodes(androidx.compose.ui.test.hasContentDescription("展开课程目录"))[0].performClick()
+        composeRule.onNodeWithText("课程 B").performClick()
+        composeRule.onNodeWithTag("overview-detail-title").assertTextEquals("课程 B")
         capture("overview_deep_blue_directory_840x892")
     }
 
