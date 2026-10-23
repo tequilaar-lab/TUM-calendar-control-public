@@ -733,4 +733,14 @@
     <string name="msg_0727" formatted="false">"Glasvorschau"</string>
     <string name="msg_0728" formatted="false">"Darstellung, helle und dunkle Farben, Glaseffekt"</string>
     <string name="msg_0729" formatted="false">"So erscheinen schwebende Schaltflächen und Navigation"</string>
+    <string name="msg_0730" formatted="false">"App-Symbol"</string>
+    <string name="msg_0731" formatted="false">"Das Startsymbol wird in wenigen Sekunden aktualisiert; manche Startbildschirme setzen es an die Standardposition zurück."</string>
+    <string name="msg_0732" formatted="false">"App-Symbol wechseln?"</string>
+    <string name="msg_0733" formatted="false">"Wechseln"</string>
+    <string name="msg_0734" formatted="false">"Glasblau"</string>
+    <string name="msg_0735" formatted="false">"Papier"</string>
+    <string name="msg_0736" formatted="false">"Nacht"</string>
+    <string name="msg_0737" formatted="false">"Raster"</string>
+    <string name="msg_0738" formatted="false">"Umlauf"</string>
+    <string name="msg_0739" formatted="false">"„{0}“ wird als Startsymbol verwendet. Kalender, Kurse und Einstellungen bleiben unverändert."</string>
 </resources>

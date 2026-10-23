@@ -1,0 +1,15 @@
+<!-- Aufgabe: App-Symbol „Glasblau“ (Vordergrund); reine Vektorgrafik ohne Daten oder Aktionen. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:pivotX="54" android:pivotY="54" android:scaleX="0.92" android:scaleY="0.92">
+        <path android:fillColor="#EBFFFFFF" android:pathData="M40,30H68A13,13 0 0 1 81,43V67A13,13 0 0 1 68,80H40A13,13 0 0 1 27,67V43A13,13 0 0 1 40,30Z" />
+        <path android:fillColor="#400065A8" android:pathData="M34,44H74A1,1 0 0 1 75,45V45A1,1 0 0 1 74,46H34A1,1 0 0 1 33,45V45A1,1 0 0 1 34,44Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M42.5,25H42.5A2.5,2.5 0 0 1 45,27.5V33.5A2.5,2.5 0 0 1 42.5,36H42.5A2.5,2.5 0 0 1 40,33.5V27.5A2.5,2.5 0 0 1 42.5,25ZM65.5,25H65.5A2.5,2.5 0 0 1 68,27.5V33.5A2.5,2.5 0 0 1 65.5,36H65.5A2.5,2.5 0 0 1 63,33.5V27.5A2.5,2.5 0 0 1 65.5,25Z" />
+        <path android:fillColor="#FF237A42" android:pathData="M36,62a5,5 0 1 0 10,0a5,5 0 1 0 -10,0Z" />
+        <path android:fillColor="#FF0065A8" android:pathData="M49,62a5,5 0 1 0 10,0a5,5 0 1 0 -10,0Z" />
+        <path android:fillColor="#FF9AA4AB" android:pathData="M62,62a5,5 0 1 0 10,0a5,5 0 1 0 -10,0Z" />
+    </group>
+</vector>

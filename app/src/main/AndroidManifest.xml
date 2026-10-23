@@ -1,5 +1,5 @@
 <!--
-  Aufgabe: Android-Anwendungseinstieg und benötigte Berechtigungen deklarieren.
+  Aufgabe: Android-Anwendungseinstieg, wählbare Startsymbole (Aliasse) und benötigte Berechtigungen deklarieren.
   Ein-/Ausgabe: System liest Activity, Thema und Berechtigungen für bestätigte lokale Kalenderausgabe.
   Nebenwirkungen: HTTPS erst nach ausdrücklichem Lesen/Prüfen; Kalenderausgabe benötigt separate Berechtigungen.
   Nicht zuständig: Automatisches Schreiben, Anlegen, Ändern oder Löschen von Kalendern; Berechtigungen lösen keine Synchronisierung aus.
@@ -18,11 +18,67 @@
         android:theme="@style/Theme.TumCalendarControl">
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true" />
+        <!-- Startsymbole als Aliasse: genau einer ist aktiv (Standard Glasblau); Auswahl unter Einstellungen → Darstellung. -->
+        <activity-alias
+            android:name=".LauncherGlass"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_glass"
+            android:roundIcon="@mipmap/ic_launcher_glass"
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherPaper"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_paper"
+            android:roundIcon="@mipmap/ic_launcher_paper"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherNight"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_night"
+            android:roundIcon="@mipmap/ic_launcher_night"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherGrid"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_grid"
+            android:roundIcon="@mipmap/ic_launcher_grid"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherOrbit"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_orbit"
+            android:roundIcon="@mipmap/ic_launcher_orbit"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
     </application>
 </manifest>

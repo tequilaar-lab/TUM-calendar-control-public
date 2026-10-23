@@ -1,6 +1,6 @@
-<!-- Aufgabe: Android-Darstellungsressourcen definieren; keine Konten, privaten Daten oder externen Aktionen. -->
+<!-- Aufgabe: Standard-App-Symbol (Glasblau) für Anwendung und Systemlisten; reine Ressource ohne Aktionen. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/launcher_background" />
-    <foreground android:drawable="@drawable/ic_launcher_foreground" />
-    <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
+    <background android:drawable="@drawable/ic_launcher_glass_background" />
+    <foreground android:drawable="@drawable/ic_launcher_glass_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_glass_monochrome" />
 </adaptive-icon>

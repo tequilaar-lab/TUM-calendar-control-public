@@ -1,6 +1,5 @@
 <!-- Aufgabe: Android-Darstellungsressourcen definieren; keine Konten, privaten Daten oder externen Aktionen. -->
 <resources>
-    <color name="launcher_background">#146C94</color>
     <color name="tum_date_picker_light_primary">#0065BD</color>
     <color name="tum_date_picker_light_surface">#F9F9FF</color>
     <color name="tum_date_picker_light_on_surface">#17202A</color>

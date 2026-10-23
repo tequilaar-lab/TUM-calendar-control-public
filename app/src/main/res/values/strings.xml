@@ -733,4 +733,14 @@
     <string name="msg_0727" formatted="false">"Glass preview"</string>
     <string name="msg_0728" formatted="false">"Display mode, light and dark palettes, glass"</string>
     <string name="msg_0729" formatted="false">"Floating buttons and navigation look like this"</string>
+    <string name="msg_0730" formatted="false">"App icon"</string>
+    <string name="msg_0731" formatted="false">"The home screen icon updates within a few seconds; some launchers move it back to its default position."</string>
+    <string name="msg_0732" formatted="false">"Change app icon?"</string>
+    <string name="msg_0733" formatted="false">"Change"</string>
+    <string name="msg_0734" formatted="false">"Glass blue"</string>
+    <string name="msg_0735" formatted="false">"Paper"</string>
+    <string name="msg_0736" formatted="false">"Night"</string>
+    <string name="msg_0737" formatted="false">"Grid"</string>
+    <string name="msg_0738" formatted="false">"Orbit"</string>
+    <string name="msg_0739" formatted="false">"“{0}” will be used as the home screen icon. Calendars, courses and settings stay unchanged."</string>
 </resources>

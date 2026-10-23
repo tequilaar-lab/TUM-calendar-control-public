@@ -1,5 +1,5 @@
 /*
- * Aufgabe: Darstellungsseite: Hell/Dunkel, helle und dunkle Palette, Glasstufe mit Vorschau.
+ * Aufgabe: Darstellungsseite: Hell/Dunkel, helle und dunkle Palette, Glasstufe mit Vorschau, Startsymbol.
  * Ein-/Ausgabe: Darstellungszustand und Glasauswahl -> sofort gespeicherte Auswahl (wie bisher ohne Speichern-Schaltfläche).
  * Nebenwirkungen: Keine externen Aktionen; Speichern übernehmen Zustand bzw. App-Einstieg (Glasstufe).
  * Nicht zuständig: Teilnahmefarben, Systemeinstellungen oder Gerätefähigkeit (nur angezeigt).
@@ -67,6 +67,7 @@ internal fun AppearanceScreen(state: CalendarControlState) {
         if (LocalGlassSupport.current != GlassSupport.FULL) DesignText(tr(message(692)), 12, TextInset, color = LocalDesignColors.current.danger)
         DesignSection(tr(message(727)), TextInset, index = tr(glass.level.label))
         GlassPreview()
+        AppIconSelector()
     }
 }
 
