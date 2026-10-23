@@ -113,6 +113,18 @@ class SettingsPagesTest {
         capture("appearance_dark_redesign_412x892")
     }
 
+    @Test fun `外观页触感开关与档位`() {
+        var settings = com.tequila.tumcalendarcontrol.ui.design.HapticSettings()
+        val state = state(AppScreen.APPEARANCE)
+        composeRule.setContent {
+            CompositionLocalProvider(
+                com.tequila.tumcalendarcontrol.ui.design.LocalHapticSelection provides com.tequila.tumcalendarcontrol.ui.design.HapticSelection(settings) { settings = it },
+            ) { CalendarControlSurface(state) }
+        }
+        composeRule.onNodeWithTag("haptics-enabled").performSemanticsAction(SemanticsActions.OnClick)
+        assertFalse(settings.enabled)
+    }
+
     @Test fun `个人资料保存后返回`() {
         val state = state(AppScreen.SETTINGS).also { it.openProfile() }
         render(state)

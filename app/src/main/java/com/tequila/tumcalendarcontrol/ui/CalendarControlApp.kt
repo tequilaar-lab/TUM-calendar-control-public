@@ -52,6 +52,9 @@ fun CalendarControlApp() {
     // Glasstufe getrennt gespeichert (eigener Schlüssel); die Darstellungsseite wählt über LocalGlassSelection.
     val glassPreferences = remember(context) { com.tequila.tumcalendarcontrol.ui.design.GlassPreferences(context) }
     var glassLevel by remember { mutableStateOf(glassPreferences.load()) }
+    // Haptik getrennt gespeichert (eigene Schlüssel); Darstellungsseite ändert über LocalHapticSelection.
+    val hapticPreferences = remember(context) { com.tequila.tumcalendarcontrol.ui.design.HapticPreferences(context) }
+    var hapticSettings by remember { mutableStateOf(hapticPreferences.load()) }
     val courseTypeNamesPreferences = remember(context) { CourseTypeNamesPreferences(context) }
     val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
     val privateSyncConfigurationStore = remember(context) { PrivateSyncConfigurationStore(context) }
@@ -265,6 +268,11 @@ fun CalendarControlApp() {
             language = chosen
         },
         com.tequila.tumcalendarcontrol.ui.design.LocalGlassLevel provides glassLevel,
+        com.tequila.tumcalendarcontrol.ui.design.LocalDesignHaptics provides com.tequila.tumcalendarcontrol.ui.design.rememberViewHaptics(hapticSettings),
+        com.tequila.tumcalendarcontrol.ui.design.LocalHapticSelection provides com.tequila.tumcalendarcontrol.ui.design.HapticSelection(hapticSettings) { chosen ->
+            hapticPreferences.save(chosen)
+            hapticSettings = chosen
+        },
         com.tequila.tumcalendarcontrol.ui.design.LocalGlassSelection provides com.tequila.tumcalendarcontrol.ui.design.GlassSelection(glassLevel) { chosen ->
             glassPreferences.save(chosen)
             glassLevel = chosen

@@ -6,6 +6,7 @@
  */
 package com.tequila.tumcalendarcontrol.ui
 
+import com.tequila.tumcalendarcontrol.ui.design.hapticSelectable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -57,7 +57,7 @@ private fun PaletteTile(label: String, palette: DesignColors, selected: Boolean,
     Box(
         modifier.height(72.dp).clip(shape).background(palette.paper)
             .border(if (selected) 2.dp else 1.dp, if (selected) current.ink else current.ink.copy(alpha = .14f), shape)
-            .selectable(selected, role = Role.RadioButton, onClick = onClick).padding(14.dp),
+            .hapticSelectable(selected, Role.RadioButton, onClick).padding(14.dp),
     ) {
         DesignText(label, 14, Modifier.align(Alignment.BottomStart), color = palette.ink, weight = if (selected) FontWeight.Medium else FontWeight.Normal)
         if (selected) DesignText("✓", 16, Modifier.align(Alignment.TopEnd), color = palette.ink)

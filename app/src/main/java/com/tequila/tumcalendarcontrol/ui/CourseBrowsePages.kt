@@ -8,6 +8,7 @@ package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
+import com.tequila.tumcalendarcontrol.ui.design.hapticClickable
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.clickable
@@ -35,7 +36,7 @@ internal fun OverviewHome(state: CalendarControlState) {
             DesignText(
                 tr(message(694)) + "  ↗", 14, color = colors.accent, weight = FontWeight.Medium,
                 // Tippfläche 48 dp hoch; Zeilenabstand darunter entsprechend verringert, Lage bleibt gleich.
-                modifier = Modifier.clickable { if (state.sourceCatalogLoaded) state.openSourceCourseSelector() else state.openSourceRange() }
+                modifier = Modifier.hapticClickable { if (state.sourceCatalogLoaded) state.openSourceCourseSelector() else state.openSourceRange() }
                     .heightIn(min = 48.dp).wrapContentHeight().padding(horizontal = 4.dp).testTag("overview-select"),
             )
         }

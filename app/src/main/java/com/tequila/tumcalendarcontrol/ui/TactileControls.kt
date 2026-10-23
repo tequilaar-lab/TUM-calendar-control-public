@@ -83,6 +83,7 @@ private fun TactileSurface(
     pressedColor: Color,
     content: @Composable () -> Unit,
 ) {
+    val haptics = com.tequila.tumcalendarcontrol.ui.design.LocalDesignHaptics.current
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.92f else 1f, label = message(667))
@@ -101,7 +102,7 @@ private fun TactileSurface(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick,
+                onClick = { haptics.perform(com.tequila.tumcalendarcontrol.ui.design.HapticEvent.ACTION); onClick() },
             ),
         contentAlignment = Alignment.Center,
     ) { content() }

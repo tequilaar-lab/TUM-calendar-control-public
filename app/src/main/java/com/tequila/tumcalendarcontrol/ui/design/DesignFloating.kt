@@ -49,6 +49,7 @@ import top.yukonga.miuix.kmp.basic.Icon
 @Composable
 fun DesignFloatingButton(label: String, enabled: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val colors = LocalDesignColors.current
+    val haptics = LocalDesignHaptics.current
     val spec = glassSpec(LocalGlassLevel.current, LocalGlassSupport.current)
     val solid = !spec.enabled || LocalGlassBackdrop.current == null
     val surface = when {
@@ -59,7 +60,7 @@ fun DesignFloatingButton(label: String, enabled: Boolean, modifier: Modifier = M
     }
     val ink = when { !enabled -> colors.muted; solid -> colors.paper; else -> colors.accent }
     Button(
-        onClick = onClick, enabled = enabled, cornerRadius = DesignRadii.Pill, minHeight = 56.dp,
+        onClick = { haptics.perform(HapticEvent.ACTION); onClick() }, enabled = enabled, cornerRadius = DesignRadii.Pill, minHeight = 56.dp,
         modifier = modifier.heightIn(min = 56.dp).then(surface),
         colors = ButtonDefaults.buttonColors(color = Color.Transparent, disabledColor = Color.Transparent, contentColor = ink, disabledContentColor = colors.muted),
     ) {
@@ -79,6 +80,7 @@ data class DesignNavigationItem(val icon: ImageVector, val label: String)
 @Composable
 fun DesignGlassNavigation(items: List<DesignNavigationItem>, selected: Int, modifier: Modifier = Modifier, onSelect: (Int) -> Unit) {
     val colors = LocalDesignColors.current
+    val haptics = LocalDesignHaptics.current
     val spec = glassSpec(LocalGlassLevel.current, LocalGlassSupport.current)
     FloatingNavigationBar(
         modifier = modifier.designGlass(colors, DesignRadii.Navigation, LocalGlassBackdrop.current, spec, rim = true),
@@ -91,7 +93,7 @@ fun DesignGlassNavigation(items: List<DesignNavigationItem>, selected: Int, modi
             val tint = if (active) colors.accent else colors.muted
             Column(
                 Modifier.width(64.dp).heightIn(min = 52.dp)
-                    .selectable(active, role = Role.Tab, onClick = { onSelect(index) }),
+                    .selectable(active, role = Role.Tab, onClick = { if (!active) haptics.perform(HapticEvent.SELECTION); onSelect(index) }),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
             ) {
                 Icon(item.icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))

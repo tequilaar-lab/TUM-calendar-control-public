@@ -8,6 +8,7 @@ package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
+import com.tequila.tumcalendarcontrol.ui.design.hapticSelectable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -75,7 +75,7 @@ internal fun AppIconSelector() {
 private fun AppIconTile(style: AppIconStyle, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val colors = LocalDesignColors.current
     Column(
-        modifier.selectable(selected, role = Role.RadioButton, onClick = onClick).padding(vertical = 4.dp),
+        modifier.hapticSelectable(selected, Role.RadioButton, onClick).padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Box(

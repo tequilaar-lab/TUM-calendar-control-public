@@ -10,6 +10,7 @@ package com.tequila.tumcalendarcontrol.ui
 import com.tequila.tumcalendarcontrol.i18n.message
 import com.tequila.tumcalendarcontrol.domain.browseKey
 
+import com.tequila.tumcalendarcontrol.ui.design.hapticClickable
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.animation.AnimatedVisibility
@@ -144,7 +145,7 @@ private fun OverviewIndex(
             Spacer(Modifier.height(16.dp))
             DesignText(
                 tr(message(700)) + "  ↗", 12, color = colors.accent,
-                modifier = Modifier.clickable { state.openSourceRange() }.heightIn(min = 48.dp).wrapContentHeight().padding(horizontal = 4.dp),
+                modifier = Modifier.hapticClickable { state.openSourceRange() }.heightIn(min = 48.dp).wrapContentHeight().padding(horizontal = 4.dp),
             )
         }
     }
@@ -157,7 +158,7 @@ private fun OverviewIndexRow(index: Int, group: CourseDisplayGroup, selected: Bo
     val rotation by animateFloatAsState(if (expanded) -90f else 0f, label = "overview-arrow")
     val favorite = group.courses.any { it.isFavorite }
     Row(
-        Modifier.fillMaxWidth().background(if (selected) colors.wash else colors.paper).clickable(onClick = onClick),
+        Modifier.fillMaxWidth().background(if (selected) colors.wash else colors.paper).hapticClickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.width(2.dp).height(54.dp).background(if (selected) colors.accent else colors.paper))

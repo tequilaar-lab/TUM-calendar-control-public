@@ -8,6 +8,7 @@ package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
+import com.tequila.tumcalendarcontrol.ui.design.hapticClickable
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -62,7 +63,7 @@ internal fun OverviewCourseSessions(group: CourseDisplayGroup, compact: Boolean,
             group.teachingTypes.forEach { type ->
                 val isActive = type.key == active.key
                 // Tippfläche 48 dp hoch; Beschriftung und Unterstrich mittig darin.
-                Column(Modifier.clickable { activeTypeKey = type.key; showAll = false }.heightIn(min = 48.dp), verticalArrangement = Arrangement.Center) {
+                Column(Modifier.hapticClickable { activeTypeKey = type.key; showAll = false }.heightIn(min = 48.dp), verticalArrangement = Arrangement.Center) {
                     DesignText(tr(type.label), 12, color = if (isActive) colors.accent else colors.muted, weight = if (isActive) FontWeight.Medium else FontWeight.Normal)
                     Box(Modifier.padding(top = 4.dp).width(48.dp).height(2.dp).background(if (isActive) colors.accent else Color.Transparent))
                 }
@@ -79,7 +80,7 @@ internal fun OverviewCourseSessions(group: CourseDisplayGroup, compact: Boolean,
         if (more) {
             DesignText(
                 tr(if (showAll) message(699) else message(698, sessions.size)) + if (showAll) "  ↑" else "  ↓", 12, color = colors.accent,
-                modifier = Modifier.clickable { showAll = !showAll }.padding(vertical = 8.dp),
+                modifier = Modifier.hapticClickable { showAll = !showAll }.padding(vertical = 8.dp),
             )
         }
     }
@@ -95,7 +96,7 @@ private fun OverviewSessionRow(course: Course, compact: Boolean, colors: DesignC
         val end = course.endsAt?.atZone(Berlin)
         start!!.format(TimeFormat) + (end?.let { "–" + it.format(TimeFormat) } ?: "")
     } else course.displaySchedule
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = if (compact) 6.dp else 10.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+    Row(Modifier.fillMaxWidth().hapticClickable(onClick = onClick).padding(vertical = if (compact) 6.dp else 10.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
         if (start != null) {
             Column(Modifier.width(44.dp)) {
                 DesignText(start.dayOfMonth.toString().padStart(2, '0'), if (compact) 25 else 32, weight = FontWeight.Light)

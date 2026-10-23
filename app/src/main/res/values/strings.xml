@@ -731,7 +731,7 @@
     <string name="msg_0725" formatted="false">"Preferences &amp; data"</string>
     <string name="msg_0726" formatted="false">"Display mode"</string>
     <string name="msg_0727" formatted="false">"Glass preview"</string>
-    <string name="msg_0728" formatted="false">"Display mode, light and dark palettes, glass"</string>
+    <string name="msg_0728" formatted="false">"Display mode, palettes, glass, app icon and haptics"</string>
     <string name="msg_0729" formatted="false">"Floating buttons and navigation look like this"</string>
     <string name="msg_0730" formatted="false">"App icon"</string>
     <string name="msg_0731" formatted="false">"The home screen icon updates within a few seconds; some launchers move it back to its default position."</string>
@@ -743,4 +743,10 @@
     <string name="msg_0737" formatted="false">"Grid"</string>
     <string name="msg_0738" formatted="false">"Orbit"</string>
     <string name="msg_0739" formatted="false">"“{0}” will be used as the home screen icon. Calendars, courses and settings stay unchanged."</string>
+    <string name="msg_0740" formatted="false">"Haptic feedback"</string>
+    <string name="msg_0741" formatted="false">"Enable haptic feedback"</string>
+    <string name="msg_0742" formatted="false">"Light vibration on selections, buttons and confirmations; also follows the system setting."</string>
+    <string name="msg_0743" formatted="false">"Light"</string>
+    <string name="msg_0744" formatted="false">"Strength"</string>
+    <string name="msg_0745" formatted="false">"Strong"</string>
 </resources>

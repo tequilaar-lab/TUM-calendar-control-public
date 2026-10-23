@@ -3,7 +3,7 @@
  * Ein-/Ausgabe: Lokalisierte Beschriftungen, Werte und Rückrufe -> Miuix RadioButton, Checkbox, TabRowWithContour,
  *   umbrechende Auswahlchips,
  *   TextField, Button und BasicComponent mit den Farbrollen und Radien des Designs.
- * Nebenwirkungen: Keine; Rückrufe entscheiden über Zustandsänderungen.
+ * Nebenwirkungen: Kurze haptische Rückmeldung über LocalDesignHaptics; Rückrufe entscheiden über Zustandsänderungen.
  * Nicht zuständig: Fachlogik, Übersetzung, Speicherung oder Navigation.
  */
 package com.tequila.tumcalendarcontrol.ui.design
@@ -75,7 +75,8 @@ fun DesignChoice(
     onClick: () -> Unit,
 ) {
     val colors = LocalDesignColors.current
-    Row(modifier.fillMaxWidth().heightIn(min = 52.dp).selectable(selected, role = Role.RadioButton, onClick = onClick).padding(vertical = 8.dp),
+    val haptics = LocalDesignHaptics.current
+    Row(modifier.fillMaxWidth().heightIn(min = 52.dp).selectable(selected, role = Role.RadioButton) { haptics.perform(HapticEvent.SELECTION); onClick() }.padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         // Miuix-Auswahl zeigt nur beim gewählten Eintrag ein Häkchen; fester Platz hält die Beschriftungen bündig.
         Box(Modifier.size(26.dp), contentAlignment = Alignment.Center) {
@@ -90,7 +91,8 @@ fun DesignChoice(
 @Composable
 fun DesignCheck(label: String, checked: Boolean, modifier: Modifier = Modifier, detail: String = "", onChange: (Boolean) -> Unit) {
     val colors = LocalDesignColors.current
-    Row(modifier.fillMaxWidth().heightIn(min = 52.dp).toggleable(checked, role = Role.Checkbox, onValueChange = onChange).padding(vertical = 8.dp),
+    val haptics = LocalDesignHaptics.current
+    Row(modifier.fillMaxWidth().heightIn(min = 52.dp).toggleable(checked, role = Role.Checkbox) { haptics.perform(HapticEvent.SELECTION); onChange(it) }.padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         // Miuix fixiert das Kästchen auf 26 dp (requiredSize); auf Wunsch etwas kleiner: 22-dp-Rahmen, 0,85 skaliert.
         Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
@@ -117,8 +119,9 @@ private fun DesignLabel(label: String, detail: String) {
 @Composable
 fun DesignSegmented(options: List<String>, selected: Int, modifier: Modifier = Modifier, onSelect: (Int) -> Unit) {
     val colors = LocalDesignColors.current
+    val haptics = LocalDesignHaptics.current
     TabRowWithContour(
-        tabs = options, selectedTabIndex = selected, onTabSelected = onSelect,
+        tabs = options, selectedTabIndex = selected, onTabSelected = { if (it != selected) haptics.perform(HapticEvent.SELECTION); onSelect(it) },
         modifier = modifier.fillMaxWidth(), cornerRadius = DesignRadii.Field, height = 58.dp,
         colors = TabRowDefaults.tabRowColors(
             backgroundColor = colors.wash, contentColor = colors.muted,
@@ -134,6 +137,7 @@ fun DesignSegmented(options: List<String>, selected: Int, modifier: Modifier = M
 @Composable
 fun DesignChips(options: List<String>, selected: Int, modifier: Modifier = Modifier, onSelect: (Int) -> Unit) {
     val colors = LocalDesignColors.current
+    val haptics = LocalDesignHaptics.current
     FlowRow(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         options.forEachIndexed { index, option ->
             val active = index == selected
@@ -141,7 +145,7 @@ fun DesignChips(options: List<String>, selected: Int, modifier: Modifier = Modif
                 Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(DesignRadii.Field))
                     .background(if (!active) colors.wash else if (colors.isDark) colors.ink.copy(alpha = .14f) else colors.floating)
                     .then(if (active) Modifier.squircleBorder(1.dp, colors.ink.copy(alpha = .14f), DesignRadii.Field) else Modifier)
-                    .selectable(active, role = Role.RadioButton) { onSelect(index) }.padding(horizontal = 16.dp),
+                    .selectable(active, role = Role.RadioButton) { haptics.perform(HapticEvent.SELECTION); onSelect(index) }.padding(horizontal = 16.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 DesignText(option, 14, color = if (active) colors.ink else colors.muted, weight = if (active) FontWeight.Medium else FontWeight.Normal)
@@ -189,13 +193,22 @@ fun DesignField(
 
 /** Pillen-Schaltfläche im Inhalt: primär Akzent, sekundär helle Fläche mit Glanzkante, Gefahr gedämpftes Rot. */
 @Composable
-fun DesignPillButton(label: String, modifier: Modifier = Modifier, primary: Boolean = true, danger: Boolean = false, enabled: Boolean = true, onClick: () -> Unit) {
+fun DesignPillButton(
+    label: String,
+    modifier: Modifier = Modifier,
+    primary: Boolean = true,
+    danger: Boolean = false,
+    enabled: Boolean = true,
+    haptic: HapticEvent? = HapticEvent.ACTION,
+    onClick: () -> Unit,
+) {
+    val haptics = LocalDesignHaptics.current
     val colors = LocalDesignColors.current
     val container = when { !primary -> colors.wash; danger -> colors.danger; else -> colors.accent }
     val content = if (primary) colors.paper else colors.ink
     val sheen = !primary && enabled && LocalGlassLevel.current != GlassLevel.OFF
     Button(
-        onClick = onClick, enabled = enabled, cornerRadius = DesignRadii.Pill, minHeight = 48.dp,
+        onClick = { haptic?.let(haptics::perform); onClick() }, enabled = enabled, cornerRadius = DesignRadii.Pill, minHeight = 48.dp,
         modifier = modifier.fillMaxWidth().designSheen(RoundedCornerShape(DesignRadii.Pill), colors, sheen),
         colors = ButtonDefaults.buttonColors(color = container, disabledColor = colors.wash, contentColor = content, disabledContentColor = colors.muted),
     ) {
@@ -216,6 +229,7 @@ fun DesignRow(
     onClick: () -> Unit = {},
 ) {
     val colors = LocalDesignColors.current
+    val haptics = LocalDesignHaptics.current
     Column(modifier.fillMaxWidth().then(if (tag.isNotEmpty()) Modifier.testTag(tag) else Modifier)) {
         BasicComponent(
             title = title, summary = detail.ifEmpty { null },
@@ -223,7 +237,7 @@ fun DesignRow(
             summaryColor = BasicComponentDefaults.summaryColor(color = colors.muted),
             // inset: Text auf der Titellinie, Trennlinie bleibt an der Blockkante (frei stehende Listen auf Seiten).
             insideMargin = PaddingValues(start = inset, top = 12.dp, bottom = 12.dp),
-            onClick = onClick,
+            onClick = { haptics.perform(HapticEvent.SELECTION); onClick() },
             endActions = {
                 if (value.isNotEmpty()) DesignText(value, 12, muted = true)
                 Spacer(Modifier.width(6.dp))

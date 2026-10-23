@@ -731,7 +731,7 @@
     <string name="msg_0725" formatted="false">"偏好与数据"</string>
     <string name="msg_0726" formatted="false">"显示模式"</string>
     <string name="msg_0727" formatted="false">"玻璃预览"</string>
-    <string name="msg_0728" formatted="false">"显示模式、浅色与深色配色、玻璃效果"</string>
+    <string name="msg_0728" formatted="false">"显示模式、配色、玻璃效果、应用图标与触感"</string>
     <string name="msg_0729" formatted="false">"浮动按钮与导航栏会这样显示"</string>
     <string name="msg_0730" formatted="false">"应用图标"</string>
     <string name="msg_0731" formatted="false">"更换后桌面图标会在几秒内更新；部分桌面会把图标放回默认位置。"</string>
@@ -743,4 +743,10 @@
     <string name="msg_0737" formatted="false">"日程格"</string>
     <string name="msg_0738" formatted="false">"环绕"</string>
     <string name="msg_0739" formatted="false">"将使用“{0}”作为桌面图标。日历、课程和设置都不受影响。"</string>
+    <string name="msg_0740" formatted="false">"触感反馈"</string>
+    <string name="msg_0741" formatted="false">"开启触感反馈"</string>
+    <string name="msg_0742" formatted="false">"选中、按钮和确认时轻微震动；同时遵循系统的触感设置。"</string>
+    <string name="msg_0743" formatted="false">"轻"</string>
+    <string name="msg_0744" formatted="false">"强度"</string>
+    <string name="msg_0745" formatted="false">"强"</string>
 </resources>

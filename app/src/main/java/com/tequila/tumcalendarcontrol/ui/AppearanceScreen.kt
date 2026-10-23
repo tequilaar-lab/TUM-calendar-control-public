@@ -1,5 +1,5 @@
 /*
- * Aufgabe: Darstellungsseite: Hell/Dunkel, helle und dunkle Palette, Glasstufe mit Vorschau, Startsymbol.
+ * Aufgabe: Darstellungsseite: Hell/Dunkel, helle und dunkle Palette, Glasstufe mit Vorschau, Haptik, Startsymbol.
  * Ein-/Ausgabe: Darstellungszustand und Glasauswahl -> sofort gespeicherte Auswahl (wie bisher ohne Speichern-Schaltfläche).
  * Nebenwirkungen: Keine externen Aktionen; Speichern übernehmen Zustand bzw. App-Einstieg (Glasstufe).
  * Nicht zuständig: Teilnahmefarben, Systemeinstellungen oder Gerätefähigkeit (nur angezeigt).
@@ -30,6 +30,10 @@ import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import com.tequila.tumcalendarcontrol.ui.design.DesignPage
+import com.tequila.tumcalendarcontrol.ui.design.LocalHapticSelection
+import com.tequila.tumcalendarcontrol.ui.design.LocalDesignHaptics
+import com.tequila.tumcalendarcontrol.ui.design.HapticLevel
+import com.tequila.tumcalendarcontrol.ui.design.DesignCheck
 import com.tequila.tumcalendarcontrol.ui.design.DesignRadii
 import com.tequila.tumcalendarcontrol.ui.design.DesignSection
 import com.tequila.tumcalendarcontrol.ui.design.DesignSegmented
@@ -67,6 +71,7 @@ internal fun AppearanceScreen(state: CalendarControlState) {
         if (LocalGlassSupport.current != GlassSupport.FULL) DesignText(tr(message(692)), 12, TextInset, color = LocalDesignColors.current.danger)
         DesignSection(tr(message(727)), TextInset, index = tr(glass.level.label))
         GlassPreview()
+        HapticSettingsSection()
         AppIconSelector()
     }
 }
@@ -102,6 +107,26 @@ private fun GlassPreview() {
                     .designGlass(colors, DesignRadii.Pill, layer, spec, tintScale = 1.15f),
                 contentAlignment = Alignment.Center,
             ) { DesignText(tr(message(729)), 12, color = colors.accent, weight = FontWeight.Medium) }
+        }
+    }
+}
+
+/** Haptik: Ein/Aus und Stärke; beim Umstellen der Stärke kurze Vorschau (auch wenn ausgeschaltet nicht). */
+@Composable
+private fun HapticSettingsSection() {
+    val selection = LocalHapticSelection.current
+    val haptics = LocalDesignHaptics.current
+    val settings = selection.settings
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        DesignSection(tr(message(740)), TextInset)
+        DesignCheck(tr(message(741)), settings.enabled, TextInset.testTag("haptics-enabled"), detail = tr(message(742))) { selection.change(settings.copy(enabled = it)) }
+        if (settings.enabled) {
+            DesignSection(tr(message(744)), TextInset)
+            DesignSegmented(HapticLevel.entries.map { tr(it.label) }, settings.level.ordinal, Modifier.testTag("haptics-level")) {
+                val level = HapticLevel.entries[it]
+                selection.change(settings.copy(level = level))
+                haptics.preview(level)
+            }
         }
     }
 }

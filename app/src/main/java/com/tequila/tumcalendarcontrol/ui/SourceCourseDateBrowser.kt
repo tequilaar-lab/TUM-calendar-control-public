@@ -8,6 +8,7 @@ package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
+import com.tequila.tumcalendarcontrol.ui.design.hapticClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -114,9 +115,9 @@ private fun MonthNavigation(month: YearMonth, onPrevious: () -> Unit, onNext: ()
     val monthTitle = DateTimeFormatter.ofPattern(tr(message(595)), java.util.Locale.forLanguageTag(LocalAppLanguage.current.language.tag))
     val link = Modifier.heightIn(min = 48.dp).wrapContentHeight().padding(horizontal = 4.dp)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        DesignText("‹  " + tr(message(602)), 13, Modifier.clickable(onClick = onPrevious).then(link).testTag("date-previous"), color = colors.accent)
+        DesignText("‹  " + tr(message(602)), 13, Modifier.hapticClickable(onClick = onPrevious).then(link).testTag("date-previous"), color = colors.accent)
         DesignText(tr(month.format(monthTitle)), 18, Modifier.weight(1f), serif = true, align = TextAlign.Center)
-        DesignText(tr(message(603)) + "  ›", 13, Modifier.clickable(onClick = onNext).then(link).testTag("date-next"), color = colors.accent)
+        DesignText(tr(message(603)) + "  ›", 13, Modifier.hapticClickable(onClick = onNext).then(link).testTag("date-next"), color = colors.accent)
     }
 }
 
@@ -150,7 +151,7 @@ private fun SourceDayCell(day: LocalDate, occurrenceCount: Int, selected: Boolea
     val ink = if (selected) colors.paper else colors.ink
     Column(
         Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(DesignRadii.Tile))
-            .background(if (selected) colors.ink else Color.Transparent).clickable { onDateSelected(day) }.testTag("date-day-${day.dayOfMonth}"),
+            .background(if (selected) colors.ink else Color.Transparent).hapticClickable { onDateSelected(day) }.testTag("date-day-${day.dayOfMonth}"),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

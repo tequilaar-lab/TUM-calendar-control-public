@@ -8,6 +8,7 @@ package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
 
+import com.tequila.tumcalendarcontrol.ui.design.hapticClickable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -82,7 +83,7 @@ private fun SourceGroupHeader(group: SourceCourseDisplayGroup, expanded: Boolean
     val colors = LocalDesignColors.current
     val rotation by animateFloatAsState(if (expanded) -90f else 0f, label = "source-group-arrow")
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(start = 4.dp, top = 14.dp, bottom = 14.dp).testTag("source-group"),
+        Modifier.fillMaxWidth().hapticClickable(onClick = onClick).padding(start = 4.dp, top = 14.dp, bottom = 14.dp).testTag("source-group"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -105,7 +106,7 @@ internal fun SourceFilterTabs(selected: SourceCourseFilter, onSelect: (SourceCou
         SourceCourseFilter.entries.forEach { filter ->
             val active = filter == selected
             Column(
-                Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).clickable { onSelect(filter) }.testTag("source-filter-${filter.name}"),
+                Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).hapticClickable { onSelect(filter) }.testTag("source-filter-${filter.name}"),
                 verticalArrangement = Arrangement.Center,
             ) {
                 DesignText(tr(filter.label), 13, color = if (active) colors.accent else colors.muted, weight = if (active) FontWeight.Medium else FontWeight.Normal)

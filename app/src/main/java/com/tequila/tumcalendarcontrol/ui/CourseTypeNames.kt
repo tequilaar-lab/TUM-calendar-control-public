@@ -9,6 +9,7 @@ package com.tequila.tumcalendarcontrol.ui
 import com.tequila.tumcalendarcontrol.i18n.message
 
 import android.content.Context
+import com.tequila.tumcalendarcontrol.ui.design.hapticClickable
 import androidx.compose.runtime.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -58,7 +59,7 @@ internal fun CourseTypeRenameButton(type: CourseTeachingTypeGroup) {
     val configuration = LocalConfiguration.current
     DesignText(
         tr(message(383)), 12, color = colors.accent, weight = FontWeight.Medium,
-        modifier = Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).clickable { value = type.label; editing = true }
+        modifier = Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp).hapticClickable { value = type.label; editing = true }
             .wrapContentSize().padding(horizontal = 4.dp).testTag("course-type-rename"),
     )
     if (editing) Dialog(onDismissRequest = { editing = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {

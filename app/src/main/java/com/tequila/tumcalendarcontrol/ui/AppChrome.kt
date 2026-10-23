@@ -185,8 +185,9 @@ private fun AppPageHeader(
 @Composable
 private fun GlassBackButton(onClick: () -> Unit) {
     val colors = LocalDesignColors.current
+    val haptics = com.tequila.tumcalendarcontrol.ui.design.LocalDesignHaptics.current
     IconButton(
-        onClick = onClick,
+        onClick = { haptics.perform(com.tequila.tumcalendarcontrol.ui.design.HapticEvent.SELECTION); onClick() },
         modifier = Modifier.offset(x = (-4).dp).testTag("back-button"),
         backgroundColor = Color.Transparent,
         minHeight = 48.dp,

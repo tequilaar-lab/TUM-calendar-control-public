@@ -731,7 +731,7 @@
     <string name="msg_0725" formatted="false">"Einstellungen &amp; Daten"</string>
     <string name="msg_0726" formatted="false">"Darstellung"</string>
     <string name="msg_0727" formatted="false">"Glasvorschau"</string>
-    <string name="msg_0728" formatted="false">"Darstellung, helle und dunkle Farben, Glaseffekt"</string>
+    <string name="msg_0728" formatted="false">"Darstellung, Farben, Glaseffekt, App-Symbol und Haptik"</string>
     <string name="msg_0729" formatted="false">"So erscheinen schwebende Schaltflächen und Navigation"</string>
     <string name="msg_0730" formatted="false">"App-Symbol"</string>
     <string name="msg_0731" formatted="false">"Das Startsymbol wird in wenigen Sekunden aktualisiert; manche Startbildschirme setzen es an die Standardposition zurück."</string>
@@ -743,4 +743,10 @@
     <string name="msg_0737" formatted="false">"Raster"</string>
     <string name="msg_0738" formatted="false">"Umlauf"</string>
     <string name="msg_0739" formatted="false">"„{0}“ wird als Startsymbol verwendet. Kalender, Kurse und Einstellungen bleiben unverändert."</string>
+    <string name="msg_0740" formatted="false">"Haptisches Feedback"</string>
+    <string name="msg_0741" formatted="false">"Haptisches Feedback ein"</string>
+    <string name="msg_0742" formatted="false">"Leichte Vibration bei Auswahl, Schaltflächen und Bestätigungen; folgt zusätzlich der Systemeinstellung."</string>
+    <string name="msg_0743" formatted="false">"Leicht"</string>
+    <string name="msg_0744" formatted="false">"Stärke"</string>
+    <string name="msg_0745" formatted="false">"Stark"</string>
 </resources>

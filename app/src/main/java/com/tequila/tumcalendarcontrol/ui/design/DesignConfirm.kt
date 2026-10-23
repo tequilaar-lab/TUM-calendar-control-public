@@ -113,8 +113,12 @@ private fun DesignConfirmOverlay(request: DesignConfirmRequest, host: LayerBackd
                 DesignText(request.note, 12, muted = true)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                DesignPillButton(request.cancelLabel, Modifier.weight(1f).testTag("confirm-cancel"), primary = false, onClick = request.onCancel)
-                DesignPillButton(request.confirmLabel, Modifier.weight(1f).testTag("confirm-accept"), danger = request.danger, onClick = request.onConfirm)
+                // Abbrechen leicht, Bestätigen mit eigenem Muster (gefährlich: Ablehnungsmuster).
+                DesignPillButton(request.cancelLabel, Modifier.weight(1f).testTag("confirm-cancel"), primary = false, haptic = HapticEvent.SELECTION, onClick = request.onCancel)
+                DesignPillButton(
+                    request.confirmLabel, Modifier.weight(1f).testTag("confirm-accept"), danger = request.danger,
+                    haptic = if (request.danger) HapticEvent.REJECT else HapticEvent.CONFIRM, onClick = request.onConfirm,
+                )
             }
         }
     }
