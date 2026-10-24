@@ -942,4 +942,9 @@
     <string name="msg_0940" formatted="false">"{0}: {1}"</string>
     <string name="msg_0941" formatted="false">"+{0} weitere Kurse"</string>
     <string name="msg_0942" formatted="false">"Kurznamen anzeigen (sonst voller Name)"</string>
+    <string name="msg_0943" formatted="false">"Beispielkurs"</string>
+    <string name="msg_0944" formatted="false">"Test-Live-Benachrichtigung senden"</string>
+    <string name="msg_0945" formatted="false">"Die Testbenachrichtigung wurde zum Live-Update hochgestuft und sollte als Statusleisten-Chip erscheinen (HONOR: Kapsel)"</string>
+    <string name="msg_0946" formatted="false">"Die Testbenachrichtigung wurde nicht hochgestuft (Systemversion oder Einstellung); sie erscheint als normale dauerhafte Benachrichtigung"</string>
+    <string name="msg_0947" formatted="false">"Die Testbenachrichtigung verschwindet nach 2 Minuten und zeigt Beispielinhalte"</string>
 </resources>

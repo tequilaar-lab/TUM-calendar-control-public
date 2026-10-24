@@ -28,6 +28,8 @@ sealed interface AppEntry {
     data object WritePreview : AppEntry
     /** Seite der Hintergrundprüfung (aus der Schnelleinstellung, wenn die Prüfung noch nicht eingerichtet ist). */
     data object BackgroundCheck : AppEntry
+    /** Einstellungsseite der Live-Kursbenachrichtigung (Testbenachrichtigung, Deeplink). */
+    data object ClassLive : AppEntry
 }
 
 object AppEntryIntents {
@@ -40,6 +42,7 @@ object AppEntryIntents {
     private const val TARGET_EVENTS = "events"
     private const val TARGET_WRITE = "write-preview"
     private const val TARGET_CHECK = "background-check"
+    private const val TARGET_LIVE = "class-live"
     private const val EXTRA_KIND = "com.tequila.tumcalendarcontrol.entry.kind"
     private const val EXTRA_WIDGET_ID = "com.tequila.tumcalendarcontrol.entry.widget"
 
@@ -54,6 +57,7 @@ object AppEntryIntents {
                 is AppEntry.ManualEvents -> { putExtra(EXTRA_TARGET, TARGET_EVENTS); entry.kind?.let { putExtra(EXTRA_KIND, it.name) } }
                 AppEntry.WritePreview -> putExtra(EXTRA_TARGET, TARGET_WRITE)
                 AppEntry.BackgroundCheck -> putExtra(EXTRA_TARGET, TARGET_CHECK)
+                AppEntry.ClassLive -> putExtra(EXTRA_TARGET, TARGET_LIVE)
                 null -> Unit
             }
         }
@@ -78,6 +82,7 @@ object AppEntryIntents {
         TARGET_WIDGETS -> AppEntry.WidgetSettings(intent.getIntExtra(EXTRA_WIDGET_ID, -1).takeIf { it >= 0 })
         TARGET_WRITE -> AppEntry.WritePreview
         TARGET_CHECK -> AppEntry.BackgroundCheck
+        TARGET_LIVE -> AppEntry.ClassLive
         TARGET_EVENTS -> AppEntry.ManualEvents(intent.getStringExtra(EXTRA_KIND)?.let { name -> ManualEventKind.entries.firstOrNull { it.name == name } })
         else -> null
     }

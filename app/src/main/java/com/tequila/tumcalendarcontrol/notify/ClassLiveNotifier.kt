@@ -20,6 +20,7 @@ import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
+import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import com.tequila.tumcalendarcontrol.domain.RoomLink
 import com.tequila.tumcalendarcontrol.i18n.AppLanguagePreferences
 import com.tequila.tumcalendarcontrol.i18n.localizedAppContext
@@ -27,6 +28,7 @@ import com.tequila.tumcalendarcontrol.i18n.localizedMessage
 import com.tequila.tumcalendarcontrol.i18n.message
 import com.tequila.tumcalendarcontrol.ui.AppEntry
 import com.tequila.tumcalendarcontrol.ui.AppEntryIntents
+import com.tequila.tumcalendarcontrol.widget.WidgetEvent
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
@@ -71,7 +73,8 @@ object ClassLiveNotifier {
     fun canPromote(context: Context): Boolean =
         promotionAvailable() && context.getSystemService(NotificationManager::class.java)?.canPostPromotedNotifications() == true
 
-    fun show(context: Context, state: LiveState, name: String, now: Instant, zone: ZoneId) {
+    /** entry = Ziel beim Antippen (Standard: Kursdetails; Testbenachrichtigung: Einstellungsseite). */
+    fun show(context: Context, state: LiveState, name: String, now: Instant, zone: ZoneId, entry: AppEntry = AppEntry.Course(state.event.courseId)) {
         if (!canPost(context)) return
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         val localized = localizedAppContext(context, AppLanguagePreferences(context).load())
@@ -93,7 +96,7 @@ object ClassLiveNotifier {
             .setUsesChronometer(true)
             .setChronometerCountDown(true)
             .setTimeoutAfter(Duration.between(now, event.endsAt).toMillis().coerceAtLeast(1))
-            .setContentIntent(open(context, AppEntryIntents.intent(context, AppEntry.Course(event.courseId)), 0))
+            .setContentIntent(open(context, AppEntryIntents.intent(context, entry), 0))
         RoomLink.url(event.location)?.let { url ->
             builder.addAction(Notification.Action.Builder(null, translate(message(935)), open(context, Intent(Intent.ACTION_VIEW, Uri.parse(url)), 1)).build())
         }
@@ -109,6 +112,22 @@ object ClassLiveNotifier {
         if (state.phase == LivePhase.IN_PROGRESS) builder.setStyle(
             Notification.ProgressStyle().setProgressSegments(listOf(Notification.ProgressStyle.Segment(100))).setProgress(progressPercent(state, now)),
         )
+    }
+
+    /**
+     * Testbenachrichtigung mit synthetischem laufendem Kurs (Beginn vor 1 Minute, Ende in 2 Minuten); zeigt auf dem Gerät
+     * sofort, ob das System Live-Updates hochstuft (HONOR: Kapsel). Antippen öffnet die Einstellungsseite.
+     */
+    fun showTest(context: Context, now: Instant = Instant.now(), zone: ZoneId = ZoneId.systemDefault()) {
+        val sample = WidgetEvent("sample", "sample", message(943), now.minus(Duration.ofMinutes(1)), now.plus(Duration.ofMinutes(2)), AttendanceState.MUST_ATTEND, "Hörsaal (0000.00.000)")
+        val localized = localizedAppContext(context, AppLanguagePreferences(context).load())
+        show(context, LiveState(sample, LivePhase.IN_PROGRESS), localizedMessage(localized, message(943)), now, zone, AppEntry.ClassLive)
+    }
+
+    /** Ob die gezeigte Benachrichtigung vom System als Live-Update hochgestuft wurde (ab API 36); null = keine aktiv. */
+    fun isPromoted(context: Context): Boolean? {
+        val active = context.getSystemService(NotificationManager::class.java)?.activeNotifications?.firstOrNull { it.id == NOTIFICATION_ID } ?: return null
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA && active.notification.flags and Notification.FLAG_PROMOTED_ONGOING != 0
     }
 
     fun cancel(context: Context) {

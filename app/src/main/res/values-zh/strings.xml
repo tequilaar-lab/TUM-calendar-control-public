@@ -942,4 +942,9 @@
     <string name="msg_0940" formatted="false">"{0}：{1}"</string>
     <string name="msg_0941" formatted="false">"另有 {0} 门课"</string>
     <string name="msg_0942" formatted="false">"显示课程简写（没有简写时显示全名）"</string>
+    <string name="msg_0943" formatted="false">"示例课程"</string>
+    <string name="msg_0944" formatted="false">"发送测试实况通知"</string>
+    <string name="msg_0945" formatted="false">"测试通知已提升为实况更新，应显示在状态栏胶囊（荣耀：灵动胶囊）中"</string>
+    <string name="msg_0946" formatted="false">"测试通知未被提升（系统版本或设置不支持），显示为普通常驻通知"</string>
+    <string name="msg_0947" formatted="false">"测试通知 2 分钟后自动消失，内容为示例"</string>
 </resources>

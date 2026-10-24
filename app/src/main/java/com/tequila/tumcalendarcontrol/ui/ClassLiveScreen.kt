@@ -1,6 +1,7 @@
 /*
  * Aufgabe: Einstellungsseite der Live-Kursbenachrichtigung: Erklärung, Schalter (fragt bei Bedarf die
- *   Benachrichtigungsberechtigung an), Stand der Live-Updates im System, Vorlauf und „auch blaue Kurse“.
+ *   Benachrichtigungsberechtigung an), Stand der Live-Updates im System, Vorlauf, „auch blaue Kurse“ und
+ *   Testbenachrichtigung mit Anzeige, ob das System sie hochgestuft hat.
  * Ein-/Ausgabe: ClassLiveSettingsStore -> Bedienelemente; Änderungen -> speichern und ClassLiveScheduler.refresh.
  * Nebenwirkungen: Nur private Einstellungen, Systemdialog der Benachrichtigungsberechtigung, Neuplanung von
  *   Benachrichtigung und Wecker; kein Netzwerk, keine Kalender- oder Regeländerung.
@@ -31,6 +32,7 @@ import com.tequila.tumcalendarcontrol.notify.ClassLiveSettingsStore
 import com.tequila.tumcalendarcontrol.ui.design.DesignCheck
 import com.tequila.tumcalendarcontrol.ui.design.DesignChips
 import com.tequila.tumcalendarcontrol.ui.design.DesignPage
+import com.tequila.tumcalendarcontrol.ui.design.DesignPillButton
 import com.tequila.tumcalendarcontrol.ui.design.DesignSection
 import com.tequila.tumcalendarcontrol.ui.design.DesignText
 import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
@@ -43,6 +45,8 @@ fun ClassLiveScreen() {
     val store = remember(context) { ClassLiveSettingsStore(context) }
     var settings by remember { mutableStateOf(store.load()) }
     var permissionMissing by remember { mutableStateOf(!ClassLiveNotifier.canPost(context)) }
+    var testSent by remember { mutableStateOf(false) }
+    var testResult by remember { mutableStateOf<Boolean?>(null) }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         permissionMissing = !granted
         ClassLiveScheduler.refresh(context)
@@ -70,5 +74,20 @@ fun ClassLiveScreen() {
             change(settings.copy(leadMinutes = ClassLiveLeadOptions[it]))
         }
         DesignCheck(tr(message(930)), settings.includeChooseToAttend, LiveInset.testTag("class-live-choose")) { change(settings.copy(includeChooseToAttend = it)) }
+
+        // Testbenachrichtigung: zeigt auf dem Gerät sofort, ob das System sie als Live-Update hochstuft.
+        DesignPillButton(tr(message(944)), Modifier.testTag("class-live-test"), primary = false) {
+            if (permissionMissing && Build.VERSION.SDK_INT >= 33) {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                return@DesignPillButton
+            }
+            ClassLiveNotifier.showTest(context)
+            testResult = ClassLiveNotifier.isPromoted(context)
+            testSent = true
+        }
+        if (testSent) {
+            DesignText(tr(message(if (testResult == true) 945 else 946)), 12, LiveInset.testTag("class-live-test-result"), muted = testResult != true)
+            DesignText(tr(message(947)), 11, LiveInset, muted = true)
+        }
     }
 }

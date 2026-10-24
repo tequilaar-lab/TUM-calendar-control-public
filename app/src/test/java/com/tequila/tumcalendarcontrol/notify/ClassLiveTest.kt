@@ -126,6 +126,17 @@ class ClassLiveTest {
         assertTrue(ClassLiveNotifier.promotionAvailable(37) { android.os.Build.VERSION_CODES_FULL.BAKLAVA_1 + 1 })
     }
 
+    /** Testbenachrichtigung: synthetischer laufender Kurs, sofort sichtbar; Hochstufung im Robolectric-36 nicht gesetzt. */
+    @Test fun `Testbenachrichtigung`() {
+        shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        com.tequila.tumcalendarcontrol.i18n.AppLanguagePreferences(app).save(com.tequila.tumcalendarcontrol.i18n.AppLanguage.CHINESE)
+        assertNull("ohne aktive Benachrichtigung unbekannt", ClassLiveNotifier.isPromoted(app))
+        ClassLiveNotifier.showTest(app, now, zone)
+        val posted = shadowOf(app.getSystemService(NotificationManager::class.java)).allNotifications.single()
+        assertEquals("进行中：示例课程", posted.extras.getString(Notification.EXTRA_TITLE))
+        assertEquals(false, ClassLiveNotifier.isPromoted(app))
+    }
+
     @Test fun `ohne Benachrichtigungsberechtigung nichts gezeigt`() {
         shadowOf(app).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
         assertFalse(ClassLiveNotifier.canPost(app))

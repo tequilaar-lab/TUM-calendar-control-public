@@ -942,4 +942,9 @@
     <string name="msg_0940" formatted="false">"{0}: {1}"</string>
     <string name="msg_0941" formatted="false">"+{0} more courses"</string>
     <string name="msg_0942" formatted="false">"Show course short names (full name if none)"</string>
+    <string name="msg_0943" formatted="false">"Sample class"</string>
+    <string name="msg_0944" formatted="false">"Send test live notification"</string>
+    <string name="msg_0945" formatted="false">"The test notification was promoted to a Live Update and should appear as a status bar chip (HONOR: Dynamic Capsule)"</string>
+    <string name="msg_0946" formatted="false">"The test notification was not promoted (system version or settings); it shows as a regular ongoing notification"</string>
+    <string name="msg_0947" formatted="false">"The test notification disappears after 2 minutes and shows sample content"</string>
 </resources>
