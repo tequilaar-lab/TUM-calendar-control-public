@@ -1,7 +1,8 @@
 /*
  * Aufgabe: Inhalt eines aufgeklappten Kurses in der Übersicht: Lehrtyp-Umschalter mit Umbenennen und Terminliste.
  * Ein-/Ausgabe: Kursgruppe und Rückruf -> Termine (Datum, Zeit, Ort, Teilnahmestatus); Antippen öffnet den Termin.
- * Nebenwirkungen: Keine; Umbenennen läuft über den bestehenden CourseTypeRenameButton.
+ * Nebenwirkungen: Keine; Umbenennen läuft über den bestehenden CourseTypeRenameButton; Kartenschaltfläche öffnet nur auf
+ *   Antippen den Raumfinder im Browser.
  * Nicht zuständig: Verzeichnisaufbau (CourseIndexPage), Teilnahmeänderung oder Kursidentität.
  */
 package com.tequila.tumcalendarcontrol.ui
@@ -111,6 +112,8 @@ private fun OverviewSessionRow(course: Course, compact: Boolean, colors: DesignC
             DesignText(tr(course.displayLocation), 11, muted = true)
             DesignText(tr(course.attendance.label), 11, color = attendanceInk(course.attendance, colors))
         }
+        // Eigene Tippfläche für die Raumkarte; die übrige Zeile öffnet weiterhin die Details.
+        RoomMapButton(course.displayLocation, Modifier.align(Alignment.CenterVertically))
     }
 }
 

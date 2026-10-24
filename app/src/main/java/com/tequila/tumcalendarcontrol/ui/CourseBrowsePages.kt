@@ -1,5 +1,6 @@
 /*
- * Aufgabe: Übersicht, Suche und Favoriten als Varianten des gemeinsamen Kursverzeichnisses mit eigenem Kopfinhalt.
+ * Aufgabe: Übersicht (mit Karte „Demnächst“ für Prüfungen/Fristen), Suche und Favoriten als Varianten des gemeinsamen
+ *   Kursverzeichnisses mit eigenem Kopfinhalt.
  * Ein-/Ausgabe: CalendarControlState (angezeigte, gesuchte, favorisierte Kurse; Suchbegriff) -> CourseIndexPage.
  * Nebenwirkungen: Keine externen Aktionen; Suchbegriff bleibt Seitenzustand im bestehenden Zustand.
  * Nicht zuständig: Filterlogik (CalendarControlState), Verzeichnisdarstellung (CourseIndexPage) oder Kursidentität.
@@ -31,6 +32,8 @@ import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
 internal fun OverviewHome(state: CalendarControlState) {
     CourseIndexPage(state, state.displayedCourses, message(360), showRefresh = true) { groups ->
         val colors = LocalDesignColors.current
+        // Prüfungen/Fristen der nächsten 30 Tage (nur wenn vorhanden); Antippen öffnet die Campustermine.
+        UpcomingDeadlinesCard(state, Modifier.padding(bottom = 12.dp))
         Row(Modifier.fillMaxWidth().padding(start = 4.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             DesignText(tr(message(693, groups.size, groups.sumOf { it.courses.size })), 12, muted = true, modifier = Modifier.weight(1f))
             DesignText(

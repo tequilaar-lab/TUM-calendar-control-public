@@ -7,6 +7,7 @@
 package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
+import com.tequila.tumcalendarcontrol.widget.ScheduleWidgets
 import com.tequila.tumcalendarcontrol.i18n.AppLanguagePreferences
 
 import android.Manifest
@@ -14,7 +15,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
+import com.tequila.tumcalendarcontrol.sync.WriteTimingLog
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -40,8 +43,9 @@ private const val SourceReadDeadlineMillis = 35_000L
 private const val MAX_RULE_BACKUP_CHARS = 1_000_000
 private const val SourceReadLogTag = "TumSourceRead"
 
+/** entry: Einstiegsziel aus Hinweis oder Widget (nur Navigation); nach Anwendung onEntryHandled. */
 @Composable
-fun CalendarControlApp() {
+fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {}) {
     val context = LocalContext.current
     val session = androidx.lifecycle.ViewModelProvider(context as androidx.activity.ComponentActivity)[CalendarSessionModel::class.java]
     val languagePreferences = remember(context) { AppLanguagePreferences(context) }
@@ -57,6 +61,7 @@ fun CalendarControlApp() {
     var hapticSettings by remember { mutableStateOf(hapticPreferences.load()) }
     val courseTypeNamesPreferences = remember(context) { CourseTypeNamesPreferences(context) }
     val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
+    val calendarReminderPreferences = remember(context) { com.tequila.tumcalendarcontrol.sync.CalendarReminderPreferences(context) }
     val privateSyncConfigurationStore = remember(context) { PrivateSyncConfigurationStore(context) }
     val ruleLedgerPreferences = remember(context) { RuleLedgerPreferences(context) }
     val courseOverridePreferences = remember(context) { CourseOverridePreferences(context) }
@@ -85,7 +90,12 @@ fun CalendarControlApp() {
             initialCoursePresentations = courseOverridePreferences.loadPresentations(),
             initialSourceSnapshots = initialSourceSnapshots,
             userDataPersistence = userDataPersistence,
-        ).also { it.courseTypeNames = courseTypeNamesPreferences.load(); it.restorePageMemory(pageMemoryPreferences.load()); session.state = it }
+        ).also {
+            it.courseTypeNames = courseTypeNamesPreferences.load()
+            it.calendarReminderMinutes = calendarReminderPreferences.load()
+            it.restorePageMemory(pageMemoryPreferences.load())
+            session.state = it
+        }
     }
     var privateConfigurationInitialized by remember { mutableStateOf(false) }
     val localCalendarPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
@@ -120,6 +130,10 @@ fun CalendarControlApp() {
         googleAuthorizationCoordinator.resolveResult(result.resultCode, result.data, state::resolveGoogleAuthorization)
     }
     LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
+    LaunchedEffect(entry) {
+        state.applyEntry(entry ?: return@LaunchedEffect)
+        onEntryHandled()
+    }
     LaunchedEffect(state.persistedPageMemory) {
         runCatching { pageMemoryPreferences.save(state.persistedPageMemory) }
             .onFailure { state.feedback = message(216) }
@@ -127,6 +141,7 @@ fun CalendarControlApp() {
     LaunchedEffect(state.appearanceSettings) { appearancePreferences.save(state.appearanceSettings) }
     LaunchedEffect(state.courseTypeNames) { courseTypeNamesPreferences.save(state.courseTypeNames) }
     LaunchedEffect(state.syncDestinations) { syncDestinationPreferences.save(state.syncDestinations) }
+    LaunchedEffect(state.calendarReminderMinutes) { calendarReminderPreferences.save(state.calendarReminderMinutes) }
     LaunchedEffect(state.privateSyncConfiguration) {
         if (privateConfigurationInitialized) runCatching { privateSyncConfigurationStore.save(state.privateSyncConfiguration) }
             .onFailure { state.feedback = message(217) }
@@ -217,17 +232,25 @@ fun CalendarControlApp() {
         val desired = state.currentDesiredEvents()
         val mappings = state.ruleLedger.mappings
         val googleToken = state.currentGoogleAccessToken()
+        // Nur Schreiben meldet Fortschritt und lässt sich anhalten; Rückmeldungen gedrosselt in den UI-Faden.
+        val mainHandler = Handler(Looper.getMainLooper())
+        val control = if (rollback) null else state.writeProgress.begin { update -> mainHandler.post(update) }
         Thread {
+            val startedAt = SystemClock.elapsedRealtime()
             val outcome = runCatching {
                 if (rollback) platformManagedSyncRunner.rollback(mappings, targets, configuration, googleToken, state.currentManagedCleanupScope())
-                else platformManagedSyncRunner.execute(desired, mappings, targets, configuration, googleToken)
+                else platformManagedSyncRunner.execute(desired, mappings, targets, configuration, googleToken, control!!)
             }
+            // Nur Dauer und Zähler (keine Inhalte), um die Schreibgeschwindigkeit auf dem Gerät zu messen.
+            outcome.onSuccess { Log.i(WriteTimingLog.TAG, WriteTimingLog.line(it.result, SystemClock.elapsedRealtime() - startedAt, rollback)) }
             Handler(Looper.getMainLooper()).post {
                 outcome.onSuccess {
                     state.resolveManagedOperation(token, it.result, it.configuration)
                     if (!ruleLedgerPreferences.save(state.ruleLedger)) {
                         state.feedback = message(218)
                     }
+                    // Widgets zeigen geschriebene Termine: nach gespeicherter Ausgabe/Bereinigung neu zeichnen.
+                    ScheduleWidgets.refreshAll(context)
                     runCatching { privateSyncConfigurationStore.save(state.privateSyncConfiguration) }
                         .onFailure { state.feedback = message(219) }
                     if (it.requiresGoogleReauthorization && !googleToken.isNullOrBlank()) {

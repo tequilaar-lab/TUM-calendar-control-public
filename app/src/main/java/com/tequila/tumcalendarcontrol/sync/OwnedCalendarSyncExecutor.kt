@@ -22,8 +22,9 @@ interface OwnedCalendarGateway {
     fun findAllManagedEventIds(calendar: OwnedCalendarRef): List<String>
     /** Nur identitätsgeprüfte App-Felder lesen; unbekanntes Format ergibt null, niemals lokalen Fingerabdruck als Istwert ausgeben. */
     fun readEvent(calendar: OwnedCalendarRef, eventId: String, identity: ManagedEventIdentity): DesiredCalendarEvent? = null
+    /** Fingerabdruck ohne Erinnerung (für nicht verwaltete Erinnerungen; verwaltete vergleicht der Executor über readEvent). */
     fun readFingerprint(calendar: OwnedCalendarRef, eventId: String, identity: ManagedEventIdentity): String? =
-        readEvent(calendar, eventId, identity)?.let { SyncDiffPlanner().run { it.fingerprint() } }
+        readEvent(calendar, eventId, identity)?.let { SyncDiffPlanner().run { it.copy(reminderMinutes = null).fingerprint() } }
     fun create(calendar: OwnedCalendarRef, event: DesiredCalendarEvent): String
     fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent)
     /** Löschergebnis beschreibt nur diese Anfrage; keine Inhalte/IDs an Oberfläche oder Datenbank. */
@@ -39,8 +40,12 @@ interface OwnedCalendarGateway {
 data class ManagedEventSnapshot(val eventId: String, val content: ManagedEventContent?)
 
 /** Vergleichbare Inhalte ohne Identität; Identität kommt aus dem Schlüssel des Durchlaufs. */
-data class ManagedEventContent(val title: String, val startsAt: java.time.Instant, val endsAt: java.time.Instant, val state: AttendanceState, val location: String) {
-    fun toEvent(identity: ManagedEventIdentity) = DesiredCalendarEvent(identity, title, startsAt, endsAt, state, location)
+data class ManagedEventContent(
+    val title: String, val startsAt: java.time.Instant, val endsAt: java.time.Instant, val state: AttendanceState, val location: String,
+    /** Gelesene Erinnerung in Minuten (null = keine); nur bei verwalteten Erinnerungen verglichen. */
+    val reminderMinutes: Int? = null,
+) {
+    fun toEvent(identity: ManagedEventIdentity) = DesiredCalendarEvent(identity, title, startsAt, endsAt, state, location, reminderMinutes)
 }
 
 /** 404/410 bedeutet vorherige Abwesenheit, nicht eine erfolgreiche Löschung dieses Aufrufs. */
@@ -74,6 +79,8 @@ data class TargetSyncResult(
     val cleanupSummary: ManagedCleanupSummary? = null,
     val restoredMissingCount: Int = 0,
     val failedCount: Int = 0,
+    /** Wegen Anhaltens nicht bearbeitete Termine; eine erneute Ausgabe setzt dort fort. */
+    val skippedCount: Int = 0,
 )
 
 /** Bereinigungsbereich separat wählen; normale Ausgabe erzeugt ihn niemals. */
@@ -94,6 +101,7 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
         desired: List<DesiredCalendarEvent>,
         storedMappings: List<StoredEventMapping>,
         gateway: OwnedCalendarGateway,
+        control: WriteControl = WriteControl(),
         onCheckpoint: (List<StoredEventMapping>) -> Unit = {},
     ): TargetSyncResult {
         if (!gateway.verifyOwnership(calendar)) return TargetSyncResult(calendar.target, storedMappings, emptyList(), message(98), failedCount = desired.size)
@@ -106,7 +114,11 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
         // Jede Bestätigung prüft echte App-Identität im Ziel; alte Zuordnung beweist kein Vorhandensein.
         // Schnellweg: einmal den ganzen Zielbestand lesen (zu Beginn dieser Ausgabe) statt je Termin suchen und lesen.
         val snapshot = runCatching { gateway.snapshotManagedEvents(calendar) }.getOrNull()
-        desired.distinctBy { it.identity }.forEach { event ->
+        val unique = desired.distinctBy { it.identity }
+        var skipped = 0
+        for ((index, event) in unique.withIndex()) {
+            // Anhalten nur zwischen zwei Terminen: Begonnenes wird fertig und als Prüfpunkt gesichert; Rest gilt als nicht bearbeitet.
+            if (control.stopRequested) { skipped = unique.size - index; break }
             try {
                 val found = snapshot?.let { it[event.identity.opaqueKey()].orEmpty() }
                 val ids = found?.map(ManagedEventSnapshot::eventId) ?: gateway.findEventIdsByIdentity(calendar, event.identity)
@@ -114,8 +126,10 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
                 var type = SyncChangeType.UPDATE
                 val id = ids.singleOrNull()?.let { existingId ->
                     try {
-                        val actual = if (found != null) found.single().content?.let { planner.run { it.toEvent(event.identity).fingerprint() } }
-                        else gateway.readFingerprint(calendar, existingId, event.identity)
+                        // Erinnerung nur vergleichen, wenn sie verwaltet wird (sonst Verhalten wie zuvor).
+                        val actual = if (found != null) found.single().content?.let { planner.run { it.toEvent(event.identity).comparableTo(event).fingerprint() } }
+                        else if (event.reminderMinutes == null) gateway.readFingerprint(calendar, existingId, event.identity)
+                        else gateway.readEvent(calendar, existingId, event.identity)?.let { planner.run { it.comparableTo(event).fingerprint() } }
                         if (actual == planner.run { event.fingerprint() }) type = SyncChangeType.KEEP
                         else gateway.update(calendar, existingId, event)
                         existingId
@@ -131,6 +145,7 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
             } catch (error: Exception) {
                 failures += error
             }
+            control.report(calendar.target, index + 1, unique.size)
         }
         return TargetSyncResult(
             calendar.target, otherMappings + next.values, completed,
@@ -138,6 +153,7 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
             failures.firstNotNullOfOrNull { it.targetFailureCode() },
             restoredMissingCount = restored,
             failedCount = failures.size,
+            skippedCount = skipped,
         )
     }
 
@@ -239,7 +255,8 @@ class FakeOwnedCalendarGateway(
     override fun findAllManagedEventIds(calendar: OwnedCalendarRef): List<String> = (currentManagedIds + generated.filterKeys { it.first == calendar.calendarId }.values).distinct()
     override fun create(calendar: OwnedCalendarRef, event: DesiredCalendarEvent): String = "${calendar.target.name.lowercase()}-${nextId++}".also { operations += "create:$it"; generated[calendar.calendarId to event.identity] = it; eventValues[calendar.calendarId to it] = event }
     override fun update(calendar: OwnedCalendarRef, eventId: String, event: DesiredCalendarEvent) { operations += "update:$eventId"; eventValues[calendar.calendarId to eventId] = event }
-    override fun readFingerprint(calendar: OwnedCalendarRef, eventId: String, identity: ManagedEventIdentity): String? = eventValues[calendar.calendarId to eventId]?.let { SyncDiffPlanner().run { it.fingerprint() } }
+    override fun readEvent(calendar: OwnedCalendarRef, eventId: String, identity: ManagedEventIdentity): DesiredCalendarEvent? = eventValues[calendar.calendarId to eventId]
+    override fun readFingerprint(calendar: OwnedCalendarRef, eventId: String, identity: ManagedEventIdentity): String? = eventValues[calendar.calendarId to eventId]?.let { SyncDiffPlanner().run { it.copy(reminderMinutes = null).fingerprint() } }
     override fun remove(calendar: OwnedCalendarRef, eventId: String): ManagedEventRemovalOutcome {
         operations += "remove:$eventId"
         check(eventId !in failedRemovalIds) { message(105) }

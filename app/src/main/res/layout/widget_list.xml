@@ -1,0 +1,14 @@
+<!-- Aufgabe: Mittleres Widget „Heute“: Kopf, Zeitleistenzeilen, Fußzeile (äußerer transparenter Rahmen, innen der Block mit Hintergrund); reine Darstellungsressource ohne Daten oder Aktionen. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/widget_frame" android:layout_width="match_parent" android:layout_height="match_parent">
+<FrameLayout android:id="@+id/widget_root" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/widget_bg_solid_r16" android:padding="14dp">
+    <LinearLayout android:id="@+id/widget_body" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+            <TextView android:id="@+id/widget_header" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="13sp" android:textStyle="bold" android:textColor="@color/widget_ink" android:singleLine="true" android:ellipsize="end" />
+            <TextView android:id="@+id/widget_header_side" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/widget_muted" android:singleLine="true" android:ellipsize="end" android:layout_marginStart="8dp"/>
+        </LinearLayout>
+        <LinearLayout android:id="@+id/widget_rows" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="6dp" android:orientation="vertical" />
+        <TextView android:id="@+id/widget_footer" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textSize="12sp" android:textColor="@color/widget_muted" android:singleLine="true" android:ellipsize="end" android:visibility="gone" />
+    </LinearLayout>
+    <TextView android:id="@+id/widget_empty" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center_vertical" android:textSize="13sp" android:textColor="@color/widget_muted" android:visibility="gone" />
+</FrameLayout>
+</FrameLayout>

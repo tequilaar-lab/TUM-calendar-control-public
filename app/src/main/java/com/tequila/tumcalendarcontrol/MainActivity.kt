@@ -1,7 +1,9 @@
 /*
  * Aufgabe: Compose-Miuix-App über die Android-Activity starten.
  * Ein-/Ausgabe: Android-Lebenszyklus -> interaktive lokale Compose-Oberfläche.
- * Nebenwirkungen: Android-Oberfläche starten, höchste Bildwiederholrate anfordern; bestätigte Operationen an CalendarControlApp delegieren.
+ * Nebenwirkungen: Android-Oberfläche starten, höchste Bildwiederholrate anfordern; bestätigte Operationen an CalendarControlApp delegieren;
+ *   Einstiegsziele aus Hinweisen/Widgets/Verknüpfungen (nur Navigation) weiterreichen; Verknüpfungen beim Start
+ *   veröffentlichen; Widgets und Live-Kursbenachrichtigung beim Verlassen aktualisieren.
  * Nicht zuständig: Persistenz, Netzwerk-, Konto-, iCal- oder Calendar-Provider-Zugriffe.
  */
 package com.tequila.tumcalendarcontrol
@@ -11,15 +13,51 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import android.content.Intent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.tequila.tumcalendarcontrol.ui.AppEntry
+import com.tequila.tumcalendarcontrol.ui.AppEntryIntents
 import com.tequila.tumcalendarcontrol.ui.CalendarControlApp
+import com.tequila.tumcalendarcontrol.shortcuts.AppShortcuts
+import com.tequila.tumcalendarcontrol.widget.ScheduleWidgets
+import com.tequila.tumcalendarcontrol.notify.ClassLiveScheduler
 
 class MainActivity : ComponentActivity() {
+    /** Noch nicht angewandtes Einstiegsziel; nach Neuaufbau nur erneut, wenn es vorher noch ausstand. */
+    private var pendingEntry by mutableStateOf<AppEntry?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        pendingEntry = AppEntryIntents.initial(intent, savedInstanceState)
+        AppShortcuts.publish(this)
         setContent {
-            CalendarControlApp()
+            CalendarControlApp(entry = pendingEntry, onEntryHandled = { pendingEntry = null })
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Als aktuellen Intent merken, damit eine spätere Neuerstellung ein noch offenes Ziel daraus liest.
+        setIntent(intent)
+        AppEntryIntents.parse(intent)?.let { pendingEntry = it }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        AppEntryIntents.save(outState, pendingEntry)
+    }
+
+    /**
+     * Beim Verlassen Widgets neu zeichnen und die Live-Kursbenachrichtigung neu planen (z. B. geänderte Einstellungen
+     * oder Zuordnungen); kein Netzwerk, kein Kalender.
+     */
+    override fun onStop() {
+        super.onStop()
+        ScheduleWidgets.refreshAll(this)
+        ClassLiveScheduler.refresh(this)
     }
 
     override fun onResume() {

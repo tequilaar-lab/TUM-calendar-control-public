@@ -22,6 +22,11 @@ fun ManagedEventIdentity.opaqueKey(): String = MessageDigest.getInstance("SHA-25
     .digest("$sourceUid\u0000$instanceKey".toByteArray(Charsets.UTF_8))
     .joinToString("") { byte -> "%02x".format(byte) }
 
+/**
+ * Sollzustand eines App-Termins. reminderMinutes: null = Erinnerungen nicht verwaltet (unverändertes Verhalten, auch vom
+ * Nutzer im Kalender ergänzte Erinnerungen bleiben unberührt und zählen nicht als Abweichung); NO_REMINDER = verwaltet,
+ * keine Erinnerung der App; N > 0 = genau eine Erinnerung N Minuten vor Beginn.
+ */
 data class DesiredCalendarEvent(
     val identity: ManagedEventIdentity,
     val title: String,
@@ -29,7 +34,18 @@ data class DesiredCalendarEvent(
     val endsAt: Instant,
     val attendanceState: AttendanceState,
     val location: String = "",
+    val reminderMinutes: Int? = null,
 )
+
+/** Verwaltet, aber ohne Erinnerung (nach dem Ausschalten: früher geschriebene Erinnerungen entfernen). */
+const val NO_REMINDER = -1
+
+/**
+ * Gelesenen Istwert vergleichbar zum Sollwert machen: nicht verwaltet -> Erinnerung ignorieren; verwaltet -> fehlende
+ * Erinnerung als NO_REMINDER.
+ */
+fun DesiredCalendarEvent.comparableTo(desired: DesiredCalendarEvent): DesiredCalendarEvent =
+    copy(reminderMinutes = if (desired.reminderMinutes == null) null else reminderMinutes ?: NO_REMINDER)
 
 data class ManagedEventMapping(
     val identity: ManagedEventIdentity,
@@ -65,13 +81,16 @@ class SyncDiffPlanner {
         return upserts
     }
 
-    /** Hash darf Anzeigefelder enthalten, ist aber keine Synchronisierungsidentität; diese bleibt UID plus Instanz. */
-    fun DesiredCalendarEvent.fingerprint(): String = listOf(
+    /**
+     * Hash darf Anzeigefelder enthalten, ist aber keine Synchronisierungsidentität; diese bleibt UID plus Instanz.
+     * Erinnerung nur, wenn verwaltet: ohne Verwaltung bleibt der Hash genau wie vor dieser Funktion (keine Massenänderung).
+     */
+    fun DesiredCalendarEvent.fingerprint(): String = (listOf(
         EVENT_OUTPUT_FORMAT_REVISION,
         title,
         startsAt.toString(),
         endsAt.toString(),
         attendanceState.name,
         location,
-    ).joinToString("|")
+    ) + listOfNotNull(reminderMinutes?.let { "reminder=$it" })).joinToString("|")
 }

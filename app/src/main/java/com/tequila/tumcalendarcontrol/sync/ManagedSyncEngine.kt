@@ -31,8 +31,11 @@ data class ManagedSyncResult(
     val writeDetailSummary: String get() = joinMessages(targetResults.map { result ->
         val label = if (result.target == OutputTarget.LOCAL_CALENDAR) message(89) else message(90)
         concatenateMessages(message(91, (label), (result.changes.count { it.type == SyncChangeType.CREATE }), (result.changes.count { it.type == SyncChangeType.UPDATE }), (result.changes.count { it.type == SyncChangeType.KEEP }), (result.failedCount)),
-            if (result.restoredMissingCount > 0) message(92, (result.restoredMissingCount)) else "")
+            if (result.restoredMissingCount > 0) message(92, (result.restoredMissingCount)) else "",
+            if (result.skippedCount > 0) message(780, result.skippedCount) else "")
     })
+    /** Ausgabe wurde angehalten (mindestens ein Termin nicht bearbeitet). */
+    val stoppedEarly: Boolean get() = targetResults.any { it.skippedCount > 0 }
     val cleanupDetailSummary: String? get() = targetResults
         .mapNotNull { result -> result.cleanupSummary?.toUserSummary(result.target) }
         .takeIf(List<String>::isNotEmpty)
@@ -63,10 +66,22 @@ class ManagedSyncEngine(
         )
 
     /** Bei Fehler eines Ziels erfolgreiche Zuordnungen behalten und andere unabhängige Ziele weiter bearbeiten. */
-    fun execute(desired: List<DesiredCalendarEvent>, mappings: List<StoredEventMapping>, bindings: List<TargetBinding>, onCheckpoint: (List<StoredEventMapping>) -> Unit = {}): ManagedSyncResult {
+    fun execute(
+        desired: List<DesiredCalendarEvent>,
+        mappings: List<StoredEventMapping>,
+        bindings: List<TargetBinding>,
+        control: WriteControl = WriteControl(),
+        onCheckpoint: (List<StoredEventMapping>) -> Unit = {},
+    ): ManagedSyncResult {
         var currentMappings = mappings
-        val results = bindings.map { binding ->
-            val result = runCatching { executor.execute(binding.calendar, desired, currentMappings, binding.gateway, onCheckpoint) }
+        control.targetCount = bindings.size
+        val results = bindings.mapIndexed { index, binding ->
+            control.targetIndex = index
+            // Angehalten vor diesem Ziel: nichts anfassen (auch keine Eigentumsprüfung), alles als nicht bearbeitet melden.
+            if (control.stopRequested) {
+                return@mapIndexed TargetSyncResult(binding.calendar.target, currentMappings, emptyList(), skippedCount = desired.distinctBy { it.identity }.size)
+            }
+            val result = runCatching { executor.execute(binding.calendar, desired, currentMappings, binding.gateway, control, onCheckpoint) }
                 .getOrElse { error ->
                     TargetSyncResult(
                         target = binding.calendar.target,

@@ -17,6 +17,8 @@ internal class NavigationState {
         private set
 
     private var detailReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
+    /** Seite, aus der die Kursdetails geöffnet wurden (zweispaltige Darstellung zeigt sie links weiter an). */
+    val detailOrigin: AppScreen get() = detailReturnScreen
     private var profileReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
     private var syncConfigurationReturnScreen by mutableStateOf(AppScreen.SETTINGS)
     private var sourceRangeReturnScreen by mutableStateOf(AppScreen.SETTINGS)
@@ -28,6 +30,7 @@ internal class NavigationState {
     private var outputCleanupReturnScreen by mutableStateOf(AppScreen.SETTINGS)
     private var backgroundCheckReturnScreen by mutableStateOf(AppScreen.SETTINGS)
     private var ruleBackupReturnScreen by mutableStateOf(AppScreen.SETTINGS)
+    private var sourceChangesReturnScreen by mutableStateOf(AppScreen.SOURCE_PREVIEW)
 
     val contentScreen: AppScreen
         get() = screen
@@ -52,6 +55,7 @@ internal class NavigationState {
     fun openOutputCleanup() { outputCleanupReturnScreen = contentScreen; openChild(AppScreen.OUTPUT_CLEANUP) }
     fun openBackgroundCheck() { backgroundCheckReturnScreen = contentScreen; direction = NavigationDirection.FORWARD; screen = AppScreen.BACKGROUND_CHECK }
     fun openRuleBackup() { ruleBackupReturnScreen = contentScreen; direction = NavigationDirection.FORWARD; screen = AppScreen.RULE_BACKUP }
+    fun openSourceChanges() { sourceChangesReturnScreen = contentScreen; openChild(AppScreen.SOURCE_CHANGES) }
 
     fun handleBack(): Boolean {
         val closingProfile = screen == AppScreen.PROFILE
@@ -71,6 +75,9 @@ internal class NavigationState {
             AppScreen.BACKGROUND_CHECK -> backgroundCheckReturnScreen
             AppScreen.RULE_BACKUP -> ruleBackupReturnScreen
             AppScreen.APPEARANCE -> AppScreen.SETTINGS
+            AppScreen.WIDGETS -> AppScreen.SETTINGS
+            AppScreen.CLASS_LIVE -> AppScreen.SETTINGS
+            AppScreen.SOURCE_CHANGES -> sourceChangesReturnScreen
             else -> return false
         }
         direction = if (closingProfile) NavigationDirection.PROFILE_EXIT else NavigationDirection.BACKWARD

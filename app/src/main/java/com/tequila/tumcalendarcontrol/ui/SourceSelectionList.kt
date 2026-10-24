@@ -76,6 +76,7 @@ internal fun LazyListScope.sourceGroupItems(
                         occurrence = occurrence,
                         selected = occurrence.identity in state.selectedSourceOccurrences,
                         showTitle = false,
+                        changes = state.sourceChanges.kindsOf(occurrence.identity),
                         modifier = Modifier.animateItem().padding(start = 16.dp),
                         onToggle = { onCurrent(key); state.toggleSourceOccurrenceSelection(occurrence.identity) },
                     )

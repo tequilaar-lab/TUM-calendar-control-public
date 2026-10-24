@@ -36,6 +36,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import top.yukonga.miuix.kmp.basic.Slider
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.testTag
@@ -92,11 +97,15 @@ fun DesignChoice(
     }
 }
 
+/** Deckkraft nicht bedienbarer Steuerelemente (z. B. vom Systemaussehen bestimmte Widget-Werte). */
+private const val DisabledAlpha = .45f
+
+/** badge: kurzer Hinweis in Akzentfarbe unter der Erläuterung (z. B. Quelländerung); leer = keiner. enabled=false: gedämpft, nicht umschaltbar. */
 @Composable
-fun DesignCheck(label: String, checked: Boolean, modifier: Modifier = Modifier, detail: String = "", onChange: (Boolean) -> Unit) {
+fun DesignCheck(label: String, checked: Boolean, modifier: Modifier = Modifier, detail: String = "", badge: String = "", enabled: Boolean = true, onChange: (Boolean) -> Unit) {
     val colors = LocalDesignColors.current
     val haptics = LocalDesignHaptics.current
-    Row(modifier.fillMaxWidth().heightIn(min = 52.dp).toggleable(checked, role = Role.Checkbox) { haptics.perform(HapticEvent.SELECTION); onChange(it) }.padding(vertical = 8.dp),
+    Row(modifier.fillMaxWidth().heightIn(min = 52.dp).alpha(if (enabled) 1f else DisabledAlpha).toggleable(checked, enabled = enabled, role = Role.Checkbox) { haptics.perform(HapticEvent.SELECTION); onChange(it) }.padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         // Miuix fixiert das Kästchen auf 26 dp (requiredSize); auf Wunsch etwas kleiner: 22-dp-Rahmen, 0,85 skaliert.
         Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
@@ -107,15 +116,16 @@ fun DesignCheck(label: String, checked: Boolean, modifier: Modifier = Modifier, 
                     uncheckedBackgroundColor = colors.ink.copy(alpha = .10f), uncheckedForegroundColor = colors.paper,
                 ))
         }
-        DesignLabel(label, detail)
+        DesignLabel(label, detail, badge)
     }
 }
 
 @Composable
-private fun DesignLabel(label: String, detail: String) {
+private fun DesignLabel(label: String, detail: String, badge: String = "") {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         DesignText(label, 14)
         if (detail.isNotEmpty()) DesignText(detail, 11, muted = true)
+        if (badge.isNotEmpty()) DesignText(badge, 11, color = LocalDesignColors.current.accent, weight = FontWeight.Medium)
     }
 }
 
@@ -142,17 +152,17 @@ fun DesignSegmented(options: List<String>, selected: Int, modifier: Modifier = M
  * würden: umbrechende Reihe, gleiche Farbrollen wie DesignSegmented, Tippfläche je Chip ≥ 48 dp hoch.
  */
 @Composable
-fun DesignChips(options: List<String>, selected: Int, modifier: Modifier = Modifier, onSelect: (Int) -> Unit) {
+fun DesignChips(options: List<String>, selected: Int, modifier: Modifier = Modifier, enabled: Boolean = true, onSelect: (Int) -> Unit) {
     val colors = LocalDesignColors.current
     val haptics = LocalDesignHaptics.current
-    FlowRow(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(modifier.fillMaxWidth().alpha(if (enabled) 1f else DisabledAlpha), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         options.forEachIndexed { index, option ->
             val active = index == selected
             val progress = animatedSelectionProgress(active, "chip-$index")
             Box(
                 Modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(DesignRadii.Field)).background(colors.wash)
                     .designSelectionBlock(colors, DesignRadii.Field, progress)
-                    .selectable(active, role = Role.RadioButton) { haptics.perform(HapticEvent.SELECTION); onSelect(index) }.padding(horizontal = 16.dp),
+                    .selectable(active, enabled = enabled, role = Role.RadioButton) { haptics.perform(HapticEvent.SELECTION); onSelect(index) }.padding(horizontal = 16.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 DesignText(option, 14, color = if (active) colors.ink else colors.muted, weight = if (active) FontWeight.Medium else FontWeight.Normal)
@@ -207,6 +217,26 @@ fun DesignField(
             )
             Box(Modifier.matchParentSize().squircleBorder(1.dp, colors.ink.copy(alpha = .14f), DesignRadii.Field))
         }
+    }
+}
+
+/**
+ * Schieberegler (Miuix Slider) mit Beschriftung: zeigt den Wert während des Ziehens, meldet ihn erst beim Loslassen
+ * (vermeidet Speichern/Neuzeichnen bei jedem Bildschirmbild). Werte in festen Schritten innerhalb des Bereichs.
+ */
+@Composable
+fun DesignSlider(label: @Composable (Int) -> String, value: Int, range: IntRange, step: Int, modifier: Modifier = Modifier, enabled: Boolean = true, onChange: (Int) -> Unit) {
+    var shown by remember(value) { mutableStateOf(value) }
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        DesignText(label(shown), 13, Modifier.padding(horizontal = 4.dp), muted = !enabled)
+        Slider(
+            value = shown.toFloat(),
+            onValueChange = { raw -> shown = (range.first + Math.round((raw - range.first) / step) * step).coerceIn(range) },
+            enabled = enabled,
+            valueRange = range.first.toFloat()..range.last.toFloat(),
+            steps = (range.last - range.first) / step - 1,
+            onValueChangeFinished = { onChange(shown) },
+        )
     }
 }
 

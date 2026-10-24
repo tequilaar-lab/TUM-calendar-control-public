@@ -16,6 +16,7 @@ import com.tequila.tumcalendarcontrol.sync.RuleEditCommand
 import com.tequila.tumcalendarcontrol.sync.RuleLedger
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerEditor
 import com.tequila.tumcalendarcontrol.sync.SyncRule
+import com.tequila.tumcalendarcontrol.sync.SourceChangeSummary
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyImportResult
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyPreview
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
@@ -96,6 +97,20 @@ internal class SourceReadWorkflowState(initialSnapshots: SavedSourceSnapshots = 
         freshReadCompletedInThisRun && snapshots.activeSlot == SourceSnapshotSlot.LATEST
     val activeSnapshotDifference: SourceSnapshotDifference? get() = snapshots.latest
         ?.let { latest -> snapshots.previous?.let { previous -> SourceSnapshotDifferenceModel.compare(previous, latest) } }
+
+    /** Zwischenspeicher je Momentaufnahmepaar: Zeilen fragen Änderungsarten einzeln ab, Vergleich nur einmal. */
+    private var changeCache: Pair<SavedSourceSnapshots, SourceChangeSummary>? = null
+
+    /** Ausführliche Änderungen der neuesten gegenüber der vorherigen Lesung; leer ohne Vorgänger. */
+    val latestChanges: SourceChangeSummary get() {
+        val current = snapshots
+        changeCache?.takeIf { it.first === current }?.let { return it.second }
+        val latest = current.latest
+        val previous = current.previous
+        val summary = if (latest == null || previous == null) SourceChangeSummary.EMPTY else SourceChangeSummary.between(previous.occurrences, latest.occurrences)
+        changeCache = current to summary
+        return summary
+    }
 
     /** Mit altem Katalog Bestätigung verlangen; ohne alten Katalog direkt lesende Anfrage vorbereiten. */
     fun requestRead(hasSubscription: Boolean): SourceReadRequest = when {

@@ -42,6 +42,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
@@ -60,8 +67,9 @@ import top.yukonga.miuix.kmp.basic.Icon
  * weiße Schrift auf halbtransparentem Blau erreicht 4,5:1 nicht. Bei „Aus“ deckend blau mit heller Schrift.
  * Die Lichtkante entfällt auf Wunsch des Nutzers; Unschärfe, Brechung, Tönung und Schatten bleiben.
  */
+/** progress (0..1): laufender Vorgang füllt die Pille von links in zarter Akzenttönung; null = keine Füllung. */
 @Composable
-fun DesignFloatingButton(label: String, enabled: Boolean, modifier: Modifier = Modifier, secondary: Boolean = false, onClick: () -> Unit) {
+fun DesignFloatingButton(label: String, enabled: Boolean, modifier: Modifier = Modifier, secondary: Boolean = false, progress: Float? = null, onClick: () -> Unit) {
     val colors = LocalDesignColors.current
     val haptics = LocalDesignHaptics.current
     val spec = glassSpec(LocalGlassLevel.current, LocalGlassSupport.current)
@@ -74,9 +82,17 @@ fun DesignFloatingButton(label: String, enabled: Boolean, modifier: Modifier = M
             accent = if (enabled && !secondary) colors.accent.copy(alpha = if (colors.isDark) .16f else .10f) else null)
     }
     val ink = when { !enabled -> colors.muted; secondary -> colors.ink; solid -> colors.paper; else -> colors.accent }
+    val shown by animateFloatAsState(progress ?: 0f, DesignMotion.select(), label = "floating-progress")
+    val fill = colors.accent.copy(alpha = if (colors.isDark) .24f else .16f)
     Button(
         onClick = { haptics.perform(HapticEvent.ACTION); onClick() }, enabled = enabled, cornerRadius = DesignRadii.Pill, minHeight = 56.dp,
-        modifier = modifier.heightIn(min = 56.dp).then(surface),
+        modifier = modifier.heightIn(min = 56.dp).then(surface).then(
+            if (progress == null) Modifier else Modifier.drawBehind {
+                // Füllung auf die Pillenform begrenzt, damit sie auch bei kleinem Anteil rund beginnt.
+                val pill = Path().apply { addRoundRect(RoundRect(0f, 0f, size.width, size.height, CornerRadius(size.height / 2))) }
+                clipPath(pill) { drawRect(fill, size = Size(size.width * shown.coerceIn(0f, 1f), size.height)) }
+            },
+        ),
         colors = ButtonDefaults.buttonColors(color = Color.Transparent, disabledColor = Color.Transparent, contentColor = ink, disabledContentColor = colors.muted),
     ) {
         DesignText(label, 15, color = ink, weight = if (solid || secondary) FontWeight.Medium else FontWeight.SemiBold, maxLines = 1)
@@ -137,9 +153,13 @@ fun DesignActionPage(
     actionEnabled: Boolean = true,
     actionTag: String = "floating-action",
     contentTag: String = "action-page-content",
+    actionProgress: Float? = null,
+    secondaryLabel: String? = null,
+    onSecondary: () -> Unit = {},
+    secondaryTag: String = "floating-secondary",
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    DesignActionFrame(actionLabel, onAction, modifier, actionEnabled, actionTag) {
+    DesignActionFrame(actionLabel, onAction, modifier, actionEnabled, actionTag, secondaryLabel, onSecondary, secondaryTag, actionProgress) {
         Column(
             Modifier.fillMaxSize().testTag(contentTag).verticalScroll(rememberScrollState())
                 .padding(horizontal = 8.dp).padding(bottom = FloatingActionContentClearance),
@@ -163,6 +183,7 @@ fun DesignActionFrame(
     secondaryLabel: String? = null,
     onSecondary: () -> Unit = {},
     secondaryTag: String = "floating-secondary",
+    actionProgress: Float? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val pageLayer = rememberLayerBackdrop()
@@ -184,7 +205,7 @@ fun DesignActionFrame(
                     ) {
                         DesignFloatingButton(lastSecondary, true, Modifier.width(secondaryWidth).padding(end = 10.dp).testTag(secondaryTag), secondary = true, onClick = onSecondary)
                     }
-                    DesignFloatingButton(actionLabel, actionEnabled, Modifier.weight(1f).testTag(actionTag), onClick = onAction)
+                    DesignFloatingButton(actionLabel, actionEnabled, Modifier.weight(1f).testTag(actionTag), progress = actionProgress, onClick = onAction)
                 }
             }
         }
