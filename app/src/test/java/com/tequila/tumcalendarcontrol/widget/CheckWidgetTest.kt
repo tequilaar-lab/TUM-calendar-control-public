@@ -61,6 +61,16 @@ class CheckWidgetTest {
         assertEquals("后台检查未开启，点此设置", text(state(enabled = false)))
     }
 
+    /** 1×1 (HONOR etwa 73×101 dp): zweizeilig Uhrzeit bzw. Datum und Ergebnis statt abgeschnittener langer Zeile. */
+    @Test fun `kompakter Status`() {
+        fun text(s: CheckWidgetRenderer.State) = com.tequila.tumcalendarcontrol.i18n.localizedMessage(
+            com.tequila.tumcalendarcontrol.i18n.localizedAppContext(context, AppLanguage.CHINESE), CheckWidgetRenderer.compactStatusText(s))
+        assertEquals("10:15\n无变化", text(state()))
+        assertEquals("10-23\n有变化", text(state(result = SourceCheckResult.CHANGED, checkedAt = now.minusSeconds(86_400))))
+        assertEquals("检查中…", text(state(started = now.minusSeconds(60))))
+        assertEquals("未开启", text(state(enabled = false)))
+    }
+
     @Test fun `kompakt ohne Titel, größer mit Titel`() {
         val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
         fun view(w: Int, h: Int) = CheckWidgetRenderer.render(activity, WidgetFrame(emptyList(), false, WidgetSettings(), now, zone, w, h), state()).apply(activity, FrameLayout(activity))

@@ -138,11 +138,11 @@ class ScheduleWidgetRendererTest {
         assertTrue(list.visible(R.id.widget_body))
     }
 
-    /** Schmales 2×2 (HONOR: 155×211 dp): Wochentag statt Datum, nur Beginn, Kurs einzeilig. */
+    /** Schmales 2×2 (HONOR: 155×211 dp): Status nur mit Tag (Uhrzeit steht groß darunter), nur Beginn. */
     @Test fun `klein schmal mit Wochentag und nur Beginn`() {
         val later = listOf(ev("x", 24, 13))
         val view = render(WidgetSize.SMALL, 155, 211, data = later)
-        assertEquals("周六 13:00", view.text(R.id.widget_status))
+        assertEquals("周六", view.text(R.id.widget_status))
         assertEquals("13:00", view.text(R.id.widget_time))
         view.captureRoboImage("src/test/screenshots/widget_small_narrow_155x211.png")
     }

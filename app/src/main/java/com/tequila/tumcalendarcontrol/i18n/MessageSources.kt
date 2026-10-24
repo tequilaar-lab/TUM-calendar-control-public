@@ -901,4 +901,5 @@ internal val messageSources = mapOf(
     896 to "检查中…",
     897 to "后台检查未开启，点此设置",
     898 to "显示上次检查结果，点一下立即只读检查课程更新",
+    899 to "明天",
 )

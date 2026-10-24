@@ -898,4 +898,5 @@
     <string name="msg_0896" formatted="false">"Checking…"</string>
     <string name="msg_0897" formatted="false">"Background check is off – tap to set up"</string>
     <string name="msg_0898" formatted="false">"Shows the last check; tap to check the course source now (read only)"</string>
+    <string name="msg_0899" formatted="false">"Tomorrow"</string>
 </resources>

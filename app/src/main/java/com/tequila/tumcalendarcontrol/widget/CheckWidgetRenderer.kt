@@ -70,7 +70,28 @@ object CheckWidgetRenderer {
         return checkedAt?.let { message(889, Stamp.format(it.atZone(state.zone)), result) } ?: result
     }
 
-    /** Klein (unter 110 dp Breite oder 90 dp Höhe): nur Symbol und Status; sonst mit Titel. */
+    /**
+     * Kompakte Statuszeile für 1×1 (Gerätefund: „Zuletzt …“ wurde abgeschnitten): zweizeilig Uhrzeit (heute) bzw.
+     * Datum und Ergebnis; „Prüft…“, „nie geprüft“ und „aus“ unverändert kurz.
+     */
+    fun compactStatusText(state: State): String {
+        if (action(state.enabled, state.configured) == Action.OPEN_SETTINGS) return message(876)
+        val full = statusText(state)
+        val checkedAt = state.status.checkedAt ?: return full
+        if (state.status.result == SourceCheckResult.NEVER || full == message(896)) return full
+        val local = checkedAt.atZone(state.zone)
+        val stamp = if (local.toLocalDate() == state.now.atZone(state.zone).toLocalDate()) DateTimeFormatter.ofPattern("HH:mm").format(local) else DateTimeFormatter.ofPattern("MM-dd").format(local)
+        val result = when (state.status.result) {
+            SourceCheckResult.UNCHANGED -> message(890)
+            SourceCheckResult.CHANGED -> message(891)
+            SourceCheckResult.FAILED -> message(892)
+            SourceCheckResult.INITIAL -> message(893)
+            else -> message(894)
+        }
+        return com.tequila.tumcalendarcontrol.i18n.joinMessages(listOf(stamp, result), "\n")
+    }
+
+    /** Klein (unter 110 dp Breite oder 90 dp Höhe): nur Symbol und kompakter Status; sonst mit Titel. */
     fun render(context: Context, frame: WidgetFrame, state: State = load(context, frame.now, frame.zone)): RemoteViews {
         val text = ScheduleWidgetRenderer.WidgetTexts(context)
         val views = RemoteViews(context.packageName, R.layout.widget_check)
@@ -79,7 +100,7 @@ object CheckWidgetRenderer {
         val compact = frame.widthDp < 110 || frame.heightDp < 90
         views.setViewVisibility(R.id.check_title, if (compact) View.GONE else View.VISIBLE)
         views.setTextViewText(R.id.check_title, text(message(873)))
-        views.setTextViewText(R.id.check_status, text(statusText(state)))
+        views.setTextViewText(R.id.check_status, text(if (compact) compactStatusText(state) else statusText(state)))
         val click = when (action(state.enabled, state.configured)) {
             Action.CHECK_NOW -> PendingIntent.getBroadcast(
                 context, 3, Intent(context, ScheduleWidgetCheck::class.java).setAction(ACTION_CHECK_NOW),

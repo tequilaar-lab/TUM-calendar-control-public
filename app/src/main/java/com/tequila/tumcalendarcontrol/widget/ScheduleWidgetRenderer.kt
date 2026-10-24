@@ -110,16 +110,24 @@ object ScheduleWidgetRenderer {
     }
 
     /**
-     * Klein: ein Termin. Status kurz („Mo 13:15“, „Morgen 13:15“, „In 23 Min.“); unter 170 dp Breite nur Beginn;
-     * unter 80 dp Höhe nur Status und Kurs; Kurs zweizeilig ab 150 dp; Raum ab 110 dp (antippbar).
+     * Klein: ein Termin. Status kurz („Mo 13:15“, „Morgen 13:15“, „In 23 Min.“); unter 170 dp Breite nur Beginn in der
+     * Zeitzeile und nur der Tag im Status; unter 80 dp Höhe nur Status und Kurs; Kurs zweizeilig ab 120 dp; Raum ab 110 dp.
      */
     private fun small(context: Context, views: RemoteViews, text: WidgetTexts, events: List<WidgetEvent>, frame: WidgetFrame) {
         val focus = ScheduleWidgetModel.focus(events, frame.now, frame.zone) ?: run { empty(views, text(message(799))); return }
         val event = focus.event
         val start = event.startsAt.atZone(frame.zone)
+        val narrow = frame.widthDp < 170
         val status = when {
             focus.inProgress -> message(791, focus.minutes)
             focus.day == focus.today && focus.minutes <= 60 -> message(792, focus.minutes)
+            // Schmal: Zeitzeile zeigt den Beginn schon groß – Status nur mit dem Tag (Gerätefund: Uhrzeit doppelt).
+            narrow -> when {
+                focus.day == focus.today -> message(787)
+                focus.day == focus.today.plusDays(1) -> message(899)
+                focus.day <= focus.today.plusDays(6) -> text.weekday(focus.day)
+                else -> text.shortDate(focus.day)
+            }
             focus.day == focus.today -> message(793, Time.format(start))
             focus.day == focus.today.plusDays(1) -> message(794, Time.format(start))
             // Innerhalb einer Woche Wochentag, sonst kurzes Datum – beides passt auch in schmale 2×2-Felder.
@@ -127,12 +135,11 @@ object ScheduleWidgetRenderer {
             else -> message(765, text.shortDate(focus.day), Time.format(start))
         }
         views.setTextViewText(R.id.widget_status, text(status))
-        val narrow = frame.widthDp < 170
         views.setTextViewText(R.id.widget_time, if (narrow) Time.format(start) else timeRange(event, frame.zone))
         views.setTextViewTextSize(R.id.widget_time, android.util.TypedValue.COMPLEX_UNIT_SP, if (narrow) 18f else 20f)
         views.setImageViewResource(R.id.widget_dot, dot(event.state))
         views.setTextViewText(R.id.widget_title, event.title)
-        views.setInt(R.id.widget_title, "setMaxLines", if (frame.heightDp >= 150) 2 else 1)
+        views.setInt(R.id.widget_title, "setMaxLines", if (frame.heightDp >= 120) 2 else 1)
         val compact = frame.heightDp < 80
         views.setViewVisibility(R.id.widget_time, if (compact) View.GONE else View.VISIBLE)
         views.setViewVisibility(R.id.widget_dot, if (compact) View.GONE else View.VISIBLE)

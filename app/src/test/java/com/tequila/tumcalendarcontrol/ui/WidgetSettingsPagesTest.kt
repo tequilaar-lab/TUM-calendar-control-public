@@ -25,6 +25,7 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import com.tequila.tumcalendarcontrol.widget.WidgetCorner
 import com.tequila.tumcalendarcontrol.widget.WidgetPreferences
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.assertIsSelected
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -112,6 +113,19 @@ class WidgetSettingsPagesTest {
         val preferences = WidgetPreferences(context)
         assertEquals("Countdown startet quadratisch, Klick schaltet aus", false, preferences.load(id, com.tequila.tumcalendarcontrol.widget.WidgetSize.COUNTDOWN).square)
         assertEquals("Standard unverändert", false, preferences.load().square)
+    }
+
+    /** Seite schon offen (Standard), dann „Bearbeiten“ auf dem Startbildschirm: Ziel wechselt zum Widget (Gerätefund). */
+    @Test fun `页面已打开时从桌面编辑进入对应组件`() {
+        val state = CalendarControlState().also { it.themeMode = ThemeMode.LIGHT; it.open(AppScreen.WIDGETS) }
+        composeRule.setContent { CompositionLocalProvider(LocalWidgetPreviewClock provides fixedClock) { CalendarControlSurface(state) } }
+        composeRule.waitForIdle()
+        val manager = android.appwidget.AppWidgetManager.getInstance(context)
+        val id = org.robolectric.Shadows.shadowOf(manager).createWidget(com.tequila.tumcalendarcontrol.widget.ScheduleWidgetLarge::class.java, com.tequila.tumcalendarcontrol.R.layout.widget_week)
+        state.editingWidgetId = id
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("widgets-target-$id").assertIsSelected()
+        assertEquals("Wunsch verbraucht", null, state.editingWidgetId)
     }
 
     @Test fun `小组件入口打开设置页`() {

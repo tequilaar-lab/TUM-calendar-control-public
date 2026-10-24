@@ -898,4 +898,5 @@
     <string name="msg_0896" formatted="false">"Prüft…"</string>
     <string name="msg_0897" formatted="false">"Hintergrundprüfung aus – zum Einrichten antippen"</string>
     <string name="msg_0898" formatted="false">"Zeigt die letzte Prüfung; antippen prüft die Kursquelle sofort (nur lesen)"</string>
+    <string name="msg_0899" formatted="false">"Morgen"</string>
 </resources>

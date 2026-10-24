@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -92,8 +94,15 @@ internal fun WidgetSize.label(): String = when (this) {
 fun WidgetSettingsScreen(state: CalendarControlState) {
     val context = LocalContext.current
     val preferences = remember(context) { WidgetPreferences(context) }
-    val placed = remember(context) { ScheduleWidgets.placed(context) }
+    // Bei jedem Zeichnen frisch: Die Seite kann im Hintergrund offen bleiben, während Widgets hinzukommen (Gerätefund).
+    val placed = ScheduleWidgets.placed(context)
     var target by rememberSaveable { mutableStateOf(state.editingWidgetId?.takeIf { id -> placed.any { it.id == id } } ?: placed.firstOrNull()?.id ?: DefaultTarget) }
+    // Neuer Einstieg aus „Bearbeiten“ auf dem Startbildschirm: dieses Widget wählen, auch wenn die Seite schon offen war.
+    LaunchedEffect(state.editingWidgetId) {
+        val wanted = state.editingWidgetId ?: return@LaunchedEffect
+        if (placed.any { it.id == wanted }) target = wanted
+        state.editingWidgetId = null
+    }
     val current = placed.firstOrNull { it.id == target }
     var settings by remember(target) { mutableStateOf(current?.let { preferences.load(it.id, it.size) } ?: preferences.load()) }
     var defaultPreview by rememberSaveable { mutableStateOf(WidgetSize.SMALL.name) }
@@ -117,7 +126,8 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
     val showCourse = current == null || size in setOf(WidgetSize.SMALL, WidgetSize.MEDIUM, WidgetSize.LARGE)
     val showWeek = current == null || size == WidgetSize.LARGE
     val showCountdown = current == null || size == WidgetSize.COUNTDOWN
-    DesignPage(contentTag = "widgets-content") {
+    // Neues Ziel beginnt oben (eigener Bildlaufzustand je Ziel).
+    key(target) { DesignPage(contentTag = "widgets-content") {
         DesignText(tr(message(812)), 13, TextInset)
         DesignText(tr(message(813)), 12, TextInset, muted = true)
 
@@ -182,7 +192,7 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
             }
             pinFeedback?.let { DesignText(tr(it), 12, TextInset.testTag("widgets-pin-feedback"), muted = true) }
         }
-    }
+    } }
 }
 
 /** Countdown: Arten und angeheftetes Hauptziel (Rückfall auf das nächste, wenn es abläuft oder gelöscht wird). */

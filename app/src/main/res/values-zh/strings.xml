@@ -898,4 +898,5 @@
     <string name="msg_0896" formatted="false">"检查中…"</string>
     <string name="msg_0897" formatted="false">"后台检查未开启，点此设置"</string>
     <string name="msg_0898" formatted="false">"显示上次检查结果，点一下立即只读检查课程更新"</string>
+    <string name="msg_0899" formatted="false">"明天"</string>
 </resources>
