@@ -758,4 +758,26 @@
     <string name="msg_0752" formatted="false">"Quelldaten wiederherstellen"</string>
     <string name="msg_0753" formatted="false">"Alle Kurse wählen"</string>
     <string name="msg_0754" formatted="false">"Leeren"</string>
+    <string name="msg_0755" formatted="false">"Gegenüber der letzten Lesung"</string>
+    <string name="msg_0756" formatted="false">"{0} Änderungen"</string>
+    <string name="msg_0757" formatted="false">"Keine Änderungen seit der letzten Lesung"</string>
+    <string name="msg_0758" formatted="false">"Neu"</string>
+    <string name="msg_0759" formatted="false">"Entfallen"</string>
+    <string name="msg_0760" formatted="false">"Abgesagt"</string>
+    <string name="msg_0761" formatted="false">"Wieder angesetzt"</string>
+    <string name="msg_0762" formatted="false">"Zeit geändert"</string>
+    <string name="msg_0763" formatted="false">"Ort geändert"</string>
+    <string name="msg_0764" formatted="false">"Titel geändert"</string>
+    <string name="msg_0765" formatted="false">"{0} {1}"</string>
+    <string name="msg_0766" formatted="false">"{0} Änderungen betreffen gewählte Termine; bitte Auswahl und Teilnahme prüfen."</string>
+    <string name="msg_0767" formatted="false">"Alle Änderungen ansehen"</string>
+    <string name="msg_0768" formatted="false">"Änderungsdetails"</string>
+    <string name="msg_0769" formatted="false">"Nur lesen: vergleicht die neueste mit der vorherigen Kursdatenversion. Auswahl, Regeln und Kalender bleiben unverändert."</string>
+    <string name="msg_0770" formatted="false">"Vorher {0}"</string>
+    <string name="msg_0771" formatted="false">"Ort: {0} → {1}"</string>
+    <string name="msg_0772" formatted="false">"kein Ort"</string>
+    <string name="msg_0773" formatted="false">"Beide Versionen vergleichen"</string>
+    <string name="msg_0774" formatted="false">"Änderungen erkannt: {0}. App öffnen und erneut lesen, um Details zu sehen."</string>
+    <string name="msg_0775" formatted="false">"Es gibt keine vorherige Lesung zum Vergleichen."</string>
+    <string name="msg_0776" formatted="false">"{0} Änderungen in {1} Kursen"</string>
 </resources>

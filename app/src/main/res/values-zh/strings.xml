@@ -758,4 +758,26 @@
     <string name="msg_0752" formatted="false">"恢复为来源信息"</string>
     <string name="msg_0753" formatted="false">"全选课程"</string>
     <string name="msg_0754" formatted="false">"清空"</string>
+    <string name="msg_0755" formatted="false">"与上次读取相比"</string>
+    <string name="msg_0756" formatted="false">"{0} 处变化"</string>
+    <string name="msg_0757" formatted="false">"与上次读取相比没有变化"</string>
+    <string name="msg_0758" formatted="false">"新增"</string>
+    <string name="msg_0759" formatted="false">"已移除"</string>
+    <string name="msg_0760" formatted="false">"已取消"</string>
+    <string name="msg_0761" formatted="false">"恢复上课"</string>
+    <string name="msg_0762" formatted="false">"时间已变"</string>
+    <string name="msg_0763" formatted="false">"地点已变"</string>
+    <string name="msg_0764" formatted="false">"课名已变"</string>
+    <string name="msg_0765" formatted="false">"{0} {1}"</string>
+    <string name="msg_0766" formatted="false">"已选课次中有 {0} 处变化，请检查选择和出席设置。"</string>
+    <string name="msg_0767" formatted="false">"查看全部变化"</string>
+    <string name="msg_0768" formatted="false">"变化明细"</string>
+    <string name="msg_0769" formatted="false">"只读：比较最新一次和上一次读取的课程数据，不会改动选择、规则或日历。"</string>
+    <string name="msg_0770" formatted="false">"原为 {0}"</string>
+    <string name="msg_0771" formatted="false">"地点：{0} → {1}"</string>
+    <string name="msg_0772" formatted="false">"无地点"</string>
+    <string name="msg_0773" formatted="false">"查看两版差异"</string>
+    <string name="msg_0774" formatted="false">"检测到变化：{0}。打开后重新读取即可查看明细。"</string>
+    <string name="msg_0775" formatted="false">"没有可比较的上一次读取。"</string>
+    <string name="msg_0776" formatted="false">"共 {0} 处变化，涉及 {1} 门课程"</string>
 </resources>

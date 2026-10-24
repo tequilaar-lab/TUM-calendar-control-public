@@ -31,6 +31,7 @@ internal fun AppScreen.usesBackArrow(): Boolean = this in setOf(
     AppScreen.BACKGROUND_CHECK,
     AppScreen.RULE_BACKUP,
     AppScreen.APPEARANCE,
+    AppScreen.SOURCE_CHANGES,
 )
 
 internal fun AppScreen.bottomNavigationIndex(): Int = when (this) {
@@ -61,6 +62,7 @@ internal fun AppScreen.title(): String = when (this) {
     AppScreen.BACKGROUND_CHECK -> message(168)
     AppScreen.RULE_BACKUP -> message(169)
     AppScreen.APPEARANCE -> message(580)
+    AppScreen.SOURCE_CHANGES -> message(768)
 }
 
 internal fun AppScreen.subtitle(): String? = when (this) {
@@ -76,6 +78,7 @@ internal fun AppScreen.subtitle(): String? = when (this) {
     AppScreen.OUTPUT_CLEANUP -> message(179)
     AppScreen.BACKGROUND_CHECK -> message(180)
     AppScreen.RULE_BACKUP -> message(181)
+    AppScreen.SOURCE_CHANGES -> message(769)
     else -> null
 }
 
@@ -103,4 +106,5 @@ internal fun AppScreen.kicker(): String = when (this) {
     AppScreen.BACKGROUND_CHECK -> "UPDATES / READ ONLY"
     AppScreen.RULE_BACKUP -> "DATA / BACKUP"
     AppScreen.APPEARANCE -> "APPEARANCE"
+    AppScreen.SOURCE_CHANGES -> "COURSES / CHANGES"
 }

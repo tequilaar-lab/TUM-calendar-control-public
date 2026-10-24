@@ -758,4 +758,26 @@
     <string name="msg_0752" formatted="false">"Restore source details"</string>
     <string name="msg_0753" formatted="false">"Select all courses"</string>
     <string name="msg_0754" formatted="false">"Clear"</string>
+    <string name="msg_0755" formatted="false">"Compared with the last read"</string>
+    <string name="msg_0756" formatted="false">"{0} changes"</string>
+    <string name="msg_0757" formatted="false">"No changes since the last read"</string>
+    <string name="msg_0758" formatted="false">"New"</string>
+    <string name="msg_0759" formatted="false">"Removed"</string>
+    <string name="msg_0760" formatted="false">"Cancelled"</string>
+    <string name="msg_0761" formatted="false">"Reinstated"</string>
+    <string name="msg_0762" formatted="false">"Time changed"</string>
+    <string name="msg_0763" formatted="false">"Room changed"</string>
+    <string name="msg_0764" formatted="false">"Title changed"</string>
+    <string name="msg_0765" formatted="false">"{0} {1}"</string>
+    <string name="msg_0766" formatted="false">"{0} changes affect selected sessions; please check your selection and attendance."</string>
+    <string name="msg_0767" formatted="false">"View all changes"</string>
+    <string name="msg_0768" formatted="false">"Change details"</string>
+    <string name="msg_0769" formatted="false">"Read only: compares the latest with the previous course data. Selection, rules and calendars stay unchanged."</string>
+    <string name="msg_0770" formatted="false">"Previously {0}"</string>
+    <string name="msg_0771" formatted="false">"Room: {0} → {1}"</string>
+    <string name="msg_0772" formatted="false">"no room"</string>
+    <string name="msg_0773" formatted="false">"Compare both versions"</string>
+    <string name="msg_0774" formatted="false">"Changes detected: {0}. Open the app and read again to see details."</string>
+    <string name="msg_0775" formatted="false">"There is no previous read to compare with."</string>
+    <string name="msg_0776" formatted="false">"{0} changes in {1} courses"</string>
 </resources>

@@ -32,6 +32,7 @@ internal val routedAppScreens: Set<AppScreen> =
     AppScreen.BACKGROUND_CHECK,
     AppScreen.RULE_BACKUP,
     AppScreen.APPEARANCE,
+    AppScreen.SOURCE_CHANGES,
     )
 
 @Composable
@@ -63,6 +64,7 @@ fun AppScreenContent(
         AppScreen.OUTPUT_CLEANUP,
         AppScreen.BACKGROUND_CHECK,
         AppScreen.RULE_BACKUP,
+        AppScreen.SOURCE_CHANGES,
         -> WorkflowScreenContent(state, screen)
     }
 }
@@ -103,6 +105,7 @@ private fun WorkflowScreenContent(state: CalendarControlState, screen: AppScreen
         AppScreen.OUTPUT_CLEANUP -> OutputCleanupScreen(state)
         AppScreen.BACKGROUND_CHECK -> BackgroundCheckScreen(state)
         AppScreen.RULE_BACKUP -> RuleBackupScreen(state)
+        AppScreen.SOURCE_CHANGES -> SourceChangeScreen(state)
         else -> error(message(184))
     }
 }

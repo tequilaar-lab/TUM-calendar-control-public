@@ -156,6 +156,8 @@ private fun SourceSelectorControls(state: CalendarControlState, ui: SelectorUi) 
     val allSelected = all.isNotEmpty() && selection.containsAll(all)
     DesignSection(tr(state.sourceSnapshotLabel), TextInset)
     DesignText(tr(message(693, unfiltered.size, all.size)), 19, TextInset)
+    // Änderungen gegenüber der vorherigen Lesung (nur neueste Version aktiv); Details auf eigener Seite.
+    SourceChangeCard(state)
     DesignField("", state.sourceBrowserQuery, state::updateSourceBrowserQuery, Modifier.testTag("source-search"), placeholder = tr(message(616)), search = true)
     SourceFilterTabs(state.sourceBrowserFilter, state::updateSourceBrowserFilter)
     val mode = SourceBrowserMode.valueOf(ui.mode)

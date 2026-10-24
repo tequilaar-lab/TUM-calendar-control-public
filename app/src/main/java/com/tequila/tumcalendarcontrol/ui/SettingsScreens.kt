@@ -119,6 +119,7 @@ private fun SourceSnapshotSelection(state: CalendarControlState) {
                 state.selectSourceSnapshot(slots[it])
             }
             state.sourceSnapshotDifference?.let { DesignNote(tr(message(542)), tr(it.summary())) }
+            DesignRow(tr(message(773)), tag = "settings-snapshot-changes", inset = 4.dp, onClick = state::openSourceChanges)
         }
     }
 }

@@ -40,8 +40,9 @@ private const val SourceReadDeadlineMillis = 35_000L
 private const val MAX_RULE_BACKUP_CHARS = 1_000_000
 private const val SourceReadLogTag = "TumSourceRead"
 
+/** entry: Einstiegsziel aus Hinweis oder Widget (nur Navigation); nach Anwendung onEntryHandled. */
 @Composable
-fun CalendarControlApp() {
+fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {}) {
     val context = LocalContext.current
     val session = androidx.lifecycle.ViewModelProvider(context as androidx.activity.ComponentActivity)[CalendarSessionModel::class.java]
     val languagePreferences = remember(context) { AppLanguagePreferences(context) }
@@ -120,6 +121,14 @@ fun CalendarControlApp() {
         googleAuthorizationCoordinator.resolveResult(result.resultCode, result.data, state::resolveGoogleAuthorization)
     }
     LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
+    LaunchedEffect(entry) {
+        when (entry) {
+            AppEntry.SourceRange -> state.openSourceRange()
+            is AppEntry.Course -> state.openCourse(entry.courseId)
+            null -> return@LaunchedEffect
+        }
+        onEntryHandled()
+    }
     LaunchedEffect(state.persistedPageMemory) {
         runCatching { pageMemoryPreferences.save(state.persistedPageMemory) }
             .onFailure { state.feedback = message(216) }
