@@ -1,0 +1,11 @@
+<!-- Aufgabe: Symbol der App-Verknüpfung „Widget-Einstellungen“; reine Vektorgrafik ohne Daten oder Aktionen. (48-dp-Fläche mit hellem Kreis, Symbol 20 dp mittig, wie System-Verknüpfungen) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path android:fillColor="#FFE6EEF5" android:pathData="M24,24m-24,0a24,24 0,1 1,48 0a24,24 0,1 1,-48 0" />
+    <group android:translateX="14" android:translateY="14" android:scaleX="0.8333" android:scaleY="0.8333">
+        <path android:fillColor="#FF0065A8" android:pathData="M13,13v8h8v-8h-8zM3,21h8v-8L3,13v8zM3,3v8h8L11,3L3,3zM16.66,1.69L11,7.34 16.66,13l5.66,-5.66 -5.66,-5.65z" />
+    </group>
+</vector>

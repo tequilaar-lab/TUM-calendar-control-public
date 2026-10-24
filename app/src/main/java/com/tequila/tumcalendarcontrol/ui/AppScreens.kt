@@ -34,6 +34,7 @@ internal val routedAppScreens: Set<AppScreen> =
     AppScreen.APPEARANCE,
     AppScreen.SOURCE_CHANGES,
     AppScreen.WIDGETS,
+    AppScreen.CLASS_LIVE,
     )
 
 @Composable
@@ -55,6 +56,7 @@ fun AppScreenContent(
         AppScreen.SYNC_PREVIEW,
         AppScreen.APPEARANCE,
         AppScreen.WIDGETS,
+        AppScreen.CLASS_LIVE,
         -> SettingsScreenContent(state, screen)
 
         AppScreen.ATTENDANCE,
@@ -91,7 +93,8 @@ private fun SettingsScreenContent(state: CalendarControlState, screen: AppScreen
         AppScreen.SYNC_CONFIGURATION -> SyncConfigurationScreen(state)
         AppScreen.SYNC_PREVIEW -> SyncPreviewScreen(state)
         AppScreen.APPEARANCE -> AppearanceScreen(state)
-        AppScreen.WIDGETS -> WidgetSettingsScreen()
+        AppScreen.WIDGETS -> WidgetSettingsScreen(state)
+        AppScreen.CLASS_LIVE -> ClassLiveScreen()
         else -> error(message(183))
     }
 }

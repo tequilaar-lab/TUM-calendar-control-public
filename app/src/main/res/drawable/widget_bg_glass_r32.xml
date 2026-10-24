@@ -1,4 +1,5 @@
-<!-- Aufgabe: Widget-Hintergrund (durchscheinend, Ecken 32 dp); reine Darstellungsressource ohne Daten oder Aktionen. -->
+<!-- Automatisch erzeugt (scripts/generate_widget_backgrounds.py); nicht von Hand bearbeiten.
+     Aufgabe: Widget-Hintergrund (durchscheinend, Ecken 32 dp); reine Darstellungsressource ohne Daten oder Aktionen. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <solid android:color="@color/widget_surface_glass" />
     <corners android:radius="32dp" />

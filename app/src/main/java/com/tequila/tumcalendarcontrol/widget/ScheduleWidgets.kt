@@ -1,8 +1,9 @@
 /*
- * Aufgabe: Die drei Startbildschirm-Widgets (klein „Wohin jetzt“, mittel „Heute“, groß „Woche“) bereitstellen und
- *   aktualisieren: Daten laden, je Instanz nach Größe zeichnen, nächste Aktualisierung grob vormerken.
+ * Aufgabe: Die Startbildschirm-Widgets (klein „Wohin jetzt“, mittel „Heute“, groß „Woche“, „Countdown“, Prüf-Widget,
+ *   „Stundenplan“, „Morgen“) bereitstellen und aktualisieren: Daten laden, je Instanz nach Größe zeichnen, nächste Aktualisierung grob vormerken.
  * Ein-/Ausgabe: Systemereignisse (Aktualisierung, Größenänderung, Zeit/Zeitzone/Sprache) und App-Aufrufe -> RemoteViews.
- * Nebenwirkungen: Liest nur private Zuordnungen und Widget-Einstellungen; setzt einen nicht weckenden, ungenauen Alarm.
+ * Nebenwirkungen: Liest nur private Zuordnungen, eigene Termine, Widget-Einstellungen und Kurznamen; setzt einen nicht
+ *   weckenden, ungenauen Alarm.
  *   Kein Netzwerk, kein Kalenderzugriff, keine Schreibvorgänge an Regeln oder Kalendern.
  * Nicht zuständig: Inhalt/Layout (Model, Renderer) oder Einstellungsoberfläche.
  */
@@ -15,8 +16,15 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.util.SizeF
+import android.widget.RemoteViews
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerPreferences
+import com.tequila.tumcalendarcontrol.sync.DeadlineCountdown
+import com.tequila.tumcalendarcontrol.sync.ManualEventKind
+import com.tequila.tumcalendarcontrol.sync.ManualScheduleItem
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 
@@ -27,9 +35,16 @@ abstract class ScheduleWidgetProvider : AppWidgetProvider() {
     override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) =
         ScheduleWidgets.refreshAll(context)
 
+    /** Entfernte Widgets: ihre eigenen Einstellungen löschen. */
+    override fun onDeleted(context: Context, ids: IntArray) {
+        val preferences = WidgetPreferences(context)
+        ids.forEach(preferences::remove)
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED, Intent.ACTION_LOCALE_CHANGED, ScheduleWidgets.ACTION_REFRESH -> ScheduleWidgets.refreshAll(context)
+            CheckWidgetRenderer.ACTION_CHECK_NOW -> CheckWidgetRenderer.startCheck(context)
             else -> super.onReceive(context, intent)
         }
     }
@@ -39,6 +54,14 @@ abstract class ScheduleWidgetProvider : AppWidgetProvider() {
 class ScheduleWidgetSmall : ScheduleWidgetProvider()
 class ScheduleWidgetMedium : ScheduleWidgetProvider()
 class ScheduleWidgetLarge : ScheduleWidgetProvider()
+/** Countdown bis zu Prüfungen und Fristen (eigene Termine, nicht nur geschriebene). */
+class ScheduleWidgetCountdown : ScheduleWidgetProvider()
+/** „Auf Änderungen prüfen“ (1×1 bis 2×2); ersetzt die frühere Schnelleinstellung. */
+class ScheduleWidgetCheck : ScheduleWidgetProvider()
+/** Stundenplan: Kalenderwoche als Raster nach Uhrzeit (4×3 und größer). */
+class ScheduleWidgetGrid : ScheduleWidgetProvider()
+/** Morgen: erster Kurs (schmal) bzw. Terminliste (breit) des nächsten Tages. */
+class ScheduleWidgetTomorrow : ScheduleWidgetProvider()
 
 object ScheduleWidgets {
     internal const val ACTION_REFRESH = "com.tequila.tumcalendarcontrol.widget.REFRESH"
@@ -46,6 +69,10 @@ object ScheduleWidgets {
         ScheduleWidgetSmall::class.java to WidgetSize.SMALL,
         ScheduleWidgetMedium::class.java to WidgetSize.MEDIUM,
         ScheduleWidgetLarge::class.java to WidgetSize.LARGE,
+        ScheduleWidgetCountdown::class.java to WidgetSize.COUNTDOWN,
+        ScheduleWidgetCheck::class.java to WidgetSize.CHECK,
+        ScheduleWidgetGrid::class.java to WidgetSize.GRID,
+        ScheduleWidgetTomorrow::class.java to WidgetSize.TOMORROW,
     )
 
     /**
@@ -54,21 +81,79 @@ object ScheduleWidgets {
      */
     fun refreshAll(context: Context, now: Instant = Instant.now(), zone: ZoneId = ZoneId.systemDefault()) {
         val app = context.applicationContext
+        // Auf-/Zuklappen meldet der HONOR-Startbildschirm nicht: solange der Prozess lebt, selbst darauf reagieren.
+        FoldRefreshWatcher.watch(app)
         val manager = AppWidgetManager.getInstance(app) ?: return
         val placed = providers.map { (type, size) -> size to manager.getAppWidgetIds(ComponentName(app, type)) }.filter { it.second.isNotEmpty() }
         if (placed.isEmpty()) return
-        val events = runCatching { ScheduleWidgetModel.eventsFrom(RuleLedgerPreferences(app).load().mappings) }.getOrDefault(emptyList())
-        val settings = WidgetPreferences(app).load()
+        val ledger = runCatching { RuleLedgerPreferences(app).load() }.getOrNull()
+        val events = ledger?.let { ScheduleWidgetModel.eventsFrom(it.mappings) }.orEmpty()
+        val manual = ledger?.manualEvents.orEmpty()
+        val preferences = WidgetPreferences(app)
+        val settings = preferences.load()
+        val shortNames = CourseShortNames.resolve(CourseShortNames(app).load(), events)
         placed.forEach { (size, ids) ->
             ids.forEach { id ->
-                val options = manager.getAppWidgetOptions(id)
-                // Hochformat: Breite = kleinste, Höhe = größte gemeldete Abmessung.
-                val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).takeIf { it > 0 } ?: defaultWidth(size)
-                val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).takeIf { it > 0 } ?: defaultHeight(size)
-                manager.updateAppWidget(id, ScheduleWidgetRenderer.render(app, size, WidgetFrame(events, events.isNotEmpty(), settings, now, zone, width, height)))
+                // Jedes platzierte Widget mit eigenen Einstellungen (neue: Standard, klein/Countdown quadratisch).
+                val own = preferences.load(id, size)
+                fun frame(width: Int, height: Int) = WidgetFrame(events, events.isNotEmpty(), own, now, zone, width, height, manual, shortNames)
+                manager.updateAppWidget(id, viewsFor(app, size, manager.getAppWidgetOptions(id), ::frame))
             }
         }
-        scheduleNext(app, ScheduleWidgetModel.nextRefresh(ScheduleWidgetModel.visible(events, settings), now, zone))
+        val courses = ScheduleWidgetModel.nextRefresh(ScheduleWidgetModel.visible(events, settings), now, zone)
+        scheduleNext(app, listOfNotNull(courses, countdownRefresh(manual, now)).min())
+    }
+
+    /**
+     * Ab Android 12 je gemeldeter Größe eine eigene Darstellung; der Startbildschirm wählt passend zur tatsächlichen
+     * Größe (keine eigene Schätzung, die je nach Auslöser anders ausfallen kann). Davor: Hochformat-Abmessungen.
+     */
+    internal fun viewsFor(context: Context, size: WidgetSize, options: Bundle, frame: (Int, Int) -> WidgetFrame): RemoteViews {
+        val sizes = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            @Suppress("DEPRECATION")
+            options.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES).orEmpty().distinct().take(MAX_SIZES)
+        } else emptyList()
+        if (sizes.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return RemoteViews(sizes.associateWith { ScheduleWidgetRenderer.render(context, size, frame(it.width.toInt(), it.height.toInt())) })
+        }
+        val (width, height) = portraitSize(options, size)
+        return ScheduleWidgetRenderer.render(context, size, frame(width, height))
+    }
+
+    /** Platziertes Widget mit Art und (Hochformat-)Größe in dp für Einstellungsliste und Vorschau. */
+    data class PlacedWidget(val id: Int, val size: WidgetSize, val widthDp: Int, val heightDp: Int)
+
+    /** Alle platzierten Widgets dieser App, nach Art und ID geordnet. */
+    fun placed(context: Context): List<PlacedWidget> {
+        val app = context.applicationContext
+        val manager = AppWidgetManager.getInstance(app) ?: return emptyList()
+        return providers.flatMap { (type, size) ->
+            manager.getAppWidgetIds(ComponentName(app, type)).sorted().map { id ->
+                val (width, height) = portraitSize(manager.getAppWidgetOptions(id), size)
+                PlacedWidget(id, size, width, height)
+            }
+        }
+    }
+
+    /** Hochformatgröße: ab Android 12 die erste gemeldete Größe, sonst minWidth × maxHeight, sonst Standard. */
+    internal fun portraitSize(options: Bundle, size: WidgetSize): Pair<Int, Int> {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            @Suppress("DEPRECATION")
+            options.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)?.firstOrNull()?.let { return it.width.toInt() to it.height.toInt() }
+        }
+        val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).takeIf { it > 0 } ?: defaultWidth(size)
+        val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).takeIf { it > 0 } ?: defaultHeight(size)
+        return width to height
+    }
+
+    /** RemoteViews erlaubt höchstens 16 Größen in einer Zuordnung. */
+    private const val MAX_SIZES = 16
+
+    /** Countdown: Zielzeiten (und Prüfungsende) als Ränder; in der letzten Stunde alle 5 Minuten. */
+    internal fun countdownRefresh(items: List<ManualScheduleItem>, now: Instant): Instant? {
+        val boundaries = items.flatMap { listOfNotNull(DeadlineCountdown.target(it), if (it.kind == ManualEventKind.EXAM) it.endsAt else null) }.filter { it > now }
+        val next = boundaries.minOrNull() ?: return null
+        return if (Duration.between(now, next) <= Duration.ofHours(1)) minOf(next, now.plus(Duration.ofMinutes(5))) else next
     }
 
     /** Ungenauer, nicht weckender Alarm (keine Sonderberechtigung, keine Pünktlichkeitszusage); ersetzt den vorherigen. */
@@ -79,8 +164,8 @@ object ScheduleWidgets {
         alarms.set(AlarmManager.RTC, at.toEpochMilli(), pending)
     }
 
-    internal fun defaultWidth(size: WidgetSize): Int = if (size == WidgetSize.SMALL) 150 else 320
-    internal fun defaultHeight(size: WidgetSize): Int = when (size) { WidgetSize.SMALL -> 150; WidgetSize.MEDIUM -> 170; WidgetSize.LARGE -> 340 }
+    internal fun defaultWidth(size: WidgetSize): Int = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN, WidgetSize.TOMORROW -> 150; WidgetSize.CHECK -> 80; else -> 320 }
+    internal fun defaultHeight(size: WidgetSize): Int = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN, WidgetSize.TOMORROW -> 150; WidgetSize.CHECK -> 100; WidgetSize.MEDIUM -> 170; WidgetSize.LARGE -> 340; WidgetSize.GRID -> 250 }
 
     /** Ob der Startbildschirm das direkte Hinzufügen anbietet (Systemdialog, Nutzer bestätigt). */
     fun canRequestPin(context: Context): Boolean = AppWidgetManager.getInstance(context)?.isRequestPinAppWidgetSupported == true

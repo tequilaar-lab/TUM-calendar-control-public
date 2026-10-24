@@ -19,7 +19,10 @@ class SyncCandidateFactory(private val zoneId: ZoneId = ZoneId.of("Europe/Berlin
         rules: List<SyncRule>,
         manualEvents: List<ManualScheduleItem>,
         overrides: Map<String, com.tequila.tumcalendarcontrol.domain.CourseLocalOverride> = emptyMap(),
+        /** Erinnerungen: null = nicht verwaltet; sonst grüne Termine mit diesem Wert (N oder NO_REMINDER), übrige NO_REMINDER. */
+        mustAttendReminder: Int? = null,
     ): List<DesiredCalendarEvent> {
+        fun reminderFor(state: AttendanceState): Int? = mustAttendReminder?.let { if (state == AttendanceState.MUST_ATTEND) it else NO_REMINDER }
         val rulesByUid = rules.associateBy(SyncRule::sourceUid)
         val sourceEvents = occurrences.asSequence()
             .filter { it.identity in selectedSourceOccurrences }
@@ -40,6 +43,7 @@ class SyncCandidateFactory(private val zoneId: ZoneId = ZoneId.of("Europe/Berlin
                     endsAt = end,
                     attendanceState = state,
                     location = override?.location ?: occurrence.location,
+                    reminderMinutes = reminderFor(state),
                 )
             }
         }.toList()
@@ -50,6 +54,7 @@ class SyncCandidateFactory(private val zoneId: ZoneId = ZoneId.of("Europe/Berlin
                 startsAt = item.startsAt,
                 endsAt = item.endsAt,
                 attendanceState = item.attendanceState,
+                reminderMinutes = reminderFor(item.attendanceState),
             )
         }
         // Doppelt expandierte iCal-Instanzen nur über stabile Quellenidentität zusammenfassen.

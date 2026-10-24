@@ -1,0 +1,5 @@
+<!-- Aufgabe: Terminblock im Stundenplan-Widget (choose); reine Darstellungsressource ohne Daten oder Aktionen. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/widget_grid_choose" />
+    <corners android:radius="5dp" />
+</shape>

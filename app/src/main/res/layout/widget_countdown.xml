@@ -1,0 +1,22 @@
+<!-- Aufgabe: Countdown-Widget: Hauptziel (Art, große Zahl mit Einheit, Name, Zeitpunkt), daneben bzw. darunter weitere Einträge (äußerer transparenter Rahmen, innen der Block mit Hintergrund); reine Darstellungsressource ohne Daten oder Aktionen. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/widget_frame" android:layout_width="match_parent" android:layout_height="match_parent">
+<FrameLayout android:id="@+id/widget_root" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/widget_bg_solid_r16" android:padding="14dp">
+    <LinearLayout android:id="@+id/widget_body" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <LinearLayout android:id="@+id/cd_main" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:id="@+id/cd_kind" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/widget_accent" android:singleLine="true" />
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="bottom" android:orientation="horizontal">
+                    <TextView android:id="@+id/cd_number" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="44sp" android:fontFamily="sans-serif-light" android:includeFontPadding="false" android:textColor="@color/widget_ink" android:singleLine="true" />
+                    <TextView android:id="@+id/cd_unit" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:layout_marginBottom="4dp" android:textSize="14sp" android:textColor="@color/widget_muted" android:singleLine="true" />
+                </LinearLayout>
+                <TextView android:id="@+id/cd_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textSize="15sp" android:textColor="@color/widget_ink" android:maxLines="2" android:ellipsize="end" />
+                <TextView android:id="@+id/cd_when" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textSize="12sp" android:textColor="@color/widget_muted" android:singleLine="true" android:ellipsize="end" />
+            </LinearLayout>
+            <LinearLayout android:id="@+id/cd_side" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="12dp" android:gravity="center_vertical" android:orientation="vertical" android:visibility="gone" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/cd_list" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="10dp" android:orientation="vertical" android:visibility="gone" />
+        <TextView android:id="@+id/widget_footer" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/widget_muted" android:singleLine="true" android:visibility="gone" />
+    </LinearLayout>
+    <TextView android:id="@+id/widget_empty" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center_vertical" android:textSize="13sp" android:textColor="@color/widget_muted" android:visibility="gone" />
+</FrameLayout>
+</FrameLayout>

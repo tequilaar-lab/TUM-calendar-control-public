@@ -1,0 +1,18 @@
+<!-- Aufgabe: Widget-Beschreibung (Stundenplan): 4×3 als Ziel, in Höhe und Breite änderbar, Aktualisierung höchstens alle 30 min, optionale Einrichtung; reine Darstellungsressource ohne Daten oder Aktionen. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="180dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="3"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="110dp"
+    android:maxResizeWidth="1000dp"
+    android:maxResizeHeight="1000dp"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_grid"
+    android:previewImage="@drawable/widget_preview_grid"
+    android:description="@string/msg_0914"
+    android:configure="com.tequila.tumcalendarcontrol.widget.WidgetConfigureActivity"
+    android:widgetFeatures="reconfigurable|configuration_optional" />

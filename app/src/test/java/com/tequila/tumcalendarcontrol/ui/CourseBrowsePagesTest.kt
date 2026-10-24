@@ -83,7 +83,8 @@ class CourseBrowsePagesTest {
     @Test fun courseEditRejectsInvalidTime() {
         val state = lightState().also { it.openCourse("course-a"); it.openCourseEdit() }
         render(state)
-        val startHour = composeRule.onAllNodes(hasSetTextAction() and hasAnyAncestor(hasTestTag("edit-content")))[2]
+        // Felder: Titel, Ort, Widget-Kurzname, dann Startstunde.
+        val startHour = composeRule.onAllNodes(hasSetTextAction() and hasAnyAncestor(hasTestTag("edit-content")))[3]
         startHour.performTextClearance()
         startHour.performTextInput("25")
         composeRule.onNodeWithTag("edit-save").performClick()

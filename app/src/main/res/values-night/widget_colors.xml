@@ -11,4 +11,8 @@
     <color name="widget_stop">#FF7D8588</color>
     <color name="widget_wash">#2488B9D9</color>
     <color name="widget_chip">#14E8E9E6</color>
+    <!-- Stundenplan-Raster: Blockflächen je Teilnahmeregel (Grün/Blau/Grau, gedämpft). -->
+    <color name="widget_grid_must">#3D6DD875</color>
+    <color name="widget_grid_choose">#3388B9D9</color>
+    <color name="widget_grid_stop">#267D8588</color>
 </resources>
