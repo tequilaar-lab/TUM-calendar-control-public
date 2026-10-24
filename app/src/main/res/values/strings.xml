@@ -907,7 +907,7 @@
     <string name="msg_0905" formatted="false">"This widget is elongated: square uses the shorter side, so stretching it lengthwise has no effect"</string>
     <string name="msg_0906" formatted="false">"This course is not in the current course list; the home page was opened"</string>
     <string name="msg_0907" formatted="false">"Widget short name"</string>
-    <string name="msg_0908" formatted="false">"Used only in the “Week” and “Timetable” widgets, up to 16 characters; leave empty to show the full name. Stored on this device only, never written to the calendar."</string>
+    <string name="msg_0908" formatted="false">"Used in the “Week” and “Timetable” widgets, and in other widgets if turned on in their settings; up to 16 characters, empty shows the full name. Stored on this device only, never written to the calendar."</string>
     <string name="msg_0909" formatted="false">"Course short names"</string>
     <string name="msg_0910" formatted="false">"Courses in the Week and Timetable widgets; changes are saved as you type, empty shows the full name. Other courses can be set on the course edit page."</string>
     <string name="msg_0911" formatted="false">"Once courses are written to the calendar, the courses of the Week widget are listed here."</string>
@@ -939,4 +939,7 @@
     <string name="msg_0937" formatted="false">"The system allows Live Updates"</string>
     <string name="msg_0938" formatted="false">"The system does not allow Live Updates; a regular ongoing notification is shown"</string>
     <string name="msg_0939" formatted="false">"Notification permission is needed for live class notifications"</string>
+    <string name="msg_0940" formatted="false">"{0}: {1}"</string>
+    <string name="msg_0941" formatted="false">"+{0} more courses"</string>
+    <string name="msg_0942" formatted="false">"Show course short names (full name if none)"</string>
 </resources>

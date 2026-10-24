@@ -51,7 +51,7 @@ object TomorrowWidgetRenderer {
         views.setTextViewText(R.id.widget_time, Time.format(first.startsAt.atZone(frame.zone)))
         views.setTextViewTextSize(R.id.widget_time, TypedValue.COMPLEX_UNIT_SP, 20f)
         views.setImageViewResource(R.id.widget_dot, ScheduleWidgetRenderer.dot(first.state))
-        views.setTextViewText(R.id.widget_title, first.title)
+        views.setTextViewText(R.id.widget_title, ScheduleWidgetRenderer.courseTitle(first, frame))
         views.setInt(R.id.widget_title, "setMaxLines", if (frame.heightDp >= 120) 2 else 1)
         val compactHeight = frame.heightDp < 80
         views.setViewVisibility(R.id.widget_time, if (compactHeight) View.GONE else View.VISIBLE)

@@ -135,6 +135,7 @@ internal fun CourseEditScreen(state: CalendarControlState) {
         DesignField(tr(message(345, course.title)), title, { title = it }, Modifier.testTag("edit-title"))
         DesignField(tr(message(346, course.location)), location, { location = it }, Modifier.testTag("edit-location"))
         DesignField(tr(message(907)), shortName, { shortName = it.take(CourseShortNames.MAX_LENGTH) }, Modifier.testTag("edit-short-name"))
+        ShortNameSuggestions(course.title, shortName, Modifier.testTag("edit-short-suggest")) { shortName = it }
         DesignText(tr(message(908)), 12, Modifier.padding(horizontal = 4.dp), muted = true)
         // Freier Text auf der Titellinie (4 dp innerhalb der Blockkanten).
         DesignSection(tr(message(347)), Modifier.padding(start = 4.dp))

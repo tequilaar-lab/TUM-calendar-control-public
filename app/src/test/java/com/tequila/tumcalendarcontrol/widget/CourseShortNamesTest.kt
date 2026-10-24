@@ -69,6 +69,16 @@ class CourseShortNamesTest {
         assertEquals("leerer Kurzname", "Synthetik Lang", ScheduleWidgetRenderer.weekTitle(frame.events.single(), frame.copy(shortNames = mapOf("uid-1" to " "))))
     }
 
+    /** „Wohin jetzt“/„Heute“/„Morgen“: Kurzname nur mit Schalter useShortNames. */
+    @Test fun `andere Widgets nur auf Wunsch`() {
+        val frame = WidgetFrame(listOf(event(1, "Synthetik Lang")), true, WidgetSettings(), now, zone, 320, 340, shortNames = mapOf("uid-1" to "SL"))
+        assertEquals("Synthetik Lang", ScheduleWidgetRenderer.courseTitle(frame.events.single(), frame))
+        assertEquals("SL", ScheduleWidgetRenderer.courseTitle(frame.events.single(), frame.copy(settings = WidgetSettings(useShortNames = true))))
+        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
+        val small = ScheduleWidgetRenderer.render(activity, WidgetSize.SMALL, frame.copy(settings = WidgetSettings(useShortNames = true), widthDp = 170, heightDp = 170)).apply(activity, FrameLayout(activity))
+        assertEquals("SL", small.findViewById<TextView>(R.id.widget_title).text.toString())
+    }
+
     private fun chipTexts(view: View): List<String> {
         val out = mutableListOf<String>()
         fun walk(v: View) {

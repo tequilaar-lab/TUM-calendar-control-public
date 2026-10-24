@@ -134,7 +134,8 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
     // Für platzierte Widgets nur passende Optionen; beim Standard alle (gilt für jede Art).
     val showCourse = current == null || size in setOf(WidgetSize.SMALL, WidgetSize.MEDIUM, WidgetSize.LARGE, WidgetSize.GRID, WidgetSize.TOMORROW)
     // Kurznamen gelten für „Woche“ und „Stundenplan“.
-    val showShortNames = current == null || size == WidgetSize.LARGE || size == WidgetSize.GRID
+    val optionalShortNames = current == null || size in setOf(WidgetSize.SMALL, WidgetSize.MEDIUM, WidgetSize.TOMORROW)
+    val showShortNames = current == null || size == WidgetSize.LARGE || size == WidgetSize.GRID || (optionalShortNames && settings.useShortNames)
     val showWeek = current == null || size == WidgetSize.LARGE
     val showCountdown = current == null || size == WidgetSize.COUNTDOWN
     // Neues Ziel beginnt oben (eigener Bildlaufzustand je Ziel).
@@ -171,6 +172,7 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
                 DesignCheck(tr(message(815)), settings.hideStopAttending, TextInset.testTag("widgets-hide-gray")) { change(settings.copy(hideStopAttending = it)) }
                 DesignCheck(tr(message(816)), settings.hideChooseToAttend, TextInset.testTag("widgets-hide-blue")) { change(settings.copy(hideChooseToAttend = it)) }
                 DesignCheck(tr(message(817)), settings.showLocation, TextInset.testTag("widgets-location")) { change(settings.copy(showLocation = it)) }
+                if (optionalShortNames) DesignCheck(tr(message(942)), settings.useShortNames, TextInset.testTag("widgets-use-short-names")) { change(settings.copy(useShortNames = it)) }
             }
         }
         if (showWeek) {
@@ -242,6 +244,7 @@ private fun CourseShortNameOptions(
         // Eigener Eingabetext je Feld: gespeichert wird bereinigt, Leerzeichen beim Tippen bleiben sichtbar.
         var text by remember(event.courseId) { mutableStateOf(shortNames[event.courseId].orEmpty()) }
         DesignField(tr(event.title), text, { text = it.take(CourseShortNames.MAX_LENGTH); onChange(event.courseId, text) }, Modifier.testTag("widgets-short-${event.courseId}"))
+        ShortNameSuggestions(event.title, text, Modifier.testTag("widgets-suggest-${event.courseId}")) { text = it; onChange(event.courseId, it) }
     }
 }
 

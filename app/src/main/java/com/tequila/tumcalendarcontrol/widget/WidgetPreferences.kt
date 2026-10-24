@@ -36,6 +36,8 @@ data class WidgetSettings(
      * bleiben gespeichert und gelten wieder, sobald der Schalter aus ist.
      */
     val followSystem: Boolean = false,
+    /** „Wohin jetzt“, „Heute“, „Morgen“: Kurznamen statt Titel (Woche und Stundenplan zeigen sie immer). */
+    val useShortNames: Boolean = false,
 )
 
 /** Zulässiger Bereich der Blockgröße in Prozent der belegten Zellen. */
@@ -97,6 +99,7 @@ class WidgetPreferences(context: Context) {
             blockHeightPercent = getInt(p + KEY_BLOCK_HEIGHT, 100).coerceIn(BlockPercentRange),
             square = getBoolean(p + KEY_SQUARE, false),
             followSystem = getBoolean(p + KEY_FOLLOW_SYSTEM, false),
+            useShortNames = getBoolean(p + KEY_SHORT_NAMES, false),
         )
     }
 
@@ -115,6 +118,7 @@ class WidgetPreferences(context: Context) {
             .putInt(p + KEY_BLOCK_HEIGHT, settings.blockHeightPercent.coerceIn(BlockPercentRange))
             .putBoolean(p + KEY_SQUARE, settings.square)
             .putBoolean(p + KEY_FOLLOW_SYSTEM, settings.followSystem)
+            .putBoolean(p + KEY_SHORT_NAMES, settings.useShortNames)
         editor.apply()
     }
 
@@ -134,5 +138,6 @@ class WidgetPreferences(context: Context) {
         const val KEY_BLOCK_HEIGHT = "block_height"
         const val KEY_SQUARE = "square"
         const val KEY_FOLLOW_SYSTEM = "follow_system"
+        const val KEY_SHORT_NAMES = "use_short_names"
     }
 }

@@ -83,6 +83,20 @@ class CourseShortNamePagesTest {
         composeRule.onRoot().captureRoboImage("src/test/screenshots/widgets_short_names_412x892.png")
     }
 
+    /** Leeres Feld zeigt Vorschläge; Antippen füllt das Feld, Speichern übernimmt ihn. */
+    @Test fun `点按简写建议并保存`() {
+        val state = lightState().also { it.openCourse("course-a"); it.openCourseEdit() }
+        composeRule.setContent { CalendarControlSurface(state) }
+        composeRule.waitForIdle()
+        val title = state.selectedCourse.title
+        val first = com.tequila.tumcalendarcontrol.widget.ShortNameSuggester.suggest(title).first()
+        composeRule.onNodeWithTag("edit-short-suggest").performScrollTo()
+        composeRule.onNode(androidx.compose.ui.test.hasText(first) and hasAnyAncestor(hasTestTag("edit-short-suggest"))).performClick()
+        composeRule.onNodeWithTag("edit-save").performClick()
+        composeRule.waitForIdle()
+        assertEquals(first, CourseShortNames(context).get("course-a"))
+    }
+
     @Test fun `没有写入时显示说明`() {
         val state = lightState().also { it.open(AppScreen.WIDGETS) }
         composeRule.setContent { CompositionLocalProvider(LocalWidgetPreviewClock provides fixedClock) { CalendarControlSurface(state) } }

@@ -907,7 +907,7 @@
     <string name="msg_0905" formatted="false">"这个组件是长条形，正方形会取较短的一边，往长的方向拉伸不会变大"</string>
     <string name="msg_0906" formatted="false">"该课程不在当前课程目录中，已打开首页"</string>
     <string name="msg_0907" formatted="false">"小组件简写"</string>
-    <string name="msg_0908" formatted="false">"只用于“本周”和“课表”组件，最多 16 个字；留空则显示全名。仅保存在本机，不会写入日历。"</string>
+    <string name="msg_0908" formatted="false">"用于“本周”和“课表”组件，其他组件可在小组件设置里开启；最多 16 个字，留空显示全名。仅保存在本机，不会写入日历。"</string>
     <string name="msg_0909" formatted="false">"课程简写"</string>
     <string name="msg_0910" formatted="false">"本周和课表组件里的课程，输入即保存；留空显示全名。其他课程可在课程编辑页设置。"</string>
     <string name="msg_0911" formatted="false">"写入日历后，这里会列出本周组件里的课程。"</string>
@@ -939,4 +939,7 @@
     <string name="msg_0937" formatted="false">"系统允许实况更新"</string>
     <string name="msg_0938" formatted="false">"系统未允许实况更新，将显示为普通的常驻通知"</string>
     <string name="msg_0939" formatted="false">"需要通知权限才能显示课程实况通知"</string>
+    <string name="msg_0940" formatted="false">"{0}：{1}"</string>
+    <string name="msg_0941" formatted="false">"另有 {0} 门课"</string>
+    <string name="msg_0942" formatted="false">"显示课程简写（没有简写时显示全名）"</string>
 </resources>

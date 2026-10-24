@@ -162,7 +162,7 @@ object ScheduleWidgetRenderer {
         views.setTextViewText(R.id.widget_time, if (narrow) Time.format(start) else timeRange(event, frame.zone))
         views.setTextViewTextSize(R.id.widget_time, android.util.TypedValue.COMPLEX_UNIT_SP, if (narrow) 18f else 20f)
         views.setImageViewResource(R.id.widget_dot, dot(event.state))
-        views.setTextViewText(R.id.widget_title, event.title)
+        views.setTextViewText(R.id.widget_title, courseTitle(event, frame))
         views.setInt(R.id.widget_title, "setMaxLines", if (frame.heightDp >= 120) 2 else 1)
         val compact = frame.heightDp < 80
         views.setViewVisibility(R.id.widget_time, if (compact) View.GONE else View.VISIBLE)
@@ -216,7 +216,7 @@ object ScheduleWidgetRenderer {
         val start = event.startsAt.atZone(frame.zone)
         item.setTextViewText(R.id.row_time, if (frame.widthDp >= 250) timeRange(event, frame.zone) else Time.format(start))
         item.setImageViewResource(R.id.row_dot, dot(event.state))
-        item.setTextViewText(R.id.row_title, event.title)
+        item.setTextViewText(R.id.row_title, courseTitle(event, frame))
         val room = event.location.trim()
         val showRoom = frame.settings.showLocation && room.isNotEmpty()
         item.setViewVisibility(R.id.row_detail, if (showRoom) View.VISIBLE else View.GONE)
@@ -272,6 +272,9 @@ object ScheduleWidgetRenderer {
             views.addView(R.id.widget_rows, row)
         }
     }
+
+    /** Titel in „Wohin jetzt“, „Heute“, „Morgen“: Kurzname nur mit Einstellung useShortNames, sonst der Titel. */
+    internal fun courseTitle(event: WidgetEvent, frame: WidgetFrame): String = if (frame.settings.useShortNames) weekTitle(event, frame) else event.title
 
     /** Titel in „Woche“ und „Stundenplan“: eigener Kurzname der Kursreihe, sonst der geschriebene Titel. */
     internal fun weekTitle(event: WidgetEvent, frame: WidgetFrame): String = frame.shortNames[event.courseId]?.takeIf(String::isNotBlank) ?: event.title
