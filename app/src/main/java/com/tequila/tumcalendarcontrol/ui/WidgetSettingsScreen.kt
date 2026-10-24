@@ -70,7 +70,7 @@ internal data class WidgetPreviewClock(val now: () -> Instant = Instant::now, va
 internal val LocalWidgetPreviewClock = staticCompositionLocalOf { WidgetPreviewClock() }
 private val CornerLabels = listOf(823, 824, 825, 826, 827)
 /** Arten in der Vorschau des Standards (Reihenfolge = Segmente). */
-private val PreviewTypes = listOf(WidgetSize.SMALL, WidgetSize.MEDIUM, WidgetSize.LARGE, WidgetSize.COUNTDOWN)
+private val PreviewTypes = listOf(WidgetSize.SMALL, WidgetSize.MEDIUM, WidgetSize.LARGE, WidgetSize.COUNTDOWN, WidgetSize.CHECK)
 
 /** Bearbeitungsziel „Standard für neue Widgets“ (kein platziertes Widget). */
 private const val DefaultTarget = -1
@@ -81,6 +81,7 @@ internal fun WidgetSize.label(): String = when (this) {
     WidgetSize.MEDIUM -> message(787)
     WidgetSize.LARGE -> message(789)
     WidgetSize.COUNTDOWN -> message(857)
+    WidgetSize.CHECK -> message(873)
 }
 
 /**
@@ -113,7 +114,7 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
         ScheduleWidgets.refreshAll(context)
     }
     // Für platzierte Widgets nur passende Optionen; beim Standard alle (gilt für jede Art).
-    val showCourse = current == null || size != WidgetSize.COUNTDOWN
+    val showCourse = current == null || size in setOf(WidgetSize.SMALL, WidgetSize.MEDIUM, WidgetSize.LARGE)
     val showWeek = current == null || size == WidgetSize.LARGE
     val showCountdown = current == null || size == WidgetSize.COUNTDOWN
     DesignPage(contentTag = "widgets-content") {
@@ -135,7 +136,8 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
 
         DesignSection(tr(message(831)), TextInset)
         if (current == null) {
-            DesignSegmented(PreviewTypes.map { tr(it.label()) }, PreviewTypes.indexOf(size), Modifier.testTag("widgets-preview-size")) { defaultPreview = PreviewTypes[it].name }
+            // Fünf Segmente: Prüf-Widget mit Kurzname, damit alle Beschriftungen passen.
+            DesignSegmented(PreviewTypes.map { tr(if (it == WidgetSize.CHECK) message(888) else it.label()) }, PreviewTypes.indexOf(size), Modifier.testTag("widgets-preview-size")) { defaultPreview = PreviewTypes[it].name }
         }
         val width = current?.widthDp ?: previewWidth(size)
         val height = current?.heightDp ?: previewHeight(size)
@@ -235,9 +237,9 @@ private fun disableClicks(view: android.view.View) {
     if (view is android.view.ViewGroup) (0 until view.childCount).forEach { disableClicks(view.getChildAt(it)) }
 }
 
-private fun previewWidth(size: WidgetSize) = if (size == WidgetSize.SMALL) 170 else 330
+private fun previewWidth(size: WidgetSize) = when (size) { WidgetSize.SMALL -> 170; WidgetSize.CHECK -> 85; else -> 330 }
 /** Countdown in der Vorschau breit (Hauptziel und die nächsten zwei daneben). */
-private fun previewHeight(size: WidgetSize) = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN -> 170; WidgetSize.MEDIUM -> 180; WidgetSize.LARGE -> 340 }
+private fun previewHeight(size: WidgetSize) = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN -> 170; WidgetSize.CHECK -> 105; WidgetSize.MEDIUM -> 180; WidgetSize.LARGE -> 340 }
 
 /** Synthetische Prüfungen/Fristen relativ zu jetzt; keine echten Daten. */
 private fun sampleCountdown(now: Instant): List<ManualScheduleItem> {

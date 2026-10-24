@@ -19,6 +19,7 @@ import com.tequila.tumcalendarcontrol.ui.AppEntry
 import com.tequila.tumcalendarcontrol.ui.AppEntryIntents
 import com.tequila.tumcalendarcontrol.ui.SourceSnapshotPreferences
 import com.tequila.tumcalendarcontrol.ui.countsText
+import com.tequila.tumcalendarcontrol.widget.ScheduleWidgets
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
@@ -41,10 +42,13 @@ class PeriodicSourceCheckWorker(appContext: Context, parameters: WorkerParameter
             is IcalReadOnlyImportResult.Success -> {
                 val status = store.recordSuccess(SourceCheckFingerprint.from(result.preview.occurrences), Instant.now())
                 if (status.result == SourceCheckResult.CHANGED) notifyPossibleChange(changeCounts(result.preview.occurrences))
+                // Prüf-Widget zeigt den neuen Stand.
+                ScheduleWidgets.refreshAll(applicationContext)
                 Result.success()
             }
             is IcalReadOnlyImportResult.Failure -> {
                 store.recordFailure(Instant.now(), SourceCheckResult.FAILED)
+                ScheduleWidgets.refreshAll(applicationContext)
                 Result.retry()
             }
         }

@@ -1,6 +1,6 @@
 /*
- * Aufgabe: Verknüpfungen und Schnelleinstellung prüfen: vier Einträge mit Ziel (nur Navigation) in App-Sprache,
- *   Veröffentlichung, Kachel-Entscheidung, Anmeldung der Kachel; Einstiege öffnen die richtigen Seiten.
+ * Aufgabe: Verknüpfungen prüfen: vier Einträge mit Ziel (nur Navigation) in App-Sprache, Veröffentlichung, keine
+ *   Schnelleinstellung mehr; Einstiege öffnen die richtigen Seiten.
  * Ein-/Ausgabe: Robolectric-Kontext und synthetischer Zustand -> Verknüpfungen, Intents, Seiten.
  * Nebenwirkungen: Keine echten Prüfungen, Kalender oder Netzwerke.
  * Nicht zuständig: Darstellung durch echte Startbildschirme (Gerätetest).
@@ -47,16 +47,10 @@ class AppShortcutsTest {
         assertEquals(4, ShortcutManagerCompat.getDynamicShortcuts(context).size)
     }
 
-    @Test fun `Kachel prüft nur bei aktivierter Prüfung und eingerichteter Quelle direkt`() {
-        assertEquals(SourceCheckTileService.TileAction.CHECK_NOW, SourceCheckTileService.action(checkEnabled = true, sourceConfigured = true))
-        assertEquals(SourceCheckTileService.TileAction.OPEN_SETTINGS, SourceCheckTileService.action(checkEnabled = true, sourceConfigured = false))
-        assertEquals(SourceCheckTileService.TileAction.OPEN_SETTINGS, SourceCheckTileService.action(checkEnabled = false, sourceConfigured = true))
-    }
-
-    @Test fun `Kachel ist als Schnelleinstellung angemeldet`() {
+    /** Die frühere Schnelleinstellung ist entfernt (Nutzerwunsch: Widget statt Platz im Schnellmenü). */
+    @Test fun `keine Schnelleinstellung mehr angemeldet`() {
         val services = context.packageManager.queryIntentServices(Intent("android.service.quicksettings.action.QS_TILE").setPackage(context.packageName), 0)
-        assertEquals(listOf(SourceCheckTileService::class.java.name), services.map { it.serviceInfo.name })
-        assertEquals("android.permission.BIND_QUICK_SETTINGS_TILE", services.single().serviceInfo.permission)
+        assertTrue(services.isEmpty())
     }
 
     @Test fun `neue Einstiege im Hin- und Rückweg`() {

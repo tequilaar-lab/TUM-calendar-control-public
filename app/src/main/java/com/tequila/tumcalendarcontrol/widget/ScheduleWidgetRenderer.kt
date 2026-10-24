@@ -29,8 +29,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** Drei Kurs-Widgets und das Countdown-Widget (eigener Renderer). */
-enum class WidgetSize { SMALL, MEDIUM, LARGE, COUNTDOWN }
+/** Drei Kurs-Widgets, das Countdown- und das Prüf-Widget (eigene Renderer). */
+enum class WidgetSize { SMALL, MEDIUM, LARGE, COUNTDOWN, CHECK }
 
 /** Eingaben eines Zeichendurchgangs; hasData = überhaupt geschriebene Termine (sonst Hinweis „noch nichts geschrieben“). */
 data class WidgetFrame(
@@ -56,7 +56,11 @@ object ScheduleWidgetRenderer {
     fun render(context: Context, size: WidgetSize, frame: WidgetFrame): RemoteViews {
         val geometry = block(frame.settings, frame.widthDp, frame.heightDp)
         val inner = frame.copy(widthDp = geometry.widthDp, heightDp = geometry.heightDp)
-        val views = if (size == WidgetSize.COUNTDOWN) CountdownWidgetRenderer.render(context, inner) else renderCourse(context, size, inner)
+        val views = when (size) {
+            WidgetSize.COUNTDOWN -> CountdownWidgetRenderer.render(context, inner)
+            WidgetSize.CHECK -> CheckWidgetRenderer.render(context, inner)
+            else -> renderCourse(context, size, inner)
+        }
         val density = context.resources.displayMetrics.density
         val x = (geometry.insetXDp * density).toInt()
         val y = (geometry.insetYDp * density).toInt()

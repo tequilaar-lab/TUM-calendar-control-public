@@ -814,7 +814,7 @@
     <string name="msg_0808" formatted="false">"d日"</string>
     <string name="msg_0810" formatted="false">"还有 {0} 节"</string>
     <string name="msg_0811" formatted="false">"桌面小组件"</string>
-    <string name="msg_0812" formatted="false">"三种尺寸各有侧重：小的显示现在去哪，中的显示今天，大的显示本周。只显示已经写入日历的课程。"</string>
+    <string name="msg_0812" formatted="false">"小组件各有侧重：“现在去哪”“今天”“本周”显示已写入日历的课程；“倒数日”显示考试和截止；“检查课程更新”显示上次检查的结果。"</string>
     <string name="msg_0813" formatted="false">"小组件会在桌面上显示课名和教室。"</string>
     <string name="msg_0814" formatted="false">"显示内容"</string>
     <string name="msg_0815" formatted="false">"隐藏灰色（从此不去）"</string>
@@ -887,4 +887,15 @@
     <string name="msg_0885" formatted="false">"高度 {0}%"</string>
     <string name="msg_0886" formatted="false">"在组件所占的格子里调整方块大小，方块居中；格子数在桌面上长按拖动边框调整。"</string>
     <string name="msg_0887" formatted="false">"桌面上还没有本应用的小组件。"</string>
+    <string name="msg_0888" formatted="false">"检查更新"</string>
+    <string name="msg_0889" formatted="false">"上次 {0} · {1}"</string>
+    <string name="msg_0890" formatted="false">"无变化"</string>
+    <string name="msg_0891" formatted="false">"有变化"</string>
+    <string name="msg_0892" formatted="false">"失败"</string>
+    <string name="msg_0893" formatted="false">"已记录基准"</string>
+    <string name="msg_0894" formatted="false">"需要先配置订阅"</string>
+    <string name="msg_0895" formatted="false">"还没有检查过"</string>
+    <string name="msg_0896" formatted="false">"检查中…"</string>
+    <string name="msg_0897" formatted="false">"后台检查未开启，点此设置"</string>
+    <string name="msg_0898" formatted="false">"显示上次检查结果，点一下立即只读检查课程更新"</string>
 </resources>

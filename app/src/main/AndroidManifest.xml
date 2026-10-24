@@ -140,18 +140,21 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/countdown_widget_info" />
         </receiver>
-        <!-- Schnelleinstellung „Auf Änderungen prüfen“: nur lesende Prüfung bzw. Seite der Hintergrundprüfung.
-             BIND_QUICK_SETTINGS_TILE ist die Systembindung (nur das System darf binden), keine Nutzerberechtigung. -->
-        <service
-            android:name=".shortcuts.SourceCheckTileService"
+        <!-- Widget „Auf Änderungen prüfen“ (ersetzt die Schnelleinstellung): nur lesende Prüfung bzw. Seite der Hintergrundprüfung. -->
+        <receiver
+            android:name=".widget.ScheduleWidgetCheck"
             android:exported="true"
-            android:icon="@drawable/ic_shortcut_refresh"
-            android:label="@string/msg_0873"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            android:label="@string/msg_0873">
             <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
             </intent-filter>
-        </service>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/check_widget_info" />
+        </receiver>
         <!-- Widget-Einrichtung: bestätigt sofort und öffnet die gemeinsamen Widget-Einstellungen in der App. -->
         <activity
             android:name=".widget.WidgetConfigureActivity"

@@ -43,6 +43,7 @@ abstract class ScheduleWidgetProvider : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED, Intent.ACTION_LOCALE_CHANGED, ScheduleWidgets.ACTION_REFRESH -> ScheduleWidgets.refreshAll(context)
+            CheckWidgetRenderer.ACTION_CHECK_NOW -> CheckWidgetRenderer.startCheck(context)
             else -> super.onReceive(context, intent)
         }
     }
@@ -54,6 +55,8 @@ class ScheduleWidgetMedium : ScheduleWidgetProvider()
 class ScheduleWidgetLarge : ScheduleWidgetProvider()
 /** Countdown bis zu Prüfungen und Fristen (eigene Termine, nicht nur geschriebene). */
 class ScheduleWidgetCountdown : ScheduleWidgetProvider()
+/** „Auf Änderungen prüfen“ (1×1 bis 2×2); ersetzt die frühere Schnelleinstellung. */
+class ScheduleWidgetCheck : ScheduleWidgetProvider()
 
 object ScheduleWidgets {
     internal const val ACTION_REFRESH = "com.tequila.tumcalendarcontrol.widget.REFRESH"
@@ -62,6 +65,7 @@ object ScheduleWidgets {
         ScheduleWidgetMedium::class.java to WidgetSize.MEDIUM,
         ScheduleWidgetLarge::class.java to WidgetSize.LARGE,
         ScheduleWidgetCountdown::class.java to WidgetSize.COUNTDOWN,
+        ScheduleWidgetCheck::class.java to WidgetSize.CHECK,
     )
 
     /**
@@ -150,8 +154,8 @@ object ScheduleWidgets {
         alarms.set(AlarmManager.RTC, at.toEpochMilli(), pending)
     }
 
-    internal fun defaultWidth(size: WidgetSize): Int = if (size == WidgetSize.SMALL || size == WidgetSize.COUNTDOWN) 150 else 320
-    internal fun defaultHeight(size: WidgetSize): Int = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN -> 150; WidgetSize.MEDIUM -> 170; WidgetSize.LARGE -> 340 }
+    internal fun defaultWidth(size: WidgetSize): Int = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN -> 150; WidgetSize.CHECK -> 80; else -> 320 }
+    internal fun defaultHeight(size: WidgetSize): Int = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN -> 150; WidgetSize.CHECK -> 100; WidgetSize.MEDIUM -> 170; WidgetSize.LARGE -> 340 }
 
     /** Ob der Startbildschirm das direkte Hinzufügen anbietet (Systemdialog, Nutzer bestätigt). */
     fun canRequestPin(context: Context): Boolean = AppWidgetManager.getInstance(context)?.isRequestPinAppWidgetSupported == true

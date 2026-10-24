@@ -814,7 +814,7 @@
     <string name="msg_0808" formatted="false">"d"</string>
     <string name="msg_0810" formatted="false">"{0} more"</string>
     <string name="msg_0811" formatted="false">"Home screen widgets"</string>
-    <string name="msg_0812" formatted="false">"Each size has its own focus: small shows where to go now, medium shows today, large shows the week. Only classes already written to the calendar appear."</string>
+    <string name="msg_0812" formatted="false">"Each widget has its own focus: “Next class”, “Today” and “This week” show classes already written to the calendar; “Countdown” shows exams and deadlines; “Check for updates” shows the last source check."</string>
     <string name="msg_0813" formatted="false">"Widgets show class names and rooms on your home screen."</string>
     <string name="msg_0814" formatted="false">"Content"</string>
     <string name="msg_0815" formatted="false">"Hide grey (no longer attending)"</string>
@@ -887,4 +887,15 @@
     <string name="msg_0885" formatted="false">"Height {0}%"</string>
     <string name="msg_0886" formatted="false">"Sets the block size within the widget\'s cells, centred; the number of cells is changed on the home screen by long-pressing and dragging."</string>
     <string name="msg_0887" formatted="false">"No widgets of this app on the home screen yet."</string>
+    <string name="msg_0888" formatted="false">"Check"</string>
+    <string name="msg_0889" formatted="false">"Last {0} · {1}"</string>
+    <string name="msg_0890" formatted="false">"no changes"</string>
+    <string name="msg_0891" formatted="false">"changes found"</string>
+    <string name="msg_0892" formatted="false">"failed"</string>
+    <string name="msg_0893" formatted="false">"baseline saved"</string>
+    <string name="msg_0894" formatted="false">"set up the source first"</string>
+    <string name="msg_0895" formatted="false">"not checked yet"</string>
+    <string name="msg_0896" formatted="false">"Checking…"</string>
+    <string name="msg_0897" formatted="false">"Background check is off – tap to set up"</string>
+    <string name="msg_0898" formatted="false">"Shows the last check; tap to check the course source now (read only)"</string>
 </resources>

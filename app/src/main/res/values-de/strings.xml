@@ -814,7 +814,7 @@
     <string name="msg_0808" formatted="false">"d."</string>
     <string name="msg_0810" formatted="false">"{0} weitere"</string>
     <string name="msg_0811" formatted="false">"Startbildschirm-Widgets"</string>
-    <string name="msg_0812" formatted="false">"Jede Größe hat ihren Schwerpunkt: klein zeigt, wohin es jetzt geht, mittel den heutigen Tag, groß die Woche. Es erscheinen nur bereits in den Kalender geschriebene Termine."</string>
+    <string name="msg_0812" formatted="false">"Jedes Widget hat seinen Schwerpunkt: „Nächster Termin“, „Heute“ und „Diese Woche“ zeigen bereits geschriebene Termine; „Countdown“ zeigt Prüfungen und Fristen; „Auf Änderungen prüfen“ zeigt die letzte Quellenprüfung."</string>
     <string name="msg_0813" formatted="false">"Widgets zeigen Kursnamen und Räume auf dem Startbildschirm."</string>
     <string name="msg_0814" formatted="false">"Inhalt"</string>
     <string name="msg_0815" formatted="false">"Grau ausblenden (nicht mehr teilnehmen)"</string>
@@ -887,4 +887,15 @@
     <string name="msg_0885" formatted="false">"Höhe {0} %"</string>
     <string name="msg_0886" formatted="false">"Legt die Blockgröße innerhalb der Zellen fest (mittig); die Zellenzahl ändert man auf dem Startbildschirm durch langes Drücken und Ziehen."</string>
     <string name="msg_0887" formatted="false">"Noch keine Widgets dieser App auf dem Startbildschirm."</string>
+    <string name="msg_0888" formatted="false">"Prüfen"</string>
+    <string name="msg_0889" formatted="false">"Zuletzt {0} · {1}"</string>
+    <string name="msg_0890" formatted="false">"unverändert"</string>
+    <string name="msg_0891" formatted="false">"Änderungen"</string>
+    <string name="msg_0892" formatted="false">"fehlgeschlagen"</string>
+    <string name="msg_0893" formatted="false">"Ausgangsstand gespeichert"</string>
+    <string name="msg_0894" formatted="false">"zuerst Quelle einrichten"</string>
+    <string name="msg_0895" formatted="false">"noch nie geprüft"</string>
+    <string name="msg_0896" formatted="false">"Prüft…"</string>
+    <string name="msg_0897" formatted="false">"Hintergrundprüfung aus – zum Einrichten antippen"</string>
+    <string name="msg_0898" formatted="false">"Zeigt die letzte Prüfung; antippen prüft die Kursquelle sofort (nur lesen)"</string>
 </resources>
