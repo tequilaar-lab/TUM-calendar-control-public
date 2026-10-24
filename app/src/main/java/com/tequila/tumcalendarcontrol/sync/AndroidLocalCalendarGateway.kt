@@ -1,7 +1,8 @@
 /*
  * Aufgabe: Eigenen lokalen Android-Kalender suchen/erstellen und ausschließlich darin schreiben.
  * Ein-/Ausgabe: Private Ziel-ID, Eigentumsmarker und Solltermine -> Zielreferenz oder Termin-ID.
- * Nebenwirkungen: Nur nach erteilten Kalenderrechten und bestätigter Ausführung eigene Provider-Ziele lesen/schreiben.
+ * Nebenwirkungen: Nur nach erteilten Kalenderrechten und bestätigter Ausführung eigene Provider-Ziele lesen/schreiben;
+ *   Erinnerungen eigener Termine nur, wenn sie verwaltet werden (DesiredCalendarEvent.reminderMinutes).
  * Nicht zuständig: Berechtigungsanfragen, fremde Kalender, Google-Synchronisierung, Quellen-Parsing oder Zuordnungsspeicherung.
  */
 package com.tequila.tumcalendarcontrol.sync
@@ -112,13 +113,15 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
     override fun create(calendar: OwnedCalendarRef, event: DesiredCalendarEvent): String {
         check(verifyOwnership(calendar)) { message(39) }
         val uri = resolver.insert(asSyncAdapter(CalendarContract.Events.CONTENT_URI), eventValues(calendar, event)) ?: error(message(40))
-        return ContentUris.parseId(uri).toString()
+        val id = ContentUris.parseId(uri)
+        writeReminder(id, event.reminderMinutes)
+        return id.toString()
     }
 
     /** Ein Abfragedurchlauf über alle App-markierten Termine des eigenen Kalenders (Identitätsschlüssel -> Einträge). */
     override fun snapshotManagedEvents(calendar: OwnedCalendarRef): Map<String, List<ManagedEventSnapshot>> {
         check(verifyOwnership(calendar)) { message(41) }
-        val result = mutableMapOf<String, MutableList<ManagedEventSnapshot>>()
+        val rows = mutableListOf<Triple<String, String, ManagedEventContent?>>()
         resolver.query(
             CalendarContract.Events.CONTENT_URI,
             arrayOf(CalendarContract.Events._ID, CalendarContract.Events.SYNC_DATA1, CalendarContract.Events.TITLE, CalendarContract.Events.DTSTART,
@@ -131,9 +134,13 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
                 val content = state?.let {
                     ManagedEventContent(cursor.getString(2).orEmpty(), java.time.Instant.ofEpochMilli(cursor.getLong(3)), java.time.Instant.ofEpochMilli(cursor.getLong(4)), it, cursor.getString(5).orEmpty())
                 }
-                result.getOrPut(cursor.getString(1)) { mutableListOf() } += ManagedEventSnapshot(cursor.getLong(0).toString(), content)
+                rows += Triple(cursor.getString(1), cursor.getLong(0).toString(), content)
             }
         } ?: error(message(42))
+        // Erinnerungen in einem zweiten Durchlauf (gebündelt) zuordnen.
+        val reminders = readReminders(rows.map { it.second })
+        val result = mutableMapOf<String, MutableList<ManagedEventSnapshot>>()
+        rows.forEach { (key, id, content) -> result.getOrPut(key) { mutableListOf() } += ManagedEventSnapshot(id, content?.copy(reminderMinutes = reminders[id])) }
         return result
     }
 
@@ -167,6 +174,41 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
             arrayOf(eventId, calendar.calendarId, event.identity.opaqueKey()))
         if (updated == 0) throw ManagedEventMissingException()
         check(updated == 1) { message(45) }
+        writeReminder(eventId.toLong(), event.reminderMinutes)
+    }
+
+    /**
+     * Erinnerung eines eigenen (bereits identitätsgeprüften) Termins: nur wenn verwaltet; vorhandene Erinnerungen dieses
+     * Termins werden ersetzt, NO_REMINDER entfernt sie. Nicht verwaltet (null): nichts anfassen.
+     */
+    private fun writeReminder(eventId: Long, minutes: Int?) {
+        if (minutes == null) return
+        resolver.delete(asSyncAdapter(CalendarContract.Reminders.CONTENT_URI), "${CalendarContract.Reminders.EVENT_ID}=?", arrayOf(eventId.toString()))
+        if (minutes > 0) resolver.insert(asSyncAdapter(CalendarContract.Reminders.CONTENT_URI), ContentValues().apply {
+            put(CalendarContract.Reminders.EVENT_ID, eventId)
+            put(CalendarContract.Reminders.MINUTES, minutes)
+            put(CalendarContract.Reminders.METHOD, CalendarContract.Reminders.METHOD_ALERT)
+        })
+    }
+
+    /** Kleinste Hinweis-Erinnerung (Alarm/Standard) je Termin-ID; Termine ohne Erinnerung fehlen in der Zuordnung. */
+    private fun readReminders(eventIds: Collection<String>): Map<String, Int> {
+        val result = mutableMapOf<String, Int>()
+        eventIds.chunked(400).forEach { chunk ->
+            resolver.query(
+                CalendarContract.Reminders.CONTENT_URI,
+                arrayOf(CalendarContract.Reminders.EVENT_ID, CalendarContract.Reminders.MINUTES, CalendarContract.Reminders.METHOD),
+                "${CalendarContract.Reminders.EVENT_ID} IN (${chunk.joinToString(",") { "?" }})", chunk.toTypedArray(), null,
+            )?.use { cursor ->
+                while (cursor.moveToNext()) {
+                    val method = cursor.getInt(2)
+                    if (method != CalendarContract.Reminders.METHOD_ALERT && method != CalendarContract.Reminders.METHOD_DEFAULT) continue
+                    val id = cursor.getLong(0).toString()
+                    result[id] = minOf(result[id] ?: Int.MAX_VALUE, cursor.getInt(1))
+                }
+            }
+        }
+        return result
     }
 
     override fun readEvent(calendar: OwnedCalendarRef, eventId: String, identity: ManagedEventIdentity): DesiredCalendarEvent? {
@@ -177,7 +219,8 @@ class AndroidLocalCalendarGateway(private val resolver: ContentResolver) : Owned
             arrayOf(eventId, calendar.calendarId, identity.opaqueKey()), null)?.use { cursor ->
             if (!cursor.moveToFirst()) throw ManagedEventMissingException()
             val state = AttendanceState.entries.firstOrNull { it.androidColor() == cursor.getInt(4) } ?: return@use null
-            DesiredCalendarEvent(identity, cursor.getString(0).orEmpty(), java.time.Instant.ofEpochMilli(cursor.getLong(1)), java.time.Instant.ofEpochMilli(cursor.getLong(2)), state, cursor.getString(3).orEmpty())
+            DesiredCalendarEvent(identity, cursor.getString(0).orEmpty(), java.time.Instant.ofEpochMilli(cursor.getLong(1)), java.time.Instant.ofEpochMilli(cursor.getLong(2)), state, cursor.getString(3).orEmpty(),
+                readReminders(listOf(eventId))[eventId])
         }
     }
 

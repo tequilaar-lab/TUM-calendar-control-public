@@ -61,6 +61,7 @@ fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {})
     var hapticSettings by remember { mutableStateOf(hapticPreferences.load()) }
     val courseTypeNamesPreferences = remember(context) { CourseTypeNamesPreferences(context) }
     val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
+    val calendarReminderPreferences = remember(context) { com.tequila.tumcalendarcontrol.sync.CalendarReminderPreferences(context) }
     val privateSyncConfigurationStore = remember(context) { PrivateSyncConfigurationStore(context) }
     val ruleLedgerPreferences = remember(context) { RuleLedgerPreferences(context) }
     val courseOverridePreferences = remember(context) { CourseOverridePreferences(context) }
@@ -89,7 +90,12 @@ fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {})
             initialCoursePresentations = courseOverridePreferences.loadPresentations(),
             initialSourceSnapshots = initialSourceSnapshots,
             userDataPersistence = userDataPersistence,
-        ).also { it.courseTypeNames = courseTypeNamesPreferences.load(); it.restorePageMemory(pageMemoryPreferences.load()); session.state = it }
+        ).also {
+            it.courseTypeNames = courseTypeNamesPreferences.load()
+            it.calendarReminderMinutes = calendarReminderPreferences.load()
+            it.restorePageMemory(pageMemoryPreferences.load())
+            session.state = it
+        }
     }
     var privateConfigurationInitialized by remember { mutableStateOf(false) }
     val localCalendarPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
@@ -135,6 +141,7 @@ fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {})
     LaunchedEffect(state.appearanceSettings) { appearancePreferences.save(state.appearanceSettings) }
     LaunchedEffect(state.courseTypeNames) { courseTypeNamesPreferences.save(state.courseTypeNames) }
     LaunchedEffect(state.syncDestinations) { syncDestinationPreferences.save(state.syncDestinations) }
+    LaunchedEffect(state.calendarReminderMinutes) { calendarReminderPreferences.save(state.calendarReminderMinutes) }
     LaunchedEffect(state.privateSyncConfiguration) {
         if (privateConfigurationInitialized) runCatching { privateSyncConfigurationStore.save(state.privateSyncConfiguration) }
             .onFailure { state.feedback = message(217) }

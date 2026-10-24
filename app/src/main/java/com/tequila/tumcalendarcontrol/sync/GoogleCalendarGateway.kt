@@ -1,7 +1,7 @@
 /*
  * Aufgabe: Eigenen Google-Zweitkalender über REST suchen/erstellen und zugeordnete Termine verwalten.
  * Ein-/Ausgabe: Kurzlebiger Token, Ziel-ID und Solltermine -> Zielreferenz, Termin-ID oder bereinigter Fehler.
- * Nebenwirkungen: HTTPS-Zugriffe nur im ausdrücklich bestätigten eigenen Ziel.
+ * Nebenwirkungen: HTTPS-Zugriffe nur im ausdrücklich bestätigten eigenen Ziel; Erinnerung nur, wenn verwaltet.
  * Nicht zuständig: OAuth-Start, Tokenspeicherung, Hauptkalender, Auflistung fremder Kalender oder Quellen-Parsing.
  */
 package com.tequila.tumcalendarcontrol.sync
@@ -9,6 +9,7 @@ package com.tequila.tumcalendarcontrol.sync
 import com.tequila.tumcalendarcontrol.i18n.message
 
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
+import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -136,12 +137,13 @@ class GoogleCalendarRestApi(
     private val transport: GoogleCalendarHttpTransport = GoogleCalendarHttpTransport(),
 ) : GoogleCalendarApi {
     override fun readEventFingerprint(calendarId: String, eventId: String, identity: ManagedEventIdentity): String? {
-        return readManagedEvent(calendarId, eventId, identity)?.let { SyncDiffPlanner().run { it.fingerprint() } }
+        // Ohne Erinnerung (nicht verwaltete Erinnerungen zählen nicht als Abweichung).
+        return readManagedEvent(calendarId, eventId, identity)?.let { SyncDiffPlanner().run { it.copy(reminderMinutes = null).fingerprint() } }
     }
 
     override fun readManagedEvent(calendarId: String, eventId: String, identity: ManagedEventIdentity): DesiredCalendarEvent? {
         val response = transport.execute(GoogleCalendarRequestStage.FIND_MANAGED_EVENTS, "GET",
-            "/calendars/${calendarId.encodePath()}/events/${eventId.encodePath()}?fields=status,summary,location,start,end,colorId,extendedProperties", null, accessToken)
+            "/calendars/${calendarId.encodePath()}/events/${eventId.encodePath()}?fields=status,summary,location,start,end,colorId,extendedProperties,reminders", null, accessToken)
         if (response.statusCode == 404 || response.statusCode == 410) throw ManagedEventMissingException()
         response.requireSuccess()
         return googleManagedEvent(response.body, identity)
@@ -179,7 +181,7 @@ class GoogleCalendarRestApi(
             pageToken?.let { check(visited.add(it)) { message(66) } }
             val path = buildString {
                 append("/calendars/${calendarId.encodePath()}/events?singleEvents=true&showDeleted=false&maxResults=250")
-                append("&fields=nextPageToken,items(id,status,summary,location,start,end,colorId,extendedProperties)")
+                append("&fields=nextPageToken,items(id,status,summary,location,start,end,colorId,extendedProperties,reminders)")
                 pageToken?.let { append("&pageToken=${it.encodePath()}") }
             }
             val json = JSONObject(transport.execute(GoogleCalendarRequestStage.FIND_ALL_MANAGED_EVENTS, "GET", path, null, accessToken).requireSuccess().body)
@@ -235,7 +237,7 @@ class GoogleCalendarRestApi(
         return response.toManagedEventRemovalOutcome()
     }
 
-    private fun DesiredCalendarEvent.jsonBody(): String = JSONObject().apply {
+    internal fun DesiredCalendarEvent.jsonBody(): String = JSONObject().apply {
         put("summary", title)
         put("location", location)
         put("description", AppOwnedCalendarContract.eventDescription())
@@ -243,6 +245,10 @@ class GoogleCalendarRestApi(
         put("colorId", attendanceState.googleColorId())
         put("start", JSONObject().put("dateTime", startsAt.toString()).put("timeZone", ZoneId.of("Europe/Berlin").id))
         put("end", JSONObject().put("dateTime", endsAt.toString()).put("timeZone", ZoneId.of("Europe/Berlin").id))
+        // Nur eine verwaltete Erinnerung > 0 wird gesetzt; sonst fehlt das Feld und PUT stellt die Kalendervorgabe wieder her.
+        reminderMinutes?.takeIf { it > 0 }?.let { minutes ->
+            put("reminders", JSONObject().put("useDefault", false).put("overrides", JSONArray().put(JSONObject().put("method", "popup").put("minutes", minutes))))
+        }
     }.toString()
 
     private fun AttendanceState.googleColorId(): String = when (this) {
@@ -255,8 +261,17 @@ class GoogleCalendarRestApi(
 }
 
 /** Nur echte markierte Zielfelder vergleichen; unbekannte Farbe/Ganztagsformate gelten nicht als unverändert. */
+/** Fingerabdruck ohne Erinnerung (wie OwnedCalendarGateway.readFingerprint). */
 internal fun googleEventFingerprint(body: String, identity: ManagedEventIdentity): String? {
-    return googleManagedEvent(body, identity)?.let { SyncDiffPlanner().run { it.fingerprint() } }
+    return googleManagedEvent(body, identity)?.let { SyncDiffPlanner().run { it.copy(reminderMinutes = null).fingerprint() } }
+}
+
+/** Eigene Erinnerung: nur ohne Kalendervorgabe die kleinste Hinweis-Erinnerung (popup); sonst null. */
+internal fun googleReminder(event: JSONObject): Int? {
+    val reminders = event.optJSONObject("reminders") ?: return null
+    if (reminders.optBoolean("useDefault", true)) return null
+    val overrides = reminders.optJSONArray("overrides") ?: return null
+    return (0 until overrides.length()).mapNotNull { overrides.optJSONObject(it) }.filter { it.optString("method") == "popup" }.minOfOrNull { it.optInt("minutes") }
 }
 
 /** Vergleichsfelder eines gelisteten Termins; unbekannte Farbe oder Ganztagsformat -> null (gilt als geändert). */
@@ -269,7 +284,7 @@ internal fun googleEventContent(event: JSONObject): ManagedEventContent? {
     }
     val start = event.optJSONObject("start")?.optString("dateTime")?.takeIf(String::isNotBlank) ?: return null
     val end = event.optJSONObject("end")?.optString("dateTime")?.takeIf(String::isNotBlank) ?: return null
-    return ManagedEventContent(event.optString("summary"), java.time.OffsetDateTime.parse(start).toInstant(), java.time.OffsetDateTime.parse(end).toInstant(), state, event.optString("location"))
+    return ManagedEventContent(event.optString("summary"), java.time.OffsetDateTime.parse(start).toInstant(), java.time.OffsetDateTime.parse(end).toInstant(), state, event.optString("location"), googleReminder(event))
 }
 
 private fun googleManagedEvent(body: String, identity: ManagedEventIdentity): DesiredCalendarEvent? {
@@ -284,7 +299,7 @@ private fun googleManagedEvent(body: String, identity: ManagedEventIdentity): De
     }
     val start = event.optJSONObject("start")?.optString("dateTime")?.takeIf(String::isNotBlank) ?: return null
     val end = event.optJSONObject("end")?.optString("dateTime")?.takeIf(String::isNotBlank) ?: return null
-    return DesiredCalendarEvent(identity, event.optString("summary"), java.time.OffsetDateTime.parse(start).toInstant(), java.time.OffsetDateTime.parse(end).toInstant(), state, event.optString("location"))
+    return DesiredCalendarEvent(identity, event.optString("summary"), java.time.OffsetDateTime.parse(start).toInstant(), java.time.OffsetDateTime.parse(end).toInstant(), state, event.optString("location"), googleReminder(event))
 }
 
 /** Vollständige Seitennavigation nur im eigenen Ziel; Titel, Ort, Beschreibung und Zeiten nicht auswerten. */

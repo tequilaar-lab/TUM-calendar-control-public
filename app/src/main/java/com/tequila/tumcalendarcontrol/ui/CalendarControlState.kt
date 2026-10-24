@@ -475,6 +475,7 @@ class CalendarControlState(
             rules = GroupAttendanceRuleResolver.materialize(ruleLedger, currentSourceOccurrences),
             manualEvents = ruleLedger.manualEvents,
             overrides = courses.associate { it.id to it.localOverride },
+            mustAttendReminder = calendarReminderMinutes,
         )
         managedSyncPreview = ManagedSyncEngine().preview(managedDesiredEvents, ruleLedger.mappings, targets)
         navigation.openManagedSyncPreview()
@@ -566,6 +567,9 @@ class CalendarControlState(
     var manualEventsInitialKind by mutableStateOf(ManualEventKind.NORMAL)
     /** Widget, das die Widget-Seite beim Öffnen bearbeitet (aus der Einrichtung); null = erstes platziertes. */
     var editingWidgetId by mutableStateOf<Int?>(null)
+    /** Erinnerung beim Schreiben (CalendarReminderPreferences): null = nicht verwaltet, NO_REMINDER oder Minuten. */
+    var calendarReminderMinutes by mutableStateOf<Int?>(null)
+        internal set
     /** Entwurf aus geteiltem Text für das Formular der Campustermine; das Formular übernimmt und leert ihn. */
     var manualEventDraft by mutableStateOf<com.tequila.tumcalendarcontrol.sync.ManualEventDraft?>(null)
 

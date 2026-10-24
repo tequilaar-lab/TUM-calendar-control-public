@@ -950,4 +950,7 @@
     <string name="msg_0948" formatted="false">"Aus dem geteilten Text ausgefüllt; bitte prüfen und hinzufügen"</string>
     <string name="msg_0949" formatted="false">"Neuer Campustermin"</string>
     <string name="msg_0950" formatted="false">"Links einen Kurs wählen, um Details zu sehen"</string>
+    <string name="msg_0951" formatted="false">"Erinnerung beim Schreiben"</string>
+    <string name="msg_0952" formatted="false">"Fügt Pflichtkursen im Kalender eine Systemerinnerung hinzu, damit die Kalender-App (z. B. HONOR-Kalender) vor dem Kurs erinnert. Nach einer Änderung aktualisiert der nächste Schreibvorgang die geschriebenen Kurse einmal (in der Vorschau sichtbar); nur der eigene Kalender der App wird geändert."</string>
+    <string name="msg_0953" formatted="false">"Keine Erinnerung"</string>
 </resources>

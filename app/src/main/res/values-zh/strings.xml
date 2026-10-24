@@ -950,4 +950,7 @@
     <string name="msg_0948" formatted="false">"已根据分享的内容填好，请核对后添加"</string>
     <string name="msg_0949" formatted="false">"新建校园事项"</string>
     <string name="msg_0950" formatted="false">"在左侧选择一门课程查看详情"</string>
+    <string name="msg_0951" formatted="false">"写入时附带提醒"</string>
+    <string name="msg_0952" formatted="false">"给写入日历的必去课程附带一条系统提醒，由日历应用（如荣耀日历）在课前提醒。更改后，下次写入会把已写入的课程更新一次，写入预览里可以看到；只改本 App 自己的日历。"</string>
+    <string name="msg_0953" formatted="false">"不提醒"</string>
 </resources>

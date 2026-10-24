@@ -1,5 +1,6 @@
 /*
- * Aufgabe: Private Verbindungskonfiguration bearbeiten: Kursabonnement (verdeckt), Lesezeitraum-Hinweis, Google-Kalendername.
+ * Aufgabe: Private Verbindungskonfiguration bearbeiten: Kursabonnement (verdeckt), Lesezeitraum-Hinweis, Google-Kalendername,
+ *   Erinnerung beim Schreiben (wirkt sofort auf die nächste Schreibvorschau).
  * Ein-/Ausgabe: Gespeicherte Konfiguration und Entwurf -> validiert gespeicherte Konfiguration (schwebende Hauptaktion).
  * Nebenwirkungen: Keine externen Aktionen; Speichern über bestehenden Zustandsaufruf, danach zurück.
  * Nicht zuständig: iCal-Abruf, Google-Autorisierung (Einstellungsseite), Verschlüsselung oder Kalenderausgabe.
@@ -23,6 +24,8 @@ import com.tequila.tumcalendarcontrol.ui.design.DesignNote
 import com.tequila.tumcalendarcontrol.ui.design.DesignPillButton
 import com.tequila.tumcalendarcontrol.ui.design.DesignSection
 import com.tequila.tumcalendarcontrol.ui.design.DesignText
+import com.tequila.tumcalendarcontrol.ui.design.DesignChips
+import com.tequila.tumcalendarcontrol.sync.CalendarReminderOptions
 import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
 
 /** Freier Text auf der Titellinie (4 dp innerhalb der Blockkanten). */
@@ -63,6 +66,15 @@ internal fun SyncConfigurationScreen(state: CalendarControlState) {
         DesignText(tr(message(554)), 12, TextInset, muted = true)
         DesignField(tr(message(557)), calendarName, { calendarName = it }, Modifier.testTag("connection-calendar-name"), singleLine = true)
         DesignNote(tr(message(555)), tr(message(556)))
+        // Erinnerung beim Schreiben: wirkt sofort auf die nächste Schreibvorschau (nicht auf „Speichern“ dieser Seite).
+        DesignSection(tr(message(951)), TextInset)
+        DesignText(tr(message(952)), 12, TextInset, muted = true)
+        val reminder = state.calendarReminderMinutes
+        DesignChips(
+            listOf(tr(message(953))) + CalendarReminderOptions.map { tr(message(929, it)) },
+            CalendarReminderOptions.indexOf(reminder).let { if (it < 0) 0 else it + 1 },
+            Modifier.testTag("connection-reminder"),
+        ) { index -> state.chooseCalendarReminder(if (index == 0) null else CalendarReminderOptions[index - 1]) }
         validationMessage?.let { DesignText(tr(it), 12, TextInset.testTag("connection-validation"), color = LocalDesignColors.current.danger) }
     }
 }

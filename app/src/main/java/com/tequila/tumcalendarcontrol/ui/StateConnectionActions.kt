@@ -66,6 +66,14 @@ fun CalendarControlState.updatePrivateSyncConfiguration(configuration: PrivateSy
     invalidateWritePreview()
 }
 
+/** Erinnerung beim Schreiben ändern (null = „keine“); bestehende Schreibvorschau verfällt, geschrieben wird erst nach Bestätigung. */
+fun CalendarControlState.chooseCalendarReminder(chosen: Int?) {
+    val next = com.tequila.tumcalendarcontrol.sync.CalendarReminderPreferences.next(calendarReminderMinutes, chosen)
+    if (next == calendarReminderMinutes) return
+    calendarReminderMinutes = next
+    invalidateWritePreview()
+}
+
 /** Hintergrundprüfung nur mit konfigurierter Quelle; Einplanung liest/schreibt keinen Kalender. */
 fun CalendarControlState.updateSourceCheck(enabled: Boolean, cadence: SourceCheckCadence = sourceCheckSettings.cadence) {
     if (enabled && !privateSyncConfiguration.hasTumSubscription) {

@@ -950,4 +950,7 @@
     <string name="msg_0948" formatted="false">"Filled in from the shared text; please check and add"</string>
     <string name="msg_0949" formatted="false">"New campus event"</string>
     <string name="msg_0950" formatted="false">"Select a course on the left to see its details"</string>
+    <string name="msg_0951" formatted="false">"Reminder when writing"</string>
+    <string name="msg_0952" formatted="false">"Adds a system reminder to must-attend classes written to the calendar, so the calendar app (e.g. HONOR Calendar) reminds you before class. After a change, the next write updates already written classes once (visible in the write preview); only the app\'s own calendar is changed."</string>
+    <string name="msg_0953" formatted="false">"No reminder"</string>
 </resources>
