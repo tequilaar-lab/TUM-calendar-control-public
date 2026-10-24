@@ -1,0 +1,5 @@
+<!-- Aufgabe: Widget-Fläche widget_today_wash; reine Darstellungsressource ohne Daten oder Aktionen. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/widget_wash" />
+    <corners android:radius="10dp" />
+</shape>

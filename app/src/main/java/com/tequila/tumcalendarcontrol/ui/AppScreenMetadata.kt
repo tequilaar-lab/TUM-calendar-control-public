@@ -32,6 +32,7 @@ internal fun AppScreen.usesBackArrow(): Boolean = this in setOf(
     AppScreen.RULE_BACKUP,
     AppScreen.APPEARANCE,
     AppScreen.SOURCE_CHANGES,
+    AppScreen.WIDGETS,
 )
 
 internal fun AppScreen.bottomNavigationIndex(): Int = when (this) {
@@ -63,6 +64,7 @@ internal fun AppScreen.title(): String = when (this) {
     AppScreen.RULE_BACKUP -> message(169)
     AppScreen.APPEARANCE -> message(580)
     AppScreen.SOURCE_CHANGES -> message(768)
+    AppScreen.WIDGETS -> message(811)
 }
 
 internal fun AppScreen.subtitle(): String? = when (this) {
@@ -107,4 +109,5 @@ internal fun AppScreen.kicker(): String = when (this) {
     AppScreen.RULE_BACKUP -> "DATA / BACKUP"
     AppScreen.APPEARANCE -> "APPEARANCE"
     AppScreen.SOURCE_CHANGES -> "COURSES / CHANGES"
+    AppScreen.WIDGETS -> "HOME / WIDGETS"
 }

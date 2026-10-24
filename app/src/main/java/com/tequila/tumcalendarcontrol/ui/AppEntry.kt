@@ -16,6 +16,8 @@ sealed interface AppEntry {
     data object SourceRange : AppEntry
     /** Kursdetails anhand der Quell-UID; unbekannte Kurse lassen die aktuelle Seite unverändert. */
     data class Course(val courseId: String) : AppEntry
+    /** Einstellungsseite der Startbildschirm-Widgets (aus der Widget-Einrichtung). */
+    data object WidgetSettings : AppEntry
 }
 
 object AppEntryIntents {
@@ -23,6 +25,7 @@ object AppEntryIntents {
     private const val EXTRA_COURSE = "com.tequila.tumcalendarcontrol.entry.course"
     private const val TARGET_SOURCE_RANGE = "source-range"
     private const val TARGET_COURSE = "course"
+    private const val TARGET_WIDGETS = "widgets"
 
     fun intent(context: Context, entry: AppEntry?): Intent =
         Intent(context, MainActivity::class.java).apply {
@@ -30,6 +33,7 @@ object AppEntryIntents {
             when (entry) {
                 AppEntry.SourceRange -> putExtra(EXTRA_TARGET, TARGET_SOURCE_RANGE)
                 is AppEntry.Course -> { putExtra(EXTRA_TARGET, TARGET_COURSE); putExtra(EXTRA_COURSE, entry.courseId) }
+                AppEntry.WidgetSettings -> putExtra(EXTRA_TARGET, TARGET_WIDGETS)
                 null -> Unit
             }
         }
@@ -37,6 +41,7 @@ object AppEntryIntents {
     fun parse(intent: Intent?): AppEntry? = when (intent?.getStringExtra(EXTRA_TARGET)) {
         TARGET_SOURCE_RANGE -> AppEntry.SourceRange
         TARGET_COURSE -> intent.getStringExtra(EXTRA_COURSE)?.takeIf(String::isNotBlank)?.let(AppEntry::Course)
+        TARGET_WIDGETS -> AppEntry.WidgetSettings
         else -> null
     }
 }

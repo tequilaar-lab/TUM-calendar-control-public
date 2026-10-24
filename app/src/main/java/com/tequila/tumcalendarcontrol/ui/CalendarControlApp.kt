@@ -7,6 +7,7 @@
 package com.tequila.tumcalendarcontrol.ui
 
 import com.tequila.tumcalendarcontrol.i18n.message
+import com.tequila.tumcalendarcontrol.widget.ScheduleWidgets
 import com.tequila.tumcalendarcontrol.i18n.AppLanguagePreferences
 
 import android.Manifest
@@ -125,6 +126,7 @@ fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {})
         when (entry) {
             AppEntry.SourceRange -> state.openSourceRange()
             is AppEntry.Course -> state.openCourse(entry.courseId)
+            AppEntry.WidgetSettings -> state.open(AppScreen.WIDGETS)
             null -> return@LaunchedEffect
         }
         onEntryHandled()
@@ -240,6 +242,8 @@ fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {})
                     if (!ruleLedgerPreferences.save(state.ruleLedger)) {
                         state.feedback = message(218)
                     }
+                    // Widgets zeigen geschriebene Termine: nach gespeicherter Ausgabe/Bereinigung neu zeichnen.
+                    ScheduleWidgets.refreshAll(context)
                     runCatching { privateSyncConfigurationStore.save(state.privateSyncConfiguration) }
                         .onFailure { state.feedback = message(219) }
                     if (it.requiresGoogleReauthorization && !googleToken.isNullOrBlank()) {

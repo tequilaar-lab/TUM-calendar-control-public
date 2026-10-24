@@ -73,6 +73,7 @@ internal class NavigationState {
             AppScreen.BACKGROUND_CHECK -> backgroundCheckReturnScreen
             AppScreen.RULE_BACKUP -> ruleBackupReturnScreen
             AppScreen.APPEARANCE -> AppScreen.SETTINGS
+            AppScreen.WIDGETS -> AppScreen.SETTINGS
             AppScreen.SOURCE_CHANGES -> sourceChangesReturnScreen
             else -> return false
         }
