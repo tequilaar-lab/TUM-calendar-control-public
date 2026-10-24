@@ -839,4 +839,12 @@
     <string name="msg_0835" formatted="false">"Nächster Termin, heute und Woche"</string>
     <string name="msg_0836" formatted="false">"Die Vorschau verwendet Beispieltermine, nicht deine Daten."</string>
     <string name="msg_0809" formatted="false">"d. MMM"</string>
+    <string name="msg_0837" formatted="false">"Termin"</string>
+    <string name="msg_0838" formatted="false">"Prüfung"</string>
+    <string name="msg_0839" formatted="false">"Frist"</string>
+    <string name="msg_0840" formatted="false">"Art"</string>
+    <string name="msg_0841" formatted="false">"Fällig Std."</string>
+    <string name="msg_0842" formatted="false">"Fällig Min."</string>
+    <string name="msg_0843" formatted="false">"Fällig {0} (Europe/Berlin)"</string>
+    <string name="msg_0844" formatted="false">"Fristen erscheinen im Kalender als die 30 Minuten vor der Fälligkeit."</string>
 </resources>

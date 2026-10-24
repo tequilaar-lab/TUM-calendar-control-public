@@ -839,4 +839,12 @@
     <string name="msg_0835" formatted="false">"Next class, today and week"</string>
     <string name="msg_0836" formatted="false">"The preview uses sample classes, not your data."</string>
     <string name="msg_0809" formatted="false">"d MMM"</string>
+    <string name="msg_0837" formatted="false">"Event"</string>
+    <string name="msg_0838" formatted="false">"Exam"</string>
+    <string name="msg_0839" formatted="false">"Deadline"</string>
+    <string name="msg_0840" formatted="false">"Type"</string>
+    <string name="msg_0841" formatted="false">"Due hour"</string>
+    <string name="msg_0842" formatted="false">"Due minute"</string>
+    <string name="msg_0843" formatted="false">"Due {0} (Europe/Berlin)"</string>
+    <string name="msg_0844" formatted="false">"Deadlines are written to the calendar as the 30 minutes before they are due."</string>
 </resources>

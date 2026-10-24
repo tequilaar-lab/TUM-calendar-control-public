@@ -25,7 +25,15 @@ data class ManualScheduleItem(
     val startsAt: Instant,
     val endsAt: Instant,
     val attendanceState: AttendanceState,
+    /** Nur in der App (Countdown, Kennzeichnung); der geschriebene Kalendertermin hängt nicht davon ab. */
+    val kind: ManualEventKind = ManualEventKind.NORMAL,
 )
+
+/**
+ * Art eines eigenen Termins. Prüfungen zählen bis zum Beginn, Fristen bis zum Fälligkeitszeitpunkt (= Ende; im Kalender
+ * als 30-Minuten-Block davor). Normale Termine haben keinen Countdown.
+ */
+enum class ManualEventKind { NORMAL, EXAM, DEADLINE }
 
 enum class OutputTarget { LOCAL_CALENDAR, GOOGLE_CALENDAR }
 

@@ -32,7 +32,9 @@ object RuleLedgerCodec {
             rule.futureInstantOverrides.toSortedMap().forEach { (time, state) -> add(listOf("gt", rule.groupKey, time, state.name).joinToString("|")) }
         }
         ledger.manualEvents.sortedBy(ManualScheduleItem::id).forEach { event ->
-            add(listOf("m", pack(event.id), pack(event.title), event.startsAt, event.endsAt, event.attendanceState.name).joinToString("|"))
+            // Art nur anhängen, wenn nicht normal: normale Termine bleiben Zeichen für Zeichen wie bisher (alte Versionen lesen weiter).
+            val fields = listOf("m", pack(event.id), pack(event.title), event.startsAt, event.endsAt, event.attendanceState.name)
+            add((if (event.kind == ManualEventKind.NORMAL) fields else fields + event.kind.name).joinToString("|"))
         }
         ledger.mappings.sortedWith(compareBy(StoredEventMapping::target, { it.identity.sourceUid }, { it.identity.instanceKey })).forEach { mapping ->
             val event = mapping.writtenEvent
@@ -62,7 +64,11 @@ object RuleLedgerCodec {
                 "g" -> groupRules[fields[1]] = GroupAttendanceRule(fields[1], fields.getOrNull(2)?.ifBlank { null }?.let(AttendanceState::valueOf))
                 "gf" -> { val key = fields[1]; groupRules[key] = groupRules.getValue(key).copy(futureStateOverrides = groupRules.getValue(key).futureStateOverrides + (LocalDate.parse(fields[2]) to AttendanceState.valueOf(fields[3]))) }
                 "gt" -> { val key = fields[1]; groupRules[key] = groupRules.getValue(key).copy(futureInstantOverrides = groupRules.getValue(key).futureInstantOverrides + (Instant.parse(fields[2]) to AttendanceState.valueOf(fields[3]))) }
-                "m" -> manualEvents += ManualScheduleItem(unpack(fields[1]), unpack(fields[2]), Instant.parse(fields[3]), Instant.parse(fields[4]), AttendanceState.valueOf(fields[5]))
+                "m" -> manualEvents += ManualScheduleItem(
+                    unpack(fields[1]), unpack(fields[2]), Instant.parse(fields[3]), Instant.parse(fields[4]), AttendanceState.valueOf(fields[5]),
+                    // Unbekannte Art (neuere Version) als normal lesen, statt den ganzen Bestand zu verwerfen.
+                    fields.getOrNull(6)?.let { name -> ManualEventKind.entries.firstOrNull { it.name == name } } ?: ManualEventKind.NORMAL,
+                )
                 "p" -> {
                     val identity = ManagedEventIdentity(unpack(fields[2]), unpack(fields[3]))
                     val event = if (!fields.getOrNull(8).isNullOrBlank()) DesiredCalendarEvent(identity, unpack(fields[7]), Instant.parse(fields[8]), Instant.parse(fields[9]), AttendanceState.valueOf(fields[10]), unpack(fields[11])) else null
