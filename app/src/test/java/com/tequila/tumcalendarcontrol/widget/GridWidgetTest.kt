@@ -132,6 +132,24 @@ class GridWidgetTest {
         view.captureRoboImage("src/test/screenshots/widget_grid_330x290.png")
     }
 
+    /** Gerätefund: gestaucht klebte der Name unten links; niedrige Blöcke einzeilig, 9 sp, senkrecht mittig. */
+    @Test fun `niedrige Blöcke kompakt und mittig`() {
+        val (_, view) = render(330, 150)
+        val titles = view.all(R.id.grid_block_title).map { it as TextView }
+        assertTrue(titles.isNotEmpty())
+        val density = view.resources.displayMetrics.scaledDensity
+        titles.forEach { assertEquals(9f, it.textSize / density, .1f); assertEquals(1, it.maxLines) }
+        view.all(R.id.grid_block_root).forEach { assertEquals(android.view.Gravity.CENTER_VERTICAL, (it as android.widget.LinearLayout).gravity and android.view.Gravity.VERTICAL_GRAVITY_MASK) }
+    }
+
+    /** Auf-/Zuklappen: nur ein Wechsel zwischen schmal und groß löst Neuzeichnen aus. */
+    @Test fun `Klappwechsel erkannt`() {
+        assertTrue(FoldRefreshWatcher.changed(false, 840))
+        assertTrue(FoldRefreshWatcher.changed(true, 411))
+        assertTrue(!FoldRefreshWatcher.changed(true, 840))
+        assertTrue("noch kein Ausgangszustand", !FoldRefreshWatcher.changed(null, 840))
+    }
+
     @Test fun `leere Woche mit Hinweis`() {
         val (_, view) = render(330, 290, data = listOf(ev("x", 12, 10)))
         assertEquals(View.VISIBLE, view.findViewById<View>(R.id.widget_empty).visibility)

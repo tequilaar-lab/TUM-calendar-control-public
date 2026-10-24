@@ -10,6 +10,7 @@ package com.tequila.tumcalendarcontrol.widget
 import android.content.Context
 import android.os.Build
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
 import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
@@ -27,6 +28,8 @@ object GridWidgetRenderer {
     private const val DAY_LABEL_DP = 16
     private const val AXIS_DP = 16
     private const val MIN_BLOCK_DP = 12f
+    /** Unter dieser Höhe passt eine Zeile 10-sp-Text samt Innenabstand nicht: kompakte, mittige Darstellung. */
+    private const val LOW_BLOCK_DP = 24f
     /** Vergangene Tage nur leicht dämpfen (auf durchscheinendem Hintergrund sonst kaum lesbar). */
     private const val PAST_ALPHA = .65f
     private const val HEIGHT_RESERVE = .92f
@@ -106,6 +109,12 @@ object GridWidgetRenderer {
         views.setInt(R.id.grid_block_root, "setBackgroundResource", background(event.state))
         views.setTextViewText(R.id.grid_block_title, ScheduleWidgetRenderer.weekTitle(event, frame))
         views.setInt(R.id.grid_block_title, "setMaxLines", if (height >= 30) 2 else 1)
+        // Niedrige Blöcke (Gerätefund: Name klebte unten links am Rand): einzeilig, kleiner, senkrecht mittig, ohne Innenabstand oben.
+        if (height < LOW_BLOCK_DP) {
+            views.setInt(R.id.grid_block_root, "setGravity", Gravity.CENTER_VERTICAL)
+            views.setTextViewTextSize(R.id.grid_block_title, TypedValue.COMPLEX_UNIT_SP, 9f)
+            views.setViewPadding(R.id.grid_block_root, px(context, 3f), 0, px(context, 2f), 0)
+        }
         val showTime = height >= 40 && widthDp >= 34
         views.setViewVisibility(R.id.grid_block_time, if (showTime) View.VISIBLE else View.GONE)
         if (showTime) views.setTextViewText(R.id.grid_block_time, Time.format(event.startsAt.atZone(frame.zone)))
@@ -116,6 +125,8 @@ object GridWidgetRenderer {
         views.setOnClickPendingIntent(R.id.grid_block_root, ScheduleWidgetRenderer.openApp(context, AppEntry.Course(event.courseId)))
         return views
     }
+
+    private fun px(context: Context, dp: Float): Int = (dp * context.resources.displayMetrics.density).toInt()
 
     @RequiresApi(Build.VERSION_CODES.S)
     private fun gap(context: Context, heightDp: Float): RemoteViews = RemoteViews(context.packageName, R.layout.widget_grid_gap).apply {

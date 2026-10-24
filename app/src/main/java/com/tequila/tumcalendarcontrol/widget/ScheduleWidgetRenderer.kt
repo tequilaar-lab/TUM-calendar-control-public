@@ -163,7 +163,7 @@ object ScheduleWidgetRenderer {
         views.setTextViewTextSize(R.id.widget_time, android.util.TypedValue.COMPLEX_UNIT_SP, if (narrow) 18f else 20f)
         views.setImageViewResource(R.id.widget_dot, dot(event.state))
         views.setTextViewText(R.id.widget_title, courseTitle(event, frame))
-        views.setInt(R.id.widget_title, "setMaxLines", if (frame.heightDp >= 120) 2 else 1)
+        views.setInt(R.id.widget_title, "setMaxLines", titleLines(frame, event.location.isNotBlank()))
         val compact = frame.heightDp < 80
         views.setViewVisibility(R.id.widget_time, if (compact) View.GONE else View.VISIBLE)
         views.setViewVisibility(R.id.widget_dot, if (compact) View.GONE else View.VISIBLE)
@@ -271,6 +271,16 @@ object ScheduleWidgetRenderer {
             if (more > 0) row.setTextViewText(R.id.day_more, "+$more")
             views.addView(R.id.widget_rows, row)
         }
+    }
+
+    /**
+     * Zeilen des Kurstitels in „Wohin jetzt“/„Morgen“: zweizeilig ab 120 dp, mit Raumzeile aber erst ab 165 dp
+     * (Gerätefund: 2×2 innen schnitt die Raumzeile ab, wenn noch die Ränder des Außenbildschirms galten).
+     */
+    internal fun titleLines(frame: WidgetFrame, hasRoom: Boolean = true): Int = when {
+        frame.heightDp < 120 -> 1
+        hasRoom && frame.settings.showLocation && frame.heightDp >= 110 && frame.heightDp < 165 -> 1
+        else -> 2
     }
 
     /** Titel in „Wohin jetzt“, „Heute“, „Morgen“: Kurzname nur mit Einstellung useShortNames, sonst der Titel. */

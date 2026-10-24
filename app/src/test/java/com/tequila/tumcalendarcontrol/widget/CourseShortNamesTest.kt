@@ -91,6 +91,15 @@ class CourseShortNamesTest {
         assertEquals("SL", small.findViewById<TextView>(R.id.widget_title).text.toString())
     }
 
+    /** 2×2 mit Raumzeile: zweizeiliger Titel erst ab 165 dp (Gerätefund: Raumzeile abgeschnitten). */
+    @Test fun `Titelzeilen mit Raum`() {
+        fun frame(h: Int) = WidgetFrame(emptyList(), true, WidgetSettings(), now, zone, 155, h)
+        assertEquals(1, ScheduleWidgetRenderer.titleLines(frame(100)))
+        assertEquals(1, ScheduleWidgetRenderer.titleLines(frame(143)))
+        assertEquals(2, ScheduleWidgetRenderer.titleLines(frame(143), hasRoom = false))
+        assertEquals(2, ScheduleWidgetRenderer.titleLines(frame(170)))
+    }
+
     private fun chipTexts(view: View): List<String> {
         val out = mutableListOf<String>()
         fun walk(v: View) {

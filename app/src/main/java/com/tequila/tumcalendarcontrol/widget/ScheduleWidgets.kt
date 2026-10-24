@@ -81,6 +81,8 @@ object ScheduleWidgets {
      */
     fun refreshAll(context: Context, now: Instant = Instant.now(), zone: ZoneId = ZoneId.systemDefault()) {
         val app = context.applicationContext
+        // Auf-/Zuklappen meldet der HONOR-Startbildschirm nicht: solange der Prozess lebt, selbst darauf reagieren.
+        FoldRefreshWatcher.watch(app)
         val manager = AppWidgetManager.getInstance(app) ?: return
         val placed = providers.map { (type, size) -> size to manager.getAppWidgetIds(ComponentName(app, type)) }.filter { it.second.isNotEmpty() }
         if (placed.isEmpty()) return
