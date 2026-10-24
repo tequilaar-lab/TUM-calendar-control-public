@@ -3,7 +3,7 @@
  * Ein-/Ausgabe: Android-Lebenszyklus -> interaktive lokale Compose-Oberfläche.
  * Nebenwirkungen: Android-Oberfläche starten, höchste Bildwiederholrate anfordern; bestätigte Operationen an CalendarControlApp delegieren;
  *   Einstiegsziele aus Hinweisen/Widgets/Verknüpfungen (nur Navigation) weiterreichen; Verknüpfungen beim Start
- *   veröffentlichen; Widgets beim Verlassen neu zeichnen.
+ *   veröffentlichen; Widgets und Live-Kursbenachrichtigung beim Verlassen aktualisieren.
  * Nicht zuständig: Persistenz, Netzwerk-, Konto-, iCal- oder Calendar-Provider-Zugriffe.
  */
 package com.tequila.tumcalendarcontrol
@@ -22,6 +22,7 @@ import com.tequila.tumcalendarcontrol.ui.AppEntryIntents
 import com.tequila.tumcalendarcontrol.ui.CalendarControlApp
 import com.tequila.tumcalendarcontrol.shortcuts.AppShortcuts
 import com.tequila.tumcalendarcontrol.widget.ScheduleWidgets
+import com.tequila.tumcalendarcontrol.notify.ClassLiveScheduler
 
 class MainActivity : ComponentActivity() {
     /** Noch nicht angewandtes Einstiegsziel; nach Neuaufbau nur erneut, wenn es vorher noch ausstand. */
@@ -49,10 +50,14 @@ class MainActivity : ComponentActivity() {
         AppEntryIntents.save(outState, pendingEntry)
     }
 
-    /** Beim Verlassen Widgets neu zeichnen (z. B. geänderte Einstellungen oder Zuordnungen); kein Netzwerk, kein Kalender. */
+    /**
+     * Beim Verlassen Widgets neu zeichnen und die Live-Kursbenachrichtigung neu planen (z. B. geänderte Einstellungen
+     * oder Zuordnungen); kein Netzwerk, kein Kalender.
+     */
     override fun onStop() {
         super.onStop()
         ScheduleWidgets.refreshAll(this)
+        ClassLiveScheduler.refresh(this)
     }
 
     override fun onResume() {

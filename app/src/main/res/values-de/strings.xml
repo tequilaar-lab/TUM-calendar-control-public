@@ -836,7 +836,7 @@
     <string name="msg_0832" formatted="false">"Zum Startbildschirm hinzufügen"</string>
     <string name="msg_0833" formatted="false">"Höhe: Widget auf dem Startbildschirm lange drücken und den Rand ziehen; der Inhalt passt sich der Höhe an."</string>
     <string name="msg_0834" formatted="false">"Dieser Startbildschirm kann Widgets nicht von hier hinzufügen; bitte über die Widget-Liste hinzufügen."</string>
-    <string name="msg_0835" formatted="false">"Nächster Termin, heute und Woche"</string>
+    <string name="msg_0835" formatted="false">"Nächster Termin, Heute, Morgen, Woche, Stundenplan, Countdown, Prüfen"</string>
     <string name="msg_0836" formatted="false">"Die Vorschau verwendet Beispieltermine, nicht deine Daten."</string>
     <string name="msg_0809" formatted="false">"d. MMM"</string>
     <string name="msg_0837" formatted="false">"Termin"</string>
@@ -923,4 +923,20 @@
     <string name="msg_0921" formatted="false">"Morgen · {0} Kurse"</string>
     <string name="msg_0922" formatted="false">"Morgen keine Kurse"</string>
     <string name="msg_0923" formatted="false">"Nächster Kurs: {0}"</string>
+    <string name="msg_0924" formatted="false">"Live-Kursbenachrichtigung"</string>
+    <string name="msg_0925" formatted="false">"Hinweis vor dem Kurs, Restzeit in der Statusleiste"</string>
+    <string name="msg_0926" formatted="false">"Live-Kursbenachrichtigung einschalten"</string>
+    <string name="msg_0927" formatted="false">"Erinnert vor Pflichtkursen, zeigt während des Kurses die Restzeit und verschwindet danach. Nutzt „Live-Updates“ von Android 16: Standard-Android zeigt sie als Chip in der Statusleiste; ob die HONOR-Kapsel sie zeigt, hängt vom System ab. Ungenaue Wecker: der Hinweis erscheint bis zu 10 Minuten früher als eingestellt."</string>
+    <string name="msg_0928" formatted="false">"Vorlauf"</string>
+    <string name="msg_0929" formatted="false">"{0} Min."</string>
+    <string name="msg_0930" formatted="false">"Auch für frei gewählte Kurse"</string>
+    <string name="msg_0931" formatted="false">"Als Nächstes {0}: {1}"</string>
+    <string name="msg_0932" formatted="false">"Läuft: {0}"</string>
+    <string name="msg_0933" formatted="false">"{0} · bis {1}"</string>
+    <string name="msg_0934" formatted="false">"bis {0}"</string>
+    <string name="msg_0935" formatted="false">"Karte"</string>
+    <string name="msg_0936" formatted="false">"Live-Kurse"</string>
+    <string name="msg_0937" formatted="false">"Das System erlaubt Live-Updates"</string>
+    <string name="msg_0938" formatted="false">"Das System erlaubt keine Live-Updates; es erscheint eine normale dauerhafte Benachrichtigung"</string>
+    <string name="msg_0939" formatted="false">"Für die Live-Kursbenachrichtigung ist die Benachrichtigungsberechtigung nötig"</string>
 </resources>

@@ -836,7 +836,7 @@
     <string name="msg_0832" formatted="false">"添加到桌面"</string>
     <string name="msg_0833" formatted="false">"高度：在桌面上长按小组件、拖动边框即可调整，内容会随高度增减。"</string>
     <string name="msg_0834" formatted="false">"当前桌面不支持从这里添加，请在桌面的小组件列表中添加。"</string>
-    <string name="msg_0835" formatted="false">"现在去哪、今天、本周三种尺寸"</string>
+    <string name="msg_0835" formatted="false">"现在去哪、今天、明天、本周、课表、倒数日、检查更新"</string>
     <string name="msg_0836" formatted="false">"预览使用示例课程，不是真实数据。"</string>
     <string name="msg_0809" formatted="false">"M月d日"</string>
     <string name="msg_0837" formatted="false">"普通事项"</string>
@@ -923,4 +923,20 @@
     <string name="msg_0921" formatted="false">"明天 · {0} 节"</string>
     <string name="msg_0922" formatted="false">"明天没有课"</string>
     <string name="msg_0923" formatted="false">"下次上课：{0}"</string>
+    <string name="msg_0924" formatted="false">"课程实况通知"</string>
+    <string name="msg_0925" formatted="false">"上课前提醒，上课时在状态栏显示剩余时间"</string>
+    <string name="msg_0926" formatted="false">"开启课程实况通知"</string>
+    <string name="msg_0927" formatted="false">"必去课程开课前提醒，上课时显示剩余时间，下课后自动消失。使用 Android 16 的“实况更新”：标准系统会显示在状态栏胶囊里；荣耀灵动胶囊是否显示以系统为准。提醒用非精确闹钟，会在设定时间前 0–10 分钟内出现。"</string>
+    <string name="msg_0928" formatted="false">"提前时间"</string>
+    <string name="msg_0929" formatted="false">"{0} 分钟"</string>
+    <string name="msg_0930" formatted="false">"也包括“选择出席”的课"</string>
+    <string name="msg_0931" formatted="false">"下一节 {0}：{1}"</string>
+    <string name="msg_0932" formatted="false">"进行中：{0}"</string>
+    <string name="msg_0933" formatted="false">"{0} · 至 {1}"</string>
+    <string name="msg_0934" formatted="false">"至 {0}"</string>
+    <string name="msg_0935" formatted="false">"地图"</string>
+    <string name="msg_0936" formatted="false">"课程实况"</string>
+    <string name="msg_0937" formatted="false">"系统允许实况更新"</string>
+    <string name="msg_0938" formatted="false">"系统未允许实况更新，将显示为普通的常驻通知"</string>
+    <string name="msg_0939" formatted="false">"需要通知权限才能显示课程实况通知"</string>
 </resources>

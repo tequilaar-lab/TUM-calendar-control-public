@@ -836,7 +836,7 @@
     <string name="msg_0832" formatted="false">"Add to home screen"</string>
     <string name="msg_0833" formatted="false">"Height: long-press the widget on the home screen and drag its edges; the content adapts to the height."</string>
     <string name="msg_0834" formatted="false">"This launcher can\'t add widgets from here; add it from the launcher\'s widget list."</string>
-    <string name="msg_0835" formatted="false">"Next class, today and week"</string>
+    <string name="msg_0835" formatted="false">"Next class, Today, Tomorrow, Week, Timetable, Countdown, Check"</string>
     <string name="msg_0836" formatted="false">"The preview uses sample classes, not your data."</string>
     <string name="msg_0809" formatted="false">"d MMM"</string>
     <string name="msg_0837" formatted="false">"Event"</string>
@@ -923,4 +923,20 @@
     <string name="msg_0921" formatted="false">"Tomorrow · {0} courses"</string>
     <string name="msg_0922" formatted="false">"No courses tomorrow"</string>
     <string name="msg_0923" formatted="false">"Next course: {0}"</string>
+    <string name="msg_0924" formatted="false">"Live class notifications"</string>
+    <string name="msg_0925" formatted="false">"Reminder before class and remaining time in the status bar"</string>
+    <string name="msg_0926" formatted="false">"Turn on live class notifications"</string>
+    <string name="msg_0927" formatted="false">"Reminds you before must-attend classes, shows the remaining time during class and disappears afterwards. Uses Android 16 “Live Updates”: standard Android shows them as a status bar chip; whether HONOR’s Dynamic Capsule shows them depends on the system. Reminders use inexact alarms and appear up to 10 minutes earlier than set."</string>
+    <string name="msg_0928" formatted="false">"Lead time"</string>
+    <string name="msg_0929" formatted="false">"{0} min"</string>
+    <string name="msg_0930" formatted="false">"Also for “choose to attend” classes"</string>
+    <string name="msg_0931" formatted="false">"Next {0}: {1}"</string>
+    <string name="msg_0932" formatted="false">"Now: {0}"</string>
+    <string name="msg_0933" formatted="false">"{0} · until {1}"</string>
+    <string name="msg_0934" formatted="false">"until {0}"</string>
+    <string name="msg_0935" formatted="false">"Map"</string>
+    <string name="msg_0936" formatted="false">"Live classes"</string>
+    <string name="msg_0937" formatted="false">"The system allows Live Updates"</string>
+    <string name="msg_0938" formatted="false">"The system does not allow Live Updates; a regular ongoing notification is shown"</string>
+    <string name="msg_0939" formatted="false">"Notification permission is needed for live class notifications"</string>
 </resources>

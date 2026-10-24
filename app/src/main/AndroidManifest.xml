@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Android 16 „Live-Updates“: Live-Kursbenachrichtigung als Statusleisten-Chip (vom Nutzer genehmigt, 2026-10-24). -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
@@ -154,6 +156,16 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/tomorrow_widget_info" />
+        </receiver>
+        <!-- Live-Kursbenachrichtigung: eigener Wecker sowie Zeit-/Zeitzonen-/Sprachwechsel; nicht exportiert. -->
+        <receiver
+            android:name=".notify.ClassLiveReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
         </receiver>
         <!-- Countdown-Widget: Prüfungen und Fristen aus eigenen Terminen; Systemereignisse lösen Neuzeichnen aus. -->
         <receiver
