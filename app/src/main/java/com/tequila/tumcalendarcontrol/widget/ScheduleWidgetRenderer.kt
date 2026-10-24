@@ -54,6 +54,7 @@ object ScheduleWidgetRenderer {
         val text = WidgetTexts(context)
         val layout = when (size) { WidgetSize.SMALL -> R.layout.widget_small; WidgetSize.MEDIUM -> R.layout.widget_list; else -> R.layout.widget_week }
         val views = RemoteViews(context.packageName, layout)
+        resetForReapply(views, if (size == WidgetSize.SMALL) emptyList() else listOf(R.id.widget_rows), if (size == WidgetSize.SMALL) emptyList() else listOf(R.id.widget_footer))
         views.setInt(R.id.widget_root, "setBackgroundResource", background(frame.settings))
         views.setOnClickPendingIntent(R.id.widget_root, openApp(context, null))
         val visible = ScheduleWidgetModel.visible(frame.events, frame.settings)
@@ -66,7 +67,22 @@ object ScheduleWidgetRenderer {
         return views
     }
 
-    /** Klein: ein Termin. Unter 80 dp nur Status und Kurs; ab 130 dp Kurs zweizeilig; Raum ab 110 dp (antippbar). */
+    /**
+     * Startbildschirme (z. B. HONOR) wenden neue RemoteViews oft auf die vorhandene Ansicht an, statt sie neu aufzubauen:
+     * addView hängt dann an, Sichtbarkeiten bleiben stehen. Daher vor jedem Zeichnen Container leeren und alle
+     * umschaltbaren Ansichten auf den Grundzustand setzen (sonst stapeln sich Zeilen bei jeder Aktualisierung).
+     */
+    internal fun resetForReapply(views: RemoteViews, containers: List<Int>, hiddenByDefault: List<Int>) {
+        views.setViewVisibility(R.id.widget_body, View.VISIBLE)
+        views.setViewVisibility(R.id.widget_empty, View.GONE)
+        containers.forEach { views.removeAllViews(it); views.setViewVisibility(it, View.VISIBLE) }
+        hiddenByDefault.forEach { views.setViewVisibility(it, View.GONE) }
+    }
+
+    /**
+     * Klein: ein Termin. Status kurz („Mo 13:15“, „Morgen 13:15“, „In 23 Min.“); unter 170 dp Breite nur Beginn;
+     * unter 80 dp Höhe nur Status und Kurs; Kurs zweizeilig ab 150 dp; Raum ab 110 dp (antippbar).
+     */
     private fun small(context: Context, views: RemoteViews, text: WidgetTexts, events: List<WidgetEvent>, frame: WidgetFrame) {
         val focus = ScheduleWidgetModel.focus(events, frame.now, frame.zone) ?: run { empty(views, text(message(799))); return }
         val event = focus.event
@@ -76,13 +92,17 @@ object ScheduleWidgetRenderer {
             focus.day == focus.today && focus.minutes <= 60 -> message(792, focus.minutes)
             focus.day == focus.today -> message(793, Time.format(start))
             focus.day == focus.today.plusDays(1) -> message(794, Time.format(start))
-            else -> message(765, text.date(focus.day), Time.format(start))
+            // Innerhalb einer Woche Wochentag, sonst kurzes Datum – beides passt auch in schmale 2×2-Felder.
+            focus.day <= focus.today.plusDays(6) -> message(765, text.weekday(focus.day), Time.format(start))
+            else -> message(765, text.shortDate(focus.day), Time.format(start))
         }
         views.setTextViewText(R.id.widget_status, text(status))
-        views.setTextViewText(R.id.widget_time, timeRange(event, frame.zone))
+        val narrow = frame.widthDp < 170
+        views.setTextViewText(R.id.widget_time, if (narrow) Time.format(start) else timeRange(event, frame.zone))
+        views.setTextViewTextSize(R.id.widget_time, android.util.TypedValue.COMPLEX_UNIT_SP, if (narrow) 18f else 20f)
         views.setImageViewResource(R.id.widget_dot, dot(event.state))
         views.setTextViewText(R.id.widget_title, event.title)
-        views.setInt(R.id.widget_title, "setMaxLines", if (frame.heightDp >= 130) 2 else 1)
+        views.setInt(R.id.widget_title, "setMaxLines", if (frame.heightDp >= 150) 2 else 1)
         val compact = frame.heightDp < 80
         views.setViewVisibility(R.id.widget_time, if (compact) View.GONE else View.VISIBLE)
         views.setViewVisibility(R.id.widget_dot, if (compact) View.GONE else View.VISIBLE)
@@ -147,10 +167,13 @@ object ScheduleWidgetRenderer {
         if (frame.heightDp < 120) { views.setViewVisibility(R.id.widget_rows, View.GONE); return }
         val perDay = (frame.heightDp - 28 - 22 - 6 - 20) / 7
         val tall = perDay >= 44
+        // Unter 34 dp je Tag passt die zweizeilige Beschriftung nicht: einzeilig „Mo 19“ (verhindert Überlappung).
+        val singleLineLabel = perDay < 34
         val maxChips = ((frame.widthDp - 28 - 48) / (if (tall) 84 else 64)).coerceAtLeast(1)
         week.days.forEach { day ->
             val row = RemoteViews(context.packageName, R.layout.widget_day)
-            row.setTextViewText(R.id.day_label, text.dayLabel(day.date))
+            row.setTextViewText(R.id.day_label, if (singleLineLabel) "${text.weekday(day.date)} ${day.date.dayOfMonth}" else text.dayLabel(day.date))
+            row.setInt(R.id.day_label, "setMaxLines", if (singleLineLabel) 1 else 2)
             if (day.date == week.today) row.setInt(R.id.day_root, "setBackgroundResource", R.drawable.widget_today_wash)
             if (day.date < week.today) row.setFloat(R.id.day_root, "setAlpha", PAST_ALPHA)
             day.events.take(maxChips).forEach { event ->
@@ -220,6 +243,7 @@ object ScheduleWidgetRenderer {
         operator fun invoke(value: String): String = localizedMessage(localized, value)
         fun date(date: LocalDate): String = DateTimeFormatter.ofPattern(this(message(795)), locale).format(date)
         fun shortDate(date: LocalDate): String = DateTimeFormatter.ofPattern(this(message(809)), locale).format(date)
+        fun weekday(date: LocalDate): String = DateTimeFormatter.ofPattern(this(message(796)), locale).format(date)
         fun dayLabel(date: LocalDate): String =
             DateTimeFormatter.ofPattern(this(message(796)), locale).format(date) + "\n" + DateTimeFormatter.ofPattern(this(message(808)), locale).format(date)
     }

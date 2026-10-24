@@ -120,6 +120,33 @@ class ScheduleWidgetRendererTest {
         render(WidgetSize.MEDIUM, 330, 170, WidgetSettings(translucent = true, corner = WidgetCorner.ROUND)).captureRoboImage("src/test/screenshots/widget_medium_glass_round_330x170.png")
     }
 
+    /**
+     * Startbildschirme wenden Aktualisierungen auf die vorhandene Ansicht an (reapply): Zeilen dürfen sich nicht
+     * stapeln, und ein früherer Leerzustand darf nicht stehen bleiben (Gerätefund 1.4.0, HONOR).
+     */
+    @Test fun `erneutes Anwenden stapelt nichts und setzt Sichtbarkeit zurück`() {
+        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
+        fun frame(data: List<WidgetEvent>, height: Int) = WidgetFrame(data, data.isNotEmpty(), WidgetSettings(), now, zone, 330, height)
+        val week = ScheduleWidgetRenderer.render(activity, WidgetSize.LARGE, frame(events, 380)).apply(activity, FrameLayout(activity))
+        repeat(3) { ScheduleWidgetRenderer.render(activity, WidgetSize.LARGE, frame(events, 380)).reapply(activity, week) }
+        assertEquals(7, week.rowCount())
+        val list = ScheduleWidgetRenderer.render(activity, WidgetSize.MEDIUM, frame(emptyList(), 240)).apply(activity, FrameLayout(activity))
+        assertTrue(list.visible(R.id.widget_empty))
+        repeat(3) { ScheduleWidgetRenderer.render(activity, WidgetSize.MEDIUM, frame(events, 240)).reapply(activity, list) }
+        assertEquals(3, list.rowCount())
+        assertFalse("Leerzustand verschwindet", list.visible(R.id.widget_empty))
+        assertTrue(list.visible(R.id.widget_body))
+    }
+
+    /** Schmales 2×2 (HONOR: 155×211 dp): Wochentag statt Datum, nur Beginn, Kurs einzeilig. */
+    @Test fun `klein schmal mit Wochentag und nur Beginn`() {
+        val later = listOf(ev("x", 24, 13))
+        val view = render(WidgetSize.SMALL, 155, 211, data = later)
+        assertEquals("周六 13:00", view.text(R.id.widget_status))
+        assertEquals("13:00", view.text(R.id.widget_time))
+        view.captureRoboImage("src/test/screenshots/widget_small_narrow_155x211.png")
+    }
+
     @Config(qualifiers = "w412dp-h892dp-night-420dpi")
     @Test fun `dunkel folgt dem System`() {
         render(WidgetSize.LARGE, 330, 380).captureRoboImage("src/test/screenshots/widget_large_dark_330x380.png")

@@ -108,6 +108,18 @@ class CountdownWidgetRendererTest {
         assertEquals("天", examsOnly.text(R.id.cd_unit))
     }
 
+    @Test fun `erneutes Anwenden stapelt die Liste nicht`() {
+        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
+        val frame = WidgetFrame(emptyList(), false, WidgetSettings(), now, zone, 330, 270, items)
+        val view = ScheduleWidgetRenderer.render(activity, WidgetSize.COUNTDOWN, frame).apply(activity, FrameLayout(activity))
+        repeat(3) { ScheduleWidgetRenderer.render(activity, WidgetSize.COUNTDOWN, frame).reapply(activity, view) }
+        assertEquals(3, view.children(R.id.cd_list))
+        // Danach schmal: Liste und Seitenspalte müssen verschwinden statt stehen zu bleiben.
+        ScheduleWidgetRenderer.render(activity, WidgetSize.COUNTDOWN, frame.copy(widthDp = 170, heightDp = 170)).reapply(activity, view)
+        assertFalse(view.visible(R.id.cd_list))
+        assertFalse(view.visible(R.id.cd_side))
+    }
+
     @Test fun `leer mit Hinweis`() {
         val view = render(170, 170, data = listOf(items.single { it.kind == ManualEventKind.NORMAL }))
         assertTrue(view.visible(R.id.widget_empty))

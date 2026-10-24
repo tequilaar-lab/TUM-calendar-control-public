@@ -15,7 +15,10 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.util.SizeF
+import android.widget.RemoteViews
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerPreferences
 import com.tequila.tumcalendarcontrol.sync.DeadlineCountdown
 import com.tequila.tumcalendarcontrol.sync.ManualEventKind
@@ -70,16 +73,34 @@ object ScheduleWidgets {
         val settings = WidgetPreferences(app).load()
         placed.forEach { (size, ids) ->
             ids.forEach { id ->
-                val options = manager.getAppWidgetOptions(id)
-                // Hochformat: Breite = kleinste, Höhe = größte gemeldete Abmessung.
-                val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).takeIf { it > 0 } ?: defaultWidth(size)
-                val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).takeIf { it > 0 } ?: defaultHeight(size)
-                manager.updateAppWidget(id, ScheduleWidgetRenderer.render(app, size, WidgetFrame(events, events.isNotEmpty(), settings, now, zone, width, height, manual)))
+                fun frame(width: Int, height: Int) = WidgetFrame(events, events.isNotEmpty(), settings, now, zone, width, height, manual)
+                manager.updateAppWidget(id, viewsFor(app, size, manager.getAppWidgetOptions(id), ::frame))
             }
         }
         val courses = ScheduleWidgetModel.nextRefresh(ScheduleWidgetModel.visible(events, settings), now, zone)
         scheduleNext(app, listOfNotNull(courses, countdownRefresh(manual, now)).min())
     }
+
+    /**
+     * Ab Android 12 je gemeldeter Größe eine eigene Darstellung; der Startbildschirm wählt passend zur tatsächlichen
+     * Größe (keine eigene Schätzung, die je nach Auslöser anders ausfallen kann). Davor: Hochformat-Abmessungen.
+     */
+    internal fun viewsFor(context: Context, size: WidgetSize, options: Bundle, frame: (Int, Int) -> WidgetFrame): RemoteViews {
+        val sizes = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            @Suppress("DEPRECATION")
+            options.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES).orEmpty().distinct().take(MAX_SIZES)
+        } else emptyList()
+        if (sizes.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return RemoteViews(sizes.associateWith { ScheduleWidgetRenderer.render(context, size, frame(it.width.toInt(), it.height.toInt())) })
+        }
+        // Hochformat: Breite = kleinste, Höhe = größte gemeldete Abmessung.
+        val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).takeIf { it > 0 } ?: defaultWidth(size)
+        val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).takeIf { it > 0 } ?: defaultHeight(size)
+        return ScheduleWidgetRenderer.render(context, size, frame(width, height))
+    }
+
+    /** RemoteViews erlaubt höchstens 16 Größen in einer Zuordnung. */
+    private const val MAX_SIZES = 16
 
     /** Countdown: Zielzeiten (und Prüfungsende) als Ränder; in der letzten Stunde alle 5 Minuten. */
     internal fun countdownRefresh(items: List<ManualScheduleItem>, now: Instant): Instant? {
