@@ -76,7 +76,7 @@ internal data class WidgetPreviewClock(val now: () -> Instant = Instant::now, va
 internal val LocalWidgetPreviewClock = staticCompositionLocalOf { WidgetPreviewClock() }
 private val CornerLabels = listOf(823, 824, 825, 826, 827)
 /** Arten in der Vorschau des Standards (Reihenfolge = Segmente). */
-private val PreviewTypes = listOf(WidgetSize.SMALL, WidgetSize.MEDIUM, WidgetSize.LARGE, WidgetSize.GRID, WidgetSize.COUNTDOWN, WidgetSize.CHECK)
+private val PreviewTypes = listOf(WidgetSize.SMALL, WidgetSize.MEDIUM, WidgetSize.TOMORROW, WidgetSize.LARGE, WidgetSize.GRID, WidgetSize.COUNTDOWN, WidgetSize.CHECK)
 
 /** Bearbeitungsziel „Standard für neue Widgets“ (kein platziertes Widget). */
 private const val DefaultTarget = -1
@@ -89,6 +89,7 @@ internal fun WidgetSize.label(): String = when (this) {
     WidgetSize.COUNTDOWN -> message(857)
     WidgetSize.CHECK -> message(873)
     WidgetSize.GRID -> message(913)
+    WidgetSize.TOMORROW -> message(918)
 }
 
 /**
@@ -131,7 +132,7 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
         ScheduleWidgets.refreshAll(context)
     }
     // Für platzierte Widgets nur passende Optionen; beim Standard alle (gilt für jede Art).
-    val showCourse = current == null || size in setOf(WidgetSize.SMALL, WidgetSize.MEDIUM, WidgetSize.LARGE, WidgetSize.GRID)
+    val showCourse = current == null || size in setOf(WidgetSize.SMALL, WidgetSize.MEDIUM, WidgetSize.LARGE, WidgetSize.GRID, WidgetSize.TOMORROW)
     // Kurznamen gelten für „Woche“ und „Stundenplan“.
     val showShortNames = current == null || size == WidgetSize.LARGE || size == WidgetSize.GRID
     val showWeek = current == null || size == WidgetSize.LARGE
@@ -301,7 +302,7 @@ internal fun elongated(widthDp: Int, heightDp: Int): Boolean = minOf(widthDp, he
 
 private fun previewWidth(size: WidgetSize) = when (size) { WidgetSize.SMALL -> 170; WidgetSize.CHECK -> 85; else -> 330 }
 /** Countdown in der Vorschau breit (Hauptziel und die nächsten zwei daneben). */
-private fun previewHeight(size: WidgetSize) = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN -> 170; WidgetSize.CHECK -> 105; WidgetSize.MEDIUM -> 180; WidgetSize.LARGE -> 340; WidgetSize.GRID -> 290 }
+private fun previewHeight(size: WidgetSize) = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN -> 170; WidgetSize.CHECK -> 105; WidgetSize.MEDIUM, WidgetSize.TOMORROW -> 180; WidgetSize.LARGE -> 340; WidgetSize.GRID -> 290 }
 
 /** Synthetische Prüfungen/Fristen relativ zu jetzt; keine echten Daten. */
 private fun sampleCountdown(now: Instant): List<ManualScheduleItem> {

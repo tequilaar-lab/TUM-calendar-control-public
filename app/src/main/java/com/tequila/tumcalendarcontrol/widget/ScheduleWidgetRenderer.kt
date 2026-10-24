@@ -30,8 +30,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 
-/** Kurs-Widgets (klein, mittel, Woche), Countdown, Prüf-Widget und Stundenplan (eigene Renderer). */
-enum class WidgetSize { SMALL, MEDIUM, LARGE, COUNTDOWN, CHECK, GRID }
+/** Kurs-Widgets (klein, mittel, Woche), Countdown, Prüf-Widget, Stundenplan und Morgen (eigene Renderer). */
+enum class WidgetSize { SMALL, MEDIUM, LARGE, COUNTDOWN, CHECK, GRID, TOMORROW }
 
 /** Eingaben eines Zeichendurchgangs; hasData = überhaupt geschriebene Termine (sonst Hinweis „noch nichts geschrieben“). */
 data class WidgetFrame(
@@ -66,6 +66,7 @@ object ScheduleWidgetRenderer {
             WidgetSize.COUNTDOWN -> CountdownWidgetRenderer.render(context, inner)
             WidgetSize.CHECK -> CheckWidgetRenderer.render(context, inner)
             WidgetSize.GRID -> GridWidgetRenderer.render(context, inner)
+            WidgetSize.TOMORROW -> TomorrowWidgetRenderer.render(context, inner)
             else -> renderCourse(context, size, inner)
         }
         // Rand in Pixeln; in Bildschirm-dp gemessene Ränder (Systemkarten) vorab durch die Vergrößerung des Startbildschirms teilen.
@@ -194,21 +195,7 @@ object ScheduleWidgetRenderer {
         var rows = today.rows
         while (rows.size > capacity && rows.first().past) rows = rows.drop(1)
         val overflow = (rows.size - capacity).coerceAtLeast(0)
-        rows.take(capacity).forEach { row ->
-            val item = RemoteViews(context.packageName, R.layout.widget_row)
-            val start = row.event.startsAt.atZone(frame.zone)
-            item.setTextViewText(R.id.row_time, if (frame.widthDp >= 250) timeRange(row.event, frame.zone) else Time.format(start))
-            item.setImageViewResource(R.id.row_dot, dot(row.event.state))
-            item.setTextViewText(R.id.row_title, row.event.title)
-            val room = row.event.location.trim()
-            val showRoom = frame.settings.showLocation && room.isNotEmpty()
-            item.setViewVisibility(R.id.row_detail, if (showRoom) View.VISIBLE else View.GONE)
-            if (showRoom) item.setTextViewText(R.id.row_detail, room)
-            item.setViewVisibility(R.id.row_now, if (row.current) View.VISIBLE else View.INVISIBLE)
-            if (row.past) item.setFloat(R.id.row_root, "setAlpha", PAST_ALPHA)
-            item.setOnClickPendingIntent(R.id.row_root, openApp(context, AppEntry.Course(row.event.courseId)))
-            views.addView(R.id.widget_rows, item)
-        }
+        rows.take(capacity).forEach { row -> views.addView(R.id.widget_rows, courseRow(context, frame, row.event, row.past, row.current)) }
         // Fußzeile: Rest, „heute nichts/vorbei“ und ggf. der erste Termin morgen.
         val footer = when {
             overflow > 0 -> text(message(810, overflow))
@@ -218,6 +205,26 @@ object ScheduleWidgetRenderer {
         }
         views.setViewVisibility(R.id.widget_footer, if (footer == null) View.GONE else View.VISIBLE)
         footer?.let { views.setTextViewText(R.id.widget_footer, it) }
+    }
+
+    /**
+     * Terminzeile („Heute“, „Morgen“): Zeit (ab 250 dp als Spanne), Punkt, Titel, optional Raum, Markierung „jetzt“;
+     * vergangene gedämpft; Klick -> Kursdetails.
+     */
+    internal fun courseRow(context: Context, frame: WidgetFrame, event: WidgetEvent, past: Boolean = false, current: Boolean = false): RemoteViews {
+        val item = RemoteViews(context.packageName, R.layout.widget_row)
+        val start = event.startsAt.atZone(frame.zone)
+        item.setTextViewText(R.id.row_time, if (frame.widthDp >= 250) timeRange(event, frame.zone) else Time.format(start))
+        item.setImageViewResource(R.id.row_dot, dot(event.state))
+        item.setTextViewText(R.id.row_title, event.title)
+        val room = event.location.trim()
+        val showRoom = frame.settings.showLocation && room.isNotEmpty()
+        item.setViewVisibility(R.id.row_detail, if (showRoom) View.VISIBLE else View.GONE)
+        if (showRoom) item.setTextViewText(R.id.row_detail, room)
+        item.setViewVisibility(R.id.row_now, if (current) View.VISIBLE else View.INVISIBLE)
+        if (past) item.setFloat(R.id.row_root, "setAlpha", PAST_ALPHA)
+        item.setOnClickPendingIntent(R.id.row_root, openApp(context, AppEntry.Course(event.courseId)))
+        return item
     }
 
     /**
@@ -276,10 +283,10 @@ object ScheduleWidgetRenderer {
         return views
     }
 
-    private fun timeRange(event: WidgetEvent, zone: ZoneId) = "${Time.format(event.startsAt.atZone(zone))}–${Time.format(event.endsAt.atZone(zone))}"
+    internal fun timeRange(event: WidgetEvent, zone: ZoneId) = "${Time.format(event.startsAt.atZone(zone))}–${Time.format(event.endsAt.atZone(zone))}"
 
     /** Sichtbare Regeln: Grün verbindlich, Blau frei gewählt, Grau ab Termin nicht mehr. */
-    private fun dot(state: AttendanceState): Int = when (state) {
+    internal fun dot(state: AttendanceState): Int = when (state) {
         AttendanceState.MUST_ATTEND -> R.drawable.widget_dot_must
         AttendanceState.CHOOSE_TO_ATTEND -> R.drawable.widget_dot_choose
         AttendanceState.STOP_ATTENDING -> R.drawable.widget_dot_stop

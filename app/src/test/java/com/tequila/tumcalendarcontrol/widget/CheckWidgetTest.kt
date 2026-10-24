@@ -84,6 +84,6 @@ class CheckWidgetTest {
         // Robolectric füllt installedProviders nicht; die Empfänger der Widget-Aktualisierung zeigen die Anmeldung.
         val receivers = context.packageManager.queryBroadcastReceivers(android.content.Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).setPackage(context.packageName), 0)
             .map { it.activityInfo.name.substringAfterLast('.') }
-        assertEquals(listOf("ScheduleWidgetCheck", "ScheduleWidgetCountdown", "ScheduleWidgetGrid", "ScheduleWidgetLarge", "ScheduleWidgetMedium", "ScheduleWidgetSmall"), receivers.sorted())
+        assertEquals(listOf("ScheduleWidgetCheck", "ScheduleWidgetCountdown", "ScheduleWidgetGrid", "ScheduleWidgetLarge", "ScheduleWidgetMedium", "ScheduleWidgetSmall", "ScheduleWidgetTomorrow"), receivers.sorted())
     }
 }

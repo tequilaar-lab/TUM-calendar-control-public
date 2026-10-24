@@ -140,6 +140,21 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/grid_widget_info" />
         </receiver>
+        <!-- Widget „Morgen“: Kurse des nächsten Tages; nur Anzeige geschriebener Termine. -->
+        <receiver
+            android:name=".widget.ScheduleWidgetTomorrow"
+            android:exported="true"
+            android:label="@string/msg_0918">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/tomorrow_widget_info" />
+        </receiver>
         <!-- Countdown-Widget: Prüfungen und Fristen aus eigenen Terminen; Systemereignisse lösen Neuzeichnen aus. -->
         <receiver
             android:name=".widget.ScheduleWidgetCountdown"

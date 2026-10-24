@@ -1,6 +1,6 @@
 /*
  * Aufgabe: Die Startbildschirm-Widgets (klein „Wohin jetzt“, mittel „Heute“, groß „Woche“, „Countdown“, Prüf-Widget,
- *   „Stundenplan“) bereitstellen und aktualisieren: Daten laden, je Instanz nach Größe zeichnen, nächste Aktualisierung grob vormerken.
+ *   „Stundenplan“, „Morgen“) bereitstellen und aktualisieren: Daten laden, je Instanz nach Größe zeichnen, nächste Aktualisierung grob vormerken.
  * Ein-/Ausgabe: Systemereignisse (Aktualisierung, Größenänderung, Zeit/Zeitzone/Sprache) und App-Aufrufe -> RemoteViews.
  * Nebenwirkungen: Liest nur private Zuordnungen, eigene Termine, Widget-Einstellungen und Kurznamen; setzt einen nicht
  *   weckenden, ungenauen Alarm.
@@ -60,6 +60,8 @@ class ScheduleWidgetCountdown : ScheduleWidgetProvider()
 class ScheduleWidgetCheck : ScheduleWidgetProvider()
 /** Stundenplan: Kalenderwoche als Raster nach Uhrzeit (4×3 und größer). */
 class ScheduleWidgetGrid : ScheduleWidgetProvider()
+/** Morgen: erster Kurs (schmal) bzw. Terminliste (breit) des nächsten Tages. */
+class ScheduleWidgetTomorrow : ScheduleWidgetProvider()
 
 object ScheduleWidgets {
     internal const val ACTION_REFRESH = "com.tequila.tumcalendarcontrol.widget.REFRESH"
@@ -70,6 +72,7 @@ object ScheduleWidgets {
         ScheduleWidgetCountdown::class.java to WidgetSize.COUNTDOWN,
         ScheduleWidgetCheck::class.java to WidgetSize.CHECK,
         ScheduleWidgetGrid::class.java to WidgetSize.GRID,
+        ScheduleWidgetTomorrow::class.java to WidgetSize.TOMORROW,
     )
 
     /**
@@ -159,8 +162,8 @@ object ScheduleWidgets {
         alarms.set(AlarmManager.RTC, at.toEpochMilli(), pending)
     }
 
-    internal fun defaultWidth(size: WidgetSize): Int = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN -> 150; WidgetSize.CHECK -> 80; else -> 320 }
-    internal fun defaultHeight(size: WidgetSize): Int = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN -> 150; WidgetSize.CHECK -> 100; WidgetSize.MEDIUM -> 170; WidgetSize.LARGE -> 340; WidgetSize.GRID -> 250 }
+    internal fun defaultWidth(size: WidgetSize): Int = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN, WidgetSize.TOMORROW -> 150; WidgetSize.CHECK -> 80; else -> 320 }
+    internal fun defaultHeight(size: WidgetSize): Int = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN, WidgetSize.TOMORROW -> 150; WidgetSize.CHECK -> 100; WidgetSize.MEDIUM -> 170; WidgetSize.LARGE -> 340; WidgetSize.GRID -> 250 }
 
     /** Ob der Startbildschirm das direkte Hinzufügen anbietet (Systemdialog, Nutzer bestätigt). */
     fun canRequestPin(context: Context): Boolean = AppWidgetManager.getInstance(context)?.isRequestPinAppWidgetSupported == true

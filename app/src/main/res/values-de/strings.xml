@@ -814,7 +814,7 @@
     <string name="msg_0808" formatted="false">"d."</string>
     <string name="msg_0810" formatted="false">"{0} weitere"</string>
     <string name="msg_0811" formatted="false">"Startbildschirm-Widgets"</string>
-    <string name="msg_0812" formatted="false">"Jedes Widget hat seinen Schwerpunkt: „Nächster Termin“, „Heute“ und „Diese Woche“ zeigen bereits geschriebene Termine; „Countdown“ zeigt Prüfungen und Fristen; „Auf Änderungen prüfen“ zeigt die letzte Quellenprüfung."</string>
+    <string name="msg_0812" formatted="false">"Jedes Widget hat seinen Schwerpunkt: „Nächster Termin“, „Heute“, „Morgen“, „Diese Woche“ und „Stundenplan“ zeigen bereits geschriebene Termine; „Countdown“ zeigt Prüfungen und Fristen; „Auf Änderungen prüfen“ zeigt die letzte Quellenprüfung."</string>
     <string name="msg_0813" formatted="false">"Widgets zeigen Kursnamen und Räume auf dem Startbildschirm."</string>
     <string name="msg_0814" formatted="false">"Inhalt"</string>
     <string name="msg_0815" formatted="false">"Grau ausblenden (nicht mehr teilnehmen)"</string>
@@ -917,4 +917,10 @@
     <string name="msg_0915" formatted="false">"Stundenplan · {0}–{1}"</string>
     <string name="msg_0916" formatted="false">"Diese Woche keine Kurse"</string>
     <string name="msg_0917" formatted="false">"+{0} weitere"</string>
+    <string name="msg_0918" formatted="false">"Morgen"</string>
+    <string name="msg_0919" formatted="false">"Kurse von morgen: erster Beginn, Raum und Anzahl"</string>
+    <string name="msg_0920" formatted="false">"Morgen · {0}"</string>
+    <string name="msg_0921" formatted="false">"Morgen · {0} Kurse"</string>
+    <string name="msg_0922" formatted="false">"Morgen keine Kurse"</string>
+    <string name="msg_0923" formatted="false">"Nächster Kurs: {0}"</string>
 </resources>

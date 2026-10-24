@@ -39,6 +39,9 @@ data class WidgetToday(
 )
 data class WidgetTodayRow(val event: WidgetEvent, val past: Boolean, val current: Boolean)
 
+/** Morgen: Termine des nächsten Tages; ohne Termine der erste Termin danach (nextEvent), sonst null. */
+data class WidgetTomorrow(val date: LocalDate, val events: List<WidgetEvent>, val nextEvent: WidgetEvent?)
+
 /** Groß: sieben Tage (Montag–Sonntag oder ab heute) mit Terminen; Zähler nur über die angezeigten Termine. */
 data class WidgetWeek(val days: List<WidgetDay>, val today: LocalDate, val mustCount: Int, val chooseCount: Int)
 data class WidgetDay(val date: LocalDate, val events: List<WidgetEvent>)
@@ -78,6 +81,14 @@ object ScheduleWidgetModel {
         val tomorrow = date.plusDays(1)
         val tomorrowFirst = if (remaining == 0) events.firstOrNull { it.startsAt.atZone(zone).toLocalDate() == tomorrow } else null
         return WidgetToday(date, rows, remaining, tomorrowFirst)
+    }
+
+    /** Termine von morgen (Ortszeit); ist morgen frei, der nächste spätere Termin als Hinweis „Nächster Kurs“. */
+    fun tomorrow(events: List<WidgetEvent>, now: Instant, zone: ZoneId): WidgetTomorrow {
+        val date = now.atZone(zone).toLocalDate().plusDays(1)
+        val rows = events.filter { it.startsAt.atZone(zone).toLocalDate() == date }
+        val next = if (rows.isEmpty()) events.firstOrNull { it.startsAt.atZone(zone).toLocalDate() > date } else null
+        return WidgetTomorrow(date, rows, next)
     }
 
     /** calendarWeek: Montag–Sonntag der aktuellen Woche; sonst sieben Tage ab heute. */

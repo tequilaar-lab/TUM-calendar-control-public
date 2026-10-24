@@ -814,7 +814,7 @@
     <string name="msg_0808" formatted="false">"d日"</string>
     <string name="msg_0810" formatted="false">"还有 {0} 节"</string>
     <string name="msg_0811" formatted="false">"桌面小组件"</string>
-    <string name="msg_0812" formatted="false">"小组件各有侧重：“现在去哪”“今天”“本周”显示已写入日历的课程；“倒数日”显示考试和截止；“检查课程更新”显示上次检查的结果。"</string>
+    <string name="msg_0812" formatted="false">"小组件各有侧重：“现在去哪”“今天”“明天”“本周”“课表”显示已写入日历的课程；“倒数日”显示考试和截止；“检查课程更新”显示上次检查的结果。"</string>
     <string name="msg_0813" formatted="false">"小组件会在桌面上显示课名和教室。"</string>
     <string name="msg_0814" formatted="false">"显示内容"</string>
     <string name="msg_0815" formatted="false">"隐藏灰色（从此不去）"</string>
@@ -917,4 +917,10 @@
     <string name="msg_0915" formatted="false">"课表 · {0}–{1}"</string>
     <string name="msg_0916" formatted="false">"本周没有课"</string>
     <string name="msg_0917" formatted="false">"另有 {0} 节"</string>
+    <string name="msg_0918" formatted="false">"明天"</string>
+    <string name="msg_0919" formatted="false">"明天的课：第一节几点、在哪、共几节"</string>
+    <string name="msg_0920" formatted="false">"明天 · {0}"</string>
+    <string name="msg_0921" formatted="false">"明天 · {0} 节"</string>
+    <string name="msg_0922" formatted="false">"明天没有课"</string>
+    <string name="msg_0923" formatted="false">"下次上课：{0}"</string>
 </resources>
