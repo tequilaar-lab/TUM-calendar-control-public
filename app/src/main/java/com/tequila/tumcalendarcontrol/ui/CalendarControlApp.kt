@@ -15,7 +15,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
+import com.tequila.tumcalendarcontrol.sync.WriteTimingLog
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -235,10 +237,13 @@ fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {})
         val mainHandler = Handler(Looper.getMainLooper())
         val control = if (rollback) null else state.writeProgress.begin { update -> mainHandler.post(update) }
         Thread {
+            val startedAt = SystemClock.elapsedRealtime()
             val outcome = runCatching {
                 if (rollback) platformManagedSyncRunner.rollback(mappings, targets, configuration, googleToken, state.currentManagedCleanupScope())
                 else platformManagedSyncRunner.execute(desired, mappings, targets, configuration, googleToken, control!!)
             }
+            // Nur Dauer und Zähler (keine Inhalte), um die Schreibgeschwindigkeit auf dem Gerät zu messen.
+            outcome.onSuccess { Log.i(WriteTimingLog.TAG, WriteTimingLog.line(it.result, SystemClock.elapsedRealtime() - startedAt, rollback)) }
             Handler(Looper.getMainLooper()).post {
                 outcome.onSuccess {
                     state.resolveManagedOperation(token, it.result, it.configuration)
