@@ -865,4 +865,16 @@
     <string name="msg_0862" formatted="false">"Pinned"</string>
     <string name="msg_0863" formatted="false">"Automatic · nearest"</string>
     <string name="msg_0864" formatted="false">"Background and corners match the other widgets."</string>
+    <string name="msg_0865" formatted="false">"Read updates"</string>
+    <string name="msg_0866" formatted="false">"Read course updates"</string>
+    <string name="msg_0867" formatted="false">"Add exam"</string>
+    <string name="msg_0868" formatted="false">"Add exam or deadline"</string>
+    <string name="msg_0869" formatted="false">"Review output"</string>
+    <string name="msg_0870" formatted="false">"Review calendar output"</string>
+    <string name="msg_0871" formatted="false">"Widgets"</string>
+    <string name="msg_0872" formatted="false">"Widget settings"</string>
+    <string name="msg_0873" formatted="false">"Check for updates"</string>
+    <string name="msg_0874" formatted="false">"Check started"</string>
+    <string name="msg_0875" formatted="false">"Last {0}"</string>
+    <string name="msg_0876" formatted="false">"Off"</string>
 </resources>

@@ -865,4 +865,16 @@
     <string name="msg_0862" formatted="false">"置顶"</string>
     <string name="msg_0863" formatted="false">"自动 · 最近一项"</string>
     <string name="msg_0864" formatted="false">"背景和圆角与其他小组件一致。"</string>
+    <string name="msg_0865" formatted="false">"读取更新"</string>
+    <string name="msg_0866" formatted="false">"读取课程更新"</string>
+    <string name="msg_0867" formatted="false">"添加考试"</string>
+    <string name="msg_0868" formatted="false">"添加考试或截止"</string>
+    <string name="msg_0869" formatted="false">"写入内容"</string>
+    <string name="msg_0870" formatted="false">"查看写入内容"</string>
+    <string name="msg_0871" formatted="false">"小组件"</string>
+    <string name="msg_0872" formatted="false">"桌面小组件设置"</string>
+    <string name="msg_0873" formatted="false">"检查课程更新"</string>
+    <string name="msg_0874" formatted="false">"已开始检查"</string>
+    <string name="msg_0875" formatted="false">"上次 {0}"</string>
+    <string name="msg_0876" formatted="false">"未开启"</string>
 </resources>

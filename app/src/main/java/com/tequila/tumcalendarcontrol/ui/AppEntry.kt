@@ -21,6 +21,10 @@ sealed interface AppEntry {
     data object WidgetSettings : AppEntry
     /** Campustermine; kind gibt die vorgewählte Art vor (z. B. Prüfung), null = unverändert. */
     data class ManualEvents(val kind: ManualEventKind? = null) : AppEntry
+    /** Schreibvorschau berechnen und zeigen; geschrieben wird erst nach „Bestätigen und schreiben“. */
+    data object WritePreview : AppEntry
+    /** Seite der Hintergrundprüfung (aus der Schnelleinstellung, wenn die Prüfung noch nicht eingerichtet ist). */
+    data object BackgroundCheck : AppEntry
 }
 
 object AppEntryIntents {
@@ -30,6 +34,8 @@ object AppEntryIntents {
     private const val TARGET_COURSE = "course"
     private const val TARGET_WIDGETS = "widgets"
     private const val TARGET_EVENTS = "events"
+    private const val TARGET_WRITE = "write-preview"
+    private const val TARGET_CHECK = "background-check"
     private const val EXTRA_KIND = "com.tequila.tumcalendarcontrol.entry.kind"
 
     fun intent(context: Context, entry: AppEntry?): Intent =
@@ -40,6 +46,8 @@ object AppEntryIntents {
                 is AppEntry.Course -> { putExtra(EXTRA_TARGET, TARGET_COURSE); putExtra(EXTRA_COURSE, entry.courseId) }
                 AppEntry.WidgetSettings -> putExtra(EXTRA_TARGET, TARGET_WIDGETS)
                 is AppEntry.ManualEvents -> { putExtra(EXTRA_TARGET, TARGET_EVENTS); entry.kind?.let { putExtra(EXTRA_KIND, it.name) } }
+                AppEntry.WritePreview -> putExtra(EXTRA_TARGET, TARGET_WRITE)
+                AppEntry.BackgroundCheck -> putExtra(EXTRA_TARGET, TARGET_CHECK)
                 null -> Unit
             }
         }
@@ -48,6 +56,8 @@ object AppEntryIntents {
         TARGET_SOURCE_RANGE -> AppEntry.SourceRange
         TARGET_COURSE -> intent.getStringExtra(EXTRA_COURSE)?.takeIf(String::isNotBlank)?.let(AppEntry::Course)
         TARGET_WIDGETS -> AppEntry.WidgetSettings
+        TARGET_WRITE -> AppEntry.WritePreview
+        TARGET_CHECK -> AppEntry.BackgroundCheck
         TARGET_EVENTS -> AppEntry.ManualEvents(intent.getStringExtra(EXTRA_KIND)?.let { name -> ManualEventKind.entries.firstOrNull { it.name == name } })
         else -> null
     }

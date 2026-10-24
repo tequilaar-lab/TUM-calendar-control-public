@@ -865,4 +865,16 @@
     <string name="msg_0862" formatted="false">"Angeheftet"</string>
     <string name="msg_0863" formatted="false">"Automatisch · nächstes"</string>
     <string name="msg_0864" formatted="false">"Hintergrund und Ecken wie bei den anderen Widgets."</string>
+    <string name="msg_0865" formatted="false">"Neu lesen"</string>
+    <string name="msg_0866" formatted="false">"Kursdaten neu lesen"</string>
+    <string name="msg_0867" formatted="false">"Prüfung hinzufügen"</string>
+    <string name="msg_0868" formatted="false">"Prüfung oder Frist hinzufügen"</string>
+    <string name="msg_0869" formatted="false">"Ausgabe prüfen"</string>
+    <string name="msg_0870" formatted="false">"Kalenderausgabe prüfen"</string>
+    <string name="msg_0871" formatted="false">"Widgets"</string>
+    <string name="msg_0872" formatted="false">"Widget-Einstellungen"</string>
+    <string name="msg_0873" formatted="false">"Auf Änderungen prüfen"</string>
+    <string name="msg_0874" formatted="false">"Prüfung gestartet"</string>
+    <string name="msg_0875" formatted="false">"Zuletzt {0}"</string>
+    <string name="msg_0876" formatted="false">"Aus"</string>
 </resources>

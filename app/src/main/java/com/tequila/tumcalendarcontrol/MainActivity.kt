@@ -2,7 +2,8 @@
  * Aufgabe: Compose-Miuix-App über die Android-Activity starten.
  * Ein-/Ausgabe: Android-Lebenszyklus -> interaktive lokale Compose-Oberfläche.
  * Nebenwirkungen: Android-Oberfläche starten, höchste Bildwiederholrate anfordern; bestätigte Operationen an CalendarControlApp delegieren;
- *   Einstiegsziele aus Hinweisen/Widgets (nur Navigation) weiterreichen; Widgets beim Verlassen neu zeichnen.
+ *   Einstiegsziele aus Hinweisen/Widgets/Verknüpfungen (nur Navigation) weiterreichen; Verknüpfungen beim Start
+ *   veröffentlichen; Widgets beim Verlassen neu zeichnen.
  * Nicht zuständig: Persistenz, Netzwerk-, Konto-, iCal- oder Calendar-Provider-Zugriffe.
  */
 package com.tequila.tumcalendarcontrol
@@ -19,6 +20,7 @@ import androidx.compose.runtime.setValue
 import com.tequila.tumcalendarcontrol.ui.AppEntry
 import com.tequila.tumcalendarcontrol.ui.AppEntryIntents
 import com.tequila.tumcalendarcontrol.ui.CalendarControlApp
+import com.tequila.tumcalendarcontrol.shortcuts.AppShortcuts
 import com.tequila.tumcalendarcontrol.widget.ScheduleWidgets
 
 class MainActivity : ComponentActivity() {
@@ -29,6 +31,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         if (savedInstanceState == null) pendingEntry = AppEntryIntents.parse(intent)
+        AppShortcuts.publish(this)
         setContent {
             CalendarControlApp(entry = pendingEntry, onEntryHandled = { pendingEntry = null })
         }
