@@ -907,9 +907,14 @@
     <string name="msg_0905" formatted="false">"This widget is elongated: square uses the shorter side, so stretching it lengthwise has no effect"</string>
     <string name="msg_0906" formatted="false">"This course is not in the current course list; the home page was opened"</string>
     <string name="msg_0907" formatted="false">"Widget short name"</string>
-    <string name="msg_0908" formatted="false">"Used only in the “Week” widget, up to 16 characters; leave empty to show the full name. Stored on this device only, never written to the calendar."</string>
+    <string name="msg_0908" formatted="false">"Used only in the “Week” and “Timetable” widgets, up to 16 characters; leave empty to show the full name. Stored on this device only, never written to the calendar."</string>
     <string name="msg_0909" formatted="false">"Course short names"</string>
-    <string name="msg_0910" formatted="false">"Courses in the Week widget; changes are saved as you type, empty shows the full name. Other courses can be set on the course edit page."</string>
+    <string name="msg_0910" formatted="false">"Courses in the Week and Timetable widgets; changes are saved as you type, empty shows the full name. Other courses can be set on the course edit page."</string>
     <string name="msg_0911" formatted="false">"Once courses are written to the calendar, the courses of the Week widget are listed here."</string>
     <string name="msg_0912" formatted="false">"+{0} more days"</string>
+    <string name="msg_0913" formatted="false">"Timetable"</string>
+    <string name="msg_0914" formatted="false">"Weekly timetable laid out by time, course blocks coloured by attendance"</string>
+    <string name="msg_0915" formatted="false">"Timetable · {0}–{1}"</string>
+    <string name="msg_0916" formatted="false">"No courses this week"</string>
+    <string name="msg_0917" formatted="false">"+{0} more"</string>
 </resources>

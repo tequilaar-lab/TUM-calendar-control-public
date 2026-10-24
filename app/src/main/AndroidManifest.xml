@@ -125,6 +125,21 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/schedule_widget_large_info" />
         </receiver>
+        <!-- Stundenplan-Widget: Kalenderwoche als Raster nach Uhrzeit; nur Anzeige geschriebener Termine. -->
+        <receiver
+            android:name=".widget.ScheduleWidgetGrid"
+            android:exported="true"
+            android:label="@string/msg_0913">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/grid_widget_info" />
+        </receiver>
         <!-- Countdown-Widget: Prüfungen und Fristen aus eigenen Terminen; Systemereignisse lösen Neuzeichnen aus. -->
         <receiver
             android:name=".widget.ScheduleWidgetCountdown"

@@ -30,8 +30,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 
-/** Drei Kurs-Widgets, das Countdown- und das Prüf-Widget (eigene Renderer). */
-enum class WidgetSize { SMALL, MEDIUM, LARGE, COUNTDOWN, CHECK }
+/** Kurs-Widgets (klein, mittel, Woche), Countdown, Prüf-Widget und Stundenplan (eigene Renderer). */
+enum class WidgetSize { SMALL, MEDIUM, LARGE, COUNTDOWN, CHECK, GRID }
 
 /** Eingaben eines Zeichendurchgangs; hasData = überhaupt geschriebene Termine (sonst Hinweis „noch nichts geschrieben“). */
 data class WidgetFrame(
@@ -65,6 +65,7 @@ object ScheduleWidgetRenderer {
         val views = when (size) {
             WidgetSize.COUNTDOWN -> CountdownWidgetRenderer.render(context, inner)
             WidgetSize.CHECK -> CheckWidgetRenderer.render(context, inner)
+            WidgetSize.GRID -> GridWidgetRenderer.render(context, inner)
             else -> renderCourse(context, size, inner)
         }
         // Rand in Pixeln; in Bildschirm-dp gemessene Ränder (Systemkarten) vorab durch die Vergrößerung des Startbildschirms teilen.
@@ -265,7 +266,7 @@ object ScheduleWidgetRenderer {
         }
     }
 
-    /** Titel im Widget „Woche“: eigener Kurzname der Kursreihe, sonst der geschriebene Titel. */
+    /** Titel in „Woche“ und „Stundenplan“: eigener Kurzname der Kursreihe, sonst der geschriebene Titel. */
     internal fun weekTitle(event: WidgetEvent, frame: WidgetFrame): String = frame.shortNames[event.courseId]?.takeIf(String::isNotBlank) ?: event.title
 
     internal fun empty(views: RemoteViews, note: String): RemoteViews {

@@ -1,0 +1,2 @@
+<!-- Aufgabe: Spur innerhalb einer Tagesspalte des Stundenplan-Widgets (Lücken und Terminblöcke untereinander); reine Darstellungsressource ohne Daten oder Aktionen. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/grid_lane_root" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" />

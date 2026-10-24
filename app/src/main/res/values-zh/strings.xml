@@ -907,9 +907,14 @@
     <string name="msg_0905" formatted="false">"这个组件是长条形，正方形会取较短的一边，往长的方向拉伸不会变大"</string>
     <string name="msg_0906" formatted="false">"该课程不在当前课程目录中，已打开首页"</string>
     <string name="msg_0907" formatted="false">"小组件简写"</string>
-    <string name="msg_0908" formatted="false">"只用于“本周”组件，最多 16 个字；留空则显示全名。仅保存在本机，不会写入日历。"</string>
+    <string name="msg_0908" formatted="false">"只用于“本周”和“课表”组件，最多 16 个字；留空则显示全名。仅保存在本机，不会写入日历。"</string>
     <string name="msg_0909" formatted="false">"课程简写"</string>
-    <string name="msg_0910" formatted="false">"本周组件里的课程，输入即保存；留空显示全名。其他课程可在课程编辑页设置。"</string>
+    <string name="msg_0910" formatted="false">"本周和课表组件里的课程，输入即保存；留空显示全名。其他课程可在课程编辑页设置。"</string>
     <string name="msg_0911" formatted="false">"写入日历后，这里会列出本周组件里的课程。"</string>
     <string name="msg_0912" formatted="false">"另有 {0} 天"</string>
+    <string name="msg_0913" formatted="false">"课表"</string>
+    <string name="msg_0914" formatted="false">"按时间排列的一周课表，课程块按出席状态着色"</string>
+    <string name="msg_0915" formatted="false">"课表 · {0}–{1}"</string>
+    <string name="msg_0916" formatted="false">"本周没有课"</string>
+    <string name="msg_0917" formatted="false">"另有 {0} 节"</string>
 </resources>

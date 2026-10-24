@@ -1,7 +1,7 @@
 /*
  * Aufgabe: Einstellungsseite der Startbildschirm-Widgets: Auswahl des platzierten Widgets (oder Standard für neue),
  *   Live-Vorschau in seiner echten Größe (echte RemoteViews), Inhalt je Art, Aussehen (auch „Systemaussehen folgen“),
- *   Blockgröße innerhalb der Zellen, Kurznamen fürs Widget „Woche“ und „Zum Startbildschirm“ (nur beim Standard).
+ *   Blockgröße innerhalb der Zellen, Kurznamen für „Woche“ und „Stundenplan“ und „Zum Startbildschirm“ (nur beim Standard).
  * Ein-/Ausgabe: WidgetPreferences je Widget-ID und geschriebene Termine -> Bedienelemente; Änderungen -> speichern und neu zeichnen.
  * Nebenwirkungen: Nur private Widget-Einstellungen und Kurznamen; Hinzufügen fragt den Startbildschirm (Systemdialog,
  *   Nutzer bestätigt).
@@ -76,7 +76,7 @@ internal data class WidgetPreviewClock(val now: () -> Instant = Instant::now, va
 internal val LocalWidgetPreviewClock = staticCompositionLocalOf { WidgetPreviewClock() }
 private val CornerLabels = listOf(823, 824, 825, 826, 827)
 /** Arten in der Vorschau des Standards (Reihenfolge = Segmente). */
-private val PreviewTypes = listOf(WidgetSize.SMALL, WidgetSize.MEDIUM, WidgetSize.LARGE, WidgetSize.COUNTDOWN, WidgetSize.CHECK)
+private val PreviewTypes = listOf(WidgetSize.SMALL, WidgetSize.MEDIUM, WidgetSize.LARGE, WidgetSize.GRID, WidgetSize.COUNTDOWN, WidgetSize.CHECK)
 
 /** Bearbeitungsziel „Standard für neue Widgets“ (kein platziertes Widget). */
 private const val DefaultTarget = -1
@@ -88,6 +88,7 @@ internal fun WidgetSize.label(): String = when (this) {
     WidgetSize.LARGE -> message(789)
     WidgetSize.COUNTDOWN -> message(857)
     WidgetSize.CHECK -> message(873)
+    WidgetSize.GRID -> message(913)
 }
 
 /**
@@ -121,7 +122,7 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
     val manual = state.ruleLedger.manualEvents
     val hasCountdownData = manual.any { it.kind != ManualEventKind.NORMAL }
     val countdownItems = if (hasCountdownData) manual else sampleCountdown(now)
-    // Kurznamen fürs Widget „Woche“ (je Quell-UID, nur lokal); Vorschau folgt sofort.
+    // Kurznamen für „Woche“ und „Stundenplan“ (je Quell-UID, nur lokal); Vorschau folgt sofort.
     val shortNameStore = remember(context) { CourseShortNames(context) }
     var shortNames by remember { mutableStateOf(shortNameStore.load()) }
     fun change(next: WidgetSettings) {
@@ -130,7 +131,9 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
         ScheduleWidgets.refreshAll(context)
     }
     // Für platzierte Widgets nur passende Optionen; beim Standard alle (gilt für jede Art).
-    val showCourse = current == null || size in setOf(WidgetSize.SMALL, WidgetSize.MEDIUM, WidgetSize.LARGE)
+    val showCourse = current == null || size in setOf(WidgetSize.SMALL, WidgetSize.MEDIUM, WidgetSize.LARGE, WidgetSize.GRID)
+    // Kurznamen gelten für „Woche“ und „Stundenplan“.
+    val showShortNames = current == null || size == WidgetSize.LARGE || size == WidgetSize.GRID
     val showWeek = current == null || size == WidgetSize.LARGE
     val showCountdown = current == null || size == WidgetSize.COUNTDOWN
     // Neues Ziel beginnt oben (eigener Bildlaufzustand je Ziel).
@@ -153,8 +156,8 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
 
         DesignSection(tr(message(831)), TextInset)
         if (current == null) {
-            // Fünf Segmente: Prüf-Widget mit Kurzname, damit alle Beschriftungen passen.
-            DesignSegmented(PreviewTypes.map { tr(if (it == WidgetSize.CHECK) message(888) else it.label()) }, PreviewTypes.indexOf(size), Modifier.testTag("widgets-preview-size")) { defaultPreview = PreviewTypes[it].name }
+            // Mehr als fünf Arten: umbrechende Chips statt Segmenten; Prüf-Widget mit Kurzname.
+            DesignChips(PreviewTypes.map { tr(if (it == WidgetSize.CHECK) message(888) else it.label()) }, PreviewTypes.indexOf(size), Modifier.testTag("widgets-preview-size")) { defaultPreview = PreviewTypes[it].name }
         }
         val width = current?.widthDp ?: previewWidth(size)
         val height = current?.heightDp ?: previewHeight(size)
@@ -174,7 +177,10 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
             DesignSegmented(listOf(tr(message(789)), tr(message(830))), if (settings.calendarWeek) 0 else 1, Modifier.testTag("widgets-week")) {
                 change(settings.copy(calendarWeek = it == 0))
             }
-            CourseShortNameOptions(ScheduleWidgetModel.visible(written, settings), settings.calendarWeek, now, clock.zone(), shortNames) { uid, name ->
+        }
+        if (showShortNames) {
+            // Stundenplan zeigt immer die Kalenderwoche.
+            CourseShortNameOptions(ScheduleWidgetModel.visible(written, settings), settings.calendarWeek || size == WidgetSize.GRID, now, clock.zone(), shortNames) { uid, name ->
                 shortNameStore.set(uid, name)
                 shortNames = shortNameStore.load()
             }
@@ -295,7 +301,7 @@ internal fun elongated(widthDp: Int, heightDp: Int): Boolean = minOf(widthDp, he
 
 private fun previewWidth(size: WidgetSize) = when (size) { WidgetSize.SMALL -> 170; WidgetSize.CHECK -> 85; else -> 330 }
 /** Countdown in der Vorschau breit (Hauptziel und die nächsten zwei daneben). */
-private fun previewHeight(size: WidgetSize) = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN -> 170; WidgetSize.CHECK -> 105; WidgetSize.MEDIUM -> 180; WidgetSize.LARGE -> 340 }
+private fun previewHeight(size: WidgetSize) = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN -> 170; WidgetSize.CHECK -> 105; WidgetSize.MEDIUM -> 180; WidgetSize.LARGE -> 340; WidgetSize.GRID -> 290 }
 
 /** Synthetische Prüfungen/Fristen relativ zu jetzt; keine echten Daten. */
 private fun sampleCountdown(now: Instant): List<ManualScheduleItem> {

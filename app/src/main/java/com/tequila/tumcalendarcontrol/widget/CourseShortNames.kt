@@ -1,5 +1,6 @@
 /*
- * Aufgabe: Kurznamen der Kurse für das Widget „Woche“ halten (Wunsch: lange Titel endeten dort mit Auslassungspunkten).
+ * Aufgabe: Kurznamen der Kurse für die Widgets „Woche“ und „Stundenplan“ halten (Wunsch: lange Titel endeten dort mit
+ *   Auslassungspunkten).
  * Ein-/Ausgabe: Quell-UID <-> Kurzname in app-privaten SharedPreferences „widget_short_names“.
  * Nebenwirkungen: Nur diese privaten Präferenzen; bewusst getrennt von lokalen Anzeigeänderungen der Kurse, damit
  *   Kurznamen nie in Schreibvorschau, Kalenderausgabe, Quelldaten oder Identitäten gelangen.

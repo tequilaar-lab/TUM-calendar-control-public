@@ -907,9 +907,14 @@
     <string name="msg_0905" formatted="false">"Dieses Widget ist länglich: Quadrat nimmt die kürzere Seite, Aufziehen in die Länge wirkt daher nicht"</string>
     <string name="msg_0906" formatted="false">"Dieser Kurs ist nicht im aktuellen Kursverzeichnis; die Startseite wurde geöffnet"</string>
     <string name="msg_0907" formatted="false">"Kurzname im Widget"</string>
-    <string name="msg_0908" formatted="false">"Nur im Widget „Woche“, höchstens 16 Zeichen; leer = voller Name. Nur auf diesem Gerät gespeichert, nie in den Kalender geschrieben."</string>
+    <string name="msg_0908" formatted="false">"Nur in den Widgets „Woche“ und „Stundenplan“, höchstens 16 Zeichen; leer = voller Name. Nur auf diesem Gerät gespeichert, nie in den Kalender geschrieben."</string>
     <string name="msg_0909" formatted="false">"Kurznamen der Kurse"</string>
-    <string name="msg_0910" formatted="false">"Kurse im Widget „Woche“; wird beim Tippen gespeichert, leer zeigt den vollen Namen. Andere Kurse auf der Bearbeitungsseite des Kurses."</string>
+    <string name="msg_0910" formatted="false">"Kurse in den Widgets „Woche“ und „Stundenplan“; wird beim Tippen gespeichert, leer zeigt den vollen Namen. Andere Kurse auf der Bearbeitungsseite des Kurses."</string>
     <string name="msg_0911" formatted="false">"Nach dem Schreiben in den Kalender erscheinen hier die Kurse des Widgets „Woche“."</string>
     <string name="msg_0912" formatted="false">"+{0} weitere Tage"</string>
+    <string name="msg_0913" formatted="false">"Stundenplan"</string>
+    <string name="msg_0914" formatted="false">"Wochenstundenplan nach Uhrzeit, Kursblöcke nach Teilnahme gefärbt"</string>
+    <string name="msg_0915" formatted="false">"Stundenplan · {0}–{1}"</string>
+    <string name="msg_0916" formatted="false">"Diese Woche keine Kurse"</string>
+    <string name="msg_0917" formatted="false">"+{0} weitere"</string>
 </resources>

@@ -1,0 +1,6 @@
+<!-- Aufgabe: Terminblock im Stundenplan-Widget: Kurz- oder Kursname, optional Zeit und Raum (Höhe je Dauer); reine Darstellungsressource ohne Daten oder Aktionen. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/grid_block_root" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginEnd="1dp" android:background="@drawable/widget_grid_block_must" android:paddingStart="3dp" android:paddingEnd="2dp" android:paddingTop="1dp" android:orientation="vertical">
+    <TextView android:id="@+id/grid_block_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="10sp" android:lineSpacingMultiplier="0.9" android:textColor="@color/widget_ink" android:maxLines="1" android:ellipsize="end" />
+    <TextView android:id="@+id/grid_block_time" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="9sp" android:textColor="@color/widget_muted" android:singleLine="true" android:visibility="gone" />
+    <TextView android:id="@+id/grid_block_room" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="9sp" android:textColor="@color/widget_muted" android:singleLine="true" android:ellipsize="end" android:visibility="gone" />
+</LinearLayout>
