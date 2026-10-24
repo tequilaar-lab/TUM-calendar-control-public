@@ -25,8 +25,8 @@ android {
         minSdk = 26
         targetSdk = 37
         // Buildnummer nach jedem abgenommenen Release erhöhen; Nachweise bleiben im lokalen Audit.
-        versionCode = 60
-        versionName = "1.3.0"
+        versionCode = 61
+        versionName = "1.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
