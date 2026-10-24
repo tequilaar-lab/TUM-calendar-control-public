@@ -13,6 +13,7 @@ import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
@@ -39,13 +40,15 @@ import org.robolectric.annotation.GraphicsMode
 class WidgetSettingsPagesTest {
     @get:Rule val composeRule = createComposeRule()
     private val context: Context = ApplicationProvider.getApplicationContext()
+    /** Feste Vorschauzeit (Mittwoch 10:30 in Berlin), damit die Bilder unabhängig von der Uhrzeit sind. */
+    private val fixedClock = WidgetPreviewClock({ java.time.Instant.parse("2026-10-21T08:30:00Z") }, { java.time.ZoneId.of("Europe/Berlin") })
 
     /** Vorschau folgt der App-Sprache wie das echte Widget. */
     @org.junit.Before fun chinese() = com.tequila.tumcalendarcontrol.i18n.AppLanguagePreferences(context).save(com.tequila.tumcalendarcontrol.i18n.AppLanguage.CHINESE)
 
     @Test fun `设置进入小组件页 选项保存`() {
         val state = CalendarControlState().also { it.themeMode = ThemeMode.LIGHT; it.lightPaletteStyle = LightPaletteStyle.WARM_WHITE; it.open(AppScreen.SETTINGS) }
-        composeRule.setContent { CalendarControlSurface(state) }
+        composeRule.setContent { CompositionLocalProvider(LocalWidgetPreviewClock provides fixedClock) { CalendarControlSurface(state) } }
         composeRule.waitForIdle()
         composeRule.onNodeWithTag("settings-list").performScrollToNode(hasTestTag("settings-widgets"))
         composeRule.onNode(hasClickAction() and hasAnyAncestor(hasTestTag("settings-widgets")), useUnmergedTree = true).performSemanticsAction(SemanticsActions.OnClick)
@@ -67,7 +70,7 @@ class WidgetSettingsPagesTest {
 
     @Test fun `预览可切换为大尺寸`() {
         val state = CalendarControlState().also { it.themeMode = ThemeMode.LIGHT; it.open(AppScreen.WIDGETS) }
-        composeRule.setContent { CalendarControlSurface(state) }
+        composeRule.setContent { CompositionLocalProvider(LocalWidgetPreviewClock provides fixedClock) { CalendarControlSurface(state) } }
         composeRule.waitForIdle()
         composeRule.onNode(hasText("大") and hasAnyAncestor(hasTestTag("widgets-preview-size"))).performClick()
         composeRule.waitForIdle()

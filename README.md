@@ -2,7 +2,7 @@
 
 Eine Android-App, die TUM-Kurstermine aus einem iCal-Abonnement entsprechend der eigenen Teilnahmeauswahl in einen app-eigenen lokalen Kalender und/oder einen Google-Zweitkalender überträgt. Systemkalender wie HONOR Kalender dienen als Anzeige.
 
-Version: **1.2.0**, Build **59**. Die Oberfläche unterstützt **Deutsch, Englisch und Chinesisch**. Unter **Einstellungen → Sprache** lässt sich die Sprache sofort wechseln; die Auswahl bleibt auf dem Gerät gespeichert. Beim ersten Start gilt die Systemsprache, für andere Sprachen Englisch.
+Version: **1.3.0**, Build **60**. Die Oberfläche unterstützt **Deutsch, Englisch und Chinesisch**. Unter **Einstellungen → Sprache** lässt sich die Sprache sofort wechseln; die Auswahl bleibt auf dem Gerät gespeichert. Beim ersten Start gilt die Systemsprache, für andere Sprachen Englisch.
 
 ## Bedienung
 
@@ -15,6 +15,8 @@ Version: **1.2.0**, Build **59**. Die Oberfläche unterstützt **Deutsch, Englis
 
 Seit 1.2.0 hat die App ein ruhiges, akademisches Erscheinungsbild: große Seitentitel, Milchglaskarten und schwebende Hauptaktionen sowie eine untere Navigation aus Glas. Alle Bedienelemente basieren auf Miuix; den Glaseffekt liefert backdrop. Unter **Einstellungen → Darstellung** lassen sich Hell/Dunkel, je zwei Farbpaletten und die Glasstufe (**Aus, Weich, Standard, Klar**) wählen. Android 12 zeigt nur Unschärfe, erst ab Android 13 kommt die Linsenbrechung hinzu; ältere Geräte verwenden deckende Flächen. Bestätigungen wie Neulesen, Bereinigen, Zieländerung und Wiederherstellen erscheinen als Glasdialog über der ganzen Seite. In der Kursauswahl wählen **Alle Kurse auswählen** und **Ganzen Kurs auswählen** schnell aus. Ist bereits alles gewählt, heben dieselben Schaltflächen die Auswahl wieder auf. Beide hängen weder von der Suche noch vom Anzeigefilter ab.
 
+Seit 1.3.0 gibt es drei **Startbildschirm-Widgets** mit eigenem Schwerpunkt: klein „Nächster Termin“ (laufender oder nächster Termin mit Raum), mittel „Heute“ (Zeitleiste) und groß „Diese Woche“. Sie zeigen nur Termine, die bereits in den Kalender geschrieben wurden, lassen sich in Höhe und Breite frei ziehen und unter **Einstellungen → Startbildschirm-Widgets** anpassen: Grau oder Blau ausblenden, Raum anzeigen, deckend oder durchscheinend, fünf Eckenstufen. Nach einer neuen Lesung zeigt die Kursauswahl, was sich gegenüber der vorherigen Lesung geändert hat (neu, entfallen, abgesagt, Zeit, Ort); die Seite **Änderungsdetails** listet alles auf. Der Hinweis der Hintergrundprüfung nennt nur die Zahlen und öffnet „Kurse lesen“. Orte in Kursdetails und Übersicht öffnen auf Antippen den TUM-Raumfinder (nav.tum.de). Beim Schreiben zeigt die Hauptaktion den Fortschritt je Kalender; **Anhalten** wirkt zwischen zwei Terminen, und erneutes Schreiben setzt dort fort.
+
 Der Browser ordnet Kurse nach **Kursname → Lehrtyp → Einzeltermin**. Namen und Typen strukturieren ausschließlich die Anzeige. Synchronisierung und Bereinigung verwenden immer **Quell-UID und ursprünglichen Instanzschlüssel**; gleichzeitige unterschiedliche Kurse bleiben getrennt.
 
 Eigene Kursnamen, Orte, Spitznamen und Eingaben werden beim Sprachwechsel nicht übersetzt. Die Darstellung enthält auch übersetzte Fehler-, Berechtigungs-, Sicherungs- und Bereinigungshinweise.
@@ -25,6 +27,7 @@ Eigene Kursnamen, Orte, Spitznamen und Eingaben werden beim Sprachwechsel nicht 
 - Lesen, Autorisieren, Schreiben und Bereinigen erfordern ausdrückliche Aktionen. Normale Ausgabe ergänzt oder aktualisiert nur die Auswahl; sie löscht keine abgewählten Kurse.
 - Werden lokaler und Google-Kalender gleichzeitig in HONOR angezeigt, können Termine doppelt erscheinen. In diesem Fall nur einen Kalender anzeigen.
 - Gespeicherte Kurse und Regeln liegen im privaten App-Speicher. Private iCal-Adressen, OAuth-Token und echte Kalenderdaten gehören niemals ins Repository.
+- Widgets lesen nur die app-eigenen Zuordnungen auf dem Gerät, ohne Netzwerk; sie zeigen Kursnamen und Räume auf dem Startbildschirm.
 - Hintergrundprüfungen sind standardmäßig aus. Nach Aktivierung prüfen sie nur auf mögliche Änderungen; sie schreiben nicht automatisch und können durch Energiesparmaßnahmen verzögert werden.
 
 ## Entwicklung

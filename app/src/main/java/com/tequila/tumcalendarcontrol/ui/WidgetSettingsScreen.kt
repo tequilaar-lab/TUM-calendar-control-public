@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,6 +57,10 @@ import java.time.Instant
 import java.time.ZoneId
 
 private val TextInset = Modifier.padding(horizontal = 4.dp)
+
+/** Uhr und Zeitzone der Vorschau; Tests setzen feste Werte, damit Bilder nicht von der Uhrzeit abhängen. */
+internal data class WidgetPreviewClock(val now: () -> Instant = Instant::now, val zone: () -> ZoneId = ZoneId::systemDefault)
+internal val LocalWidgetPreviewClock = staticCompositionLocalOf { WidgetPreviewClock() }
 private val CornerLabels = listOf(823, 824, 825, 826, 827)
 private val SizeLabels = listOf(824, 825, 826)
 
@@ -68,7 +73,8 @@ fun WidgetSettingsScreen() {
     var pinFeedback by remember { mutableStateOf<String?>(null) }
     // Eigene geschriebene Termine, sonst synthetische Beispiele (dann mit Hinweis); beides nur zur Vorschau.
     val written = remember(context) { runCatching { ScheduleWidgetModel.eventsFrom(RuleLedgerPreferences(context).load().mappings) }.getOrDefault(emptyList()) }
-    val now = remember { Instant.now() }
+    val clock = LocalWidgetPreviewClock.current
+    val now = remember(clock) { clock.now() }
     val events = written.ifEmpty { sampleEvents(now) }
     fun change(next: WidgetSettings) {
         settings = next
@@ -82,7 +88,7 @@ fun WidgetSettingsScreen() {
         DesignSection(tr(message(831)), TextInset)
         val size = WidgetSize.valueOf(previewSize)
         DesignSegmented(SizeLabels.map { tr(message(it)) }, size.ordinal, Modifier.testTag("widgets-preview-size")) { previewSize = WidgetSize.entries[it].name }
-        WidgetPreview(size, WidgetFrame(events, true, settings, now, ZoneId.systemDefault(), previewWidth(size), previewHeight(size)))
+        WidgetPreview(size, WidgetFrame(events, true, settings, now, clock.zone(), previewWidth(size), previewHeight(size)))
         if (written.isEmpty()) DesignText(tr(message(836)), 11, TextInset, muted = true)
 
         DesignSection(tr(message(814)), TextInset)
