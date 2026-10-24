@@ -852,4 +852,17 @@
     <string name="msg_0847" formatted="false">"noch {0} Min."</string>
     <string name="msg_0848" formatted="false">"Läuft"</string>
     <string name="msg_0849" formatted="false">"Demnächst"</string>
+    <string name="msg_0850" formatted="false">"Tage"</string>
+    <string name="msg_0851" formatted="false">"Std."</string>
+    <string name="msg_0852" formatted="false">"Min."</string>
+    <string name="msg_0853" formatted="false">"{0} weitere"</string>
+    <string name="msg_0854" formatted="false">"Noch keine Prüfungen oder Fristen"</string>
+    <string name="msg_0855" formatted="false">"Zum Hinzufügen antippen."</string>
+    <string name="msg_0857" formatted="false">"Countdown"</string>
+    <string name="msg_0858" formatted="false">"Countdown bis zu Prüfungen und Fristen"</string>
+    <string name="msg_0860" formatted="false">"Prüfungen anzeigen"</string>
+    <string name="msg_0861" formatted="false">"Fristen anzeigen"</string>
+    <string name="msg_0862" formatted="false">"Angeheftet"</string>
+    <string name="msg_0863" formatted="false">"Automatisch · nächstes"</string>
+    <string name="msg_0864" formatted="false">"Hintergrund und Ecken wie bei den anderen Widgets."</string>
 </resources>

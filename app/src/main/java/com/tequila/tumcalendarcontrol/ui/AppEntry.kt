@@ -9,6 +9,7 @@ package com.tequila.tumcalendarcontrol.ui
 import android.content.Context
 import android.content.Intent
 import com.tequila.tumcalendarcontrol.MainActivity
+import com.tequila.tumcalendarcontrol.sync.ManualEventKind
 
 /** Wohin die App beim Öffnen springt; reine Navigation, auch bei Aufruf durch fremde Apps unbedenklich. */
 sealed interface AppEntry {
@@ -18,6 +19,8 @@ sealed interface AppEntry {
     data class Course(val courseId: String) : AppEntry
     /** Einstellungsseite der Startbildschirm-Widgets (aus der Widget-Einrichtung). */
     data object WidgetSettings : AppEntry
+    /** Campustermine; kind gibt die vorgewählte Art vor (z. B. Prüfung), null = unverändert. */
+    data class ManualEvents(val kind: ManualEventKind? = null) : AppEntry
 }
 
 object AppEntryIntents {
@@ -26,6 +29,8 @@ object AppEntryIntents {
     private const val TARGET_SOURCE_RANGE = "source-range"
     private const val TARGET_COURSE = "course"
     private const val TARGET_WIDGETS = "widgets"
+    private const val TARGET_EVENTS = "events"
+    private const val EXTRA_KIND = "com.tequila.tumcalendarcontrol.entry.kind"
 
     fun intent(context: Context, entry: AppEntry?): Intent =
         Intent(context, MainActivity::class.java).apply {
@@ -34,6 +39,7 @@ object AppEntryIntents {
                 AppEntry.SourceRange -> putExtra(EXTRA_TARGET, TARGET_SOURCE_RANGE)
                 is AppEntry.Course -> { putExtra(EXTRA_TARGET, TARGET_COURSE); putExtra(EXTRA_COURSE, entry.courseId) }
                 AppEntry.WidgetSettings -> putExtra(EXTRA_TARGET, TARGET_WIDGETS)
+                is AppEntry.ManualEvents -> { putExtra(EXTRA_TARGET, TARGET_EVENTS); entry.kind?.let { putExtra(EXTRA_KIND, it.name) } }
                 null -> Unit
             }
         }
@@ -42,6 +48,7 @@ object AppEntryIntents {
         TARGET_SOURCE_RANGE -> AppEntry.SourceRange
         TARGET_COURSE -> intent.getStringExtra(EXTRA_COURSE)?.takeIf(String::isNotBlank)?.let(AppEntry::Course)
         TARGET_WIDGETS -> AppEntry.WidgetSettings
+        TARGET_EVENTS -> AppEntry.ManualEvents(intent.getStringExtra(EXTRA_KIND)?.let { name -> ManualEventKind.entries.firstOrNull { it.name == name } })
         else -> null
     }
 }

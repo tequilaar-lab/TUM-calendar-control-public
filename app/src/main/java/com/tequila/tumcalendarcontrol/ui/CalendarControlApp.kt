@@ -127,6 +127,7 @@ fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {})
             AppEntry.SourceRange -> state.openSourceRange()
             is AppEntry.Course -> state.openCourse(entry.courseId)
             AppEntry.WidgetSettings -> state.open(AppScreen.WIDGETS)
+            is AppEntry.ManualEvents -> { entry.kind?.let { state.manualEventsInitialKind = it }; state.openManualEvents() }
             null -> return@LaunchedEffect
         }
         onEntryHandled()

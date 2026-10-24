@@ -1,6 +1,7 @@
 /*
- * Aufgabe: Einstellungsseite der Startbildschirm-Widgets: Live-Vorschau der drei Größen (echte RemoteViews),
- *   Inhalt (Grau/Blau ausblenden, Raum), Aussehen (Deckkraft, Eckenstufe, Wochenbereich) und „Zum Startbildschirm“.
+ * Aufgabe: Einstellungsseite der Startbildschirm-Widgets: Live-Vorschau der drei Kursgrößen und des Countdowns (echte
+ *   RemoteViews), Inhalt (Grau/Blau ausblenden, Raum), Aussehen (Deckkraft, Eckenstufe, Wochenbereich), Countdown
+ *   (Prüfungen/Fristen, Anheftung) und „Zum Startbildschirm“.
  * Ein-/Ausgabe: WidgetPreferences und geschriebene Termine -> Bedienelemente; Änderungen -> speichern und Widgets neu zeichnen.
  * Nebenwirkungen: Nur private Widget-Einstellungen; Hinzufügen fragt den Startbildschirm (Systemdialog, Nutzer bestätigt).
  * Nicht zuständig: Zeichnen/Daten der Widgets (widget-Paket), Regeln, Ausgabe oder Kalender.
@@ -43,7 +44,11 @@ import com.tequila.tumcalendarcontrol.ui.design.DesignSection
 import com.tequila.tumcalendarcontrol.ui.design.DesignSegmented
 import com.tequila.tumcalendarcontrol.ui.design.DesignText
 import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
+import com.tequila.tumcalendarcontrol.widget.CountdownWidgetRenderer
 import com.tequila.tumcalendarcontrol.widget.ScheduleWidgetModel
+import com.tequila.tumcalendarcontrol.sync.ManualEventKind
+import com.tequila.tumcalendarcontrol.sync.ManualScheduleItem
+import com.tequila.tumcalendarcontrol.ui.design.DesignChoice
 import com.tequila.tumcalendarcontrol.widget.ScheduleWidgetRenderer
 import com.tequila.tumcalendarcontrol.widget.ScheduleWidgets
 import com.tequila.tumcalendarcontrol.widget.WidgetCorner
@@ -62,10 +67,10 @@ private val TextInset = Modifier.padding(horizontal = 4.dp)
 internal data class WidgetPreviewClock(val now: () -> Instant = Instant::now, val zone: () -> ZoneId = ZoneId::systemDefault)
 internal val LocalWidgetPreviewClock = staticCompositionLocalOf { WidgetPreviewClock() }
 private val CornerLabels = listOf(823, 824, 825, 826, 827)
-private val SizeLabels = listOf(824, 825, 826)
+private val SizeLabels = listOf(824, 825, 826, 857)
 
 @Composable
-fun WidgetSettingsScreen() {
+fun WidgetSettingsScreen(state: CalendarControlState) {
     val context = LocalContext.current
     val preferences = remember(context) { WidgetPreferences(context) }
     var settings by remember { mutableStateOf(preferences.load()) }
@@ -76,6 +81,10 @@ fun WidgetSettingsScreen() {
     val clock = LocalWidgetPreviewClock.current
     val now = remember(clock) { clock.now() }
     val events = written.ifEmpty { sampleEvents(now) }
+    // Countdown: eigene Prüfungen/Fristen, sonst Beispiele (mit demselben Hinweis).
+    val manual = state.ruleLedger.manualEvents
+    val hasCountdownData = manual.any { it.kind != ManualEventKind.NORMAL }
+    val countdownItems = if (hasCountdownData) manual else sampleCountdown(now)
     fun change(next: WidgetSettings) {
         settings = next
         preferences.save(next)
@@ -88,8 +97,8 @@ fun WidgetSettingsScreen() {
         DesignSection(tr(message(831)), TextInset)
         val size = WidgetSize.valueOf(previewSize)
         DesignSegmented(SizeLabels.map { tr(message(it)) }, size.ordinal, Modifier.testTag("widgets-preview-size")) { previewSize = WidgetSize.entries[it].name }
-        WidgetPreview(size, WidgetFrame(events, true, settings, now, clock.zone(), previewWidth(size), previewHeight(size)))
-        if (written.isEmpty()) DesignText(tr(message(836)), 11, TextInset, muted = true)
+        WidgetPreview(size, WidgetFrame(events, true, settings, now, clock.zone(), previewWidth(size), previewHeight(size), countdownItems))
+        if (if (size == WidgetSize.COUNTDOWN) !hasCountdownData else written.isEmpty()) DesignText(tr(message(836)), 11, TextInset, muted = true)
 
         DesignSection(tr(message(814)), TextInset)
         Column {
@@ -110,6 +119,27 @@ fun WidgetSettingsScreen() {
             change(settings.copy(calendarWeek = it == 0))
         }
         DesignText(tr(message(833)), 12, TextInset, muted = true)
+
+        // Countdown: Arten und angeheftetes Hauptziel; Hintergrund/Ecken gelten wie oben.
+        DesignSection(tr(message(857)), TextInset)
+        Column {
+            DesignCheck(tr(message(860)), settings.countdownExams, TextInset.testTag("widgets-countdown-exams")) { change(settings.copy(countdownExams = it)) }
+            DesignCheck(tr(message(861)), settings.countdownDeadlines, TextInset.testTag("widgets-countdown-deadlines")) { change(settings.copy(countdownDeadlines = it)) }
+        }
+        DesignText(tr(message(862)), 13, TextInset)
+        val pinnable = CountdownWidgetRenderer.entries(WidgetFrame(emptyList(), true, settings, now, clock.zone(), 0, 0, manual))
+        Column {
+            DesignChoice(tr(message(863)), pinnable.none { it.item.id == settings.countdownPinnedId }, Modifier.testTag("widgets-pin-auto")) {
+                change(settings.copy(countdownPinnedId = null))
+            }
+            pinnable.forEach { entry ->
+                DesignChoice(
+                    tr(entry.item.title), entry.item.id == settings.countdownPinnedId, Modifier.testTag("widgets-pin-${entry.item.id}"),
+                    detail = tr(message(147, entry.item.kind.label(), entry.remaining.text())),
+                ) { change(settings.copy(countdownPinnedId = entry.item.id)) }
+            }
+        }
+        DesignText(tr(message(864)), 12, TextInset, muted = true)
 
         DesignPillButton(tr(message(832)), Modifier.testTag("widgets-pin"), primary = false) {
             pinFeedback = if (ScheduleWidgets.canRequestPin(context) && ScheduleWidgets.requestPin(context, size)) null else message(834)
@@ -147,7 +177,16 @@ private fun disableClicks(view: android.view.View) {
 }
 
 private fun previewWidth(size: WidgetSize) = if (size == WidgetSize.SMALL) 170 else 330
-private fun previewHeight(size: WidgetSize) = when (size) { WidgetSize.SMALL -> 170; WidgetSize.MEDIUM -> 180; WidgetSize.LARGE -> 340 }
+/** Countdown in der Vorschau breit (Hauptziel und die nächsten zwei daneben). */
+private fun previewHeight(size: WidgetSize) = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN -> 170; WidgetSize.MEDIUM -> 180; WidgetSize.LARGE -> 340 }
+
+/** Synthetische Prüfungen/Fristen relativ zu jetzt; keine echten Daten. */
+private fun sampleCountdown(now: Instant): List<ManualScheduleItem> {
+    fun item(n: Int, days: Long, title: String, kind: ManualEventKind) = now.plus(Duration.ofDays(days)).let {
+        ManualScheduleItem("sample-countdown-$n", title, it, it.plus(Duration.ofHours(2)), AttendanceState.MUST_ATTEND, kind)
+    }
+    return listOf(item(1, 12, "Analysis 1", ManualEventKind.EXAM), item(2, 3, "Übungsblatt 5", ManualEventKind.DEADLINE), item(3, 20, "Messtechnik", ManualEventKind.EXAM))
+}
 
 /** Synthetische Beispieltermine relativ zu jetzt (laufend, später heute, morgen, Woche); keine echten Daten. */
 private fun sampleEvents(now: Instant): List<WidgetEvent> {

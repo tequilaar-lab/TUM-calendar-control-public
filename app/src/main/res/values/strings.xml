@@ -852,4 +852,17 @@
     <string name="msg_0847" formatted="false">"{0} min left"</string>
     <string name="msg_0848" formatted="false">"In progress"</string>
     <string name="msg_0849" formatted="false">"Coming up"</string>
+    <string name="msg_0850" formatted="false">"days"</string>
+    <string name="msg_0851" formatted="false">"hours"</string>
+    <string name="msg_0852" formatted="false">"min"</string>
+    <string name="msg_0853" formatted="false">"{0} more"</string>
+    <string name="msg_0854" formatted="false">"No exams or deadlines yet"</string>
+    <string name="msg_0855" formatted="false">"Tap to add one."</string>
+    <string name="msg_0857" formatted="false">"Countdown"</string>
+    <string name="msg_0858" formatted="false">"Countdown to exams and deadlines"</string>
+    <string name="msg_0860" formatted="false">"Show exams"</string>
+    <string name="msg_0861" formatted="false">"Show deadlines"</string>
+    <string name="msg_0862" formatted="false">"Pinned"</string>
+    <string name="msg_0863" formatted="false">"Automatic · nearest"</string>
+    <string name="msg_0864" formatted="false">"Background and corners match the other widgets."</string>
 </resources>

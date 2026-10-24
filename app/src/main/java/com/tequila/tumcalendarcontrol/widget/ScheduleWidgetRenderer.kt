@@ -20,6 +20,7 @@ import com.tequila.tumcalendarcontrol.i18n.AppLanguagePreferences
 import com.tequila.tumcalendarcontrol.i18n.localizedAppContext
 import com.tequila.tumcalendarcontrol.i18n.localizedMessage
 import com.tequila.tumcalendarcontrol.i18n.message
+import com.tequila.tumcalendarcontrol.sync.ManualScheduleItem
 import com.tequila.tumcalendarcontrol.ui.AppEntry
 import com.tequila.tumcalendarcontrol.ui.AppEntryIntents
 import java.time.Instant
@@ -28,7 +29,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-enum class WidgetSize { SMALL, MEDIUM, LARGE }
+/** Drei Kurs-Widgets und das Countdown-Widget (eigener Renderer). */
+enum class WidgetSize { SMALL, MEDIUM, LARGE, COUNTDOWN }
 
 /** Eingaben eines Zeichendurchgangs; hasData = überhaupt geschriebene Termine (sonst Hinweis „noch nichts geschrieben“). */
 data class WidgetFrame(
@@ -39,6 +41,8 @@ data class WidgetFrame(
     val zone: ZoneId,
     val widthDp: Int,
     val heightDp: Int,
+    /** Eigene Termine für das Countdown-Widget (Prüfungen/Fristen); unabhängig davon, ob sie geschrieben wurden. */
+    val manualEvents: List<ManualScheduleItem> = emptyList(),
 )
 
 object ScheduleWidgetRenderer {
@@ -46,8 +50,9 @@ object ScheduleWidgetRenderer {
     private const val PAST_ALPHA = .45f
 
     fun render(context: Context, size: WidgetSize, frame: WidgetFrame): RemoteViews {
-        val text = Texts(context)
-        val layout = when (size) { WidgetSize.SMALL -> R.layout.widget_small; WidgetSize.MEDIUM -> R.layout.widget_list; WidgetSize.LARGE -> R.layout.widget_week }
+        if (size == WidgetSize.COUNTDOWN) return CountdownWidgetRenderer.render(context, frame)
+        val text = WidgetTexts(context)
+        val layout = when (size) { WidgetSize.SMALL -> R.layout.widget_small; WidgetSize.MEDIUM -> R.layout.widget_list; else -> R.layout.widget_week }
         val views = RemoteViews(context.packageName, layout)
         views.setInt(R.id.widget_root, "setBackgroundResource", background(frame.settings))
         views.setOnClickPendingIntent(R.id.widget_root, openApp(context, null))
@@ -56,13 +61,13 @@ object ScheduleWidgetRenderer {
         when (size) {
             WidgetSize.SMALL -> small(context, views, text, visible, frame)
             WidgetSize.MEDIUM -> medium(context, views, text, visible, frame)
-            WidgetSize.LARGE -> large(context, views, text, visible, frame)
+            else -> large(context, views, text, visible, frame)
         }
         return views
     }
 
     /** Klein: ein Termin. Unter 80 dp nur Status und Kurs; ab 130 dp Kurs zweizeilig; Raum ab 110 dp (antippbar). */
-    private fun small(context: Context, views: RemoteViews, text: Texts, events: List<WidgetEvent>, frame: WidgetFrame) {
+    private fun small(context: Context, views: RemoteViews, text: WidgetTexts, events: List<WidgetEvent>, frame: WidgetFrame) {
         val focus = ScheduleWidgetModel.focus(events, frame.now, frame.zone) ?: run { empty(views, text(message(799))); return }
         val event = focus.event
         val start = event.startsAt.atZone(frame.zone)
@@ -92,7 +97,7 @@ object ScheduleWidgetRenderer {
     }
 
     /** Mittel: heutige Zeitleiste; Zeilen nach Höhe (je 38 dp), vergangene zuerst weglassen; einzeilig nur Kopf mit Nächstem. */
-    private fun medium(context: Context, views: RemoteViews, text: Texts, events: List<WidgetEvent>, frame: WidgetFrame) {
+    private fun medium(context: Context, views: RemoteViews, text: WidgetTexts, events: List<WidgetEvent>, frame: WidgetFrame) {
         val today = ScheduleWidgetModel.today(events, frame.now, frame.zone)
         views.setTextViewText(R.id.widget_header, text(message(800, text.date(today.date))))
         val nextToday = today.rows.firstOrNull { !it.past }?.event
@@ -133,7 +138,7 @@ object ScheduleWidgetRenderer {
     }
 
     /** Groß: sieben Tageszeilen mit Terminblöcken; ab 44 dp je Tag mit Raumzeile; unter 120 dp nur Kopf und Zähler. */
-    private fun large(context: Context, views: RemoteViews, text: Texts, events: List<WidgetEvent>, frame: WidgetFrame) {
+    private fun large(context: Context, views: RemoteViews, text: WidgetTexts, events: List<WidgetEvent>, frame: WidgetFrame) {
         val week = ScheduleWidgetModel.week(events, frame.now, frame.zone, frame.settings.calendarWeek)
         views.setTextViewText(R.id.widget_header, text(if (frame.settings.calendarWeek) message(805, text.shortDate(week.days.first().date), text.shortDate(week.days.last().date)) else message(806)))
         views.setTextViewText(R.id.widget_header_side, "")
@@ -166,7 +171,7 @@ object ScheduleWidgetRenderer {
         }
     }
 
-    private fun empty(views: RemoteViews, note: String): RemoteViews {
+    internal fun empty(views: RemoteViews, note: String): RemoteViews {
         views.setViewVisibility(R.id.widget_body, View.GONE)
         views.setViewVisibility(R.id.widget_empty, View.VISIBLE)
         views.setTextViewText(R.id.widget_empty, note)
@@ -197,9 +202,9 @@ object ScheduleWidgetRenderer {
     }
 
     /** App öffnen (ohne Ziel) bzw. Kursdetails; Daten-URI macht je Kurs eine eigene PendingIntent. */
-    private fun openApp(context: Context, entry: AppEntry?): PendingIntent {
+    internal fun openApp(context: Context, entry: AppEntry?): PendingIntent {
         val intent = AppEntryIntents.intent(context, entry).apply {
-            data = Uri.fromParts("tumwidget", (entry as? AppEntry.Course)?.courseId ?: "app", null)
+            data = Uri.fromParts("tumwidget", when (entry) { is AppEntry.Course -> entry.courseId; null -> "app"; else -> entry.toString() }, null)
         }
         return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
@@ -208,7 +213,7 @@ object ScheduleWidgetRenderer {
         PendingIntent.getActivity(context, 1, Intent(Intent.ACTION_VIEW, Uri.parse(url)), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
     /** Texte in der App-Sprache (nicht Systemsprache), Datumsformate aus den Sprachressourcen. */
-    private class Texts(context: Context) {
+    internal class WidgetTexts(context: Context) {
         private val language = AppLanguagePreferences(context).load()
         private val localized = localizedAppContext(context, language)
         private val locale = Locale.forLanguageTag(language.tag)

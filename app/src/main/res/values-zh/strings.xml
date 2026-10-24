@@ -852,4 +852,17 @@
     <string name="msg_0847" formatted="false">"还有 {0} 分钟"</string>
     <string name="msg_0848" formatted="false">"进行中"</string>
     <string name="msg_0849" formatted="false">"即将到来"</string>
+    <string name="msg_0850" formatted="false">"天"</string>
+    <string name="msg_0851" formatted="false">"小时"</string>
+    <string name="msg_0852" formatted="false">"分钟"</string>
+    <string name="msg_0853" formatted="false">"还有 {0} 项"</string>
+    <string name="msg_0854" formatted="false">"还没有考试或截止"</string>
+    <string name="msg_0855" formatted="false">"点此添加。"</string>
+    <string name="msg_0857" formatted="false">"倒数日"</string>
+    <string name="msg_0858" formatted="false">"考试和截止的倒计时"</string>
+    <string name="msg_0860" formatted="false">"显示考试"</string>
+    <string name="msg_0861" formatted="false">"显示截止"</string>
+    <string name="msg_0862" formatted="false">"置顶"</string>
+    <string name="msg_0863" formatted="false">"自动 · 最近一项"</string>
+    <string name="msg_0864" formatted="false">"背景和圆角与其他小组件一致。"</string>
 </resources>

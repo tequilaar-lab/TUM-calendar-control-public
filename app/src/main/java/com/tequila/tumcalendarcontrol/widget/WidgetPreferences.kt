@@ -1,6 +1,6 @@
 /*
  * Aufgabe: Gemeinsame Einstellungen aller Startbildschirm-Widgets halten und privat speichern.
- * Ein-/Ausgabe: WidgetSettings <-> app-private SharedPreferences „widgets“.
+ * Ein-/Ausgabe: WidgetSettings (Kurs- und Countdown-Widgets) <-> app-private SharedPreferences „widgets“.
  * Nebenwirkungen: Nur diese privaten Präferenzen; keine Kursinhalte, Konten oder Kalenderdaten.
  * Nicht zuständig: Aktualisieren der Widgets (ScheduleWidgets.refreshAll) oder Darstellung.
  */
@@ -20,6 +20,11 @@ data class WidgetSettings(
     val corner: WidgetCorner = WidgetCorner.MEDIUM,
     /** Großes Widget: Montag–Sonntag (true) oder sieben Tage ab heute. */
     val calendarWeek: Boolean = true,
+    /** Countdown-Widget: Prüfungen bzw. Fristen anzeigen. */
+    val countdownExams: Boolean = true,
+    val countdownDeadlines: Boolean = true,
+    /** Angeheftete Prüfung/Frist (ID des eigenen Termins); null = automatisch die nächste. */
+    val countdownPinnedId: String? = null,
 )
 
 class WidgetPreferences(context: Context) {
@@ -32,6 +37,9 @@ class WidgetPreferences(context: Context) {
         translucent = preferences.getBoolean(KEY_TRANSLUCENT, false),
         corner = preferences.getString(KEY_CORNER, null)?.let { name -> WidgetCorner.entries.firstOrNull { it.name == name } } ?: WidgetCorner.MEDIUM,
         calendarWeek = preferences.getBoolean(KEY_CALENDAR_WEEK, true),
+        countdownExams = preferences.getBoolean(KEY_COUNTDOWN_EXAMS, true),
+        countdownDeadlines = preferences.getBoolean(KEY_COUNTDOWN_DEADLINES, true),
+        countdownPinnedId = preferences.getString(KEY_COUNTDOWN_PINNED, null),
     )
 
     fun save(settings: WidgetSettings) {
@@ -42,6 +50,9 @@ class WidgetPreferences(context: Context) {
             .putBoolean(KEY_TRANSLUCENT, settings.translucent)
             .putString(KEY_CORNER, settings.corner.name)
             .putBoolean(KEY_CALENDAR_WEEK, settings.calendarWeek)
+            .putBoolean(KEY_COUNTDOWN_EXAMS, settings.countdownExams)
+            .putBoolean(KEY_COUNTDOWN_DEADLINES, settings.countdownDeadlines)
+            .putString(KEY_COUNTDOWN_PINNED, settings.countdownPinnedId)
             .apply()
     }
 
@@ -53,5 +64,8 @@ class WidgetPreferences(context: Context) {
         const val KEY_TRANSLUCENT = "translucent"
         const val KEY_CORNER = "corner"
         const val KEY_CALENDAR_WEEK = "calendar_week"
+        const val KEY_COUNTDOWN_EXAMS = "countdown_exams"
+        const val KEY_COUNTDOWN_DEADLINES = "countdown_deadlines"
+        const val KEY_COUNTDOWN_PINNED = "countdown_pinned"
     }
 }

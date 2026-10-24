@@ -91,7 +91,7 @@ private fun SettingsScreenContent(state: CalendarControlState, screen: AppScreen
         AppScreen.SYNC_CONFIGURATION -> SyncConfigurationScreen(state)
         AppScreen.SYNC_PREVIEW -> SyncPreviewScreen(state)
         AppScreen.APPEARANCE -> AppearanceScreen(state)
-        AppScreen.WIDGETS -> WidgetSettingsScreen()
+        AppScreen.WIDGETS -> WidgetSettingsScreen(state)
         else -> error(message(183))
     }
 }

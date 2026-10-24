@@ -1,8 +1,8 @@
 /*
- * Aufgabe: Die drei Startbildschirm-Widgets (klein „Wohin jetzt“, mittel „Heute“, groß „Woche“) bereitstellen und
+ * Aufgabe: Die Startbildschirm-Widgets (klein „Wohin jetzt“, mittel „Heute“, groß „Woche“, „Countdown“) bereitstellen und
  *   aktualisieren: Daten laden, je Instanz nach Größe zeichnen, nächste Aktualisierung grob vormerken.
  * Ein-/Ausgabe: Systemereignisse (Aktualisierung, Größenänderung, Zeit/Zeitzone/Sprache) und App-Aufrufe -> RemoteViews.
- * Nebenwirkungen: Liest nur private Zuordnungen und Widget-Einstellungen; setzt einen nicht weckenden, ungenauen Alarm.
+ * Nebenwirkungen: Liest nur private Zuordnungen, eigene Termine und Widget-Einstellungen; setzt einen nicht weckenden, ungenauen Alarm.
  *   Kein Netzwerk, kein Kalenderzugriff, keine Schreibvorgänge an Regeln oder Kalendern.
  * Nicht zuständig: Inhalt/Layout (Model, Renderer) oder Einstellungsoberfläche.
  */
@@ -17,6 +17,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerPreferences
+import com.tequila.tumcalendarcontrol.sync.DeadlineCountdown
+import com.tequila.tumcalendarcontrol.sync.ManualEventKind
+import com.tequila.tumcalendarcontrol.sync.ManualScheduleItem
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 
@@ -39,6 +43,8 @@ abstract class ScheduleWidgetProvider : AppWidgetProvider() {
 class ScheduleWidgetSmall : ScheduleWidgetProvider()
 class ScheduleWidgetMedium : ScheduleWidgetProvider()
 class ScheduleWidgetLarge : ScheduleWidgetProvider()
+/** Countdown bis zu Prüfungen und Fristen (eigene Termine, nicht nur geschriebene). */
+class ScheduleWidgetCountdown : ScheduleWidgetProvider()
 
 object ScheduleWidgets {
     internal const val ACTION_REFRESH = "com.tequila.tumcalendarcontrol.widget.REFRESH"
@@ -46,6 +52,7 @@ object ScheduleWidgets {
         ScheduleWidgetSmall::class.java to WidgetSize.SMALL,
         ScheduleWidgetMedium::class.java to WidgetSize.MEDIUM,
         ScheduleWidgetLarge::class.java to WidgetSize.LARGE,
+        ScheduleWidgetCountdown::class.java to WidgetSize.COUNTDOWN,
     )
 
     /**
@@ -57,7 +64,9 @@ object ScheduleWidgets {
         val manager = AppWidgetManager.getInstance(app) ?: return
         val placed = providers.map { (type, size) -> size to manager.getAppWidgetIds(ComponentName(app, type)) }.filter { it.second.isNotEmpty() }
         if (placed.isEmpty()) return
-        val events = runCatching { ScheduleWidgetModel.eventsFrom(RuleLedgerPreferences(app).load().mappings) }.getOrDefault(emptyList())
+        val ledger = runCatching { RuleLedgerPreferences(app).load() }.getOrNull()
+        val events = ledger?.let { ScheduleWidgetModel.eventsFrom(it.mappings) }.orEmpty()
+        val manual = ledger?.manualEvents.orEmpty()
         val settings = WidgetPreferences(app).load()
         placed.forEach { (size, ids) ->
             ids.forEach { id ->
@@ -65,10 +74,18 @@ object ScheduleWidgets {
                 // Hochformat: Breite = kleinste, Höhe = größte gemeldete Abmessung.
                 val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).takeIf { it > 0 } ?: defaultWidth(size)
                 val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).takeIf { it > 0 } ?: defaultHeight(size)
-                manager.updateAppWidget(id, ScheduleWidgetRenderer.render(app, size, WidgetFrame(events, events.isNotEmpty(), settings, now, zone, width, height)))
+                manager.updateAppWidget(id, ScheduleWidgetRenderer.render(app, size, WidgetFrame(events, events.isNotEmpty(), settings, now, zone, width, height, manual)))
             }
         }
-        scheduleNext(app, ScheduleWidgetModel.nextRefresh(ScheduleWidgetModel.visible(events, settings), now, zone))
+        val courses = ScheduleWidgetModel.nextRefresh(ScheduleWidgetModel.visible(events, settings), now, zone)
+        scheduleNext(app, listOfNotNull(courses, countdownRefresh(manual, now)).min())
+    }
+
+    /** Countdown: Zielzeiten (und Prüfungsende) als Ränder; in der letzten Stunde alle 5 Minuten. */
+    internal fun countdownRefresh(items: List<ManualScheduleItem>, now: Instant): Instant? {
+        val boundaries = items.flatMap { listOfNotNull(DeadlineCountdown.target(it), if (it.kind == ManualEventKind.EXAM) it.endsAt else null) }.filter { it > now }
+        val next = boundaries.minOrNull() ?: return null
+        return if (Duration.between(now, next) <= Duration.ofHours(1)) minOf(next, now.plus(Duration.ofMinutes(5))) else next
     }
 
     /** Ungenauer, nicht weckender Alarm (keine Sonderberechtigung, keine Pünktlichkeitszusage); ersetzt den vorherigen. */
@@ -79,8 +96,8 @@ object ScheduleWidgets {
         alarms.set(AlarmManager.RTC, at.toEpochMilli(), pending)
     }
 
-    internal fun defaultWidth(size: WidgetSize): Int = if (size == WidgetSize.SMALL) 150 else 320
-    internal fun defaultHeight(size: WidgetSize): Int = when (size) { WidgetSize.SMALL -> 150; WidgetSize.MEDIUM -> 170; WidgetSize.LARGE -> 340 }
+    internal fun defaultWidth(size: WidgetSize): Int = if (size == WidgetSize.SMALL || size == WidgetSize.COUNTDOWN) 150 else 320
+    internal fun defaultHeight(size: WidgetSize): Int = when (size) { WidgetSize.SMALL, WidgetSize.COUNTDOWN -> 150; WidgetSize.MEDIUM -> 170; WidgetSize.LARGE -> 340 }
 
     /** Ob der Startbildschirm das direkte Hinzufügen anbietet (Systemdialog, Nutzer bestätigt). */
     fun canRequestPin(context: Context): Boolean = AppWidgetManager.getInstance(context)?.isRequestPinAppWidgetSupported == true

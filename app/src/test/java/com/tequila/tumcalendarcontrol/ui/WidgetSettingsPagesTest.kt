@@ -77,8 +77,27 @@ class WidgetSettingsPagesTest {
         composeRule.onRoot().captureRoboImage("src/test/screenshots/widgets_settings_large_412x892.png")
     }
 
+    /** Countdown-Abschnitt: Prüfung anheften speichert die ID; Vorschau auf Countdown umschalten. */
+    @Test fun `倒数日置顶与预览`() {
+        val state = CalendarControlState().also { it.themeMode = ThemeMode.LIGHT; it.open(AppScreen.WIDGETS) }
+        state.addManualEvent("Synthetik Analysis", "2026-11-02", "9", "0", "11", "0", com.tequila.tumcalendarcontrol.domain.AttendanceState.MUST_ATTEND, com.tequila.tumcalendarcontrol.sync.ManualEventKind.EXAM)
+        composeRule.setContent { CompositionLocalProvider(LocalWidgetPreviewClock provides fixedClock) { CalendarControlSurface(state) } }
+        composeRule.waitForIdle()
+        composeRule.onNode(hasText("倒数日") and hasAnyAncestor(hasTestTag("widgets-preview-size"))).performClick()
+        val id = state.ruleLedger.manualEvents.single().id
+        composeRule.onNodeWithTag("widgets-content").performScrollToNode(hasTestTag("widgets-pin-$id"))
+        composeRule.onNodeWithTag("widgets-pin-$id").performClick()
+        composeRule.waitForIdle()
+        assertEquals(id, WidgetPreferences(context).load().countdownPinnedId)
+        composeRule.onNodeWithTag("widgets-content").performScrollToNode(hasTestTag("widgets-preview-size"))
+        composeRule.onRoot().captureRoboImage("src/test/screenshots/widgets_settings_countdown_412x892.png")
+    }
+
     @Test fun `小组件入口打开设置页`() {
         val intent = AppEntryIntents.intent(context, AppEntry.WidgetSettings)
         assertEquals(AppEntry.WidgetSettings, AppEntryIntents.parse(intent))
+        val exam = AppEntry.ManualEvents(com.tequila.tumcalendarcontrol.sync.ManualEventKind.EXAM)
+        assertEquals(exam, AppEntryIntents.parse(AppEntryIntents.intent(context, exam)))
+        assertEquals(AppEntry.ManualEvents(null), AppEntryIntents.parse(AppEntryIntents.intent(context, AppEntry.ManualEvents())))
     }
 }
