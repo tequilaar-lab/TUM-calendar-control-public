@@ -949,4 +949,5 @@
     <string name="msg_0947" formatted="false">"The test notification disappears after 2 minutes and shows sample content"</string>
     <string name="msg_0948" formatted="false">"Filled in from the shared text; please check and add"</string>
     <string name="msg_0949" formatted="false">"New campus event"</string>
+    <string name="msg_0950" formatted="false">"Select a course on the left to see its details"</string>
 </resources>

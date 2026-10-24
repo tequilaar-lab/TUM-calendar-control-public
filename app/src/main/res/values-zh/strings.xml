@@ -949,4 +949,5 @@
     <string name="msg_0947" formatted="false">"测试通知 2 分钟后自动消失，内容为示例"</string>
     <string name="msg_0948" formatted="false">"已根据分享的内容填好，请核对后添加"</string>
     <string name="msg_0949" formatted="false">"新建校园事项"</string>
+    <string name="msg_0950" formatted="false">"在左侧选择一门课程查看详情"</string>
 </resources>

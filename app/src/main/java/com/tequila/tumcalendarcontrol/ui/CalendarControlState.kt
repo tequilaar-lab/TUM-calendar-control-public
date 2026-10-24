@@ -80,6 +80,8 @@ class CalendarControlState(
     }
     internal val navigation = NavigationState()
     val screen: AppScreen get() = navigation.screen
+    /** Herkunft der Kursdetails (für die zweispaltige Darstellung). */
+    val detailOrigin: AppScreen get() = navigation.detailOrigin
     var selectedCourseId by mutableStateOf(courses.firstOrNull()?.id.orEmpty())
         private set
     private var selectedInstanceKey by mutableStateOf<String?>(null)

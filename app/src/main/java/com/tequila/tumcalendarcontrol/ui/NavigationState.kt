@@ -17,6 +17,8 @@ internal class NavigationState {
         private set
 
     private var detailReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
+    /** Seite, aus der die Kursdetails geöffnet wurden (zweispaltige Darstellung zeigt sie links weiter an). */
+    val detailOrigin: AppScreen get() = detailReturnScreen
     private var profileReturnScreen by mutableStateOf(AppScreen.OVERVIEW)
     private var syncConfigurationReturnScreen by mutableStateOf(AppScreen.SETTINGS)
     private var sourceRangeReturnScreen by mutableStateOf(AppScreen.SETTINGS)

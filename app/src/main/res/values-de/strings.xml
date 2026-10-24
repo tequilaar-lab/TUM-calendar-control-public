@@ -949,4 +949,5 @@
     <string name="msg_0947" formatted="false">"Die Testbenachrichtigung verschwindet nach 2 Minuten und zeigt Beispielinhalte"</string>
     <string name="msg_0948" formatted="false">"Aus dem geteilten Text ausgefüllt; bitte prüfen und hinzufügen"</string>
     <string name="msg_0949" formatted="false">"Neuer Campustermin"</string>
+    <string name="msg_0950" formatted="false">"Links einen Kurs wählen, um Details zu sehen"</string>
 </resources>
