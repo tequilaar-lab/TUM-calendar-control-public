@@ -1,6 +1,6 @@
 /*
  * Aufgabe: „Systemaussehen folgen“ prüfen: Blockgeometrie passend zu Systemkarten (2×2, 4×2, 1×1-Untergrenze),
- *   Rückfall des Systemradius, Wahl des Hintergrunds je Radius sowie Speichern des Schalters mit erhaltenen manuellen Werten.
+ *   Rückfall des Systemradius, Startbildschirm-Maßstab, Wahl des Hintergrunds je Radius sowie Speichern des Schalters mit erhaltenen manuellen Werten.
  * Ein-/Ausgabe: synthetische Größen, Radien und Robolectric-Präferenzen -> Geometrie, Ressourcen-IDs, gespeicherte Werte.
  * Nebenwirkungen: Nur private Test-Präferenzen.
  * Nicht zuständig: Einstellungsoberfläche (WidgetSettingsPagesTest) oder prozentuale Blöcke (WidgetBlockSettingsTest).
@@ -58,6 +58,14 @@ class SystemWidgetLookTest {
         assertNull("Lesefehler", SystemWidgetLook.radiusDp(36, 2.55f) { error("keine Ressource") })
         assertEquals(23, SystemWidgetLook.radiusDp(36, 2.55f) { 58.65f })
         assertEquals("auf 32 dp begrenzt", 32, SystemWidgetLook.radiusDp(36, 2f) { 100f })
+    }
+
+    /** HONOR zeichnet Drittanbieter-Widgets mit der festen Gerätedichte: 480/408; andere Hersteller unverändert. */
+    @Test fun `Startbildschirm-Maßstab`() {
+        assertEquals(480f / 408f, SystemWidgetLook.launcherScale("HONOR", 408, 480), .0001f)
+        assertEquals("Anzeigegröße = Gerätedichte", 1f, SystemWidgetLook.launcherScale("HONOR", 480, 480))
+        assertEquals(1f, SystemWidgetLook.launcherScale("Google", 408, 480))
+        assertEquals(1f, SystemWidgetLook.launcherScale("HUAWEI", 0, 480))
     }
 
     @Test fun `Hintergrund je Radius`() {

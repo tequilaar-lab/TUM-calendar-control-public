@@ -1,6 +1,7 @@
 /*
  * Aufgabe: Anwenden von Einstiegszielen prüfen: Die App landet auf der Zielseite, auch wenn sie zuvor auf einer anderen
- *   Seite offen war (Gerätefund 1.4.1); unbekannter Kurs führt zur Startseite mit Hinweis; Startseite als Intent-Ziel.
+ *   Seite offen war (Gerätefund 1.4.1); unbekannter Kurs führt zur Startseite mit Hinweis; Startseite als Intent-Ziel;
+ *   ein offenes Ziel übersteht die Neuerstellung der Activity.
  * Ein-/Ausgabe: CalendarControlState mit Beispielkursen und synthetischen Zielen -> erreichte Seite, Hinweis, Intents.
  * Nebenwirkungen: Keine außer Robolectric-Kontext.
  * Nicht zuständig: Tippziele der Widgets (WidgetClickTargetTest) oder Widget-Einstellungen (WidgetSettingsPagesTest).
@@ -40,6 +41,16 @@ class AppEntryNavigationTest {
         val state = openElsewhere()
         assertEquals(AppScreen.OVERVIEW, state.applyEntry(AppEntry.Course("nicht-vorhanden")))
         assertEquals(message(906), state.feedback)
+    }
+
+    /** Neuerstellung vor dem Anwenden behält das Ziel; nach dem Anwenden wird es nicht wiederholt. */
+    @Test fun `Ziel übersteht Neuerstellung der Activity`() {
+        val intent = AppEntryIntents.intent(context, AppEntry.WidgetSettings(3))
+        assertEquals(AppEntry.WidgetSettings(3), AppEntryIntents.initial(intent, null))
+        val pending = android.os.Bundle().also { AppEntryIntents.save(it, AppEntry.WidgetSettings(3)) }
+        assertEquals("noch offen", AppEntry.WidgetSettings(3), AppEntryIntents.initial(intent, pending))
+        val handled = android.os.Bundle().also { AppEntryIntents.save(it, null) }
+        assertEquals("schon angewandt", null, AppEntryIntents.initial(intent, handled))
     }
 
     @Test fun `Startseite als Intent-Ziel`() {

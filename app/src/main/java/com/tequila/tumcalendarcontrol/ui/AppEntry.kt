@@ -1,6 +1,6 @@
 /*
  * Aufgabe: Einstiegsziele von außen (Hinweis der Quellenprüfung, Startbildschirm-Widgets) als Intent kodieren und lesen.
- * Ein-/Ausgabe: Ziel -> expliziter Intent auf MainActivity; Intent -> Ziel oder null.
+ * Ein-/Ausgabe: Ziel -> expliziter Intent auf MainActivity; Intent (und gesicherter Zustand) -> Ziel oder null.
  * Nebenwirkungen: Keine; nur Intent-Aufbau und -Auswertung. Ziele navigieren ausschließlich, sie lösen keine Aktion aus.
  * Nicht zuständig: Navigation selbst (CalendarControlState), PendingIntent-Flags der Aufrufer oder Widget-Darstellung.
  */
@@ -8,6 +8,7 @@ package com.tequila.tumcalendarcontrol.ui
 
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import com.tequila.tumcalendarcontrol.MainActivity
 import com.tequila.tumcalendarcontrol.sync.ManualEventKind
 
@@ -56,6 +57,19 @@ object AppEntryIntents {
                 null -> Unit
             }
         }
+
+    /**
+     * Ziel beim Erzeugen der Activity: neu gestartet -> aus dem Intent; nach Neuerstellung nur, wenn das Ziel vorher noch
+     * nicht angewandt war (Gerätefund: nach einem Update wurde die Activity vor der ersten Darstellung neu erstellt und
+     * das Ziel ging verloren – die App blieb auf der Startseite).
+     */
+    fun initial(intent: Intent?, savedState: Bundle?): AppEntry? =
+        if (savedState == null || savedState.getBoolean(STATE_PENDING)) parse(intent) else null
+
+    /** Merkt für eine Neuerstellung, ob noch ein Ziel aussteht. */
+    fun save(outState: Bundle, pending: AppEntry?) = outState.putBoolean(STATE_PENDING, pending != null)
+
+    private const val STATE_PENDING = "com.tequila.tumcalendarcontrol.entry.pending"
 
     fun parse(intent: Intent?): AppEntry? = when (intent?.getStringExtra(EXTRA_TARGET)) {
         TARGET_OVERVIEW -> AppEntry.Overview

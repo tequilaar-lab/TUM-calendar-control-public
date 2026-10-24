@@ -63,7 +63,8 @@ object ScheduleWidgetRenderer {
             WidgetSize.CHECK -> CheckWidgetRenderer.render(context, inner)
             else -> renderCourse(context, size, inner)
         }
-        val density = context.resources.displayMetrics.density
+        // Rand in Pixeln; in Bildschirm-dp gemessene Ränder (Systemkarten) vorab durch die Vergrößerung des Startbildschirms teilen.
+        val density = context.resources.displayMetrics.density / (if (geometry.screenUnits) SystemWidgetLook.launcherScale(context) else 1f)
         fun px(dp: Float) = (dp * density).roundToInt()
         views.setViewPadding(R.id.widget_frame, px(geometry.leftDp), px(geometry.topDp), px(geometry.rightDp), px(geometry.bottomDp))
         return views
@@ -78,8 +79,14 @@ object ScheduleWidgetRenderer {
         views.setOnClickPendingIntent(R.id.widget_frame, click)
     }
 
-    /** Blockgröße in dp innerhalb der Zellen und Rand je Seite (dp, nicht gerundet, damit feste Ränder genau bleiben). */
-    data class BlockGeometry(val widthDp: Int, val heightDp: Int, val leftDp: Float, val topDp: Float, val rightDp: Float = leftDp, val bottomDp: Float = topDp)
+    /**
+     * Blockgröße in dp innerhalb der Zellen und Rand je Seite (dp, nicht gerundet, damit feste Ränder genau bleiben);
+     * screenUnits = Ränder in Bildschirm-dp gemessen (Systemkarten), nicht in den gemeldeten Widget-dp.
+     */
+    data class BlockGeometry(
+        val widthDp: Int, val heightDp: Int, val leftDp: Float, val topDp: Float,
+        val rightDp: Float = leftDp, val bottomDp: Float = topDp, val screenUnits: Boolean = false,
+    )
 
     /** Systemaussehen: feste Ränder wie Systemkarten; sonst Prozent je Achse, Quadrat nimmt die kürzere Seite, mittig. */
     fun block(settings: WidgetSettings, widthDp: Int, heightDp: Int): BlockGeometry {
@@ -261,9 +268,14 @@ object ScheduleWidgetRenderer {
         AttendanceState.STOP_ATTENDING -> R.drawable.widget_dot_stop
     }
 
-    /** Hintergrund des Blocks: Ecke vom System (beim Folgen, falls verfügbar), sonst die manuelle Stufe. */
-    internal fun background(context: Context, settings: WidgetSettings): Int =
-        background(settings, if (settings.followSystem) SystemWidgetLook.radiusDp(context) else null)
+    /**
+     * Hintergrund des Blocks: Ecke vom System (beim Folgen, falls verfügbar), sonst die manuelle Stufe. Der Systemradius
+     * gilt in Bildschirm-dp; unsere Hintergründe vergrößert der Startbildschirm um launcherScale, daher geteilt.
+     */
+    internal fun background(context: Context, settings: WidgetSettings): Int = background(
+        settings,
+        if (settings.followSystem) SystemWidgetLook.radiusDp(context)?.let { (it / SystemWidgetLook.launcherScale(context)).roundToInt() } else null,
+    )
 
     /** Reine Auswahl (testbar): systemRadiusDp nur beim Folgen gesetzt; Tabelle je ganzem dp 0–32. */
     internal fun background(settings: WidgetSettings, systemRadiusDp: Int?): Int {

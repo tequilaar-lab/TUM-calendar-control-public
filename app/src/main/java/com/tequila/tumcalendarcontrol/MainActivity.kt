@@ -24,13 +24,13 @@ import com.tequila.tumcalendarcontrol.shortcuts.AppShortcuts
 import com.tequila.tumcalendarcontrol.widget.ScheduleWidgets
 
 class MainActivity : ComponentActivity() {
-    /** Noch nicht angewandtes Einstiegsziel; nach Neuaufbau (savedInstanceState) nicht erneut anwenden. */
+    /** Noch nicht angewandtes Einstiegsziel; nach Neuaufbau nur erneut, wenn es vorher noch ausstand. */
     private var pendingEntry by mutableStateOf<AppEntry?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        if (savedInstanceState == null) pendingEntry = AppEntryIntents.parse(intent)
+        pendingEntry = AppEntryIntents.initial(intent, savedInstanceState)
         AppShortcuts.publish(this)
         setContent {
             CalendarControlApp(entry = pendingEntry, onEntryHandled = { pendingEntry = null })
@@ -39,7 +39,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        // Als aktuellen Intent merken, damit eine spätere Neuerstellung ein noch offenes Ziel daraus liest.
+        setIntent(intent)
         AppEntryIntents.parse(intent)?.let { pendingEntry = it }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        AppEntryIntents.save(outState, pendingEntry)
     }
 
     /** Beim Verlassen Widgets neu zeichnen (z. B. geänderte Einstellungen oder Zuordnungen); kein Netzwerk, kein Kalender. */
