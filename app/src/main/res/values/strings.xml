@@ -899,4 +899,11 @@
     <string name="msg_0897" formatted="false">"Background check is off – tap to set up"</string>
     <string name="msg_0898" formatted="false">"Shows the last check; tap to check the course source now (read only)"</string>
     <string name="msg_0899" formatted="false">"Tomorrow"</string>
+    <string name="msg_0900" formatted="false">"Follow system look"</string>
+    <string name="msg_0901" formatted="false">"Corners use the system value; the block uses the margins of system cards (measured on the HONOR home screen). Turning it off restores the manual settings below."</string>
+    <string name="msg_0902" formatted="false">"System corner radius {0} dp"</string>
+    <string name="msg_0903" formatted="false">"The system provides no corner radius; the manual corner below is used"</string>
+    <string name="msg_0904" formatted="false">"Set by the system look"</string>
+    <string name="msg_0905" formatted="false">"This widget is elongated: square uses the shorter side, so stretching it lengthwise has no effect"</string>
+    <string name="msg_0906" formatted="false">"This course is not in the current course list; the home page was opened"</string>
 </resources>

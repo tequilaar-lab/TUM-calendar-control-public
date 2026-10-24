@@ -899,4 +899,11 @@
     <string name="msg_0897" formatted="false">"Hintergrundprüfung aus – zum Einrichten antippen"</string>
     <string name="msg_0898" formatted="false">"Zeigt die letzte Prüfung; antippen prüft die Kursquelle sofort (nur lesen)"</string>
     <string name="msg_0899" formatted="false">"Morgen"</string>
+    <string name="msg_0900" formatted="false">"Systemaussehen folgen"</string>
+    <string name="msg_0901" formatted="false">"Ecken nach Systemwert, Block mit den Rändern der Systemkarten (gemessen auf dem HONOR-Startbildschirm). Ausschalten stellt die manuellen Werte unten wieder her."</string>
+    <string name="msg_0902" formatted="false">"Systemradius {0} dp"</string>
+    <string name="msg_0903" formatted="false">"Das System liefert keinen Radius; die manuelle Ecke unten gilt"</string>
+    <string name="msg_0904" formatted="false">"Vom Systemaussehen bestimmt"</string>
+    <string name="msg_0905" formatted="false">"Dieses Widget ist länglich: Quadrat nimmt die kürzere Seite, Aufziehen in die Länge wirkt daher nicht"</string>
+    <string name="msg_0906" formatted="false">"Dieser Kurs ist nicht im aktuellen Kursverzeichnis; die Startseite wurde geöffnet"</string>
 </resources>

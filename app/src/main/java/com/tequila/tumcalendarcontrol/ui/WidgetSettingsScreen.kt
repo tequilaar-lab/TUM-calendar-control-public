@@ -1,7 +1,7 @@
 /*
  * Aufgabe: Einstellungsseite der Startbildschirm-Widgets: Auswahl des platzierten Widgets (oder Standard für neue),
- *   Live-Vorschau in seiner echten Größe (echte RemoteViews), Inhalt je Art, Aussehen, Blockgröße innerhalb der Zellen
- *   und „Zum Startbildschirm“ (nur beim Standard).
+ *   Live-Vorschau in seiner echten Größe (echte RemoteViews), Inhalt je Art, Aussehen (auch „Systemaussehen folgen“),
+ *   Blockgröße innerhalb der Zellen und „Zum Startbildschirm“ (nur beim Standard).
  * Ein-/Ausgabe: WidgetPreferences je Widget-ID und geschriebene Termine -> Bedienelemente; Änderungen -> speichern und neu zeichnen.
  * Nebenwirkungen: Nur private Widget-Einstellungen; Hinzufügen fragt den Startbildschirm (Systemdialog, Nutzer bestätigt).
  * Nicht zuständig: Zeichnen/Daten der Widgets (widget-Paket), Regeln, Ausgabe oder Kalender.
@@ -55,6 +55,7 @@ import com.tequila.tumcalendarcontrol.sync.ManualScheduleItem
 import com.tequila.tumcalendarcontrol.ui.design.DesignChoice
 import com.tequila.tumcalendarcontrol.widget.ScheduleWidgetRenderer
 import com.tequila.tumcalendarcontrol.widget.ScheduleWidgets
+import com.tequila.tumcalendarcontrol.widget.SystemWidgetLook
 import com.tequila.tumcalendarcontrol.widget.WidgetCorner
 import com.tequila.tumcalendarcontrol.widget.WidgetEvent
 import com.tequila.tumcalendarcontrol.widget.WidgetFrame
@@ -171,19 +172,29 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
         if (showCountdown) CountdownOptions(settings, manual, now, clock.zone(), ::change)
 
         DesignSection(tr(message(818)), TextInset)
+        // Systemaussehen: Ecke vom System, Block wie Systemkarten; manuelle Werte bleiben darunter gespeichert.
+        val systemRadius = remember(context) { SystemWidgetLook.radiusDp(context) }
+        val follow = settings.followSystem
+        DesignCheck(tr(message(900)), follow, TextInset.testTag("widgets-follow-system"), detail = tr(message(901))) { change(settings.copy(followSystem = it)) }
+        if (follow) DesignText(tr(systemRadius?.let { message(902, it) } ?: message(903)), 12, TextInset.testTag("widgets-system-radius"), muted = true)
         DesignText(tr(message(819)), 13, TextInset)
         DesignSegmented(listOf(tr(message(820)), tr(message(821))), if (settings.translucent) 1 else 0, Modifier.testTag("widgets-background")) {
             change(settings.copy(translucent = it == 1))
         }
         DesignText(tr(message(822)), 13, TextInset)
-        DesignChips(CornerLabels.map { tr(message(it)) }, settings.corner.ordinal, Modifier.testTag("widgets-corner")) { change(settings.copy(corner = WidgetCorner.entries[it])) }
+        // Manuelle Ecke gilt beim Folgen nur, wenn das System keinen Radius liefert.
+        val cornerBySystem = follow && systemRadius != null
+        DesignChips(CornerLabels.map { tr(message(it)) }, settings.corner.ordinal, Modifier.testTag("widgets-corner"), enabled = !cornerBySystem) { change(settings.copy(corner = WidgetCorner.entries[it])) }
+        if (cornerBySystem) DesignText(tr(message(904)), 12, TextInset, muted = true)
 
         // Block innerhalb der Zellen: Quadrat oder Breite/Höhe in Prozent (Wunsch: auch im festen 2×2 anpassbar).
         DesignSection(tr(message(882)), TextInset)
-        DesignCheck(tr(message(883)), settings.square, TextInset.testTag("widgets-square")) { change(settings.copy(square = it)) }
-        DesignSlider({ tr(message(884, it)) }, settings.blockWidthPercent, BlockPercentRange, 5, Modifier.testTag("widgets-block-width")) { change(settings.copy(blockWidthPercent = it)) }
-        DesignSlider({ tr(message(885, it)) }, settings.blockHeightPercent, BlockPercentRange, 5, Modifier.testTag("widgets-block-height")) { change(settings.copy(blockHeightPercent = it)) }
-        DesignText(tr(message(886)), 12, TextInset, muted = true)
+        DesignCheck(tr(message(883)), settings.square, TextInset.testTag("widgets-square"), enabled = !follow) { change(settings.copy(square = it)) }
+        // Gerätefund: Quadrat in einem länglichen Feld (z. B. 1×2) macht das Aufziehen wirkungslos – darauf hinweisen.
+        if (!follow && settings.square && elongated(width, height)) DesignText(tr(message(905)), 12, TextInset.testTag("widgets-square-hint"), color = LocalDesignColors.current.accent)
+        DesignSlider({ tr(message(884, it)) }, settings.blockWidthPercent, BlockPercentRange, 5, Modifier.testTag("widgets-block-width"), enabled = !follow) { change(settings.copy(blockWidthPercent = it)) }
+        DesignSlider({ tr(message(885, it)) }, settings.blockHeightPercent, BlockPercentRange, 5, Modifier.testTag("widgets-block-height"), enabled = !follow) { change(settings.copy(blockHeightPercent = it)) }
+        DesignText(tr(message(if (follow) 904 else 886)), 12, TextInset, muted = true)
 
         // Hinzufügen nur beim Standard; die Schaltfläche nennt die Art (Startbildschirm-Dialog zeigt nur das App-Symbol).
         if (current == null) {
@@ -246,6 +257,9 @@ private fun disableClicks(view: android.view.View) {
     view.isClickable = false
     if (view is android.view.ViewGroup) (0 until view.childCount).forEach { disableClicks(view.getChildAt(it)) }
 }
+
+/** Längliches Feld: lange Seite mindestens 1,6-mal die kurze (dann wirkt „Quadrat“ beim Aufziehen nicht). */
+internal fun elongated(widthDp: Int, heightDp: Int): Boolean = minOf(widthDp, heightDp) > 0 && maxOf(widthDp, heightDp) >= 1.6 * minOf(widthDp, heightDp)
 
 private fun previewWidth(size: WidgetSize) = when (size) { WidgetSize.SMALL -> 170; WidgetSize.CHECK -> 85; else -> 330 }
 /** Countdown in der Vorschau breit (Hauptziel und die nächsten zwei daneben). */

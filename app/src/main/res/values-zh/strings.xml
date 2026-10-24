@@ -899,4 +899,11 @@
     <string name="msg_0897" formatted="false">"后台检查未开启，点此设置"</string>
     <string name="msg_0898" formatted="false">"显示上次检查结果，点一下立即只读检查课程更新"</string>
     <string name="msg_0899" formatted="false">"明天"</string>
+    <string name="msg_0900" formatted="false">"跟随系统外观"</string>
+    <string name="msg_0901" formatted="false">"圆角取系统值，方块按系统卡片的边距（按荣耀桌面实测）。关闭后恢复下面的手动设置。"</string>
+    <string name="msg_0902" formatted="false">"系统圆角 {0} dp"</string>
+    <string name="msg_0903" formatted="false">"系统未提供圆角，使用下面的手动圆角"</string>
+    <string name="msg_0904" formatted="false">"由系统外观决定"</string>
+    <string name="msg_0905" formatted="false">"这个组件是长条形，正方形会取较短的一边，往长的方向拉伸不会变大"</string>
+    <string name="msg_0906" formatted="false">"该课程不在当前课程目录中，已打开首页"</string>
 </resources>
