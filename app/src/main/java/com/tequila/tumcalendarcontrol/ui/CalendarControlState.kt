@@ -1,20 +1,21 @@
 /*
- * Aufgabe: Navigation, Darstellung, Kurse, Suche, Favoriten, Teilnahme, Profil und Ausgabezustände halten.
+ * Aufgabe: Navigation, Darstellung, Kurse, Suche, Favoriten, Teilnahme, Profil und Ausgabezustände halten. Aktionen
+ *   zu Teilnahme, Verbindungen/Prüfung, Sicherung, eigenen Terminen, Bereinigung und Google liegen als Erweiterungen in
+ *   State*Actions.kt, gemeinsame Typen in CalendarControlTypes.kt; dafür nötige Mitglieder sind modulintern (internal).
  * Ein-/Ausgabe: Benutzerabsichten und Adapterergebnisse -> beobachtbarer Kurs-/Navigations-/Ausgabezustand.
  * Nebenwirkungen: Keine externen Aktionen; reine Berechnung/Darstellung oder bestehende Aufrufrückmeldung.
  * Nicht zuständig: Datenbank, Datumsdialog, echte Kalenderausgabe, Netzwerksynchronisierung oder Kontoidentität.
  */
 package com.tequila.tumcalendarcontrol.ui
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import com.tequila.tumcalendarcontrol.i18n.message
 import com.tequila.tumcalendarcontrol.i18n.joinMessages
 
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import com.tequila.tumcalendarcontrol.domain.AttendanceState
 import com.tequila.tumcalendarcontrol.domain.Course
-import com.tequila.tumcalendarcontrol.domain.CourseLocalOverride
 import com.tequila.tumcalendarcontrol.domain.SampleCourses
 import com.tequila.tumcalendarcontrol.domain.TumEventStatus
 import com.tequila.tumcalendarcontrol.domain.displayTitle
@@ -26,9 +27,6 @@ import com.tequila.tumcalendarcontrol.sync.SyncPreview
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyImportResult
 import com.tequila.tumcalendarcontrol.sync.IcalReadOnlyPreview
 import com.tequila.tumcalendarcontrol.sync.SourceCourse
-import com.tequila.tumcalendarcontrol.sync.RuleEditCommand
-import com.tequila.tumcalendarcontrol.sync.RuleLedgerEditor
-import com.tequila.tumcalendarcontrol.sync.SyncRule
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
 import com.tequila.tumcalendarcontrol.sync.SourceChangeSummary
 import com.tequila.tumcalendarcontrol.sync.SourceOccurrenceIdentity
@@ -36,8 +34,7 @@ import com.tequila.tumcalendarcontrol.sync.SyncCandidateFactory
 import com.tequila.tumcalendarcontrol.sync.ManagedSyncEngine
 import com.tequila.tumcalendarcontrol.sync.ManagedSyncPreview
 import com.tequila.tumcalendarcontrol.sync.ManagedSyncResult
-import com.tequila.tumcalendarcontrol.sync.ManualScheduleEditor
-import com.tequila.tumcalendarcontrol.sync.ManualScheduleItem
+import com.tequila.tumcalendarcontrol.sync.ManualEventKind
 import com.tequila.tumcalendarcontrol.sync.OutputTarget
 import com.tequila.tumcalendarcontrol.sync.DesiredCalendarEvent
 import com.tequila.tumcalendarcontrol.sync.SyncRunSummary
@@ -45,47 +42,11 @@ import com.tequila.tumcalendarcontrol.sync.StoredEventMapping
 import com.tequila.tumcalendarcontrol.sync.ManagedEventCleanupScope
 import com.tequila.tumcalendarcontrol.sync.ManagedEventIdentity
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerBackup
-import com.tequila.tumcalendarcontrol.sync.RuleLedgerBackupCodec
-import com.tequila.tumcalendarcontrol.sync.GroupAttendanceRuleEditor
 import com.tequila.tumcalendarcontrol.sync.GroupAttendanceRuleResolver
-import com.tequila.tumcalendarcontrol.sync.GoogleConnectionCheckResult
 import com.tequila.tumcalendarcontrol.sync.SourceCheckSettings
 import com.tequila.tumcalendarcontrol.sync.SourceCheckStatus
-import com.tequila.tumcalendarcontrol.sync.SourceCheckCadence
 import java.time.Instant
-import java.time.LocalDateTime
 import java.time.ZoneId
-import java.util.UUID
-import java.time.LocalDate
-
-enum class AppScreen {
-    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_RANGE, SOURCE_PREVIEW, SOURCE_ATTENDANCE, MANUAL_EVENTS, MANAGED_SYNC_PREVIEW, OUTPUT_CLEANUP, BACKGROUND_CHECK, RULE_BACKUP, APPEARANCE, SOURCE_CHANGES, WIDGETS,
-}
-
-enum class ThemeMode(val label: String) {
-    LIGHT(message(222)),
-    DARK(message(223)),
-    SYSTEM(message(224)),
-}
-
-enum class NavigationDirection {
-    FORWARD, BACKWARD, PROFILE_ENTER, PROFILE_EXIT,
-}
-
-/** Teilnahme und Favoriten gemeinsam setzen; unverändert verhindert unbeabsichtigte Favoritenänderungen. */
-enum class SourceFavoriteAction(val label: String, val description: String) {
-    KEEP(message(225), message(226)),
-    ADD(message(227), message(228)),
-    REMOVE(message(229), message(230)),
-}
-
-/** Google-Autorisierung nur für aktuellen Prozess; Token nie persistieren, nach Neustart erneut autorisieren. */
-enum class GoogleAuthorizationStatus(val title: String, val defaultDetail: String) {
-    NOT_CONNECTED(message(231), message(232)),
-    AUTHORIZING(message(233), message(234)),
-    AUTHORIZED(message(235), message(236)),
-    FAILED(message(237), message(238)),
-}
 
 class CalendarControlState(
     initialCourses: List<Course> = SampleCourses.all(),
@@ -102,7 +63,7 @@ class CalendarControlState(
 ) {
     /** Nur lokale Anzeigemetadaten pro UID speichern; keine Ersatzidentität für Quelleninstanzen. */
     private val savedCoursePresentations = initialCoursePresentations.toMutableMap()
-    private val sourceWorkflow = SourceReadWorkflowState(initialSourceSnapshots)
+    internal val sourceWorkflow = SourceReadWorkflowState(initialSourceSnapshots)
     /** Momentaufnahme nur für Browser und ausdrücklich gewählte Vorschau wiederherstellen; keine automatische Quelle oder Kalenderausgabe. */
     var courses by mutableStateOf(initialCourses)
         private set
@@ -117,8 +78,10 @@ class CalendarControlState(
             )
         }
     }
-    private val navigation = NavigationState()
+    internal val navigation = NavigationState()
     val screen: AppScreen get() = navigation.screen
+    /** Herkunft der Kursdetails (für die zweispaltige Darstellung). */
+    val detailOrigin: AppScreen get() = navigation.detailOrigin
     var selectedCourseId by mutableStateOf(courses.firstOrNull()?.id.orEmpty())
         private set
     private var selectedInstanceKey by mutableStateOf<String?>(null)
@@ -130,19 +93,19 @@ class CalendarControlState(
     var pendingEffectiveDate by mutableStateOf("")
     var visibleSourceStatuses by mutableStateOf(TumEventStatus.entries.toSet())
     var localCalendarPermissionRequestPending by mutableStateOf(false)
-        private set
+        internal set
     var feedback by mutableStateOf<String?>(null)
     var themeMode by mutableStateOf(initialAppearance.mode)
     var courseTypeNames by mutableStateOf<Map<String, String>>(emptyMap())
     var individualAttendanceMode by mutableStateOf(false)
     var individualAttendanceDrafts by mutableStateOf<Map<String, IndividualAttendanceDraft>>(emptyMap())
     var pageMemory by mutableStateOf(PageMemory())
-    private var openedIndividualDrafts: Map<String, IndividualAttendanceDraft> = emptyMap()
-    private var sourceEditorOpened = false
-    private var sourceEditorChanged = false
-    private var sourceAttendanceChanged = false
-    private var sourceStateChosen = false
-    private var detailAttendanceBaseline: Triple<AttendanceState, AttendanceEditScope, String>? = null
+    internal var openedIndividualDrafts: Map<String, IndividualAttendanceDraft> = emptyMap()
+    internal var sourceEditorOpened = false
+    internal var sourceEditorChanged = false
+    internal var sourceAttendanceChanged = false
+    internal var sourceStateChosen = false
+    internal var detailAttendanceBaseline: Triple<AttendanceState, AttendanceEditScope, String>? = null
     fun restorePageMemory(memory: PageMemory) {
         pageMemory = memory
         searchQuery = memory.search
@@ -165,12 +128,12 @@ class CalendarControlState(
         val favorites = items.map { it.isFavorite }.distinct()
         return message(239, (states.singleOrNull()?.label ?: message(240)), (favorites.singleOrNull()?.let { if (it) message(241) else message(242) } ?: message(243)))
     }
-    private fun rememberAttendanceOptions() {
+    internal fun rememberAttendanceOptions() {
         pageMemory = pageMemory.copy(individual = individualAttendanceMode, scope = pendingSourceAttendanceScope, date = pendingSourceEffectiveDate)
     }
 
     /** Benutzerdaten vor beobachtbarem Zustand synchron speichern; keine halben Regeln/Favoriten bei Fehler. */
-    private fun commitUserData(nextLedger: RuleLedger = ruleLedger, nextCourses: List<Course> = courses): Boolean {
+    internal fun commitUserData(nextLedger: RuleLedger = ruleLedger, nextCourses: List<Course> = courses): Boolean {
         val committedLedger = userDataPersistence.commit(nextLedger, nextCourses)
         if (committedLedger == null) {
             feedback = message(244)
@@ -182,7 +145,7 @@ class CalendarControlState(
         return true
     }
 
-    private fun projectedCourses(ledger: RuleLedger, previous: List<Course> = courses): List<Course> =
+    internal fun projectedCourses(ledger: RuleLedger, previous: List<Course> = courses): List<Course> =
         if (!sourceCatalogLoaded) previous else SourceCourseProjection.courses(
             sourceCourses = sourceCourses,
             occurrences = currentSourceOccurrences,
@@ -198,29 +161,29 @@ class CalendarControlState(
     var darkPaletteStyle by mutableStateOf(initialAppearance.dark)
     val appearanceSettings: AppearanceSettings get() = AppearanceSettings(themeMode, lightPaletteStyle, darkPaletteStyle)
     var syncDestinations by mutableStateOf(initialSyncDestinations)
-        private set
+        internal set
     var pendingSyncDestinationChange by mutableStateOf<PendingSyncDestinationChange?>(null)
-        private set
+        internal set
     var privateSyncConfiguration by mutableStateOf(initialPrivateSyncConfiguration)
-        private set
+        internal set
     var ruleLedger by mutableStateOf(initialRuleLedger)
-        private set
+        internal set
     var sourceCheckSettings by mutableStateOf(initialSourceCheckSettings)
-        private set
+        internal set
     var sourceCheckStatus by mutableStateOf(initialSourceCheckStatus)
-        private set
+        internal set
     var sourceCheckSchedulingRequested by mutableStateOf(false)
-        private set
+        internal set
     var notificationPermissionRequestPending by mutableStateOf(false)
-        private set
+        internal set
     var ruleBackupExportRequested by mutableStateOf(false)
-        private set
+        internal set
     var ruleBackupImportRequested by mutableStateOf(false)
-        private set
+        internal set
     var pendingRuleBackup by mutableStateOf<RuleLedgerBackup?>(null)
-        private set
+        internal set
     val offlinePreview: SyncPreview = OfflinePreviewSamples.preview()
-    private val outputWorkflow = ManagedOutputWorkflowState()
+    internal val outputWorkflow = ManagedOutputWorkflowState()
     val sourceReadRequested: Boolean get() = sourceWorkflow.readRequested
     val sourceReadInProgress: Boolean get() = sourceWorkflow.readInProgress
     val sourcePreview: IcalReadOnlyPreview? get() = sourceWorkflow.preview
@@ -269,38 +232,20 @@ class CalendarControlState(
         set(value) { sourceWorkflow.pendingFavoriteAction = value; sourceEditorChanged = true }
     var managedSyncPreview: ManagedSyncPreview?
         get() = outputWorkflow.preview
-        private set(value) { outputWorkflow.preview = value }
+        internal set(value) { outputWorkflow.preview = value }
     private var managedDesiredEvents: List<DesiredCalendarEvent>
         get() = outputWorkflow.desiredEvents
         set(value) { outputWorkflow.desiredEvents = value }
     /** Bereinigungsbereich nur kurz vor/nach Bestätigung im Speicher; niemals im Regelbestand speichern. */
-    private var managedRollbackScope by mutableStateOf<ManagedEventCleanupScope>(ManagedEventCleanupScope.AllManagedEvents)
-    private var managedRollbackTargets by mutableStateOf<Set<OutputTarget>>(emptySet())
+    internal var managedRollbackScope by mutableStateOf<ManagedEventCleanupScope>(ManagedEventCleanupScope.AllManagedEvents)
+    internal var managedRollbackTargets by mutableStateOf<Set<OutputTarget>>(emptySet())
     private var confirmedWriteTargets: Set<OutputTarget> = emptySet()
     private var previewChangedDuringWrite = false
     var cleanupCatalogReadTargets by mutableStateOf<Set<OutputTarget>>(emptySet())
-        private set
+        internal set
     var cleanupCatalogReadToken by mutableStateOf(0L)
-        private set
+        internal set
 
-    fun requestCleanupCatalogRead(targets: Set<OutputTarget>) {
-        if (managedSyncInProgress || cleanupCatalogReadTargets.isNotEmpty()) return
-        val requested = targets.intersect(availableManagedOutputTargets())
-        if (requested.isEmpty()) { feedback = message(249); return }
-        if (OutputTarget.GOOGLE_CALENDAR in requested && !hasGoogleAuthorization) { feedback = message(250); return }
-        if (OutputTarget.LOCAL_CALENDAR in requested && !localCalendarPermissionGranted) { feedback = message(251); return }
-        cleanupCatalogReadTargets = requested
-        cleanupCatalogReadToken += 1
-        feedback = message(252)
-    }
-
-    fun resolveCleanupCatalogRead(token: Long, result: com.tequila.tumcalendarcontrol.sync.CleanupCatalogReadResult?) {
-        if (token != cleanupCatalogReadToken) return
-        cleanupCatalogReadTargets = emptySet()
-        if (result == null) { feedback = message(253); return }
-        ruleLedger = ruleLedger.copy(mappings = result.mappings)
-        feedback = message(254, (result.checkedCount), (result.failedCount))
-    }
     /** Vorschau zählt nur generierte Identitätspräfixe; keine Quelltitel oder Inhalte offenlegen. */
     val managedSourceCandidateCount: Int get() = managedDesiredEvents.count { !it.identity.sourceUid.startsWith("manual:") }
     val managedManualCandidateCount: Int get() = managedDesiredEvents.count { it.identity.sourceUid.startsWith("manual:") }
@@ -356,32 +301,17 @@ class CalendarControlState(
         navigation.open(screen)
     }
 
-    fun openCourse(courseId: String) {
-        val course = courses.firstOrNull { it.browseKey == courseId || it.id == courseId } ?: return
+    /** Kursdetails öffnen; false = Kurs nicht im Verzeichnis (Seite bleibt, Aufrufer entscheidet über Rückfall). */
+    fun openCourse(courseId: String): Boolean {
+        val course = courses.firstOrNull { it.browseKey == courseId || it.id == courseId } ?: return false
         selectedCourseId = course.id
         selectedInstanceKey = course.instanceKey
         pendingAttendance = selectedCourse.attendance
         navigation.openDetail()
-    }
-
-    fun openAttendance() {
-        pendingAttendance = selectedCourse.attendance
-        pendingAttendanceScope = pageMemory.scope
-        pendingEffectiveDate = pageMemory.date
-        detailAttendanceBaseline = Triple(pendingAttendance, pendingAttendanceScope, pendingEffectiveDate)
-        feedback = null
-        open(AppScreen.ATTENDANCE)
+        return true
     }
 
     fun openCourseEdit() = navigation.openCourseEdit()
-
-    /** Nur private App-Änderung; Quell-title/schedule/location unverändert. */
-    fun updateSelectedCourseOverride(override: CourseLocalOverride) {
-        val nextCourses = courses.map { if (it.id == selectedCourseId) it.copy(localOverride = override) else it }
-        if (!commitUserData(nextCourses = nextCourses)) return
-        invalidateWritePreview()
-        feedback = message(255)
-    }
 
     fun toggleSourceStatusVisible(status: TumEventStatus) {
         visibleSourceStatuses = if (status in visibleSourceStatuses) visibleSourceStatuses - status else visibleSourceStatuses + status
@@ -394,114 +324,18 @@ class CalendarControlState(
         profile = updatedProfile.copy(displayName = updatedProfile.displayName.trim().ifBlank { UserProfile().displayName })
     }
 
-    /** Nur künftige Ausgabeerlaubnis ändern; Kalenderverbindung und Schreiben im nachfolgenden autorisierten Modul. */
-    fun setSyncDestinationEnabled(destination: SyncDestination, enabled: Boolean) {
-        invalidateWritePreview()
-        syncDestinations = syncDestinations.withEnabled(destination, enabled)
-        if (destination == SyncDestination.GOOGLE_CALENDAR && !enabled) {
-            outputWorkflow.disconnectGoogle()
-        }
-    }
-
-    /** Schalter zunächst im Bestätigungsdialog; vorher keine Berechtigung, Tokenlöschung oder Präferenzänderung. */
-    fun requestSyncDestinationChange(destination: SyncDestination, enabled: Boolean) {
-        if (syncDestinations.isEnabled(destination) == enabled) return
-        pendingSyncDestinationChange = PendingSyncDestinationChange(destination, enabled)
-    }
-
-    fun cancelSyncDestinationChange() { pendingSyncDestinationChange = null }
-
-    fun confirmSyncDestinationChange() {
-        val change = pendingSyncDestinationChange ?: return
-        pendingSyncDestinationChange = null
-        if (change.destination == SyncDestination.LOCAL_CALENDAR && change.enabled) {
-            requestLocalCalendarOutput()
-        } else {
-            setSyncDestinationEnabled(change.destination, change.enabled)
-            feedback = if (change.enabled) message(256, (change.destination.title)) else message(257, (change.destination.title))
-        }
-    }
-
     /** Berechtigung ist keine Ausgabe; erst nach Systemzustimmung künftige lokale Ausgabeerlaubnis speichern. */
-    private var permissionForCurrentWriteOnly = false
-    fun requestLocalCalendarOutput() { permissionForCurrentWriteOnly = false; localCalendarPermissionRequestPending = true }
-
-    fun requestCurrentWriteLocalPermission() { permissionForCurrentWriteOnly = true; localCalendarPermissionRequestPending = true }
-
-    fun resolveLocalCalendarPermission(granted: Boolean) {
-        localCalendarPermissionRequestPending = false
-        outputWorkflow.localCalendarPermissionGranted = granted
-        if (!permissionForCurrentWriteOnly) {
-            syncDestinations = syncDestinations.withEnabled(SyncDestination.LOCAL_CALENDAR, granted)
-            invalidateWritePreview()
-        }
-        permissionForCurrentWriteOnly = false
-        feedback = if (granted) message(258) else message(259)
-    }
-
-    /** Beim Start nur bestehende Systemrechte lesen; keine Anfragen oder Änderung der Ausgabeschalter. */
-    fun refreshLocalCalendarPermission(granted: Boolean) { outputWorkflow.localCalendarPermissionGranted = granted }
-
-    /** Formatprobleme vor Speichern anzeigen; Zustandsmaschine verbindet oder schreibt keine Kalender. */
-    fun updatePrivateSyncConfiguration(configuration: PrivateSyncConfiguration) {
-        require(configuration.validate().isEmpty()) { message(260) }
-        privateSyncConfiguration = configuration
-        invalidateWritePreview()
-    }
+    internal var permissionForCurrentWriteOnly = false
 
     fun openSyncConfiguration() = navigation.openSyncConfiguration()
 
     /** Zeitraum unabhängig vom Kontoformular; Öffnen/Speichern löst keine Netzlesung aus. */
     fun openSourceRange() = navigation.openSourceRange()
 
-    /** Hintergrundprüfung nur mit konfigurierter Quelle; Einplanung liest/schreibt keinen Kalender. */
-    fun updateSourceCheck(enabled: Boolean, cadence: SourceCheckCadence = sourceCheckSettings.cadence) {
-        if (enabled && !privateSyncConfiguration.hasTumSubscription) {
-            feedback = message(261)
-            return
-        }
-        val newlyEnabled = enabled && !sourceCheckSettings.enabled
-        sourceCheckSettings = SourceCheckSettings(enabled, cadence)
-        sourceCheckSchedulingRequested = true
-        if (newlyEnabled) notificationPermissionRequestPending = true
-        feedback = if (enabled) message(262) else message(263)
-    }
-
-    fun consumeSourceCheckSchedulingRequest() { sourceCheckSchedulingRequested = false }
-    fun consumeNotificationPermissionRequest() { notificationPermissionRequestPending = false }
-    fun resolveNotificationPermission(granted: Boolean) {
-        notificationPermissionRequestPending = false
-        if (!granted && sourceCheckSettings.enabled) feedback = message(264)
-    }
-    fun refreshSourceCheckStatus(status: SourceCheckStatus) { sourceCheckStatus = status }
-
     fun openBackgroundCheck() = navigation.openBackgroundCheck()
 
     fun openRuleBackup() = navigation.openRuleBackup()
     fun openSourceChanges() = navigation.openSourceChanges()
-
-    /** SAF-Ausgabe erst nach Dateiwahl; hier nur Oberflächenabsicht. */
-    fun requestRuleBackupExport() { ruleBackupExportRequested = true }
-    fun consumeRuleBackupExportRequest() { ruleBackupExportRequested = false }
-    fun resolveRuleBackupExport(saved: Boolean) { feedback = if (saved) message(265) else message(266) }
-
-    /** SAF-Inhalt nur als zu bestätigender Entwurf im Speicher; Regelbestand vor Bestätigung unverändert. */
-    fun requestRuleBackupImport() { ruleBackupImportRequested = true }
-    fun consumeRuleBackupImportRequest() { ruleBackupImportRequested = false }
-    fun resolveRuleBackupImport(text: String?) {
-        pendingRuleBackup = text?.let(RuleLedgerBackupCodec::decode)
-        feedback = if (pendingRuleBackup == null) message(267) else message(268)
-    }
-    fun cancelRuleBackupImport() { pendingRuleBackup = null }
-    fun confirmRuleBackupImport() {
-        val backup = pendingRuleBackup ?: return
-        val nextLedger = ruleLedger.copy(rules = backup.rules, manualEvents = backup.manualEvents, groupRules = backup.groupRules)
-        val nextCourses = projectedCourses(nextLedger)
-        if (!commitUserData(nextLedger, nextCourses)) return
-        invalidateWritePreview()
-        pendingRuleBackup = null
-        feedback = message(269)
-    }
 
     /** Nächsten Lesezeitraum speichern; aktuelle Daten, Auswahl und Kandidaten unverändert. */
     fun saveSourceOutputRange(startDate: String, endDate: String): List<String> {
@@ -620,176 +454,12 @@ class CalendarControlState(
 
     fun updateSourceBrowserFilter(filter: SourceCourseFilter) { sourceBrowserFilter = filter }
 
-    /** Neue Termine ohne Regel standardmäßig blau; gleicher Dreizustandseditor für Einzel-/Mehrfachwahl. */
-    fun sourceAttendanceFor(sourceUid: String): AttendanceState = GroupAttendanceRuleResolver
-        .materialize(ruleLedger, currentSourceOccurrences)
-        .firstOrNull { it.sourceUid == sourceUid }
-        ?.defaultState
-        ?: AttendanceState.CHOOSE_TO_ATTEND
-
-    fun openSourceAttendanceEditor(selection: Set<SourceOccurrenceIdentity> = selectedSourceOccurrences) {
-        if (selection.isEmpty()) {
-            feedback = message(283)
-            return
-        }
-        val firstState = courses.firstOrNull { it.id == selection.first().sourceUid && it.instanceKey == selection.first().instanceKey }?.attendance
-            ?: sourceAttendanceFor(selection.first().sourceUid)
-        sourceWorkflow.prepareAttendanceEditor(selection, firstState)
-        individualAttendanceMode = pageMemory.individual
-        sourceWorkflow.pendingAttendanceScope = pageMemory.scope
-        sourceWorkflow.pendingEffectiveDate = pageMemory.date
-        val selectedCourses = courses.filter { SourceOccurrenceIdentity(it.id, it.instanceKey.orEmpty()) in selection }
-        sourceWorkflow.pendingFavoriteAction = selectedCourses.map { it.isFavorite }.distinct().singleOrNull()
-            ?.let { if (it) SourceFavoriteAction.ADD else SourceFavoriteAction.REMOVE } ?: SourceFavoriteAction.KEEP
-        individualAttendanceDrafts = individualAttendanceGroups.associate { group ->
-            val members = courses.filter { SourceOccurrenceIdentity(it.id, it.instanceKey.orEmpty()) in group.selection }
-            group.key to IndividualAttendanceDraft(members.map { it.attendance }.distinct().singleOrNull(),
-                members.map { it.isFavorite }.distinct().singleOrNull()?.let { if (it) SourceFavoriteAction.ADD else SourceFavoriteAction.REMOVE } ?: SourceFavoriteAction.KEEP)
-        }
-        openedIndividualDrafts = individualAttendanceDrafts
-        sourceEditorOpened = true
-        sourceEditorChanged = false
-        sourceAttendanceChanged = false
-        sourceStateChosen = false
-        navigation.openSourceAttendance()
-    }
-
-    /** Oberflächenbereich in UID-Regeln umwandeln; Einzelterminregel verwendet Originalinstanz. */
-    fun confirmSourceAttendance() {
-        if (sourceEditorOpened && !sourceEditorChanged && (!individualAttendanceMode || individualAttendanceDrafts == openedIndividualDrafts)) {
-            rememberAttendanceOptions()
-            feedback = message(284)
-            navigation.handleBack()
-            return
-        }
-        if (individualAttendanceMode) { confirmIndividualSourceAttendance(); return }
-        if (sourceAttendanceChanged && !sourceStateChosen && openedIndividualDrafts.values.map { it.attendance }.let { it.contains(null) || it.distinct().size > 1 }) {
-            feedback = message(285)
-            return
-        }
-        val result = sourceWorkflow.applyAttendanceRules(ruleLedger, attendance = if (!sourceEditorOpened || sourceAttendanceChanged) pendingSourceAttendance else null)
-        if (result is SourceAttendanceRuleResult.Invalid) {
-            feedback = result.message
-            if (result.message.startsWith(message(286))) navigation.handleBack()
-            return
-        }
-        result as SourceAttendanceRuleResult.Applied
-        var nextCourses = projectedCourses(result.rules)
-        if (result.favoriteAction != SourceFavoriteAction.KEEP) {
-            nextCourses = nextCourses.map { course ->
-                if (course.id in result.sourceUids) course.copy(isFavorite = result.favoriteAction == SourceFavoriteAction.ADD) else course
-            }
-        }
-        if (!commitUserData(result.rules, nextCourses)) return
-        sourceWorkflow.includeInSelection(result.affectedOccurrences)
-        invalidateWritePreview()
-        rememberAttendanceOptions()
-        feedback = message(287, (selectedSourceOccurrences.size), (if (result.favoriteAction == SourceFavoriteAction.KEEP) "" else message(288)))
-        navigation.handleBack()
-    }
-
-    /** Erst nach vollständiger Prüfung atomar speichern; kein Teilzustand bei späterem Datumsfehler. */
-    private fun confirmIndividualSourceAttendance() {
-        val groups = individualAttendanceGroups
-        if (groups.isEmpty()) { feedback = message(289); return }
-        var nextLedger = ruleLedger
-        val results = mutableListOf<SourceAttendanceRuleResult.Applied>()
-        for (group in groups) {
-            val draft = individualAttendanceDrafts[group.key] ?: IndividualAttendanceDraft()
-            if (!sourceEditorChanged && draft == openedIndividualDrafts[group.key]) continue
-            val before = openedIndividualDrafts[group.key]
-            val result = sourceWorkflow.applyAttendanceRules(nextLedger, group.selection,
-                if (sourceAttendanceChanged || draft.attendance != before?.attendance) draft.attendance else null,
-                if (draft.favorite != before?.favorite) draft.favorite else SourceFavoriteAction.KEEP)
-            if (result is SourceAttendanceRuleResult.Invalid) { feedback = result.message; return }
-            result as SourceAttendanceRuleResult.Applied
-            nextLedger = result.rules
-            results += result
-        }
-        var nextCourses = projectedCourses(nextLedger)
-        results.filter { it.favoriteAction != SourceFavoriteAction.KEEP }.forEach { result ->
-            nextCourses = nextCourses.map { course -> if (course.id in result.sourceUids) course.copy(isFavorite = result.favoriteAction == SourceFavoriteAction.ADD) else course }
-        }
-        if (!commitUserData(nextLedger, nextCourses)) return
-        sourceWorkflow.includeInSelection(results.flatMap { it.affectedOccurrences }.toSet())
-        invalidateWritePreview()
-        rememberAttendanceOptions()
-        feedback = message(290, (groups.size))
-        navigation.handleBack()
-    }
-
-    fun confirmAttendance() {
-        if (detailAttendanceBaseline == Triple(pendingAttendance, pendingAttendanceScope, pendingEffectiveDate)) {
-            feedback = message(291)
-            open(AppScreen.DETAIL)
-            return
-        }
-        if (sourceCatalogLoaded && selectedCourse.instanceKey != null) {
-            val result = sourceWorkflow.applyAttendanceRules(
-                ruleLedger, setOf(SourceOccurrenceIdentity(selectedCourseId, selectedCourse.instanceKey!!)),
-                pendingAttendance, SourceFavoriteAction.KEEP, pendingAttendanceScope, pendingEffectiveDate,
-            )
-            if (result is SourceAttendanceRuleResult.Invalid) { feedback = result.message; return }
-            result as SourceAttendanceRuleResult.Applied
-            val nextCourses = projectedCourses(result.rules)
-            if (!commitUserData(result.rules, nextCourses)) return
-            pageMemory = pageMemory.copy(scope = pendingAttendanceScope, date = pendingEffectiveDate)
-            sourceWorkflow.includeInSelection(result.affectedOccurrences)
-            invalidateWritePreview()
-            feedback = message(292, (result.affectedOccurrences.size))
-            open(AppScreen.DETAIL)
-            return
-        }
-        val command = attendanceCommand() ?: return
-        val selectedRule = ruleLedger.rules.firstOrNull { it.sourceUid == selectedCourseId }
-            ?: SyncRule(selectedCourseId, hasConfirmedFixplatz = selectedCourse.hasFixedPlus, defaultState = selectedCourse.attendance)
-        val nextLedger = ruleLedger.copy(rules = RuleLedgerEditor.apply(
-            ruleLedger.rules.filterNot { it.sourceUid == selectedCourseId } + selectedRule,
-            command,
-        ))
-        val nextCourses = if (sourceCatalogLoaded) projectedCourses(nextLedger) else courses.map { if (it.id == selectedCourseId) it.copy(attendance = pendingAttendance) else it }
-        if (!commitUserData(nextLedger, nextCourses)) return
-        invalidateWritePreview()
-        feedback = message(293, (selectedCourse.displayTitle), (pendingAttendanceScope.label))
-        open(AppScreen.DETAIL)
-    }
-
-    private fun attendanceCommand(): RuleEditCommand? = when (pendingAttendanceScope) {
-        AttendanceEditScope.ALL_OCCURRENCES -> RuleEditCommand.WholeCourse(setOf(selectedCourseId), pendingAttendance)
-        AttendanceEditScope.ONLY_THIS_OCCURRENCE -> selectedCourse.instanceKey?.let {
-            RuleEditCommand.Instances(setOf(selectedCourseId), setOf(it), pendingAttendance)
-        } ?: run { feedback = message(294); null }
-        AttendanceEditScope.CURRENT_AND_FUTURE -> selectedCourse.startsAt?.let {
-            RuleEditCommand.FromOccurrence(mapOf(selectedCourseId to it), pendingAttendance)
-        } ?: run { feedback = message(294); null }
-        AttendanceEditScope.SPECIFIED_AND_FUTURE -> AttendanceEffectiveDateParser.parseOrNull(pendingEffectiveDate)
-            ?.let { RuleEditCommand.FromDate(setOf(selectedCourseId), it, pendingAttendance) }
-            ?: run { feedback = message(295); null }
-    }
-
-    fun toggleFavorite(courseId: String) {
-        val nextCourses = courses.map { course ->
-            if (course.id == courseId) course.copy(isFavorite = !course.isFavorite) else course
-        }
-        commitUserData(nextCourses = nextCourses)
-    }
-
     fun requestSync() {
         prepareCalendarWrite()
     }
 
     /** Vorbereitung nach „In Kalender schreiben“ berechnet nur Bestätigungsinformationen; kein Schreiben. */
     fun prepareCalendarWrite() = requestManagedSyncPreview()
-
-    /** Bereinigungsseite bereitet Bereich und zweite Bestätigung vor; Öffnen greift nicht auf Kalender zu. */
-    fun openOutputCleanup() {
-        if (availableManagedOutputTargets().isEmpty()) {
-            feedback = message(296)
-            return
-        }
-        managedSyncPreview = null
-        navigation.openOutputCleanup()
-    }
 
     /** Differenz aus Quelle und Regeln berechnen; keine Zielabfrage, Erstellung oder Ausgabe. */
     fun requestManagedSyncPreview() {
@@ -805,47 +475,11 @@ class CalendarControlState(
             rules = GroupAttendanceRuleResolver.materialize(ruleLedger, currentSourceOccurrences),
             manualEvents = ruleLedger.manualEvents,
             overrides = courses.associate { it.id to it.localOverride },
+            mustAttendReminder = calendarReminderMinutes,
         )
         managedSyncPreview = ManagedSyncEngine().preview(managedDesiredEvents, ruleLedger.mappings, targets)
         navigation.openManagedSyncPreview()
     }
-
-    /** Google-Autorisierung nur nach ausdrücklichem Antippen; Token bleibt nur im Prozess. */
-    fun requestGoogleAuthorization() {
-        val rejection = outputWorkflow.requestGoogleAuthorization(syncDestinations.googleCalendarEnabled || OutputTarget.GOOGLE_CALENDAR in currentWriteTargets)
-        if (rejection != null) {
-            feedback = rejection
-            return
-        }
-        feedback = googleAuthorizationDetail
-    }
-
-    fun resolveGoogleAuthorization(outcome: GoogleAuthorizationOutcome) {
-        feedback = outputWorkflow.resolveGoogleAuthorization(outcome)
-    }
-
-    /** Nur lesende Verbindungsabsicht; App-Einstieg prüft eigenes Ziel, erstellt oder schreibt nichts. */
-    fun requestGoogleConnectionCheck() {
-        outputWorkflow.requestGoogleConnectionCheck()?.let { feedback = it }
-    }
-
-    fun resolveGoogleConnectionCheck(token: Long, result: GoogleConnectionCheckResult) {
-        if (outputWorkflow.resolveGoogleConnectionCheck(token, result)) feedback = result.userSummary
-    }
-
-    /** Nur strukturiert erkannter Google-401-Pfad; Kalender, Zuordnungen und andere Ziele unverändert. */
-    fun invalidateGoogleAuthorizationAfterUnauthorized(): String {
-        val summary = outputWorkflow.invalidateGoogleAuthorization()
-        feedback = summary
-        return summary
-    }
-
-    /** Nur bereinigtes Token-Cache-Ergebnis anzeigen; keine Token, Konten oder Google-Antworten speichern. */
-    fun resolveRejectedGoogleTokenCacheClear(cleared: Boolean) {
-        outputWorkflow.resolveRejectedGoogleTokenCacheClear(cleared)?.let { feedback = it }
-    }
-
-    fun consumeGoogleAuthorizationRequest() = outputWorkflow.consumeGoogleAuthorizationRequest()
 
     /** Ausführung nur nach Nutzerbestätigung; Oberfläche erzeugt eigenes Ziel im Hintergrund und ruft Gateway auf. */
     fun requestManagedSyncExecution() {
@@ -881,57 +515,8 @@ class CalendarControlState(
         if (outputWorkflow.beginSync() != null) feedback = message(306)
     }
 
-    /** Erst nach zweiter Bestätigung; Löschobjekte über UID/Originalinstanz, niemals Anzeigetitel bestimmen. */
-    fun requestManagedRollback(scope: ManagedEventCleanupScope = ManagedEventCleanupScope.AllManagedEvents, selectedTargets: Set<OutputTarget> = availableManagedOutputTargets()) {
-        if (managedSyncInProgress) return
-        if (cleanupCatalogReadTargets.isNotEmpty()) { feedback = message(307); return }
-        if (scope is ManagedEventCleanupScope.SelectedIdentities && scope.identities.isEmpty()) {
-            feedback = message(308)
-            return
-        }
-        val targets = selectedTargets.intersect(availableManagedOutputTargets())
-        if (targets.isEmpty()) { feedback = message(309); return }
-        if (OutputTarget.LOCAL_CALENDAR in targets && !localCalendarPermissionGranted) { feedback = message(310); return }
-        if (OutputTarget.GOOGLE_CALENDAR in targets && !hasGoogleAuthorization) { feedback = message(311); return }
-        managedRollbackScope = scope
-        managedRollbackTargets = targets
-        if (outputWorkflow.beginRollback() != null) feedback = message(312)
-    }
-
-    /** Leere Kursmenge bedeutet keine Auswahl; null nur im Datumsmodus als unbegrenzte Kurswahl. */
-    fun cleanupIdentities(
-        sourceUids: Set<String>?,
-        startsOn: LocalDate?,
-        endsOn: LocalDate?,
-        targets: Set<OutputTarget> = availableManagedOutputTargets(),
-    ): Set<ManagedEventIdentity> = cleanupOccurrencesForTargets(targets).asSequence()
-        .filter { sourceUids == null || it.sourceUid in sourceUids }
-        .filter { occurrence ->
-            val localDate = occurrence.startsAt.atZone(ZoneId.of("Europe/Berlin")).toLocalDate()
-            (startsOn == null || !localDate.isBefore(startsOn)) && (endsOn == null || !localDate.isAfter(endsOn))
-        }
-        .map { ManagedEventIdentity(it.sourceUid, it.instanceKey) }
-        .toSet()
-
     /** Quelle und Schreibprotokoll vereinigen; auch abgesagte/entfallene geschriebene Termine bleiben bereinigbar. */
     val cleanupOccurrences: List<SourceCalendarOccurrence> get() = cleanupOccurrencesForTargets(availableManagedOutputTargets())
-
-    fun cleanupOccurrencesForTargets(targets: Set<OutputTarget>): List<SourceCalendarOccurrence> {
-        val written = ruleLedger.mappings.filter { it.target in targets }.mapNotNull { it.writtenEvent }.map {
-            SourceCalendarOccurrence(it.identity.sourceUid, it.identity.instanceKey, it.title, it.startsAt, it.endsAt, false, location = it.location)
-        }
-        val known = written.map { it.identity }.toSet()
-        val fallback = currentSourceOccurrences + savedSourceSnapshots.previous?.occurrences.orEmpty() + ruleLedger.manualEvents.map {
-            SourceCalendarOccurrence("manual:${(it.id)}", it.id, it.title, it.startsAt, it.endsAt, false)
-        }
-        return (written + fallback.filter { it.identity !in known }).distinct()
-    }
-
-    /** Ziele können verschiedene Zeitversionen enthalten; Datumsfilter je Ziel, keine zielübergreifende Löschwahl. */
-    fun selectedCleanupScope(sourceUids: Set<String>?, startsOn: LocalDate?, endsOn: LocalDate?, targets: Set<OutputTarget>): ManagedEventCleanupScope.SelectedIdentities {
-        val byTarget = targets.associateWith { cleanupIdentities(sourceUids, startsOn, endsOn, setOf(it)) }
-        return ManagedEventCleanupScope.SelectedIdentities(byTarget.values.flatten().toSet(), byTarget)
-    }
 
     val managedOutputTargetsForCleanup: Set<OutputTarget> get() = availableManagedOutputTargets()
 
@@ -978,28 +563,15 @@ class CalendarControlState(
     }
 
     fun openManualEvents() = navigation.openManualEvents()
-
-    /** Eigene generierte Termin-ID; Europe/Berlin-Zeiten. Eingabefehler verändern keinen Bestand. */
-    fun addManualEvent(title: String, date: String, startHour: String, startMinute: String, endHour: String, endMinute: String, attendance: AttendanceState) {
-        val item = runCatching {
-            val day = LocalDate.parse(date)
-            val start = LocalDateTime.of(day, java.time.LocalTime.of(startHour.toInt(), startMinute.toInt())).atZone(ZoneId.of("Europe/Berlin")).toInstant()
-            val end = LocalDateTime.of(day, java.time.LocalTime.of(endHour.toInt(), endMinute.toInt())).atZone(ZoneId.of("Europe/Berlin")).toInstant()
-            require(end.isAfter(start))
-            ManualScheduleItem(UUID.randomUUID().toString(), title.trim().ifBlank { error(message(315)) }, start, end, attendance)
-        }.getOrElse { feedback = message(316); return }
-        val nextLedger = ruleLedger.copy(manualEvents = ManualScheduleEditor().upsert(ruleLedger.manualEvents, item))
-        if (!commitUserData(nextLedger)) return
-        invalidateWritePreview()
-        feedback = message(317)
-    }
-
-    fun removeManualEvent(itemId: String) {
-        val nextLedger = ruleLedger.copy(manualEvents = ManualScheduleEditor().remove(ruleLedger.manualEvents, itemId))
-        if (!commitUserData(nextLedger)) return
-        invalidateWritePreview()
-        feedback = message(318)
-    }
+    /** Vorgewählte Art beim nächsten Öffnen der Campustermine (Einstiege wie „Prüfung hinzufügen“). */
+    var manualEventsInitialKind by mutableStateOf(ManualEventKind.NORMAL)
+    /** Widget, das die Widget-Seite beim Öffnen bearbeitet (aus der Einrichtung); null = erstes platziertes. */
+    var editingWidgetId by mutableStateOf<Int?>(null)
+    /** Erinnerung beim Schreiben (CalendarReminderPreferences): null = nicht verwaltet, NO_REMINDER oder Minuten. */
+    var calendarReminderMinutes by mutableStateOf<Int?>(null)
+        internal set
+    /** Entwurf aus geteiltem Text für das Formular der Campustermine; das Formular übernimmt und leert ihn. */
+    var manualEventDraft by mutableStateOf<com.tequila.tumcalendarcontrol.sync.ManualEventDraft?>(null)
 
     /** Hierarchische Rückkehr innerhalb der App; nur Hauptseite übergibt Beenden an das System. */
     fun handleBack(): Boolean = navigation.handleBack()
@@ -1012,7 +584,7 @@ class CalendarControlState(
     }
 
     /** Gespeicherte Ziel-ID erlaubt Bereinigung alter App-markierter Termine; keine Inhaltsanalyse oder Zielerstellung. */
-    private fun availableManagedOutputTargets(): Set<OutputTarget> = buildSet {
+    internal fun availableManagedOutputTargets(): Set<OutputTarget> = buildSet {
         addAll(ruleLedger.mappings.map(StoredEventMapping::target))
         if (privateSyncConfiguration.localCalendarId.isNotBlank()) add(OutputTarget.LOCAL_CALENDAR)
         if (privateSyncConfiguration.googleCalendarId.isNotBlank()) add(OutputTarget.GOOGLE_CALENDAR)
@@ -1035,26 +607,11 @@ class CalendarControlState(
         courses.forEach { savedCoursePresentations[it.id] = CoursePresentation(it.isFavorite, it.localOverride) }
     }
 
-    private fun invalidateWritePreview() {
+    internal fun invalidateWritePreview() {
         if (managedSyncInProgress) { previewChangedDuringWrite = true; return }
         previewChangedDuringWrite = false
         managedSyncPreview = null
         managedDesiredEvents = emptyList()
     }
 
-}
-
-enum class AttendanceEditScope(val label: String, val description: String) {
-    ALL_OCCURRENCES(message(319), message(320)),
-    ONLY_THIS_OCCURRENCE(message(321), message(322)),
-    CURRENT_AND_FUTURE(message(323), message(324)),
-    SPECIFIED_AND_FUTURE(message(325), message(326)),
-}
-
-internal fun AppScreen.primaryIndex(): Int? = when (this) {
-    AppScreen.OVERVIEW -> 0
-    AppScreen.SEARCH -> 1
-    AppScreen.FAVORITES -> 2
-    AppScreen.SETTINGS -> 3
-    else -> null
 }

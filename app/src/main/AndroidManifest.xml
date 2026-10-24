@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Android 16 „Live-Updates“: Live-Kursbenachrichtigung als Statusleisten-Chip (vom Nutzer genehmigt, 2026-10-24). -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
@@ -16,9 +18,22 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TumCalendarControl">
+        <!-- Öffentliche Deeplinks tumcal://… (nur Navigation, siehe AppEntryIntents.parseUri); geteilter Text -> Entwurf eines Campustermins. -->
         <activity
             android:name=".MainActivity"
-            android:exported="true" />
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tumcal" />
+            </intent-filter>
+            <intent-filter android:label="@string/msg_0949">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
         <!-- Startsymbole als Aliasse: genau einer ist aktiv (Standard Glasblau); Auswahl unter Einstellungen → Darstellung. -->
         <activity-alias
             android:name=".LauncherGlass"
@@ -124,6 +139,76 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/schedule_widget_large_info" />
+        </receiver>
+        <!-- Stundenplan-Widget: Kalenderwoche als Raster nach Uhrzeit; nur Anzeige geschriebener Termine. -->
+        <receiver
+            android:name=".widget.ScheduleWidgetGrid"
+            android:exported="true"
+            android:label="@string/msg_0913">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/grid_widget_info" />
+        </receiver>
+        <!-- Widget „Morgen“: Kurse des nächsten Tages; nur Anzeige geschriebener Termine. -->
+        <receiver
+            android:name=".widget.ScheduleWidgetTomorrow"
+            android:exported="true"
+            android:label="@string/msg_0918">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/tomorrow_widget_info" />
+        </receiver>
+        <!-- Live-Kursbenachrichtigung: eigener Wecker sowie Zeit-/Zeitzonen-/Sprachwechsel; nicht exportiert. -->
+        <receiver
+            android:name=".notify.ClassLiveReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+        </receiver>
+        <!-- Countdown-Widget: Prüfungen und Fristen aus eigenen Terminen; Systemereignisse lösen Neuzeichnen aus. -->
+        <receiver
+            android:name=".widget.ScheduleWidgetCountdown"
+            android:exported="true"
+            android:label="@string/msg_0857">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/countdown_widget_info" />
+        </receiver>
+        <!-- Widget „Auf Änderungen prüfen“ (ersetzt die Schnelleinstellung): nur lesende Prüfung bzw. Seite der Hintergrundprüfung. -->
+        <receiver
+            android:name=".widget.ScheduleWidgetCheck"
+            android:exported="true"
+            android:label="@string/msg_0873">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/check_widget_info" />
         </receiver>
         <!-- Widget-Einrichtung: bestätigt sofort und öffnet die gemeinsamen Widget-Einstellungen in der App. -->
         <activity

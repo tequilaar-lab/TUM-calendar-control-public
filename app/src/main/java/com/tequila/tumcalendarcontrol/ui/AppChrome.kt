@@ -1,6 +1,7 @@
 /*
  * Aufgabe: Seitenrahmen rendern: Kopf (Marke, gläserne Zurück-Schaltfläche oder Profil, englische Kleinbeschriftung, Titel),
- *   Hauptseitenanimation, Inhaltsebene als Glasquelle und schwebende Glasnavigation.
+ *   Hauptseitenanimation, Inhaltsebene als Glasquelle und schwebende Glasnavigation; auf breiten Fenstern Liste und
+ *   Kursdetails nebeneinander (TwoPaneLayout).
  * Ein-/Ausgabe: Navigation und bestehender Zustand -> fester Compose-Rahmen mit Animationen.
  * Nebenwirkungen: Keine externen Aktionen; reine Darstellung und bestehende Aufrufrückmeldung.
  * Nicht zuständig: Seiteninhalte, Android-Berechtigungs-/Datei-/Netzwerkkoordination, iCal-Lesen, Google-Autorisierung oder Kalenderausgabe.
@@ -12,6 +13,7 @@ import com.tequila.tumcalendarcontrol.i18n.message
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.offset
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.animation.SizeTransform
 import com.tequila.tumcalendarcontrol.ui.design.DesignMotion
 import androidx.compose.runtime.remember
@@ -144,23 +146,30 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                             ),
                         ),
                 ) {
-                    AnimatedContent(
-                        targetState = contentScreen,
-                        transitionSpec = {
-                            // Hereinkommen mit Abbremskurve, alte Seite schneller ausblenden (DesignMotion).
-                            val enter = DesignMotion.enter<androidx.compose.ui.unit.IntOffset>()
-                            val leave = DesignMotion.exit<androidx.compose.ui.unit.IntOffset>()
-                            when (state.navigationDirection) {
-                                NavigationDirection.FORWARD -> (slideInHorizontally(enter) { it } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { -it / 3 } + fadeOut(DesignMotion.exit()))
-                                NavigationDirection.BACKWARD -> (slideInHorizontally(enter) { -it / 3 } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { it } + fadeOut(DesignMotion.exit()))
-                                // Profil (Knopf oben rechts) kommt wie eine Unterseite von rechts und verlässt nach rechts (Rückmeldung vom Gerät).
-                                NavigationDirection.PROFILE_ENTER -> (slideInHorizontally(enter) { it } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { -it / 3 } + fadeOut(DesignMotion.exit()))
-                                NavigationDirection.PROFILE_EXIT -> (slideInHorizontally(enter) { -it / 3 } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { it } + fadeOut(DesignMotion.exit()))
-                            }
-                        },
-                        label = message(139),
-                    ) { screen ->
-                        savedPages.SaveableStateProvider(screen.name) { AppScreenContent(state, screen) }
+                    // Breites Fenster: Liste und Details nebeneinander; Liste -> Details wechselt dann ohne Seitenübergang.
+                    // Inhaltsbreite wie bei der breiten Übersicht (CourseIndexPage, 700 dp); innen auf HONOR rund 820 dp.
+                    BoxWithConstraints {
+                        val widthDp = maxWidth.value.toInt()
+                        val paneKey = twoPaneListScreen(contentScreen, widthDp, state.detailOrigin) ?: contentScreen
+                        AnimatedContent(
+                            targetState = paneKey,
+                            transitionSpec = {
+                                // Hereinkommen mit Abbremskurve, alte Seite schneller ausblenden (DesignMotion).
+                                val enter = DesignMotion.enter<androidx.compose.ui.unit.IntOffset>()
+                                val leave = DesignMotion.exit<androidx.compose.ui.unit.IntOffset>()
+                                when (state.navigationDirection) {
+                                    NavigationDirection.FORWARD -> (slideInHorizontally(enter) { it } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { -it / 3 } + fadeOut(DesignMotion.exit()))
+                                    NavigationDirection.BACKWARD -> (slideInHorizontally(enter) { -it / 3 } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { it } + fadeOut(DesignMotion.exit()))
+                                    // Profil (Knopf oben rechts) kommt wie eine Unterseite von rechts und verlässt nach rechts (Rückmeldung vom Gerät).
+                                    NavigationDirection.PROFILE_ENTER -> (slideInHorizontally(enter) { it } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { -it / 3 } + fadeOut(DesignMotion.exit()))
+                                    NavigationDirection.PROFILE_EXIT -> (slideInHorizontally(enter) { -it / 3 } + fadeIn(DesignMotion.enter())) togetherWith (slideOutHorizontally(leave) { it } + fadeOut(DesignMotion.exit()))
+                                }
+                            },
+                            label = message(139),
+                        ) { screen ->
+                            if (twoPaneListScreen(screen, widthDp, state.detailOrigin) == screen) TwoPaneContent(state, screen, savedPages)
+                            else savedPages.SaveableStateProvider(screen.name) { AppScreenContent(state, screen) }
+                        }
                     }
                 }
                 // Scrollkante: Inhalt läuft unter dem Kopf weich aus statt hart abgeschnitten.

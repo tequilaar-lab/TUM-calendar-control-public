@@ -15,7 +15,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
+import com.tequila.tumcalendarcontrol.sync.WriteTimingLog
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -59,6 +61,7 @@ fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {})
     var hapticSettings by remember { mutableStateOf(hapticPreferences.load()) }
     val courseTypeNamesPreferences = remember(context) { CourseTypeNamesPreferences(context) }
     val syncDestinationPreferences = remember(context) { SyncDestinationPreferences(context) }
+    val calendarReminderPreferences = remember(context) { com.tequila.tumcalendarcontrol.sync.CalendarReminderPreferences(context) }
     val privateSyncConfigurationStore = remember(context) { PrivateSyncConfigurationStore(context) }
     val ruleLedgerPreferences = remember(context) { RuleLedgerPreferences(context) }
     val courseOverridePreferences = remember(context) { CourseOverridePreferences(context) }
@@ -87,7 +90,12 @@ fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {})
             initialCoursePresentations = courseOverridePreferences.loadPresentations(),
             initialSourceSnapshots = initialSourceSnapshots,
             userDataPersistence = userDataPersistence,
-        ).also { it.courseTypeNames = courseTypeNamesPreferences.load(); it.restorePageMemory(pageMemoryPreferences.load()); session.state = it }
+        ).also {
+            it.courseTypeNames = courseTypeNamesPreferences.load()
+            it.calendarReminderMinutes = calendarReminderPreferences.load()
+            it.restorePageMemory(pageMemoryPreferences.load())
+            session.state = it
+        }
     }
     var privateConfigurationInitialized by remember { mutableStateOf(false) }
     val localCalendarPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
@@ -123,12 +131,7 @@ fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {})
     }
     LaunchedEffect(state.profile) { profilePreferences.save(state.profile) }
     LaunchedEffect(entry) {
-        when (entry) {
-            AppEntry.SourceRange -> state.openSourceRange()
-            is AppEntry.Course -> state.openCourse(entry.courseId)
-            AppEntry.WidgetSettings -> state.open(AppScreen.WIDGETS)
-            null -> return@LaunchedEffect
-        }
+        state.applyEntry(entry ?: return@LaunchedEffect)
         onEntryHandled()
     }
     LaunchedEffect(state.persistedPageMemory) {
@@ -138,6 +141,7 @@ fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {})
     LaunchedEffect(state.appearanceSettings) { appearancePreferences.save(state.appearanceSettings) }
     LaunchedEffect(state.courseTypeNames) { courseTypeNamesPreferences.save(state.courseTypeNames) }
     LaunchedEffect(state.syncDestinations) { syncDestinationPreferences.save(state.syncDestinations) }
+    LaunchedEffect(state.calendarReminderMinutes) { calendarReminderPreferences.save(state.calendarReminderMinutes) }
     LaunchedEffect(state.privateSyncConfiguration) {
         if (privateConfigurationInitialized) runCatching { privateSyncConfigurationStore.save(state.privateSyncConfiguration) }
             .onFailure { state.feedback = message(217) }
@@ -232,10 +236,13 @@ fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {})
         val mainHandler = Handler(Looper.getMainLooper())
         val control = if (rollback) null else state.writeProgress.begin { update -> mainHandler.post(update) }
         Thread {
+            val startedAt = SystemClock.elapsedRealtime()
             val outcome = runCatching {
                 if (rollback) platformManagedSyncRunner.rollback(mappings, targets, configuration, googleToken, state.currentManagedCleanupScope())
                 else platformManagedSyncRunner.execute(desired, mappings, targets, configuration, googleToken, control!!)
             }
+            // Nur Dauer und Zähler (keine Inhalte), um die Schreibgeschwindigkeit auf dem Gerät zu messen.
+            outcome.onSuccess { Log.i(WriteTimingLog.TAG, WriteTimingLog.line(it.result, SystemClock.elapsedRealtime() - startedAt, rollback)) }
             Handler(Looper.getMainLooper()).post {
                 outcome.onSuccess {
                     state.resolveManagedOperation(token, it.result, it.configuration)

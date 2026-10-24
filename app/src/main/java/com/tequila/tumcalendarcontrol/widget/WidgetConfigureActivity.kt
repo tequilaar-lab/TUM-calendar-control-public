@@ -20,7 +20,8 @@ class WidgetConfigureActivity : Activity() {
         val id = intent?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID) ?: AppWidgetManager.INVALID_APPWIDGET_ID
         // Einrichtung ist optional: sofort bestätigen, damit das Widget auch ohne Änderung platziert bleibt.
         setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id))
-        startActivity(AppEntryIntents.intent(this, AppEntry.WidgetSettings))
+        // Gleich dieses Widget bearbeiten (eigene Einstellungen und passende Vorschau).
+        startActivity(AppEntryIntents.intent(this, AppEntry.WidgetSettings(id.takeIf { it != AppWidgetManager.INVALID_APPWIDGET_ID })))
         ScheduleWidgets.refreshAll(this)
         finish()
     }

@@ -1,0 +1,5 @@
+<!-- Aufgabe: Tagesspalte des Stundenplan-Widgets: Wochentag/Datum und nebeneinanderliegende Spuren für überlappende Termine; reine Darstellungsressource ohne Daten oder Aktionen. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/grid_day_root" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="2dp" android:orientation="vertical">
+    <TextView android:id="@+id/grid_day_label" android:layout_width="match_parent" android:layout_height="16dp" android:gravity="center" android:textSize="10sp" android:textColor="@color/widget_muted" android:singleLine="true" android:ellipsize="end" />
+    <LinearLayout android:id="@+id/grid_day_lanes" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" />
+</LinearLayout>

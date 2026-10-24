@@ -814,7 +814,7 @@
     <string name="msg_0808" formatted="false">"d."</string>
     <string name="msg_0810" formatted="false">"{0} weitere"</string>
     <string name="msg_0811" formatted="false">"Startbildschirm-Widgets"</string>
-    <string name="msg_0812" formatted="false">"Jede Größe hat ihren Schwerpunkt: klein zeigt, wohin es jetzt geht, mittel den heutigen Tag, groß die Woche. Es erscheinen nur bereits in den Kalender geschriebene Termine."</string>
+    <string name="msg_0812" formatted="false">"Jedes Widget hat seinen Schwerpunkt: „Nächster Termin“, „Heute“, „Morgen“, „Diese Woche“ und „Stundenplan“ zeigen bereits geschriebene Termine; „Countdown“ zeigt Prüfungen und Fristen; „Auf Änderungen prüfen“ zeigt die letzte Quellenprüfung."</string>
     <string name="msg_0813" formatted="false">"Widgets zeigen Kursnamen und Räume auf dem Startbildschirm."</string>
     <string name="msg_0814" formatted="false">"Inhalt"</string>
     <string name="msg_0815" formatted="false">"Grau ausblenden (nicht mehr teilnehmen)"</string>
@@ -836,7 +836,121 @@
     <string name="msg_0832" formatted="false">"Zum Startbildschirm hinzufügen"</string>
     <string name="msg_0833" formatted="false">"Höhe: Widget auf dem Startbildschirm lange drücken und den Rand ziehen; der Inhalt passt sich der Höhe an."</string>
     <string name="msg_0834" formatted="false">"Dieser Startbildschirm kann Widgets nicht von hier hinzufügen; bitte über die Widget-Liste hinzufügen."</string>
-    <string name="msg_0835" formatted="false">"Nächster Termin, heute und Woche"</string>
+    <string name="msg_0835" formatted="false">"Nächster Termin, Heute, Morgen, Woche, Stundenplan, Countdown, Prüfen"</string>
     <string name="msg_0836" formatted="false">"Die Vorschau verwendet Beispieltermine, nicht deine Daten."</string>
     <string name="msg_0809" formatted="false">"d. MMM"</string>
+    <string name="msg_0837" formatted="false">"Termin"</string>
+    <string name="msg_0838" formatted="false">"Prüfung"</string>
+    <string name="msg_0839" formatted="false">"Frist"</string>
+    <string name="msg_0840" formatted="false">"Art"</string>
+    <string name="msg_0841" formatted="false">"Fällig Std."</string>
+    <string name="msg_0842" formatted="false">"Fällig Min."</string>
+    <string name="msg_0843" formatted="false">"Fällig {0} (Europe/Berlin)"</string>
+    <string name="msg_0844" formatted="false">"Fristen erscheinen im Kalender als die 30 Minuten vor der Fälligkeit."</string>
+    <string name="msg_0845" formatted="false">"noch {0} Tage"</string>
+    <string name="msg_0846" formatted="false">"noch {0} Std."</string>
+    <string name="msg_0847" formatted="false">"noch {0} Min."</string>
+    <string name="msg_0848" formatted="false">"Läuft"</string>
+    <string name="msg_0849" formatted="false">"Demnächst"</string>
+    <string name="msg_0850" formatted="false">"Tage"</string>
+    <string name="msg_0851" formatted="false">"Std."</string>
+    <string name="msg_0852" formatted="false">"Min."</string>
+    <string name="msg_0853" formatted="false">"{0} weitere"</string>
+    <string name="msg_0854" formatted="false">"Noch keine Prüfungen oder Fristen"</string>
+    <string name="msg_0855" formatted="false">"Zum Hinzufügen antippen."</string>
+    <string name="msg_0857" formatted="false">"Countdown"</string>
+    <string name="msg_0858" formatted="false">"Countdown bis zu Prüfungen und Fristen"</string>
+    <string name="msg_0860" formatted="false">"Prüfungen anzeigen"</string>
+    <string name="msg_0861" formatted="false">"Fristen anzeigen"</string>
+    <string name="msg_0862" formatted="false">"Angeheftet"</string>
+    <string name="msg_0863" formatted="false">"Automatisch · nächstes"</string>
+    <string name="msg_0864" formatted="false">"Hintergrund und Ecken wie bei den anderen Widgets."</string>
+    <string name="msg_0865" formatted="false">"Neu lesen"</string>
+    <string name="msg_0866" formatted="false">"Kursdaten neu lesen"</string>
+    <string name="msg_0867" formatted="false">"Prüfung hinzufügen"</string>
+    <string name="msg_0868" formatted="false">"Prüfung oder Frist hinzufügen"</string>
+    <string name="msg_0869" formatted="false">"Ausgabe prüfen"</string>
+    <string name="msg_0870" formatted="false">"Kalenderausgabe prüfen"</string>
+    <string name="msg_0871" formatted="false">"Widgets"</string>
+    <string name="msg_0872" formatted="false">"Widget-Einstellungen"</string>
+    <string name="msg_0873" formatted="false">"Auf Änderungen prüfen"</string>
+    <string name="msg_0874" formatted="false">"Prüfung gestartet"</string>
+    <string name="msg_0875" formatted="false">"Zuletzt {0}"</string>
+    <string name="msg_0876" formatted="false">"Aus"</string>
+    <string name="msg_0877" formatted="false">"„{0}“ zum Startbildschirm hinzufügen"</string>
+    <string name="msg_0878" formatted="false">"Zu bearbeitendes Widget"</string>
+    <string name="msg_0879" formatted="false">"Standard für neue Widgets"</string>
+    <string name="msg_0881" formatted="false">"etwa {0}×{1} dp"</string>
+    <string name="msg_0882" formatted="false">"Blockgröße"</string>
+    <string name="msg_0883" formatted="false">"Quadratisch (kürzere Seite)"</string>
+    <string name="msg_0884" formatted="false">"Breite {0} %"</string>
+    <string name="msg_0885" formatted="false">"Höhe {0} %"</string>
+    <string name="msg_0886" formatted="false">"Legt die Blockgröße innerhalb der Zellen fest (mittig); die Zellenzahl ändert man auf dem Startbildschirm durch langes Drücken und Ziehen."</string>
+    <string name="msg_0887" formatted="false">"Noch keine Widgets dieser App auf dem Startbildschirm."</string>
+    <string name="msg_0888" formatted="false">"Prüfen"</string>
+    <string name="msg_0889" formatted="false">"Zuletzt {0} · {1}"</string>
+    <string name="msg_0890" formatted="false">"unverändert"</string>
+    <string name="msg_0891" formatted="false">"Änderungen"</string>
+    <string name="msg_0892" formatted="false">"fehlgeschlagen"</string>
+    <string name="msg_0893" formatted="false">"Ausgangsstand gespeichert"</string>
+    <string name="msg_0894" formatted="false">"zuerst Quelle einrichten"</string>
+    <string name="msg_0895" formatted="false">"noch nie geprüft"</string>
+    <string name="msg_0896" formatted="false">"Prüft…"</string>
+    <string name="msg_0897" formatted="false">"Hintergrundprüfung aus – zum Einrichten antippen"</string>
+    <string name="msg_0898" formatted="false">"Zeigt die letzte Prüfung; antippen prüft die Kursquelle sofort (nur lesen)"</string>
+    <string name="msg_0899" formatted="false">"Morgen"</string>
+    <string name="msg_0900" formatted="false">"Systemaussehen folgen"</string>
+    <string name="msg_0901" formatted="false">"Ecken nach Systemwert, Block mit den Rändern der Systemkarten (gemessen auf dem HONOR-Startbildschirm). Ausschalten stellt die manuellen Werte unten wieder her."</string>
+    <string name="msg_0902" formatted="false">"Systemradius {0} dp"</string>
+    <string name="msg_0903" formatted="false">"Das System liefert keinen Radius; die manuelle Ecke unten gilt"</string>
+    <string name="msg_0904" formatted="false">"Vom Systemaussehen bestimmt"</string>
+    <string name="msg_0905" formatted="false">"Dieses Widget ist länglich: Quadrat nimmt die kürzere Seite, Aufziehen in die Länge wirkt daher nicht"</string>
+    <string name="msg_0906" formatted="false">"Dieser Kurs ist nicht im aktuellen Kursverzeichnis; die Startseite wurde geöffnet"</string>
+    <string name="msg_0907" formatted="false">"Kurzname im Widget"</string>
+    <string name="msg_0908" formatted="false">"Für die Widgets „Woche“ und „Stundenplan“, in anderen Widgets in deren Einstellungen einschaltbar; höchstens 16 Zeichen, leer = voller Name. Nur auf diesem Gerät gespeichert, nie in den Kalender geschrieben."</string>
+    <string name="msg_0909" formatted="false">"Kurznamen der Kurse"</string>
+    <string name="msg_0910" formatted="false">"Kurse in den Widgets „Woche“ und „Stundenplan“; wird beim Tippen gespeichert, leer zeigt den vollen Namen. Andere Kurse auf der Bearbeitungsseite des Kurses."</string>
+    <string name="msg_0911" formatted="false">"Nach dem Schreiben in den Kalender erscheinen hier die Kurse des Widgets „Woche“."</string>
+    <string name="msg_0912" formatted="false">"+{0} weitere Tage"</string>
+    <string name="msg_0913" formatted="false">"Stundenplan"</string>
+    <string name="msg_0914" formatted="false">"Wochenstundenplan nach Uhrzeit, Kursblöcke nach Teilnahme gefärbt"</string>
+    <string name="msg_0915" formatted="false">"Stundenplan · {0}–{1}"</string>
+    <string name="msg_0916" formatted="false">"Diese Woche keine Kurse"</string>
+    <string name="msg_0917" formatted="false">"+{0} weitere"</string>
+    <string name="msg_0918" formatted="false">"Morgen"</string>
+    <string name="msg_0919" formatted="false">"Kurse von morgen: erster Beginn, Raum und Anzahl"</string>
+    <string name="msg_0920" formatted="false">"Morgen · {0}"</string>
+    <string name="msg_0921" formatted="false">"Morgen · {0} Kurse"</string>
+    <string name="msg_0922" formatted="false">"Morgen keine Kurse"</string>
+    <string name="msg_0923" formatted="false">"Nächster Kurs: {0}"</string>
+    <string name="msg_0924" formatted="false">"Live-Kursbenachrichtigung"</string>
+    <string name="msg_0925" formatted="false">"Hinweis vor dem Kurs, Restzeit in der Statusleiste"</string>
+    <string name="msg_0926" formatted="false">"Live-Kursbenachrichtigung einschalten"</string>
+    <string name="msg_0927" formatted="false">"Erinnert vor Pflichtkursen, zeigt während des Kurses die Restzeit und verschwindet danach. Nutzt „Live-Updates“ von Android 16: Standard-Android zeigt sie als Chip in der Statusleiste; ob die HONOR-Kapsel sie zeigt, hängt vom System ab. Ungenaue Wecker: der Hinweis erscheint bis zu 10 Minuten früher als eingestellt."</string>
+    <string name="msg_0928" formatted="false">"Vorlauf"</string>
+    <string name="msg_0929" formatted="false">"{0} Min."</string>
+    <string name="msg_0930" formatted="false">"Auch für frei gewählte Kurse"</string>
+    <string name="msg_0931" formatted="false">"Als Nächstes {0}: {1}"</string>
+    <string name="msg_0932" formatted="false">"Läuft: {0}"</string>
+    <string name="msg_0933" formatted="false">"{0} · bis {1}"</string>
+    <string name="msg_0934" formatted="false">"bis {0}"</string>
+    <string name="msg_0935" formatted="false">"Karte"</string>
+    <string name="msg_0936" formatted="false">"Live-Kurse"</string>
+    <string name="msg_0937" formatted="false">"Das System erlaubt Live-Updates"</string>
+    <string name="msg_0938" formatted="false">"Das System erlaubt keine Live-Updates; es erscheint eine normale dauerhafte Benachrichtigung"</string>
+    <string name="msg_0939" formatted="false">"Für die Live-Kursbenachrichtigung ist die Benachrichtigungsberechtigung nötig"</string>
+    <string name="msg_0940" formatted="false">"{0}: {1}"</string>
+    <string name="msg_0941" formatted="false">"+{0} weitere Kurse"</string>
+    <string name="msg_0942" formatted="false">"Kurznamen anzeigen (sonst voller Name)"</string>
+    <string name="msg_0943" formatted="false">"Beispielkurs"</string>
+    <string name="msg_0944" formatted="false">"Test-Live-Benachrichtigung senden"</string>
+    <string name="msg_0945" formatted="false">"Die Testbenachrichtigung wurde zum Live-Update hochgestuft und sollte als Statusleisten-Chip erscheinen (HONOR: Kapsel)"</string>
+    <string name="msg_0946" formatted="false">"Die Testbenachrichtigung wurde nicht hochgestuft (Systemversion oder Einstellung); sie erscheint als normale dauerhafte Benachrichtigung"</string>
+    <string name="msg_0947" formatted="false">"Die Testbenachrichtigung verschwindet nach 2 Minuten und zeigt Beispielinhalte"</string>
+    <string name="msg_0948" formatted="false">"Aus dem geteilten Text ausgefüllt; bitte prüfen und hinzufügen"</string>
+    <string name="msg_0949" formatted="false">"Neuer Campustermin"</string>
+    <string name="msg_0950" formatted="false">"Links einen Kurs wählen, um Details zu sehen"</string>
+    <string name="msg_0951" formatted="false">"Erinnerung beim Schreiben"</string>
+    <string name="msg_0952" formatted="false">"Fügt Pflichtkursen im Kalender eine Systemerinnerung hinzu, damit die Kalender-App (z. B. HONOR-Kalender) vor dem Kurs erinnert. Nach einer Änderung aktualisiert der nächste Schreibvorgang die geschriebenen Kurse einmal (in der Vorschau sichtbar); nur der eigene Kalender der App wird geändert."</string>
+    <string name="msg_0953" formatted="false">"Keine Erinnerung"</string>
 </resources>

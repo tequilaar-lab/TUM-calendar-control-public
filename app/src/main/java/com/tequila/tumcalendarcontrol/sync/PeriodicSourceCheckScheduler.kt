@@ -9,6 +9,8 @@ package com.tequila.tumcalendarcontrol.sync
 import android.content.Context
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequest
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
@@ -32,5 +34,15 @@ class PeriodicSourceCheckScheduler(context: Context) {
 
     fun cancel() = workManager.cancelUniqueWork(UNIQUE_WORK_NAME)
 
-    companion object { const val UNIQUE_WORK_NAME = "tum_private_source_read_only_check" }
+    /** Einmalige lesende Prüfung sofort (Schnelleinstellung); der Worker prüft selbst, ob die Prüfung aktiviert ist. */
+    fun runOnceNow() {
+        val request = OneTimeWorkRequest.Builder(PeriodicSourceCheckWorker::class.java)
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()).build()
+        workManager.enqueueUniqueWork(ONCE_WORK_NAME, ExistingWorkPolicy.KEEP, request)
+    }
+
+    companion object {
+        const val UNIQUE_WORK_NAME = "tum_private_source_read_only_check"
+        const val ONCE_WORK_NAME = "tum_private_source_read_only_check_once"
+    }
 }

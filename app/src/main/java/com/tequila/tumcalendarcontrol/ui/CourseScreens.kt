@@ -1,7 +1,8 @@
 /*
  * Aufgabe: Kursseiten verdrahten: Übersicht, Suche und Favoriten (über CourseBrowsePages) sowie Details und lokale Bearbeitung.
  * Ein-/Ausgabe: CalendarControlState-Projektion und Rückrufe -> scrollbare Kursseiten im neuen Erscheinungsbild.
- * Nebenwirkungen: Keine externen Aktionen; nur bestehende Zustands- und Navigationsaufrufe.
+ * Nebenwirkungen: Keine externen Aktionen; nur bestehende Zustands- und Navigationsaufrufe sowie der private
+ *   Kurzname fürs Widget „Woche“ (CourseShortNames, nie Kalenderausgabe).
  * Nicht zuständig: Seitenrouting, Teilnahmeregelbearbeitung, Einstellungs-/Ausgabeseiten oder Android-Koordination.
  */
 package com.tequila.tumcalendarcontrol.ui
@@ -19,9 +20,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.domain.Course
+import com.tequila.tumcalendarcontrol.widget.CourseShortNames
 import com.tequila.tumcalendarcontrol.domain.CourseLocalOverride
 import com.tequila.tumcalendarcontrol.domain.CourseMeetingTime
 import com.tequila.tumcalendarcontrol.domain.CourseWeekday
@@ -97,6 +100,14 @@ internal fun CourseEditScreen(state: CalendarControlState) {
     val course = state.selectedCourse
     var title by rememberSaveable(course.id, course.instanceKey, course.localOverride) { mutableStateOf(course.localOverride.title.orEmpty()) }
     var location by rememberSaveable(course.id, course.instanceKey, course.localOverride) { mutableStateOf(course.localOverride.location.orEmpty()) }
+    // Kurzname fürs Widget „Woche“: eigener Speicher je Quell-UID, getrennt von den lokalen Anzeigeänderungen.
+    val context = LocalContext.current
+    val shortNames = remember(context) { CourseShortNames(context) }
+    // Eigener Kurzname, sonst der eines geschriebenen Termins gleichen Titels (TUM: je Woche eigene UIDs).
+    var shortName by rememberSaveable(course.id) {
+        val written = runCatching { com.tequila.tumcalendarcontrol.widget.ScheduleWidgetModel.eventsFrom(state.ruleLedger.mappings) }.getOrDefault(emptyList())
+        mutableStateOf(CourseShortNames.resolve(shortNames.load(), written)[course.id] ?: shortNames.get(course.id))
+    }
     val sourceStart = course.startsAt?.atZone(java.time.ZoneId.of("Europe/Berlin"))
     val sourceEnd = course.endsAt?.atZone(java.time.ZoneId.of("Europe/Berlin"))
     val seedWeekday = course.localOverride.meetingTime?.weekday ?: sourceStart?.let { CourseWeekday.entries[it.dayOfWeek.value - 1] } ?: CourseWeekday.MONDAY
@@ -119,6 +130,7 @@ internal fun CourseEditScreen(state: CalendarControlState) {
             validation = message(353)
             return@save
         }
+        shortNames.set(course.id, shortName)
         state.updateSelectedCourseOverride(CourseLocalOverride(title.ifBlank { null }, location = location.ifBlank { null }, meetingTime = time))
         state.handleBack()
     }
@@ -126,6 +138,9 @@ internal fun CourseEditScreen(state: CalendarControlState) {
         DesignNote(tr(message(343)), tr(message(344)))
         DesignField(tr(message(345, course.title)), title, { title = it }, Modifier.testTag("edit-title"))
         DesignField(tr(message(346, course.location)), location, { location = it }, Modifier.testTag("edit-location"))
+        DesignField(tr(message(907)), shortName, { shortName = it.take(CourseShortNames.MAX_LENGTH) }, Modifier.testTag("edit-short-name"))
+        ShortNameSuggestions(course.title, shortName, Modifier.testTag("edit-short-suggest")) { shortName = it }
+        DesignText(tr(message(908)), 12, Modifier.padding(horizontal = 4.dp), muted = true)
         // Freier Text auf der Titellinie (4 dp innerhalb der Blockkanten).
         DesignSection(tr(message(347)), Modifier.padding(start = 4.dp))
         DesignChips(CourseWeekday.entries.map { tr(it.label) }, weekday.ordinal, Modifier.testTag("edit-weekday")) { weekday = CourseWeekday.entries[it] }

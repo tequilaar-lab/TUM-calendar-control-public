@@ -69,6 +69,17 @@ class ScheduleWidgetRendererTest {
     private fun View.visible(id: Int): Boolean = findViewById<View>(id).visibility == View.VISIBLE
     private fun View.rowCount(): Int = findViewById<ViewGroup>(R.id.widget_rows).childCount
 
+    /** 5×2 mit Systemrändern (≈143 dp hoch): nur so viele Tageszeilen, wie mit 22 dp passen; Rest im Kopf gezählt. */
+    @Test fun `niedrige Woche ohne überlappende Zeilen`() {
+        val low = render(WidgetSize.LARGE, 320, 143)
+        assertEquals(3, low.rowCount())
+        assertEquals("另有 2 天", low.text(R.id.widget_header_side))
+        val rows = low.findViewById<ViewGroup>(R.id.widget_rows)
+        val density = low.resources.displayMetrics.density
+        (0 until rows.childCount).map { rows.getChildAt(it) }.forEach { assertTrue("Zeile mindestens 22 dp", it.height >= (22 * density).toInt() - 1) }
+        assertEquals("hoch genug: sieben Tage", 7, render(WidgetSize.LARGE, 320, 340).rowCount())
+    }
+
     @Test fun `klein laufender Termin mit Raum, flach ohne Zeit`() {
         val tall = render(WidgetSize.SMALL, 170, 170)
         assertEquals("进行中 · 还剩 60 分钟", tall.text(R.id.widget_status))
@@ -114,10 +125,37 @@ class ScheduleWidgetRendererTest {
     }
 
     @Test fun `Hintergrund nach Deckkraft und Ecke`() {
-        assertEquals(R.drawable.widget_bg_solid_r16, ScheduleWidgetRenderer.background(WidgetSettings()))
-        assertEquals(R.drawable.widget_bg_glass_r0, ScheduleWidgetRenderer.background(WidgetSettings(translucent = true, corner = WidgetCorner.SQUARE)))
-        assertEquals(R.drawable.widget_bg_solid_r32, ScheduleWidgetRenderer.background(WidgetSettings(corner = WidgetCorner.ROUND)))
+        assertEquals(R.drawable.widget_bg_solid_r16, ScheduleWidgetRenderer.background(WidgetSettings(), null))
+        assertEquals(R.drawable.widget_bg_glass_r0, ScheduleWidgetRenderer.background(WidgetSettings(translucent = true, corner = WidgetCorner.SQUARE), null))
+        assertEquals(R.drawable.widget_bg_solid_r32, ScheduleWidgetRenderer.background(WidgetSettings(corner = WidgetCorner.ROUND), null))
         render(WidgetSize.MEDIUM, 330, 170, WidgetSettings(translucent = true, corner = WidgetCorner.ROUND)).captureRoboImage("src/test/screenshots/widget_medium_glass_round_330x170.png")
+    }
+
+    /**
+     * Startbildschirme wenden Aktualisierungen auf die vorhandene Ansicht an (reapply): Zeilen dürfen sich nicht
+     * stapeln, und ein früherer Leerzustand darf nicht stehen bleiben (Gerätefund 1.4.0, HONOR).
+     */
+    @Test fun `erneutes Anwenden stapelt nichts und setzt Sichtbarkeit zurück`() {
+        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
+        fun frame(data: List<WidgetEvent>, height: Int) = WidgetFrame(data, data.isNotEmpty(), WidgetSettings(), now, zone, 330, height)
+        val week = ScheduleWidgetRenderer.render(activity, WidgetSize.LARGE, frame(events, 380)).apply(activity, FrameLayout(activity))
+        repeat(3) { ScheduleWidgetRenderer.render(activity, WidgetSize.LARGE, frame(events, 380)).reapply(activity, week) }
+        assertEquals(7, week.rowCount())
+        val list = ScheduleWidgetRenderer.render(activity, WidgetSize.MEDIUM, frame(emptyList(), 240)).apply(activity, FrameLayout(activity))
+        assertTrue(list.visible(R.id.widget_empty))
+        repeat(3) { ScheduleWidgetRenderer.render(activity, WidgetSize.MEDIUM, frame(events, 240)).reapply(activity, list) }
+        assertEquals(3, list.rowCount())
+        assertFalse("Leerzustand verschwindet", list.visible(R.id.widget_empty))
+        assertTrue(list.visible(R.id.widget_body))
+    }
+
+    /** Schmales 2×2 (HONOR: 155×211 dp): Status nur mit Tag (Uhrzeit steht groß darunter), nur Beginn. */
+    @Test fun `klein schmal mit Wochentag und nur Beginn`() {
+        val later = listOf(ev("x", 24, 13))
+        val view = render(WidgetSize.SMALL, 155, 211, data = later)
+        assertEquals("周六", view.text(R.id.widget_status))
+        assertEquals("13:00", view.text(R.id.widget_time))
+        view.captureRoboImage("src/test/screenshots/widget_small_narrow_155x211.png")
     }
 
     @Config(qualifiers = "w412dp-h892dp-night-420dpi")

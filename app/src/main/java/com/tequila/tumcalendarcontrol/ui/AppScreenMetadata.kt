@@ -33,6 +33,7 @@ internal fun AppScreen.usesBackArrow(): Boolean = this in setOf(
     AppScreen.APPEARANCE,
     AppScreen.SOURCE_CHANGES,
     AppScreen.WIDGETS,
+    AppScreen.CLASS_LIVE,
 )
 
 internal fun AppScreen.bottomNavigationIndex(): Int = when (this) {
@@ -65,6 +66,7 @@ internal fun AppScreen.title(): String = when (this) {
     AppScreen.APPEARANCE -> message(580)
     AppScreen.SOURCE_CHANGES -> message(768)
     AppScreen.WIDGETS -> message(811)
+    AppScreen.CLASS_LIVE -> message(924)
 }
 
 internal fun AppScreen.subtitle(): String? = when (this) {
@@ -110,4 +112,5 @@ internal fun AppScreen.kicker(): String = when (this) {
     AppScreen.APPEARANCE -> "APPEARANCE"
     AppScreen.SOURCE_CHANGES -> "COURSES / CHANGES"
     AppScreen.WIDGETS -> "HOME / WIDGETS"
+    AppScreen.CLASS_LIVE -> "CLASSES / LIVE"
 }

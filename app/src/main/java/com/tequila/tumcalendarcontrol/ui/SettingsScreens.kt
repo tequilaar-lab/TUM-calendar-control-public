@@ -187,6 +187,7 @@ private fun LazyListScope.preferenceItems(state: CalendarControlState) {
             val palette = if (state.themeMode == ThemeMode.DARK) state.darkPaletteStyle.label else state.lightPaletteStyle.label
             DesignRow(tr(message(580)), detail = tr(message(728)), value = tr(palette), tag = "settings-appearance", inset = 4.dp) { state.open(AppScreen.APPEARANCE) }
             DesignRow(tr(message(811)), detail = tr(message(835)), tag = "settings-widgets", inset = 4.dp) { state.open(AppScreen.WIDGETS) }
+            DesignRow(tr(message(924)), detail = tr(message(925)), tag = "settings-class-live", inset = 4.dp) { state.open(AppScreen.CLASS_LIVE) }
             DesignRow(tr(message(168)), tag = "settings-background", inset = 4.dp, onClick = state::openBackgroundCheck)
             DesignRow(tr(message(516)), tag = "settings-backup", inset = 4.dp, onClick = state::openRuleBackup)
         }

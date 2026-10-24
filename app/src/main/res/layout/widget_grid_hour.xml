@@ -1,0 +1,2 @@
+<!-- Aufgabe: Stundenbeschriftung der Zeitachse im Stundenplan-Widget (Höhe je Stundenabstand); reine Darstellungsressource ohne Daten oder Aktionen. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/grid_hour" android:layout_width="match_parent" android:layout_height="0dp" android:gravity="top|end" android:paddingEnd="3dp" android:textSize="9sp" android:includeFontPadding="false" android:textColor="@color/widget_muted" android:singleLine="true" />

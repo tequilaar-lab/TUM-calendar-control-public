@@ -814,7 +814,7 @@
     <string name="msg_0808" formatted="false">"d"</string>
     <string name="msg_0810" formatted="false">"{0} more"</string>
     <string name="msg_0811" formatted="false">"Home screen widgets"</string>
-    <string name="msg_0812" formatted="false">"Each size has its own focus: small shows where to go now, medium shows today, large shows the week. Only classes already written to the calendar appear."</string>
+    <string name="msg_0812" formatted="false">"Each widget has its own focus: “Next class”, “Today”, “Tomorrow”, “This week” and “Timetable” show classes already written to the calendar; “Countdown” shows exams and deadlines; “Check for updates” shows the last source check."</string>
     <string name="msg_0813" formatted="false">"Widgets show class names and rooms on your home screen."</string>
     <string name="msg_0814" formatted="false">"Content"</string>
     <string name="msg_0815" formatted="false">"Hide grey (no longer attending)"</string>
@@ -836,7 +836,121 @@
     <string name="msg_0832" formatted="false">"Add to home screen"</string>
     <string name="msg_0833" formatted="false">"Height: long-press the widget on the home screen and drag its edges; the content adapts to the height."</string>
     <string name="msg_0834" formatted="false">"This launcher can\'t add widgets from here; add it from the launcher\'s widget list."</string>
-    <string name="msg_0835" formatted="false">"Next class, today and week"</string>
+    <string name="msg_0835" formatted="false">"Next class, Today, Tomorrow, Week, Timetable, Countdown, Check"</string>
     <string name="msg_0836" formatted="false">"The preview uses sample classes, not your data."</string>
     <string name="msg_0809" formatted="false">"d MMM"</string>
+    <string name="msg_0837" formatted="false">"Event"</string>
+    <string name="msg_0838" formatted="false">"Exam"</string>
+    <string name="msg_0839" formatted="false">"Deadline"</string>
+    <string name="msg_0840" formatted="false">"Type"</string>
+    <string name="msg_0841" formatted="false">"Due hour"</string>
+    <string name="msg_0842" formatted="false">"Due minute"</string>
+    <string name="msg_0843" formatted="false">"Due {0} (Europe/Berlin)"</string>
+    <string name="msg_0844" formatted="false">"Deadlines are written to the calendar as the 30 minutes before they are due."</string>
+    <string name="msg_0845" formatted="false">"{0} days left"</string>
+    <string name="msg_0846" formatted="false">"{0} h left"</string>
+    <string name="msg_0847" formatted="false">"{0} min left"</string>
+    <string name="msg_0848" formatted="false">"In progress"</string>
+    <string name="msg_0849" formatted="false">"Coming up"</string>
+    <string name="msg_0850" formatted="false">"days"</string>
+    <string name="msg_0851" formatted="false">"hours"</string>
+    <string name="msg_0852" formatted="false">"min"</string>
+    <string name="msg_0853" formatted="false">"{0} more"</string>
+    <string name="msg_0854" formatted="false">"No exams or deadlines yet"</string>
+    <string name="msg_0855" formatted="false">"Tap to add one."</string>
+    <string name="msg_0857" formatted="false">"Countdown"</string>
+    <string name="msg_0858" formatted="false">"Countdown to exams and deadlines"</string>
+    <string name="msg_0860" formatted="false">"Show exams"</string>
+    <string name="msg_0861" formatted="false">"Show deadlines"</string>
+    <string name="msg_0862" formatted="false">"Pinned"</string>
+    <string name="msg_0863" formatted="false">"Automatic · nearest"</string>
+    <string name="msg_0864" formatted="false">"Background and corners match the other widgets."</string>
+    <string name="msg_0865" formatted="false">"Read updates"</string>
+    <string name="msg_0866" formatted="false">"Read course updates"</string>
+    <string name="msg_0867" formatted="false">"Add exam"</string>
+    <string name="msg_0868" formatted="false">"Add exam or deadline"</string>
+    <string name="msg_0869" formatted="false">"Review output"</string>
+    <string name="msg_0870" formatted="false">"Review calendar output"</string>
+    <string name="msg_0871" formatted="false">"Widgets"</string>
+    <string name="msg_0872" formatted="false">"Widget settings"</string>
+    <string name="msg_0873" formatted="false">"Check for updates"</string>
+    <string name="msg_0874" formatted="false">"Check started"</string>
+    <string name="msg_0875" formatted="false">"Last {0}"</string>
+    <string name="msg_0876" formatted="false">"Off"</string>
+    <string name="msg_0877" formatted="false">"Add “{0}” to home screen"</string>
+    <string name="msg_0878" formatted="false">"Widget to edit"</string>
+    <string name="msg_0879" formatted="false">"Default for new widgets"</string>
+    <string name="msg_0881" formatted="false">"about {0}×{1} dp"</string>
+    <string name="msg_0882" formatted="false">"Block size"</string>
+    <string name="msg_0883" formatted="false">"Square (shorter side)"</string>
+    <string name="msg_0884" formatted="false">"Width {0}%"</string>
+    <string name="msg_0885" formatted="false">"Height {0}%"</string>
+    <string name="msg_0886" formatted="false">"Sets the block size within the widget\'s cells, centred; the number of cells is changed on the home screen by long-pressing and dragging."</string>
+    <string name="msg_0887" formatted="false">"No widgets of this app on the home screen yet."</string>
+    <string name="msg_0888" formatted="false">"Check"</string>
+    <string name="msg_0889" formatted="false">"Last {0} · {1}"</string>
+    <string name="msg_0890" formatted="false">"no changes"</string>
+    <string name="msg_0891" formatted="false">"changes found"</string>
+    <string name="msg_0892" formatted="false">"failed"</string>
+    <string name="msg_0893" formatted="false">"baseline saved"</string>
+    <string name="msg_0894" formatted="false">"set up the source first"</string>
+    <string name="msg_0895" formatted="false">"not checked yet"</string>
+    <string name="msg_0896" formatted="false">"Checking…"</string>
+    <string name="msg_0897" formatted="false">"Background check is off – tap to set up"</string>
+    <string name="msg_0898" formatted="false">"Shows the last check; tap to check the course source now (read only)"</string>
+    <string name="msg_0899" formatted="false">"Tomorrow"</string>
+    <string name="msg_0900" formatted="false">"Follow system look"</string>
+    <string name="msg_0901" formatted="false">"Corners use the system value; the block uses the margins of system cards (measured on the HONOR home screen). Turning it off restores the manual settings below."</string>
+    <string name="msg_0902" formatted="false">"System corner radius {0} dp"</string>
+    <string name="msg_0903" formatted="false">"The system provides no corner radius; the manual corner below is used"</string>
+    <string name="msg_0904" formatted="false">"Set by the system look"</string>
+    <string name="msg_0905" formatted="false">"This widget is elongated: square uses the shorter side, so stretching it lengthwise has no effect"</string>
+    <string name="msg_0906" formatted="false">"This course is not in the current course list; the home page was opened"</string>
+    <string name="msg_0907" formatted="false">"Widget short name"</string>
+    <string name="msg_0908" formatted="false">"Used in the “Week” and “Timetable” widgets, and in other widgets if turned on in their settings; up to 16 characters, empty shows the full name. Stored on this device only, never written to the calendar."</string>
+    <string name="msg_0909" formatted="false">"Course short names"</string>
+    <string name="msg_0910" formatted="false">"Courses in the Week and Timetable widgets; changes are saved as you type, empty shows the full name. Other courses can be set on the course edit page."</string>
+    <string name="msg_0911" formatted="false">"Once courses are written to the calendar, the courses of the Week widget are listed here."</string>
+    <string name="msg_0912" formatted="false">"+{0} more days"</string>
+    <string name="msg_0913" formatted="false">"Timetable"</string>
+    <string name="msg_0914" formatted="false">"Weekly timetable laid out by time, course blocks coloured by attendance"</string>
+    <string name="msg_0915" formatted="false">"Timetable · {0}–{1}"</string>
+    <string name="msg_0916" formatted="false">"No courses this week"</string>
+    <string name="msg_0917" formatted="false">"+{0} more"</string>
+    <string name="msg_0918" formatted="false">"Tomorrow"</string>
+    <string name="msg_0919" formatted="false">"Tomorrow\'s courses: first start, room and count"</string>
+    <string name="msg_0920" formatted="false">"Tomorrow · {0}"</string>
+    <string name="msg_0921" formatted="false">"Tomorrow · {0} courses"</string>
+    <string name="msg_0922" formatted="false">"No courses tomorrow"</string>
+    <string name="msg_0923" formatted="false">"Next course: {0}"</string>
+    <string name="msg_0924" formatted="false">"Live class notifications"</string>
+    <string name="msg_0925" formatted="false">"Reminder before class and remaining time in the status bar"</string>
+    <string name="msg_0926" formatted="false">"Turn on live class notifications"</string>
+    <string name="msg_0927" formatted="false">"Reminds you before must-attend classes, shows the remaining time during class and disappears afterwards. Uses Android 16 “Live Updates”: standard Android shows them as a status bar chip; whether HONOR’s Dynamic Capsule shows them depends on the system. Reminders use inexact alarms and appear up to 10 minutes earlier than set."</string>
+    <string name="msg_0928" formatted="false">"Lead time"</string>
+    <string name="msg_0929" formatted="false">"{0} min"</string>
+    <string name="msg_0930" formatted="false">"Also for “choose to attend” classes"</string>
+    <string name="msg_0931" formatted="false">"Next {0}: {1}"</string>
+    <string name="msg_0932" formatted="false">"Now: {0}"</string>
+    <string name="msg_0933" formatted="false">"{0} · until {1}"</string>
+    <string name="msg_0934" formatted="false">"until {0}"</string>
+    <string name="msg_0935" formatted="false">"Map"</string>
+    <string name="msg_0936" formatted="false">"Live classes"</string>
+    <string name="msg_0937" formatted="false">"The system allows Live Updates"</string>
+    <string name="msg_0938" formatted="false">"The system does not allow Live Updates; a regular ongoing notification is shown"</string>
+    <string name="msg_0939" formatted="false">"Notification permission is needed for live class notifications"</string>
+    <string name="msg_0940" formatted="false">"{0}: {1}"</string>
+    <string name="msg_0941" formatted="false">"+{0} more courses"</string>
+    <string name="msg_0942" formatted="false">"Show course short names (full name if none)"</string>
+    <string name="msg_0943" formatted="false">"Sample class"</string>
+    <string name="msg_0944" formatted="false">"Send test live notification"</string>
+    <string name="msg_0945" formatted="false">"The test notification was promoted to a Live Update and should appear as a status bar chip (HONOR: Dynamic Capsule)"</string>
+    <string name="msg_0946" formatted="false">"The test notification was not promoted (system version or settings); it shows as a regular ongoing notification"</string>
+    <string name="msg_0947" formatted="false">"The test notification disappears after 2 minutes and shows sample content"</string>
+    <string name="msg_0948" formatted="false">"Filled in from the shared text; please check and add"</string>
+    <string name="msg_0949" formatted="false">"New campus event"</string>
+    <string name="msg_0950" formatted="false">"Select a course on the left to see its details"</string>
+    <string name="msg_0951" formatted="false">"Reminder when writing"</string>
+    <string name="msg_0952" formatted="false">"Adds a system reminder to must-attend classes written to the calendar, so the calendar app (e.g. HONOR Calendar) reminds you before class. After a change, the next write updates already written classes once (visible in the write preview); only the app\'s own calendar is changed."</string>
+    <string name="msg_0953" formatted="false">"No reminder"</string>
 </resources>

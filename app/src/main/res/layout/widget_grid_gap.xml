@@ -1,0 +1,2 @@
+<!-- Aufgabe: Leerraum vor einem Terminblock im Stundenplan-Widget (Höhe wird je Zeitspanne gesetzt; FrameLayout, da RemoteViews keine einfache View erlaubt); reine Darstellungsressource ohne Daten oder Aktionen. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/grid_gap" android:layout_width="match_parent" android:layout_height="0dp" />

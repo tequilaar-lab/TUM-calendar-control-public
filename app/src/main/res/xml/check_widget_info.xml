@@ -1,0 +1,18 @@
+<!-- Aufgabe: Widget „Auf Änderungen prüfen“: 1×1 bis 2×2 in Höhe und Breite änderbar, Aktualisierung höchstens alle 30 min; reine Darstellungsressource ohne Daten oder Aktionen. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="40dp"
+    android:minHeight="40dp"
+    android:targetCellWidth="1"
+    android:targetCellHeight="1"
+    android:minResizeWidth="40dp"
+    android:minResizeHeight="40dp"
+    android:maxResizeWidth="180dp"
+    android:maxResizeHeight="220dp"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_check"
+    android:previewImage="@drawable/widget_preview_check"
+    android:description="@string/msg_0898"
+    android:configure="com.tequila.tumcalendarcontrol.widget.WidgetConfigureActivity"
+    android:widgetFeatures="reconfigurable|configuration_optional" />
