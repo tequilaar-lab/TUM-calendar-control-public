@@ -42,7 +42,7 @@ object CountdownWidgetRenderer {
         val views = RemoteViews(context.packageName, R.layout.widget_countdown)
         // Erneutes Anwenden auf die vorhandene Ansicht: Listen leeren, Zusatzbereiche zunächst ausblenden.
         ScheduleWidgetRenderer.resetForReapply(views, listOf(R.id.cd_side, R.id.cd_list), listOf(R.id.cd_side, R.id.cd_list, R.id.widget_footer))
-        views.setInt(R.id.widget_root, "setBackgroundResource", ScheduleWidgetRenderer.background(frame.settings))
+        views.setInt(R.id.widget_root, "setBackgroundResource", ScheduleWidgetRenderer.background(context, frame.settings))
         views.setOnClickPendingIntent(R.id.widget_root, ScheduleWidgetRenderer.openApp(context, AppEntry.ManualEvents()))
         val entries = entries(frame)
         val main = DeadlineCountdown.featured(entries, frame.settings.countdownPinnedId)

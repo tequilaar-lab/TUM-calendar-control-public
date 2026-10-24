@@ -1,6 +1,7 @@
 /*
  * Aufgabe: Einstellungen je Widget und Blockgröße prüfen: erste Werte aus dem Standard (klein/Countdown quadratisch),
- *   eigene Werte unabhängig vom Standard, Löschen beim Entfernen, Bereichsgrenzen, Blockgeometrie und Rand im Widget.
+ *   Prüf-Widget nie quadratisch, eigene Werte unabhängig vom Standard, Löschen beim Entfernen, Bereichsgrenzen,
+ *   Blockgeometrie und Rand im Widget.
  * Ein-/Ausgabe: Robolectric-Präferenzen und synthetische Größen -> gespeicherte Werte, Geometrie, angewandte Ränder.
  * Nebenwirkungen: Nur private Test-Präferenzen.
  * Nicht zuständig: Einstellungsoberfläche (WidgetSettingsPagesTest).
@@ -14,6 +15,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.tequila.tumcalendarcontrol.R
 import java.time.Instant
 import java.time.ZoneId
+import kotlin.math.roundToInt
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -35,6 +37,9 @@ class WidgetBlockSettingsTest {
         assertTrue("klein startet quadratisch", small.square)
         assertEquals(WidgetCorner.ROUND, small.corner)
         assertFalse("mittel nicht quadratisch", preferences.load(12, WidgetSize.MEDIUM).square)
+        preferences.save(WidgetSettings(square = true))
+        assertFalse("Prüf-Widget erbt kein Quadrat (sonst wirkt Hochziehen nicht)", preferences.load(13, WidgetSize.CHECK).square)
+        preferences.save(WidgetSettings(corner = WidgetCorner.ROUND, translucent = true))
         preferences.save(11, small.copy(blockWidthPercent = 80))
         preferences.save(WidgetSettings(corner = WidgetCorner.SQUARE))
         assertEquals("Standardänderung ändert vorhandene nicht", WidgetCorner.ROUND, preferences.load(11, WidgetSize.SMALL).corner)
@@ -54,9 +59,9 @@ class WidgetBlockSettingsTest {
 
     /** HONOR-2×2 (155×211 dp): Quadrat 155×155, oben und unten je 28 dp Rand; Prozent wirken je Achse. */
     @Test fun `Blockgeometrie`() {
-        assertEquals(ScheduleWidgetRenderer.BlockGeometry(155, 155, 0, 28), ScheduleWidgetRenderer.block(WidgetSettings(square = true), 155, 211))
-        assertEquals(ScheduleWidgetRenderer.BlockGeometry(256, 126, 32, 42), ScheduleWidgetRenderer.block(WidgetSettings(blockWidthPercent = 80, blockHeightPercent = 60), 320, 211))
-        assertEquals(ScheduleWidgetRenderer.BlockGeometry(320, 211, 0, 0), ScheduleWidgetRenderer.block(WidgetSettings(), 320, 211))
+        assertEquals(ScheduleWidgetRenderer.BlockGeometry(155, 155, 0f, 28f), ScheduleWidgetRenderer.block(WidgetSettings(square = true), 155, 211))
+        assertEquals(ScheduleWidgetRenderer.BlockGeometry(256, 126, 32f, 42.5f), ScheduleWidgetRenderer.block(WidgetSettings(blockWidthPercent = 80, blockHeightPercent = 60), 320, 211))
+        assertEquals(ScheduleWidgetRenderer.BlockGeometry(320, 211, 0f, 0f), ScheduleWidgetRenderer.block(WidgetSettings(), 320, 211))
     }
 
     @Test fun `Rand wird am äußeren Rahmen gesetzt`() {
@@ -65,7 +70,7 @@ class WidgetBlockSettingsTest {
         val view = ScheduleWidgetRenderer.render(activity, WidgetSize.SMALL, frame).apply(activity, FrameLayout(activity))
         val outer = view.findViewById<android.view.View>(R.id.widget_frame)
         val density = activity.resources.displayMetrics.density
-        assertEquals((28 * density).toInt(), outer.paddingTop)
+        assertEquals((28 * density).roundToInt(), outer.paddingTop)
         assertEquals(0, outer.paddingLeft)
     }
 }

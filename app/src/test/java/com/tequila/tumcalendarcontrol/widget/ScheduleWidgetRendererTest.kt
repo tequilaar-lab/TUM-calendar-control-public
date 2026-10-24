@@ -114,9 +114,9 @@ class ScheduleWidgetRendererTest {
     }
 
     @Test fun `Hintergrund nach Deckkraft und Ecke`() {
-        assertEquals(R.drawable.widget_bg_solid_r16, ScheduleWidgetRenderer.background(WidgetSettings()))
-        assertEquals(R.drawable.widget_bg_glass_r0, ScheduleWidgetRenderer.background(WidgetSettings(translucent = true, corner = WidgetCorner.SQUARE)))
-        assertEquals(R.drawable.widget_bg_solid_r32, ScheduleWidgetRenderer.background(WidgetSettings(corner = WidgetCorner.ROUND)))
+        assertEquals(R.drawable.widget_bg_solid_r16, ScheduleWidgetRenderer.background(WidgetSettings(), null))
+        assertEquals(R.drawable.widget_bg_glass_r0, ScheduleWidgetRenderer.background(WidgetSettings(translucent = true, corner = WidgetCorner.SQUARE), null))
+        assertEquals(R.drawable.widget_bg_solid_r32, ScheduleWidgetRenderer.background(WidgetSettings(corner = WidgetCorner.ROUND), null))
         render(WidgetSize.MEDIUM, 330, 170, WidgetSettings(translucent = true, corner = WidgetCorner.ROUND)).captureRoboImage("src/test/screenshots/widget_medium_glass_round_330x170.png")
     }
 

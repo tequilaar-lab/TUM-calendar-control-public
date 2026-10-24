@@ -96,7 +96,7 @@ object CheckWidgetRenderer {
         val text = ScheduleWidgetRenderer.WidgetTexts(context)
         val views = RemoteViews(context.packageName, R.layout.widget_check)
         ScheduleWidgetRenderer.resetForReapply(views, emptyList(), emptyList())
-        views.setInt(R.id.widget_root, "setBackgroundResource", ScheduleWidgetRenderer.background(frame.settings))
+        views.setInt(R.id.widget_root, "setBackgroundResource", ScheduleWidgetRenderer.background(context, frame.settings))
         val compact = frame.widthDp < 110 || frame.heightDp < 90
         views.setViewVisibility(R.id.check_title, if (compact) View.GONE else View.VISIBLE)
         views.setTextViewText(R.id.check_title, text(message(873)))

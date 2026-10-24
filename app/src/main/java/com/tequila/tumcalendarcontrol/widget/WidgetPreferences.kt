@@ -10,7 +10,7 @@ package com.tequila.tumcalendarcontrol.widget
 import android.content.Context
 import android.content.SharedPreferences
 
-/** Eckenradius in fünf Stufen (dp); die Hintergründe liegen als feste Ressourcen vor (alle Android-Versionen gleich). */
+/** Manueller Eckenradius in fünf Stufen (dp); Hintergründe gibt es je ganzem dp 0–32 (auch für den Systemradius). */
 enum class WidgetCorner(val dp: Int) { SQUARE(0), SMALL(8), MEDIUM(16), LARGE(24), ROUND(32) }
 
 data class WidgetSettings(
@@ -31,6 +31,11 @@ data class WidgetSettings(
     val blockWidthPercent: Int = 100,
     val blockHeightPercent: Int = 100,
     val square: Boolean = false,
+    /**
+     * Systemaussehen folgen: Ecke vom System (sonst die manuelle) und Block passend zu Systemkarten; die manuellen Werte
+     * bleiben gespeichert und gelten wieder, sobald der Schalter aus ist.
+     */
+    val followSystem: Boolean = false,
 )
 
 /** Zulässiger Bereich der Blockgröße in Prozent der belegten Zellen. */
@@ -46,12 +51,19 @@ class WidgetPreferences(context: Context) {
 
     /**
      * Werte eines platzierten Widgets; noch ohne eigene Werte: Standard, bei klein/Countdown als Quadrat (passt in
-     * hochformatige 2×2-Felder wie auf HONOR). Wird beim ersten Zeichnen gespeichert, damit spätere Standardänderungen
+     * hochformatige 2×2-Felder wie auf HONOR), beim Prüf-Widget nie als Quadrat (Gerätefund: geerbtes Quadrat machte
+     * das Hochziehen auf 1×2 wirkungslos). Wird beim ersten Zeichnen gespeichert, damit spätere Standardänderungen
      * vorhandene Widgets nicht verändern.
      */
     fun load(widgetId: Int, size: WidgetSize): WidgetSettings {
         if (preferences.getBoolean(prefix(widgetId) + KEY_PRESENT, false)) return read(prefix(widgetId))
-        val initial = load().let { if (size == WidgetSize.SMALL || size == WidgetSize.COUNTDOWN) it.copy(square = true) else it }
+        val initial = load().let {
+            when (size) {
+                WidgetSize.SMALL, WidgetSize.COUNTDOWN -> it.copy(square = true)
+                WidgetSize.CHECK -> it.copy(square = false)
+                else -> it
+            }
+        }
         save(widgetId, initial)
         return initial
     }
@@ -84,6 +96,7 @@ class WidgetPreferences(context: Context) {
             blockWidthPercent = getInt(p + KEY_BLOCK_WIDTH, 100).coerceIn(BlockPercentRange),
             blockHeightPercent = getInt(p + KEY_BLOCK_HEIGHT, 100).coerceIn(BlockPercentRange),
             square = getBoolean(p + KEY_SQUARE, false),
+            followSystem = getBoolean(p + KEY_FOLLOW_SYSTEM, false),
         )
     }
 
@@ -101,6 +114,7 @@ class WidgetPreferences(context: Context) {
             .putInt(p + KEY_BLOCK_WIDTH, settings.blockWidthPercent.coerceIn(BlockPercentRange))
             .putInt(p + KEY_BLOCK_HEIGHT, settings.blockHeightPercent.coerceIn(BlockPercentRange))
             .putBoolean(p + KEY_SQUARE, settings.square)
+            .putBoolean(p + KEY_FOLLOW_SYSTEM, settings.followSystem)
         editor.apply()
     }
 
@@ -119,5 +133,6 @@ class WidgetPreferences(context: Context) {
         const val KEY_BLOCK_WIDTH = "block_width"
         const val KEY_BLOCK_HEIGHT = "block_height"
         const val KEY_SQUARE = "square"
+        const val KEY_FOLLOW_SYSTEM = "follow_system"
     }
 }

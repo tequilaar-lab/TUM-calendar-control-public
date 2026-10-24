@@ -1,6 +1,6 @@
 /*
  * Aufgabe: RemoteViews der drei Widget-Größen aus den Darstellungsmodellen bauen; Inhalt passt sich Höhe/Breite an
- *   (kompakte Einzeile bis Liste mit Details), Hintergrund nach Deckkraft und Eckenstufe.
+ *   (kompakte Einzeile bis Liste mit Details), Hintergrund nach Deckkraft und Ecke (Stufe oder Systemradius).
  * Ein-/Ausgabe: Termine, Einstellungen, Zeit, Größe in dp, Sprache -> RemoteViews mit Klickzielen.
  * Nebenwirkungen: Keine; erzeugt nur PendingIntents (App öffnen, Kursdetails, Raumkarte im Browser).
  * Nicht zuständig: Laden der Daten, Auslösen von Aktualisierungen oder Speichern der Einstellungen.
@@ -28,6 +28,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /** Drei Kurs-Widgets, das Countdown- und das Prüf-Widget (eigene Renderer). */
 enum class WidgetSize { SMALL, MEDIUM, LARGE, COUNTDOWN, CHECK }
@@ -50,8 +51,9 @@ object ScheduleWidgetRenderer {
     private const val PAST_ALPHA = .45f
 
     /**
-     * Zeichnet ein Widget: Zuerst wird der Block innerhalb der belegten Zellen bestimmt (Prozent bzw. Quadrat, mittig),
-     * der äußere transparente Rahmen erhält den Rand, und der Inhalt richtet sich nach der Blockgröße.
+     * Zeichnet ein Widget: Zuerst wird der Block innerhalb der belegten Zellen bestimmt (Prozent bzw. Quadrat, mittig,
+     * oder passend zu Systemkarten), der äußere transparente Rahmen erhält den Rand, und der Inhalt richtet sich nach
+     * der Blockgröße.
      */
     fun render(context: Context, size: WidgetSize, frame: WidgetFrame): RemoteViews {
         val geometry = block(frame.settings, frame.widthDp, frame.heightDp)
@@ -62,22 +64,23 @@ object ScheduleWidgetRenderer {
             else -> renderCourse(context, size, inner)
         }
         val density = context.resources.displayMetrics.density
-        val x = (geometry.insetXDp * density).toInt()
-        val y = (geometry.insetYDp * density).toInt()
-        views.setViewPadding(R.id.widget_frame, x, y, x, y)
+        fun px(dp: Float) = (dp * density).roundToInt()
+        views.setViewPadding(R.id.widget_frame, px(geometry.leftDp), px(geometry.topDp), px(geometry.rightDp), px(geometry.bottomDp))
         // Freie Randfläche öffnet ebenfalls die App (statt toter Tippfläche).
         views.setOnClickPendingIntent(R.id.widget_frame, openApp(context, null))
         return views
     }
 
-    /** Blockgröße in dp innerhalb der Zellen und Rand je Seite; Quadrat nimmt die kürzere Seite. */
-    data class BlockGeometry(val widthDp: Int, val heightDp: Int, val insetXDp: Int, val insetYDp: Int)
+    /** Blockgröße in dp innerhalb der Zellen und Rand je Seite (dp, nicht gerundet, damit feste Ränder genau bleiben). */
+    data class BlockGeometry(val widthDp: Int, val heightDp: Int, val leftDp: Float, val topDp: Float, val rightDp: Float = leftDp, val bottomDp: Float = topDp)
 
+    /** Systemaussehen: feste Ränder wie Systemkarten; sonst Prozent je Achse, Quadrat nimmt die kürzere Seite, mittig. */
     fun block(settings: WidgetSettings, widthDp: Int, heightDp: Int): BlockGeometry {
+        if (settings.followSystem) return SystemWidgetLook.preset(widthDp, heightDp)
         var width = widthDp * settings.blockWidthPercent.coerceIn(BlockPercentRange) / 100
         var height = heightDp * settings.blockHeightPercent.coerceIn(BlockPercentRange) / 100
         if (settings.square) { val side = minOf(width, height); width = side; height = side }
-        return BlockGeometry(width, height, (widthDp - width) / 2, (heightDp - height) / 2)
+        return BlockGeometry(width, height, (widthDp - width) / 2f, (heightDp - height) / 2f)
     }
 
     private fun renderCourse(context: Context, size: WidgetSize, frame: WidgetFrame): RemoteViews {
@@ -85,7 +88,7 @@ object ScheduleWidgetRenderer {
         val layout = when (size) { WidgetSize.SMALL -> R.layout.widget_small; WidgetSize.MEDIUM -> R.layout.widget_list; else -> R.layout.widget_week }
         val views = RemoteViews(context.packageName, layout)
         resetForReapply(views, if (size == WidgetSize.SMALL) emptyList() else listOf(R.id.widget_rows), if (size == WidgetSize.SMALL) emptyList() else listOf(R.id.widget_footer))
-        views.setInt(R.id.widget_root, "setBackgroundResource", background(frame.settings))
+        views.setInt(R.id.widget_root, "setBackgroundResource", background(context, frame.settings))
         views.setOnClickPendingIntent(R.id.widget_root, openApp(context, null))
         val visible = ScheduleWidgetModel.visible(frame.events, frame.settings)
         if (!frame.hasData) return empty(views, text(message(797)) + "\n" + text(message(798)))
@@ -247,18 +250,14 @@ object ScheduleWidgetRenderer {
         AttendanceState.STOP_ATTENDING -> R.drawable.widget_dot_stop
     }
 
-    internal fun background(settings: WidgetSettings): Int = if (settings.translucent) {
-        when (settings.corner) {
-            WidgetCorner.SQUARE -> R.drawable.widget_bg_glass_r0; WidgetCorner.SMALL -> R.drawable.widget_bg_glass_r8
-            WidgetCorner.MEDIUM -> R.drawable.widget_bg_glass_r16; WidgetCorner.LARGE -> R.drawable.widget_bg_glass_r24
-            WidgetCorner.ROUND -> R.drawable.widget_bg_glass_r32
-        }
-    } else {
-        when (settings.corner) {
-            WidgetCorner.SQUARE -> R.drawable.widget_bg_solid_r0; WidgetCorner.SMALL -> R.drawable.widget_bg_solid_r8
-            WidgetCorner.MEDIUM -> R.drawable.widget_bg_solid_r16; WidgetCorner.LARGE -> R.drawable.widget_bg_solid_r24
-            WidgetCorner.ROUND -> R.drawable.widget_bg_solid_r32
-        }
+    /** Hintergrund des Blocks: Ecke vom System (beim Folgen, falls verfügbar), sonst die manuelle Stufe. */
+    internal fun background(context: Context, settings: WidgetSettings): Int =
+        background(settings, if (settings.followSystem) SystemWidgetLook.radiusDp(context) else null)
+
+    /** Reine Auswahl (testbar): systemRadiusDp nur beim Folgen gesetzt; Tabelle je ganzem dp 0–32. */
+    internal fun background(settings: WidgetSettings, systemRadiusDp: Int?): Int {
+        val radius = (systemRadiusDp?.takeIf { settings.followSystem } ?: settings.corner.dp).coerceIn(0, WidgetBackgroundTable.MAX_RADIUS_DP)
+        return (if (settings.translucent) WidgetBackgroundTable.glass else WidgetBackgroundTable.solid)[radius]
     }
 
     /** App öffnen (ohne Ziel) bzw. Kursdetails; Daten-URI macht je Kurs eine eigene PendingIntent. */
