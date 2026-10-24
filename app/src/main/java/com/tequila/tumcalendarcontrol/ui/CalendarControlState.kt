@@ -357,12 +357,14 @@ class CalendarControlState(
         navigation.open(screen)
     }
 
-    fun openCourse(courseId: String) {
-        val course = courses.firstOrNull { it.browseKey == courseId || it.id == courseId } ?: return
+    /** Kursdetails öffnen; false = Kurs nicht im Verzeichnis (Seite bleibt, Aufrufer entscheidet über Rückfall). */
+    fun openCourse(courseId: String): Boolean {
+        val course = courses.firstOrNull { it.browseKey == courseId || it.id == courseId } ?: return false
         selectedCourseId = course.id
         selectedInstanceKey = course.instanceKey
         pendingAttendance = selectedCourse.attendance
         navigation.openDetail()
+        return true
     }
 
     fun openAttendance() {

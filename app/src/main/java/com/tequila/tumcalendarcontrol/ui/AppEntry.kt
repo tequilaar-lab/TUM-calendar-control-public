@@ -13,6 +13,8 @@ import com.tequila.tumcalendarcontrol.sync.ManualEventKind
 
 /** Wohin die App beim Öffnen springt; reine Navigation, auch bei Aufruf durch fremde Apps unbedenklich. */
 sealed interface AppEntry {
+    /** Startseite (Übersicht) – Ziel der Kurs-Widgets außerhalb einzelner Termine. */
+    data object Overview : AppEntry
     /** Seite „Kurse lesen“ – erneutes Lesen bleibt eine ausdrückliche, ggf. bestätigte Aktion. */
     data object SourceRange : AppEntry
     /** Kursdetails anhand der Quell-UID; unbekannte Kurse lassen die aktuelle Seite unverändert. */
@@ -30,6 +32,7 @@ sealed interface AppEntry {
 object AppEntryIntents {
     private const val EXTRA_TARGET = "com.tequila.tumcalendarcontrol.entry"
     private const val EXTRA_COURSE = "com.tequila.tumcalendarcontrol.entry.course"
+    private const val TARGET_OVERVIEW = "overview"
     private const val TARGET_SOURCE_RANGE = "source-range"
     private const val TARGET_COURSE = "course"
     private const val TARGET_WIDGETS = "widgets"
@@ -43,6 +46,7 @@ object AppEntryIntents {
         Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             when (entry) {
+                AppEntry.Overview -> putExtra(EXTRA_TARGET, TARGET_OVERVIEW)
                 AppEntry.SourceRange -> putExtra(EXTRA_TARGET, TARGET_SOURCE_RANGE)
                 is AppEntry.Course -> { putExtra(EXTRA_TARGET, TARGET_COURSE); putExtra(EXTRA_COURSE, entry.courseId) }
                 is AppEntry.WidgetSettings -> { putExtra(EXTRA_TARGET, TARGET_WIDGETS); entry.widgetId?.let { putExtra(EXTRA_WIDGET_ID, it) } }
@@ -54,6 +58,7 @@ object AppEntryIntents {
         }
 
     fun parse(intent: Intent?): AppEntry? = when (intent?.getStringExtra(EXTRA_TARGET)) {
+        TARGET_OVERVIEW -> AppEntry.Overview
         TARGET_SOURCE_RANGE -> AppEntry.SourceRange
         TARGET_COURSE -> intent.getStringExtra(EXTRA_COURSE)?.takeIf(String::isNotBlank)?.let(AppEntry::Course)
         TARGET_WIDGETS -> AppEntry.WidgetSettings(intent.getIntExtra(EXTRA_WIDGET_ID, -1).takeIf { it >= 0 })

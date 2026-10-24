@@ -66,9 +66,16 @@ object ScheduleWidgetRenderer {
         val density = context.resources.displayMetrics.density
         fun px(dp: Float) = (dp * density).roundToInt()
         views.setViewPadding(R.id.widget_frame, px(geometry.leftDp), px(geometry.topDp), px(geometry.rightDp), px(geometry.bottomDp))
-        // Freie Randfläche öffnet ebenfalls die App (statt toter Tippfläche).
-        views.setOnClickPendingIntent(R.id.widget_frame, openApp(context, null))
         return views
+    }
+
+    /**
+     * Standardziel eines Widgets: Block und freie Randfläche bekommen dasselbe ausdrückliche Ziel (Gerätefund: ohne
+     * Ziel blieb die App auf der zuletzt benutzten Seite). Einzelne Termine setzen danach ihre eigenen Ziele.
+     */
+    internal fun setDefaultClick(views: RemoteViews, click: PendingIntent) {
+        views.setOnClickPendingIntent(R.id.widget_root, click)
+        views.setOnClickPendingIntent(R.id.widget_frame, click)
     }
 
     /** Blockgröße in dp innerhalb der Zellen und Rand je Seite (dp, nicht gerundet, damit feste Ränder genau bleiben). */
@@ -89,7 +96,8 @@ object ScheduleWidgetRenderer {
         val views = RemoteViews(context.packageName, layout)
         resetForReapply(views, if (size == WidgetSize.SMALL) emptyList() else listOf(R.id.widget_rows), if (size == WidgetSize.SMALL) emptyList() else listOf(R.id.widget_footer))
         views.setInt(R.id.widget_root, "setBackgroundResource", background(context, frame.settings))
-        views.setOnClickPendingIntent(R.id.widget_root, openApp(context, null))
+        // Außerhalb einzelner Termine: Startseite („Wohin jetzt“ mit Termin: dessen Details, siehe small()).
+        setDefaultClick(views, openApp(context, AppEntry.Overview))
         val visible = ScheduleWidgetModel.visible(frame.events, frame.settings)
         if (!frame.hasData) return empty(views, text(message(797)) + "\n" + text(message(798)))
         when (size) {
@@ -153,7 +161,10 @@ object ScheduleWidgetRenderer {
             views.setTextViewText(R.id.widget_location, room)
             RoomLink.url(room)?.let { views.setOnClickPendingIntent(R.id.widget_location, openUrl(context, it)) }
         }
-        views.setOnClickPendingIntent(R.id.widget_body, openApp(context, AppEntry.Course(event.courseId)))
+        // Das ganze Widget zeigt diesen einen Termin: überall dessen Kursdetails.
+        val course = openApp(context, AppEntry.Course(event.courseId))
+        views.setOnClickPendingIntent(R.id.widget_body, course)
+        setDefaultClick(views, course)
     }
 
     /** Mittel: heutige Zeitleiste; Zeilen nach Höhe (je 38 dp), vergangene zuerst weglassen; einzeilig nur Kopf mit Nächstem. */
@@ -260,10 +271,10 @@ object ScheduleWidgetRenderer {
         return (if (settings.translucent) WidgetBackgroundTable.glass else WidgetBackgroundTable.solid)[radius]
     }
 
-    /** App öffnen (ohne Ziel) bzw. Kursdetails; Daten-URI macht je Kurs eine eigene PendingIntent. */
-    internal fun openApp(context: Context, entry: AppEntry?): PendingIntent {
+    /** App auf einem Ziel öffnen; Daten-URI macht je Ziel (und je Kurs) eine eigene PendingIntent. */
+    internal fun openApp(context: Context, entry: AppEntry): PendingIntent {
         val intent = AppEntryIntents.intent(context, entry).apply {
-            data = Uri.fromParts("tumwidget", when (entry) { is AppEntry.Course -> entry.courseId; null -> "app"; else -> entry.toString() }, null)
+            data = Uri.fromParts("tumwidget", when (entry) { is AppEntry.Course -> entry.courseId; else -> entry.toString() }, null)
         }
         return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }

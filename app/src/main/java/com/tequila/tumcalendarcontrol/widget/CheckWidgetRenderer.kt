@@ -108,7 +108,8 @@ object CheckWidgetRenderer {
             )
             Action.OPEN_SETTINGS -> ScheduleWidgetRenderer.openApp(context, AppEntry.BackgroundCheck)
         }
-        views.setOnClickPendingIntent(R.id.widget_root, click)
+        // Randfläche wie der Block (sonst öffnete sie die App ohne Ziel).
+        ScheduleWidgetRenderer.setDefaultClick(views, click)
         return views
     }
 
