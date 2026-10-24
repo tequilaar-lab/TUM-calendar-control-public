@@ -71,6 +71,7 @@ internal fun DetailScreen(state: CalendarControlState) {
         DesignFrostCard {
             DesignText(tr(course.displayTitle), 24, serif = true, modifier = Modifier.testTag("detail-title"))
             DesignText(tr(message(148, course.displaySchedule, course.displayLocation, course.statusLabel())), 13, muted = true)
+            RoomLinkRow(course.displayLocation)
         }
         DesignFrostCard {
             DesignRow(

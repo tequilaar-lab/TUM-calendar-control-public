@@ -780,4 +780,7 @@
     <string name="msg_0774" formatted="false">"Changes detected: {0}. Open the app and read again to see details."</string>
     <string name="msg_0775" formatted="false">"There is no previous read to compare with."</string>
     <string name="msg_0776" formatted="false">"{0} changes in {1} courses"</string>
+    <string name="msg_0777" formatted="false">"Show room on map"</string>
+    <string name="msg_0778" formatted="false">"{0} · opens nav.tum.de"</string>
+    <string name="msg_0779" formatted="false">"Open room map"</string>
 </resources>

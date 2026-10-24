@@ -780,4 +780,7 @@
     <string name="msg_0774" formatted="false">"Änderungen erkannt: {0}. App öffnen und erneut lesen, um Details zu sehen."</string>
     <string name="msg_0775" formatted="false">"Es gibt keine vorherige Lesung zum Vergleichen."</string>
     <string name="msg_0776" formatted="false">"{0} Änderungen in {1} Kursen"</string>
+    <string name="msg_0777" formatted="false">"Raum auf der Karte zeigen"</string>
+    <string name="msg_0778" formatted="false">"{0} · öffnet nav.tum.de"</string>
+    <string name="msg_0779" formatted="false">"Raumkarte öffnen"</string>
 </resources>

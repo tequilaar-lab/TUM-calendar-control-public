@@ -780,4 +780,7 @@
     <string name="msg_0774" formatted="false">"检测到变化：{0}。打开后重新读取即可查看明细。"</string>
     <string name="msg_0775" formatted="false">"没有可比较的上一次读取。"</string>
     <string name="msg_0776" formatted="false">"共 {0} 处变化，涉及 {1} 门课程"</string>
+    <string name="msg_0777" formatted="false">"在地图中查看教室"</string>
+    <string name="msg_0778" formatted="false">"{0} · 在 nav.tum.de 打开"</string>
+    <string name="msg_0779" formatted="false">"打开教室地图"</string>
 </resources>
