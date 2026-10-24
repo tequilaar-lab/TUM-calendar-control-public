@@ -1,6 +1,6 @@
 /*
  * Aufgabe: „Systemaussehen folgen“ der Widgets: Eckenradius des Systems lesen und den Block „passend zu Systemkarten“
- *   innerhalb der belegten Zellen berechnen (feste Ränder nach Messung auf dem HONOR-Startbildschirm).
+ *   innerhalb der belegten Zellen berechnen (feste Ränder nach Messung auf dem HONOR-Startbildschirm, außen und innen).
  * Ein-/Ausgabe: Systemressourcen, Hersteller, Dichten bzw. Zellgröße in dp -> Radius, Startbildschirm-Maßstab, Blockgeometrie.
  * Nebenwirkungen: Liest den öffentlichen Systemradius, Herstellername und Dichten; startet einmal je Prozess getprop
  *   für ro.sf.lcd_density (keine Berechtigung, keine fremden App-Daten).
@@ -14,14 +14,23 @@ import android.util.DisplayMetrics
 import kotlin.math.roundToInt
 
 object SystemWidgetLook {
+    /** Ränder einer Systemkarte gegenüber dem Drittanbieterfeld je Seite (Bildschirm-dp, 2,55 px/dp). */
+    data class CardMargins(val sideDp: Float, val topDp: Float, val bottomDp: Float)
+
     /**
-     * Ränder der Systemkarten gegenüber dem Feld, das der Startbildschirm Drittanbieter-Widgets gibt (HONOR-Messung:
-     * Karte im Zellfeld links/rechts 19,5 px, oben 62 px, unten 67 px; Drittanbieterfeld je Seite 12 px; 1 dp = 2,55 px).
-     * Fest in dp statt Prozent: Systemkarten sind bei zwei wie drei Zeilen oben und unten zusammen etwa 41 dp kleiner.
+     * HONOR-Außenbildschirm: Karte im Zellfeld links/rechts 19,5 px, oben 62 px, unten 67 px; Drittanbieterfeld je Seite
+     * 12 px. Fest in dp statt Prozent: Systemkarten sind bei zwei wie drei Zeilen oben und unten zusammen etwa 41 dp kleiner.
      */
-    const val SIDE_DP = 3f
-    const val TOP_DP = 19.5f
-    const val BOTTOM_DP = 21.5f
+    val OuterScreen = CardMargins(sideDp = 3f, topDp = 19.5f, bottomDp = 21.5f)
+
+    /**
+     * HONOR-Innenbildschirm (aufgeklappt; Gerätefund: Block dort 16 px niedriger als die Systemkarte): Karte im Zellfeld
+     * links/rechts 16–17 px, oben 55 px, unten 57 px; Drittanbieterfeld ebenfalls 12 px je Seite.
+     */
+    val InnerScreen = CardMargins(sideDp = 1.8f, topDp = 16.9f, bottomDp = 17.6f)
+
+    /** Großer Bildschirm (aufgeklapptes Faltgerät, Tablet): kleinste Breite ab 600 dp. */
+    fun largeScreen(context: Context): Boolean = context.resources.configuration.smallestScreenWidthDp >= 600
 
     /** Untergrenze des Blocks je Achse (Anteil des Feldes), damit kleine Felder wie 1×1 lesbar bleiben. */
     const val MIN_FRACTION = .6f
@@ -71,12 +80,13 @@ object SystemWidgetLook {
     }
 
     /**
-     * Block „passend zu Systemkarten“: feste Ränder je Seite; wird ein Rand zu groß (unter 60 % übrig), wird der Block
+     * Block „passend zu Systemkarten“: feste Ränder je Seite (Außen- bzw. Innenbildschirm); wird ein Rand zu groß (unter 60 % übrig), wird der Block
      * auf 60 % begrenzt und der Rest im selben Verhältnis (oben:unten) verteilt.
      */
-    fun preset(widthDp: Int, heightDp: Int): ScheduleWidgetRenderer.BlockGeometry {
-        val (left, right) = axis(widthDp, SIDE_DP, SIDE_DP)
-        val (top, bottom) = axis(heightDp, TOP_DP, BOTTOM_DP)
+    fun preset(widthDp: Int, heightDp: Int, largeScreen: Boolean = false): ScheduleWidgetRenderer.BlockGeometry {
+        val margins = if (largeScreen) InnerScreen else OuterScreen
+        val (left, right) = axis(widthDp, margins.sideDp, margins.sideDp)
+        val (top, bottom) = axis(heightDp, margins.topDp, margins.bottomDp)
         return ScheduleWidgetRenderer.BlockGeometry((widthDp - left - right).roundToInt(), (heightDp - top - bottom).roundToInt(), left, top, right, bottom, screenUnits = true)
     }
 

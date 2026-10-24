@@ -60,7 +60,7 @@ object ScheduleWidgetRenderer {
      * der Blockgröße.
      */
     fun render(context: Context, size: WidgetSize, frame: WidgetFrame): RemoteViews {
-        val geometry = block(frame.settings, frame.widthDp, frame.heightDp)
+        val geometry = block(frame.settings, frame.widthDp, frame.heightDp, SystemWidgetLook.largeScreen(context))
         val inner = frame.copy(widthDp = geometry.widthDp, heightDp = geometry.heightDp)
         val views = when (size) {
             WidgetSize.COUNTDOWN -> CountdownWidgetRenderer.render(context, inner)
@@ -93,8 +93,8 @@ object ScheduleWidgetRenderer {
     )
 
     /** Systemaussehen: feste Ränder wie Systemkarten; sonst Prozent je Achse, Quadrat nimmt die kürzere Seite, mittig. */
-    fun block(settings: WidgetSettings, widthDp: Int, heightDp: Int): BlockGeometry {
-        if (settings.followSystem) return SystemWidgetLook.preset(widthDp, heightDp)
+    fun block(settings: WidgetSettings, widthDp: Int, heightDp: Int, largeScreen: Boolean = false): BlockGeometry {
+        if (settings.followSystem) return SystemWidgetLook.preset(widthDp, heightDp, largeScreen)
         var width = widthDp * settings.blockWidthPercent.coerceIn(BlockPercentRange) / 100
         var height = heightDp * settings.blockHeightPercent.coerceIn(BlockPercentRange) / 100
         if (settings.square) { val side = minOf(width, height); width = side; height = side }

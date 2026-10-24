@@ -1,5 +1,5 @@
 /*
- * Aufgabe: „Systemaussehen folgen“ prüfen: Blockgeometrie passend zu Systemkarten (2×2, 4×2, 1×1-Untergrenze),
+ * Aufgabe: „Systemaussehen folgen“ prüfen: Blockgeometrie passend zu Systemkarten (2×2, 4×2, 1×1-Untergrenze, innen),
  *   Rückfall des Systemradius, Startbildschirm-Maßstab, Wahl des Hintergrunds je Radius sowie Speichern des Schalters mit erhaltenen manuellen Werten.
  * Ein-/Ausgabe: synthetische Größen, Radien und Robolectric-Präferenzen -> Geometrie, Ressourcen-IDs, gespeicherte Werte.
  * Nebenwirkungen: Nur private Test-Präferenzen.
@@ -35,6 +35,18 @@ class SystemWidgetLookTest {
         val wide = SystemWidgetLook.preset(320, 211)
         assertEquals(314, wide.widthDp)
         assertEquals(170, wide.heightDp)
+    }
+
+    /** Innenbildschirm (Gerätefund: Block 16 px niedriger als die Systemkarte): kleinere feste Ränder als außen. */
+    @Test fun `Innenbildschirm mit eigenen Rändern`() {
+        val inner = SystemWidgetLook.preset(320, 211, largeScreen = true)
+        assertEquals(16.9f, inner.topDp)
+        assertEquals(17.6f, inner.bottomDp)
+        assertEquals(1.8f, inner.leftDp)
+        assertEquals(177, inner.heightDp)
+        val manual = WidgetSettings(followSystem = true)
+        assertEquals(inner, ScheduleWidgetRenderer.block(manual, 320, 211, largeScreen = true))
+        assertEquals(SystemWidgetLook.preset(320, 211), ScheduleWidgetRenderer.block(manual, 320, 211))
     }
 
     /** 1×1 (73×101 dp): Höhe nicht unter 60 %, Rest oben:unten im Verhältnis 19,5:21,5. */
