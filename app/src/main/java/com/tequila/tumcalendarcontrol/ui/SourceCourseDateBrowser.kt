@@ -103,6 +103,7 @@ internal fun LazyListScope.sourceDateItems(state: CalendarControlState, model: S
                 occurrence = occurrence,
                 selected = occurrence.identity in state.selectedSourceOccurrences,
                 onToggle = { onCurrent(SourceBulkSelection.keyOf(occurrence)); state.toggleSourceOccurrenceSelection(occurrence.identity) },
+                changes = state.sourceChanges.kindsOf(occurrence.identity),
             )
         }
     }

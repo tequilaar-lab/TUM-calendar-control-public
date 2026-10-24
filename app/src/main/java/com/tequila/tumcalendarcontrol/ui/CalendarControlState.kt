@@ -30,6 +30,7 @@ import com.tequila.tumcalendarcontrol.sync.RuleEditCommand
 import com.tequila.tumcalendarcontrol.sync.RuleLedgerEditor
 import com.tequila.tumcalendarcontrol.sync.SyncRule
 import com.tequila.tumcalendarcontrol.sync.SourceCalendarOccurrence
+import com.tequila.tumcalendarcontrol.sync.SourceChangeSummary
 import com.tequila.tumcalendarcontrol.sync.SourceOccurrenceIdentity
 import com.tequila.tumcalendarcontrol.sync.SyncCandidateFactory
 import com.tequila.tumcalendarcontrol.sync.ManagedSyncEngine
@@ -58,7 +59,7 @@ import java.util.UUID
 import java.time.LocalDate
 
 enum class AppScreen {
-    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_RANGE, SOURCE_PREVIEW, SOURCE_ATTENDANCE, MANUAL_EVENTS, MANAGED_SYNC_PREVIEW, OUTPUT_CLEANUP, BACKGROUND_CHECK, RULE_BACKUP, APPEARANCE,
+    OVERVIEW, DETAIL, ATTENDANCE, COURSE_EDIT, SEARCH, FAVORITES, SETTINGS, PROFILE, SYNC_CONFIGURATION, SYNC_PREVIEW, SOURCE_RANGE, SOURCE_PREVIEW, SOURCE_ATTENDANCE, MANUAL_EVENTS, MANAGED_SYNC_PREVIEW, OUTPUT_CLEANUP, BACKGROUND_CHECK, RULE_BACKUP, APPEARANCE, SOURCE_CHANGES, WIDGETS,
 }
 
 enum class ThemeMode(val label: String) {
@@ -235,6 +236,10 @@ class CalendarControlState(
     val activeSourceSnapshotSlot: SourceSnapshotSlot get() = sourceWorkflow.activeSnapshotSlot
     val hasPreviousSourceSnapshot: Boolean get() = sourceWorkflow.hasPreviousSnapshot
     val sourceSnapshotDifference: SourceSnapshotDifference? get() = sourceWorkflow.activeSnapshotDifference
+    /** Ausführliche Änderungen neueste gegenüber vorheriger Lesung (Unterschiedsseite, unabhängig von aktiver Version). */
+    val sourceVersionChanges: SourceChangeSummary get() = sourceWorkflow.latestChanges
+    /** Änderungskennzeichen in der Auswahl nur, solange die neueste Version aktiv ist. */
+    val sourceChanges: SourceChangeSummary get() = if (activeSourceSnapshotSlot == SourceSnapshotSlot.LATEST) sourceWorkflow.latestChanges else SourceChangeSummary.EMPTY
     val sourceSnapshotLabel: String get() = when (activeSourceSnapshotSlot) {
         SourceSnapshotSlot.LATEST -> if (sourceWorkflow.activeSnapshotWasReadInThisRun) message(245) else message(246)
         SourceSnapshotSlot.PREVIOUS -> message(247)
@@ -312,6 +317,8 @@ class CalendarControlState(
     val managedSyncRequested: Boolean get() = outputWorkflow.syncRequested
     val managedRollbackRequested: Boolean get() = outputWorkflow.rollbackRequested
     val managedSyncInProgress: Boolean get() = outputWorkflow.inProgress
+    /** Fortschritt/Anhalten der laufenden Ausgabe (nur Schreiben, nicht Bereinigung). */
+    internal val writeProgress = WriteProgressState()
     val googleAuthorizationRequested: Boolean get() = outputWorkflow.googleAuthorizationRequested
     val hasGoogleAuthorization: Boolean get() = outputWorkflow.hasGoogleAuthorization
     val googleAuthorizationStatus: GoogleAuthorizationStatus get() = outputWorkflow.googleAuthorizationStatus
@@ -471,6 +478,7 @@ class CalendarControlState(
     fun openBackgroundCheck() = navigation.openBackgroundCheck()
 
     fun openRuleBackup() = navigation.openRuleBackup()
+    fun openSourceChanges() = navigation.openSourceChanges()
 
     /** SAF-Ausgabe erst nach Dateiwahl; hier nur Oberflächenabsicht. */
     fun requestRuleBackupExport() { ruleBackupExportRequested = true }
@@ -940,6 +948,7 @@ class CalendarControlState(
     /** Nur zurückgegebene Zuordnungen und bereinigte Zahlen übernehmen; keine Token/Quellinhalte im Bestand. */
     fun resolveManagedOperation(token: Long, result: ManagedSyncResult, configuration: PrivateSyncConfiguration) {
         if (!outputWorkflow.finishOperation(token)) return
+        writeProgress.finish()
         ruleLedger = ruleLedger.copy(
             mappings = result.mappings,
             lastSummary = SyncRunSummary(
@@ -962,6 +971,7 @@ class CalendarControlState(
 
     fun failManagedOperation(token: Long, summary: String) {
         if (outputWorkflow.finishOperation(token)) {
+            writeProgress.finish()
             if (previewChangedDuringWrite) invalidateWritePreview()
             feedback = summary
         }

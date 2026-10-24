@@ -46,10 +46,23 @@ fun ManagedSyncPreviewScreen(state: CalendarControlState) {
         }
         return
     }
+    val writing = state.writeProgress
+    val running = state.managedSyncInProgress && writing.active
+    val reported = writing.progress
+    val label = when {
+        !state.managedSyncInProgress -> message(426)
+        writing.stopping -> message(783)
+        reported != null -> message(781, reported.done, reported.total, reported.target.outputLabel())
+        else -> message(304)
+    }
+    // Während des Schreibens: Pille füllt sich je Ziel, links „Anhalten“ (wirkt zwischen zwei Terminen).
     DesignActionPage(
-        tr(if (state.managedSyncInProgress) message(304) else message(426)), onAction = state::requestManagedSyncExecution,
+        tr(label), onAction = state::requestManagedSyncExecution,
         actionEnabled = !state.managedSyncInProgress, actionTag = "write-confirm", contentTag = "write-content",
+        actionProgress = if (running) writing.fraction ?: 0f else null,
+        secondaryLabel = if (running) tr(message(782)) else null, onSecondary = writing::requestStop, secondaryTag = "write-stop",
     ) {
+        if (running) DesignText(tr(message(784)), 12, TextInset.testTag("write-progress-note"), color = LocalDesignColors.current.accent)
         // Umfang: große Zahl, darunter Aufteilung nach Kursen und Campus-Terminen.
         DesignSection(tr(message(413)), TextInset)
         DesignText(preview.desiredEventCount.toString(), 56, TextInset.testTag("write-count"), weight = FontWeight.Light)

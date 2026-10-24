@@ -758,4 +758,85 @@
     <string name="msg_0752" formatted="false">"恢复为来源信息"</string>
     <string name="msg_0753" formatted="false">"全选课程"</string>
     <string name="msg_0754" formatted="false">"清空"</string>
+    <string name="msg_0755" formatted="false">"与上次读取相比"</string>
+    <string name="msg_0756" formatted="false">"{0} 处变化"</string>
+    <string name="msg_0757" formatted="false">"与上次读取相比没有变化"</string>
+    <string name="msg_0758" formatted="false">"新增"</string>
+    <string name="msg_0759" formatted="false">"已移除"</string>
+    <string name="msg_0760" formatted="false">"已取消"</string>
+    <string name="msg_0761" formatted="false">"恢复上课"</string>
+    <string name="msg_0762" formatted="false">"时间已变"</string>
+    <string name="msg_0763" formatted="false">"地点已变"</string>
+    <string name="msg_0764" formatted="false">"课名已变"</string>
+    <string name="msg_0765" formatted="false">"{0} {1}"</string>
+    <string name="msg_0766" formatted="false">"已选课次中有 {0} 处变化，请检查选择和出席设置。"</string>
+    <string name="msg_0767" formatted="false">"查看全部变化"</string>
+    <string name="msg_0768" formatted="false">"变化明细"</string>
+    <string name="msg_0769" formatted="false">"只读：比较最新一次和上一次读取的课程数据，不会改动选择、规则或日历。"</string>
+    <string name="msg_0770" formatted="false">"原为 {0}"</string>
+    <string name="msg_0771" formatted="false">"地点：{0} → {1}"</string>
+    <string name="msg_0772" formatted="false">"无地点"</string>
+    <string name="msg_0773" formatted="false">"查看两版差异"</string>
+    <string name="msg_0774" formatted="false">"检测到变化：{0}。打开后重新读取即可查看明细。"</string>
+    <string name="msg_0775" formatted="false">"没有可比较的上一次读取。"</string>
+    <string name="msg_0776" formatted="false">"共 {0} 处变化，涉及 {1} 门课程"</string>
+    <string name="msg_0777" formatted="false">"在地图中查看教室"</string>
+    <string name="msg_0778" formatted="false">"{0} · 在 nav.tum.de 打开"</string>
+    <string name="msg_0779" formatted="false">"打开教室地图"</string>
+    <string name="msg_0780" formatted="false">"；已停止，{0} 个课次未处理；再次写入会从中断处继续"</string>
+    <string name="msg_0781" formatted="false">"正在写入 {0}/{1} · {2}"</string>
+    <string name="msg_0782" formatted="false">"停止"</string>
+    <string name="msg_0783" formatted="false">"正在停止…"</string>
+    <string name="msg_0784" formatted="false">"已写入的课次会保留在日历中；停止后再次写入，会跳过没有变化的课次，从中断处继续。"</string>
+    <string name="msg_0785" formatted="false">"现在去哪"</string>
+    <string name="msg_0786" formatted="false">"正在上或下一节课，以及教室"</string>
+    <string name="msg_0787" formatted="false">"今天"</string>
+    <string name="msg_0788" formatted="false">"今天的课程时间线"</string>
+    <string name="msg_0789" formatted="false">"本周"</string>
+    <string name="msg_0790" formatted="false">"一周课程总览"</string>
+    <string name="msg_0791" formatted="false">"进行中 · 还剩 {0} 分钟"</string>
+    <string name="msg_0792" formatted="false">"{0} 分钟后"</string>
+    <string name="msg_0793" formatted="false">"今天 {0}"</string>
+    <string name="msg_0794" formatted="false">"明天 {0}"</string>
+    <string name="msg_0795" formatted="false">"M月d日（E）"</string>
+    <string name="msg_0796" formatted="false">"E"</string>
+    <string name="msg_0797" formatted="false">"还没有写入的课程"</string>
+    <string name="msg_0798" formatted="false">"写入日历后会显示在这里。"</string>
+    <string name="msg_0799" formatted="false">"近期没有课程"</string>
+    <string name="msg_0800" formatted="false">"今天 · {0}"</string>
+    <string name="msg_0801" formatted="false">"{0} 节"</string>
+    <string name="msg_0802" formatted="false">"今天没有课"</string>
+    <string name="msg_0803" formatted="false">"今天的课已结束"</string>
+    <string name="msg_0804" formatted="false">"明天首节 {0} {1}"</string>
+    <string name="msg_0805" formatted="false">"本周 · {0}–{1}"</string>
+    <string name="msg_0806" formatted="false">"接下来 7 天"</string>
+    <string name="msg_0807" formatted="false">"必去 {0} · 选择 {1}"</string>
+    <string name="msg_0808" formatted="false">"d日"</string>
+    <string name="msg_0810" formatted="false">"还有 {0} 节"</string>
+    <string name="msg_0811" formatted="false">"桌面小组件"</string>
+    <string name="msg_0812" formatted="false">"三种尺寸各有侧重：小的显示现在去哪，中的显示今天，大的显示本周。只显示已经写入日历的课程。"</string>
+    <string name="msg_0813" formatted="false">"小组件会在桌面上显示课名和教室。"</string>
+    <string name="msg_0814" formatted="false">"显示内容"</string>
+    <string name="msg_0815" formatted="false">"隐藏灰色（从此不去）"</string>
+    <string name="msg_0816" formatted="false">"隐藏蓝色（选择出席）"</string>
+    <string name="msg_0817" formatted="false">"显示教室"</string>
+    <string name="msg_0818" formatted="false">"外观"</string>
+    <string name="msg_0819" formatted="false">"背景"</string>
+    <string name="msg_0820" formatted="false">"不透明"</string>
+    <string name="msg_0821" formatted="false">"半透明"</string>
+    <string name="msg_0822" formatted="false">"圆角"</string>
+    <string name="msg_0823" formatted="false">"直角"</string>
+    <string name="msg_0824" formatted="false">"小"</string>
+    <string name="msg_0825" formatted="false">"中"</string>
+    <string name="msg_0826" formatted="false">"大"</string>
+    <string name="msg_0827" formatted="false">"圆润"</string>
+    <string name="msg_0828" formatted="false">"本周范围（大尺寸）"</string>
+    <string name="msg_0830" formatted="false">"从今天起 7 天"</string>
+    <string name="msg_0831" formatted="false">"预览"</string>
+    <string name="msg_0832" formatted="false">"添加到桌面"</string>
+    <string name="msg_0833" formatted="false">"高度：在桌面上长按小组件、拖动边框即可调整，内容会随高度增减。"</string>
+    <string name="msg_0834" formatted="false">"当前桌面不支持从这里添加，请在桌面的小组件列表中添加。"</string>
+    <string name="msg_0835" formatted="false">"现在去哪、今天、本周三种尺寸"</string>
+    <string name="msg_0836" formatted="false">"预览使用示例课程，不是真实数据。"</string>
+    <string name="msg_0809" formatted="false">"M月d日"</string>
 </resources>

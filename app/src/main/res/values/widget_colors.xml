@@ -1,0 +1,14 @@
+<!-- Aufgabe: Farben der Startbildschirm-Widgets (hell); reine Darstellungsressource ohne Daten oder Aktionen. -->
+<resources>
+    <color name="widget_surface">#FFFFFEFA</color>
+    <color name="widget_surface_glass">#C7F6F5F1</color>
+    <color name="widget_rim">#141D2B34</color>
+    <color name="widget_ink">#FF1D2B34</color>
+    <color name="widget_muted">#FF657078</color>
+    <color name="widget_accent">#FF0065A8</color>
+    <color name="widget_must">#FF237A42</color>
+    <color name="widget_choose">#FF0065A8</color>
+    <color name="widget_stop">#FF9AA3A9</color>
+    <color name="widget_wash">#170065A8</color>
+    <color name="widget_chip">#0D1D2B34</color>
+</resources>

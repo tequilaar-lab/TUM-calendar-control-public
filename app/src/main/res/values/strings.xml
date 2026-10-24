@@ -758,4 +758,85 @@
     <string name="msg_0752" formatted="false">"Restore source details"</string>
     <string name="msg_0753" formatted="false">"Select all courses"</string>
     <string name="msg_0754" formatted="false">"Clear"</string>
+    <string name="msg_0755" formatted="false">"Compared with the last read"</string>
+    <string name="msg_0756" formatted="false">"{0} changes"</string>
+    <string name="msg_0757" formatted="false">"No changes since the last read"</string>
+    <string name="msg_0758" formatted="false">"New"</string>
+    <string name="msg_0759" formatted="false">"Removed"</string>
+    <string name="msg_0760" formatted="false">"Cancelled"</string>
+    <string name="msg_0761" formatted="false">"Reinstated"</string>
+    <string name="msg_0762" formatted="false">"Time changed"</string>
+    <string name="msg_0763" formatted="false">"Room changed"</string>
+    <string name="msg_0764" formatted="false">"Title changed"</string>
+    <string name="msg_0765" formatted="false">"{0} {1}"</string>
+    <string name="msg_0766" formatted="false">"{0} changes affect selected sessions; please check your selection and attendance."</string>
+    <string name="msg_0767" formatted="false">"View all changes"</string>
+    <string name="msg_0768" formatted="false">"Change details"</string>
+    <string name="msg_0769" formatted="false">"Read only: compares the latest with the previous course data. Selection, rules and calendars stay unchanged."</string>
+    <string name="msg_0770" formatted="false">"Previously {0}"</string>
+    <string name="msg_0771" formatted="false">"Room: {0} → {1}"</string>
+    <string name="msg_0772" formatted="false">"no room"</string>
+    <string name="msg_0773" formatted="false">"Compare both versions"</string>
+    <string name="msg_0774" formatted="false">"Changes detected: {0}. Open the app and read again to see details."</string>
+    <string name="msg_0775" formatted="false">"There is no previous read to compare with."</string>
+    <string name="msg_0776" formatted="false">"{0} changes in {1} courses"</string>
+    <string name="msg_0777" formatted="false">"Show room on map"</string>
+    <string name="msg_0778" formatted="false">"{0} · opens nav.tum.de"</string>
+    <string name="msg_0779" formatted="false">"Open room map"</string>
+    <string name="msg_0780" formatted="false">"; stopped, {0} sessions not processed; writing again continues where it stopped"</string>
+    <string name="msg_0781" formatted="false">"Writing {0}/{1} · {2}"</string>
+    <string name="msg_0782" formatted="false">"Stop"</string>
+    <string name="msg_0783" formatted="false">"Stopping…"</string>
+    <string name="msg_0784" formatted="false">"Sessions already written stay in the calendar. After stopping, writing again skips unchanged sessions and continues where it stopped."</string>
+    <string name="msg_0785" formatted="false">"Next class"</string>
+    <string name="msg_0786" formatted="false">"The current or next class and its room"</string>
+    <string name="msg_0787" formatted="false">"Today"</string>
+    <string name="msg_0788" formatted="false">"Today\'s classes as a timeline"</string>
+    <string name="msg_0789" formatted="false">"This week"</string>
+    <string name="msg_0790" formatted="false">"Overview of the week"</string>
+    <string name="msg_0791" formatted="false">"Now · {0} min left"</string>
+    <string name="msg_0792" formatted="false">"In {0} min"</string>
+    <string name="msg_0793" formatted="false">"Today {0}"</string>
+    <string name="msg_0794" formatted="false">"Tomorrow {0}"</string>
+    <string name="msg_0795" formatted="false">"EEE, d MMM"</string>
+    <string name="msg_0796" formatted="false">"EEE"</string>
+    <string name="msg_0797" formatted="false">"No classes written yet"</string>
+    <string name="msg_0798" formatted="false">"They appear here after writing to the calendar."</string>
+    <string name="msg_0799" formatted="false">"No upcoming classes"</string>
+    <string name="msg_0800" formatted="false">"Today · {0}"</string>
+    <string name="msg_0801" formatted="false">"{0} classes"</string>
+    <string name="msg_0802" formatted="false">"No classes today"</string>
+    <string name="msg_0803" formatted="false">"Today\'s classes are over"</string>
+    <string name="msg_0804" formatted="false">"Tomorrow first: {0} {1}"</string>
+    <string name="msg_0805" formatted="false">"This week · {0}–{1}"</string>
+    <string name="msg_0806" formatted="false">"Next 7 days"</string>
+    <string name="msg_0807" formatted="false">"Must {0} · Optional {1}"</string>
+    <string name="msg_0808" formatted="false">"d"</string>
+    <string name="msg_0810" formatted="false">"{0} more"</string>
+    <string name="msg_0811" formatted="false">"Home screen widgets"</string>
+    <string name="msg_0812" formatted="false">"Each size has its own focus: small shows where to go now, medium shows today, large shows the week. Only classes already written to the calendar appear."</string>
+    <string name="msg_0813" formatted="false">"Widgets show class names and rooms on your home screen."</string>
+    <string name="msg_0814" formatted="false">"Content"</string>
+    <string name="msg_0815" formatted="false">"Hide grey (no longer attending)"</string>
+    <string name="msg_0816" formatted="false">"Hide blue (optional attendance)"</string>
+    <string name="msg_0817" formatted="false">"Show room"</string>
+    <string name="msg_0818" formatted="false">"Appearance"</string>
+    <string name="msg_0819" formatted="false">"Background"</string>
+    <string name="msg_0820" formatted="false">"Opaque"</string>
+    <string name="msg_0821" formatted="false">"Translucent"</string>
+    <string name="msg_0822" formatted="false">"Corners"</string>
+    <string name="msg_0823" formatted="false">"Square"</string>
+    <string name="msg_0824" formatted="false">"Small"</string>
+    <string name="msg_0825" formatted="false">"Medium"</string>
+    <string name="msg_0826" formatted="false">"Large"</string>
+    <string name="msg_0827" formatted="false">"Round"</string>
+    <string name="msg_0828" formatted="false">"Week range (large)"</string>
+    <string name="msg_0830" formatted="false">"7 days from today"</string>
+    <string name="msg_0831" formatted="false">"Preview"</string>
+    <string name="msg_0832" formatted="false">"Add to home screen"</string>
+    <string name="msg_0833" formatted="false">"Height: long-press the widget on the home screen and drag its edges; the content adapts to the height."</string>
+    <string name="msg_0834" formatted="false">"This launcher can\'t add widgets from here; add it from the launcher\'s widget list."</string>
+    <string name="msg_0835" formatted="false">"Next class, today and week"</string>
+    <string name="msg_0836" formatted="false">"The preview uses sample classes, not your data."</string>
+    <string name="msg_0809" formatted="false">"d MMM"</string>
 </resources>

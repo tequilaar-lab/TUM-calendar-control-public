@@ -92,8 +92,9 @@ fun DesignChoice(
     }
 }
 
+/** badge: kurzer Hinweis in Akzentfarbe unter der Erläuterung (z. B. Quelländerung); leer = keiner. */
 @Composable
-fun DesignCheck(label: String, checked: Boolean, modifier: Modifier = Modifier, detail: String = "", onChange: (Boolean) -> Unit) {
+fun DesignCheck(label: String, checked: Boolean, modifier: Modifier = Modifier, detail: String = "", badge: String = "", onChange: (Boolean) -> Unit) {
     val colors = LocalDesignColors.current
     val haptics = LocalDesignHaptics.current
     Row(modifier.fillMaxWidth().heightIn(min = 52.dp).toggleable(checked, role = Role.Checkbox) { haptics.perform(HapticEvent.SELECTION); onChange(it) }.padding(vertical = 8.dp),
@@ -107,15 +108,16 @@ fun DesignCheck(label: String, checked: Boolean, modifier: Modifier = Modifier, 
                     uncheckedBackgroundColor = colors.ink.copy(alpha = .10f), uncheckedForegroundColor = colors.paper,
                 ))
         }
-        DesignLabel(label, detail)
+        DesignLabel(label, detail, badge)
     }
 }
 
 @Composable
-private fun DesignLabel(label: String, detail: String) {
+private fun DesignLabel(label: String, detail: String, badge: String = "") {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         DesignText(label, 14)
         if (detail.isNotEmpty()) DesignText(detail, 11, muted = true)
+        if (badge.isNotEmpty()) DesignText(badge, 11, color = LocalDesignColors.current.accent, weight = FontWeight.Medium)
     }
 }
 

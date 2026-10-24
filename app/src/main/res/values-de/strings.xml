@@ -758,4 +758,85 @@
     <string name="msg_0752" formatted="false">"Quelldaten wiederherstellen"</string>
     <string name="msg_0753" formatted="false">"Alle Kurse wählen"</string>
     <string name="msg_0754" formatted="false">"Leeren"</string>
+    <string name="msg_0755" formatted="false">"Gegenüber der letzten Lesung"</string>
+    <string name="msg_0756" formatted="false">"{0} Änderungen"</string>
+    <string name="msg_0757" formatted="false">"Keine Änderungen seit der letzten Lesung"</string>
+    <string name="msg_0758" formatted="false">"Neu"</string>
+    <string name="msg_0759" formatted="false">"Entfallen"</string>
+    <string name="msg_0760" formatted="false">"Abgesagt"</string>
+    <string name="msg_0761" formatted="false">"Wieder angesetzt"</string>
+    <string name="msg_0762" formatted="false">"Zeit geändert"</string>
+    <string name="msg_0763" formatted="false">"Ort geändert"</string>
+    <string name="msg_0764" formatted="false">"Titel geändert"</string>
+    <string name="msg_0765" formatted="false">"{0} {1}"</string>
+    <string name="msg_0766" formatted="false">"{0} Änderungen betreffen gewählte Termine; bitte Auswahl und Teilnahme prüfen."</string>
+    <string name="msg_0767" formatted="false">"Alle Änderungen ansehen"</string>
+    <string name="msg_0768" formatted="false">"Änderungsdetails"</string>
+    <string name="msg_0769" formatted="false">"Nur lesen: vergleicht die neueste mit der vorherigen Kursdatenversion. Auswahl, Regeln und Kalender bleiben unverändert."</string>
+    <string name="msg_0770" formatted="false">"Vorher {0}"</string>
+    <string name="msg_0771" formatted="false">"Ort: {0} → {1}"</string>
+    <string name="msg_0772" formatted="false">"kein Ort"</string>
+    <string name="msg_0773" formatted="false">"Beide Versionen vergleichen"</string>
+    <string name="msg_0774" formatted="false">"Änderungen erkannt: {0}. App öffnen und erneut lesen, um Details zu sehen."</string>
+    <string name="msg_0775" formatted="false">"Es gibt keine vorherige Lesung zum Vergleichen."</string>
+    <string name="msg_0776" formatted="false">"{0} Änderungen in {1} Kursen"</string>
+    <string name="msg_0777" formatted="false">"Raum auf der Karte zeigen"</string>
+    <string name="msg_0778" formatted="false">"{0} · öffnet nav.tum.de"</string>
+    <string name="msg_0779" formatted="false">"Raumkarte öffnen"</string>
+    <string name="msg_0780" formatted="false">"; angehalten, {0} Termine nicht bearbeitet; erneutes Schreiben setzt dort fort"</string>
+    <string name="msg_0781" formatted="false">"Schreibe {0}/{1} · {2}"</string>
+    <string name="msg_0782" formatted="false">"Anhalten"</string>
+    <string name="msg_0783" formatted="false">"Wird angehalten…"</string>
+    <string name="msg_0784" formatted="false">"Bereits geschriebene Termine bleiben im Kalender. Nach dem Anhalten überspringt erneutes Schreiben unveränderte Termine und setzt dort fort."</string>
+    <string name="msg_0785" formatted="false">"Nächster Termin"</string>
+    <string name="msg_0786" formatted="false">"Laufender oder nächster Termin mit Raum"</string>
+    <string name="msg_0787" formatted="false">"Heute"</string>
+    <string name="msg_0788" formatted="false">"Heutige Termine als Zeitleiste"</string>
+    <string name="msg_0789" formatted="false">"Diese Woche"</string>
+    <string name="msg_0790" formatted="false">"Überblick über die Woche"</string>
+    <string name="msg_0791" formatted="false">"Läuft · noch {0} Min."</string>
+    <string name="msg_0792" formatted="false">"In {0} Min."</string>
+    <string name="msg_0793" formatted="false">"Heute {0}"</string>
+    <string name="msg_0794" formatted="false">"Morgen {0}"</string>
+    <string name="msg_0795" formatted="false">"EEE, d. MMM"</string>
+    <string name="msg_0796" formatted="false">"EEE"</string>
+    <string name="msg_0797" formatted="false">"Noch keine Termine geschrieben"</string>
+    <string name="msg_0798" formatted="false">"Sie erscheinen hier nach dem Schreiben in den Kalender."</string>
+    <string name="msg_0799" formatted="false">"Keine anstehenden Termine"</string>
+    <string name="msg_0800" formatted="false">"Heute · {0}"</string>
+    <string name="msg_0801" formatted="false">"{0} Termine"</string>
+    <string name="msg_0802" formatted="false">"Heute keine Termine"</string>
+    <string name="msg_0803" formatted="false">"Heute ist alles vorbei"</string>
+    <string name="msg_0804" formatted="false">"Morgen zuerst: {0} {1}"</string>
+    <string name="msg_0805" formatted="false">"Diese Woche · {0}–{1}"</string>
+    <string name="msg_0806" formatted="false">"Nächste 7 Tage"</string>
+    <string name="msg_0807" formatted="false">"Pflicht {0} · Wahl {1}"</string>
+    <string name="msg_0808" formatted="false">"d."</string>
+    <string name="msg_0810" formatted="false">"{0} weitere"</string>
+    <string name="msg_0811" formatted="false">"Startbildschirm-Widgets"</string>
+    <string name="msg_0812" formatted="false">"Jede Größe hat ihren Schwerpunkt: klein zeigt, wohin es jetzt geht, mittel den heutigen Tag, groß die Woche. Es erscheinen nur bereits in den Kalender geschriebene Termine."</string>
+    <string name="msg_0813" formatted="false">"Widgets zeigen Kursnamen und Räume auf dem Startbildschirm."</string>
+    <string name="msg_0814" formatted="false">"Inhalt"</string>
+    <string name="msg_0815" formatted="false">"Grau ausblenden (nicht mehr teilnehmen)"</string>
+    <string name="msg_0816" formatted="false">"Blau ausblenden (freie Teilnahme)"</string>
+    <string name="msg_0817" formatted="false">"Raum anzeigen"</string>
+    <string name="msg_0818" formatted="false">"Aussehen"</string>
+    <string name="msg_0819" formatted="false">"Hintergrund"</string>
+    <string name="msg_0820" formatted="false">"Deckend"</string>
+    <string name="msg_0821" formatted="false">"Durchscheinend"</string>
+    <string name="msg_0822" formatted="false">"Ecken"</string>
+    <string name="msg_0823" formatted="false">"Eckig"</string>
+    <string name="msg_0824" formatted="false">"Klein"</string>
+    <string name="msg_0825" formatted="false">"Mittel"</string>
+    <string name="msg_0826" formatted="false">"Groß"</string>
+    <string name="msg_0827" formatted="false">"Rund"</string>
+    <string name="msg_0828" formatted="false">"Wochenbereich (groß)"</string>
+    <string name="msg_0830" formatted="false">"7 Tage ab heute"</string>
+    <string name="msg_0831" formatted="false">"Vorschau"</string>
+    <string name="msg_0832" formatted="false">"Zum Startbildschirm hinzufügen"</string>
+    <string name="msg_0833" formatted="false">"Höhe: Widget auf dem Startbildschirm lange drücken und den Rand ziehen; der Inhalt passt sich der Höhe an."</string>
+    <string name="msg_0834" formatted="false">"Dieser Startbildschirm kann Widgets nicht von hier hinzufügen; bitte über die Widget-Liste hinzufügen."</string>
+    <string name="msg_0835" formatted="false">"Nächster Termin, heute und Woche"</string>
+    <string name="msg_0836" formatted="false">"Die Vorschau verwendet Beispieltermine, nicht deine Daten."</string>
+    <string name="msg_0809" formatted="false">"d. MMM"</string>
 </resources>

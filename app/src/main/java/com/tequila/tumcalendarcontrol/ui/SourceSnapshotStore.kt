@@ -89,6 +89,9 @@ internal class SourceSnapshotPreferences(context: Context) {
         return decoded
     }
 
+    /** Nur lesen (Hintergrundprüfung): keine Wiederherstellungskopie, kein Zwischenspeicher; Fehler ergeben leere Daten. */
+    fun peek(): SavedSourceSnapshots = SourceSnapshotCodec.decode(preferences.getString(KEY, null))
+
     fun save(snapshots: SavedSourceSnapshots) {
         if (snapshots == loaded) return
         preferences.edit().putString(KEY, SourceSnapshotCodec.encode(snapshots)).apply()

@@ -32,6 +32,8 @@ internal val routedAppScreens: Set<AppScreen> =
     AppScreen.BACKGROUND_CHECK,
     AppScreen.RULE_BACKUP,
     AppScreen.APPEARANCE,
+    AppScreen.SOURCE_CHANGES,
+    AppScreen.WIDGETS,
     )
 
 @Composable
@@ -52,6 +54,7 @@ fun AppScreenContent(
         AppScreen.SYNC_CONFIGURATION,
         AppScreen.SYNC_PREVIEW,
         AppScreen.APPEARANCE,
+        AppScreen.WIDGETS,
         -> SettingsScreenContent(state, screen)
 
         AppScreen.ATTENDANCE,
@@ -63,6 +66,7 @@ fun AppScreenContent(
         AppScreen.OUTPUT_CLEANUP,
         AppScreen.BACKGROUND_CHECK,
         AppScreen.RULE_BACKUP,
+        AppScreen.SOURCE_CHANGES,
         -> WorkflowScreenContent(state, screen)
     }
 }
@@ -87,6 +91,7 @@ private fun SettingsScreenContent(state: CalendarControlState, screen: AppScreen
         AppScreen.SYNC_CONFIGURATION -> SyncConfigurationScreen(state)
         AppScreen.SYNC_PREVIEW -> SyncPreviewScreen(state)
         AppScreen.APPEARANCE -> AppearanceScreen(state)
+        AppScreen.WIDGETS -> WidgetSettingsScreen()
         else -> error(message(183))
     }
 }
@@ -103,6 +108,7 @@ private fun WorkflowScreenContent(state: CalendarControlState, screen: AppScreen
         AppScreen.OUTPUT_CLEANUP -> OutputCleanupScreen(state)
         AppScreen.BACKGROUND_CHECK -> BackgroundCheckScreen(state)
         AppScreen.RULE_BACKUP -> RuleBackupScreen(state)
+        AppScreen.SOURCE_CHANGES -> SourceChangeScreen(state)
         else -> error(message(184))
     }
 }

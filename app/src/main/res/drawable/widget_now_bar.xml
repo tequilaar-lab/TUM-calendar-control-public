@@ -1,0 +1,5 @@
+<!-- Aufgabe: Widget-Fläche widget_now_bar; reine Darstellungsressource ohne Daten oder Aktionen. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/widget_accent" />
+    <corners android:radius="2dp" />
+</shape>

@@ -2,7 +2,8 @@
  * Aufgabe: Bestätigte Ziele, kurzlebige Token und eigene Kalender mit kontrollierter Ausgabe/Rücknahme verbinden.
  * Ein-/Ausgabe: Bestätigte Ziele, private Konfiguration und Sitzungstoken -> kontrollierte Ausgabe-/Rücknahmeergebnisse.
  * Nebenwirkungen: Nur zuvor bestätigte eigene Kalenderaktionen über die Plattformadapter.
- * Nicht zuständig: iCal-Lesen, Berechtigungen, OAuth-Oberfläche, Ergebnisspeicherung, Fortschrittsdarstellung oder Hauptkalender.
+ * Nicht zuständig: iCal-Lesen, Berechtigungen, OAuth-Oberfläche, Ergebnisspeicherung, Fortschrittsdarstellung (nur Weitergabe
+ *   von WriteControl) oder Hauptkalender.
  */
 package com.tequila.tumcalendarcontrol.sync
 
@@ -50,7 +51,8 @@ class PlatformManagedSyncRunner(private val context: Context, private val engine
         targets: Set<OutputTarget>,
         configuration: PrivateSyncConfiguration,
         googleAccessToken: String?,
-    ): PlatformManagedSyncOutcome = run(desired, mappings, targets, configuration, googleAccessToken, rollback = false)
+        control: WriteControl = WriteControl(),
+    ): PlatformManagedSyncOutcome = run(desired, mappings, targets, configuration, googleAccessToken, rollback = false, control = control)
 
     fun rollback(
         mappings: List<StoredEventMapping>,
@@ -68,6 +70,7 @@ class PlatformManagedSyncRunner(private val context: Context, private val engine
         googleAccessToken: String?,
         rollback: Boolean,
         cleanupScope: ManagedEventCleanupScope = ManagedEventCleanupScope.AllManagedEvents,
+        control: WriteControl = WriteControl(),
     ): PlatformManagedSyncOutcome {
         var nextConfiguration = configuration
         val bindings = mutableListOf<TargetBinding>()
@@ -112,7 +115,7 @@ class PlatformManagedSyncRunner(private val context: Context, private val engine
         // Geprüftes Ziel vor Terminen speichern, damit es nach Prozessende wieder auffindbar ist.
         val configurationStore = PrivateSyncConfigurationStore(context)
         configurationStore.save(configurationStore.load().copy(localCalendarId = nextConfiguration.localCalendarId, googleCalendarId = nextConfiguration.googleCalendarId))
-        val completed = if (rollback) engine.rollback(mappings, bindings, cleanupScope) else engine.execute(desired, mappings, bindings, RuleLedgerPreferences(context)::checkpointMappings)
+        val completed = if (rollback) engine.rollback(mappings, bindings, cleanupScope) else engine.execute(desired, mappings, bindings, control, RuleLedgerPreferences(context)::checkpointMappings)
         return PlatformManagedSyncOutcome(
             result = completed.copy(targetResults = completed.targetResults + failures),
             configuration = nextConfiguration,

@@ -1,0 +1,17 @@
+<!-- Aufgabe: Widget-Beschreibung (small): Größe, frei in Höhe und Breite änderbar, Aktualisierung höchstens alle 30 min, optionale Einrichtung; reine Darstellungsressource ohne Daten oder Aktionen. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_small"
+    android:previewLayout="@layout/widget_small"
+    android:previewImage="@mipmap/ic_launcher"
+    android:description="@string/msg_0786"
+    android:configure="com.tequila.tumcalendarcontrol.widget.WidgetConfigureActivity"
+    android:widgetFeatures="reconfigurable|configuration_optional" />

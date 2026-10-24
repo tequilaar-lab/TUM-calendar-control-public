@@ -80,5 +80,60 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
+        <!-- Startbildschirm-Widget (small); nur Anzeige geschriebener Termine, Systemereignisse lösen Neuzeichnen aus. -->
+        <receiver
+            android:name=".widget.ScheduleWidgetSmall"
+            android:exported="true"
+            android:label="@string/msg_0785">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/schedule_widget_small_info" />
+        </receiver>
+        <!-- Startbildschirm-Widget (medium); nur Anzeige geschriebener Termine, Systemereignisse lösen Neuzeichnen aus. -->
+        <receiver
+            android:name=".widget.ScheduleWidgetMedium"
+            android:exported="true"
+            android:label="@string/msg_0787">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/schedule_widget_medium_info" />
+        </receiver>
+        <!-- Startbildschirm-Widget (large); nur Anzeige geschriebener Termine, Systemereignisse lösen Neuzeichnen aus. -->
+        <receiver
+            android:name=".widget.ScheduleWidgetLarge"
+            android:exported="true"
+            android:label="@string/msg_0789">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/schedule_widget_large_info" />
+        </receiver>
+        <!-- Widget-Einrichtung: bestätigt sofort und öffnet die gemeinsamen Widget-Einstellungen in der App. -->
+        <activity
+            android:name=".widget.WidgetConfigureActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>
