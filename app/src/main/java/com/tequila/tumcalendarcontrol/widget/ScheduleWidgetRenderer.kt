@@ -44,6 +44,8 @@ data class WidgetFrame(
     val heightDp: Int,
     /** Eigene Termine für das Countdown-Widget (Prüfungen/Fristen); unabhängig davon, ob sie geschrieben wurden. */
     val manualEvents: List<ManualScheduleItem> = emptyList(),
+    /** Kurznamen je Quell-UID für das Widget „Woche“ (CourseShortNames); fehlt einer, gilt der volle Titel. */
+    val shortNames: Map<String, String> = emptyMap(),
 )
 
 object ScheduleWidgetRenderer {
@@ -215,7 +217,7 @@ object ScheduleWidgetRenderer {
         footer?.let { views.setTextViewText(R.id.widget_footer, it) }
     }
 
-    /** Groß: sieben Tageszeilen mit Terminblöcken; ab 44 dp je Tag mit Raumzeile; unter 120 dp nur Kopf und Zähler. */
+    /** Groß: sieben Tageszeilen mit Terminblöcken (Kurzname, falls gesetzt); ab 44 dp je Tag mit Raumzeile; unter 120 dp nur Kopf und Zähler. */
     private fun large(context: Context, views: RemoteViews, text: WidgetTexts, events: List<WidgetEvent>, frame: WidgetFrame) {
         val week = ScheduleWidgetModel.week(events, frame.now, frame.zone, frame.settings.calendarWeek)
         views.setTextViewText(R.id.widget_header, text(if (frame.settings.calendarWeek) message(805, text.shortDate(week.days.first().date), text.shortDate(week.days.last().date)) else message(806)))
@@ -237,7 +239,8 @@ object ScheduleWidgetRenderer {
             day.events.take(maxChips).forEach { event ->
                 val chip = RemoteViews(context.packageName, R.layout.widget_chip)
                 chip.setImageViewResource(R.id.chip_dot, dot(event.state))
-                chip.setTextViewText(R.id.chip_text, "${Time.format(event.startsAt.atZone(frame.zone))} ${event.title}")
+                // Kurzname vor vollem Titel (Wunsch: lange Titel endeten mit Auslassungspunkten).
+                chip.setTextViewText(R.id.chip_text, "${Time.format(event.startsAt.atZone(frame.zone))} ${weekTitle(event, frame)}")
                 val room = event.location.trim()
                 val showRoom = tall && frame.settings.showLocation && room.isNotEmpty()
                 chip.setViewVisibility(R.id.chip_detail, if (showRoom) View.VISIBLE else View.GONE)
@@ -251,6 +254,9 @@ object ScheduleWidgetRenderer {
             views.addView(R.id.widget_rows, row)
         }
     }
+
+    /** Titel im Widget „Woche“: eigener Kurzname der Kursreihe, sonst der geschriebene Titel. */
+    internal fun weekTitle(event: WidgetEvent, frame: WidgetFrame): String = frame.shortNames[event.courseId]?.takeIf(String::isNotBlank) ?: event.title
 
     internal fun empty(views: RemoteViews, note: String): RemoteViews {
         views.setViewVisibility(R.id.widget_body, View.GONE)

@@ -2,7 +2,8 @@
  * Aufgabe: Die Startbildschirm-Widgets (klein „Wohin jetzt“, mittel „Heute“, groß „Woche“, „Countdown“) bereitstellen und
  *   aktualisieren: Daten laden, je Instanz nach Größe zeichnen, nächste Aktualisierung grob vormerken.
  * Ein-/Ausgabe: Systemereignisse (Aktualisierung, Größenänderung, Zeit/Zeitzone/Sprache) und App-Aufrufe -> RemoteViews.
- * Nebenwirkungen: Liest nur private Zuordnungen, eigene Termine und Widget-Einstellungen; setzt einen nicht weckenden, ungenauen Alarm.
+ * Nebenwirkungen: Liest nur private Zuordnungen, eigene Termine, Widget-Einstellungen und Kurznamen; setzt einen nicht
+ *   weckenden, ungenauen Alarm.
  *   Kein Netzwerk, kein Kalenderzugriff, keine Schreibvorgänge an Regeln oder Kalendern.
  * Nicht zuständig: Inhalt/Layout (Model, Renderer) oder Einstellungsoberfläche.
  */
@@ -82,11 +83,12 @@ object ScheduleWidgets {
         val manual = ledger?.manualEvents.orEmpty()
         val preferences = WidgetPreferences(app)
         val settings = preferences.load()
+        val shortNames = CourseShortNames(app).load()
         placed.forEach { (size, ids) ->
             ids.forEach { id ->
                 // Jedes platzierte Widget mit eigenen Einstellungen (neue: Standard, klein/Countdown quadratisch).
                 val own = preferences.load(id, size)
-                fun frame(width: Int, height: Int) = WidgetFrame(events, events.isNotEmpty(), own, now, zone, width, height, manual)
+                fun frame(width: Int, height: Int) = WidgetFrame(events, events.isNotEmpty(), own, now, zone, width, height, manual, shortNames)
                 manager.updateAppWidget(id, viewsFor(app, size, manager.getAppWidgetOptions(id), ::frame))
             }
         }

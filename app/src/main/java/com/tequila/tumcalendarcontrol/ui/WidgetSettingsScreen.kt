@@ -1,9 +1,10 @@
 /*
  * Aufgabe: Einstellungsseite der Startbildschirm-Widgets: Auswahl des platzierten Widgets (oder Standard für neue),
  *   Live-Vorschau in seiner echten Größe (echte RemoteViews), Inhalt je Art, Aussehen (auch „Systemaussehen folgen“),
- *   Blockgröße innerhalb der Zellen und „Zum Startbildschirm“ (nur beim Standard).
+ *   Blockgröße innerhalb der Zellen, Kurznamen fürs Widget „Woche“ und „Zum Startbildschirm“ (nur beim Standard).
  * Ein-/Ausgabe: WidgetPreferences je Widget-ID und geschriebene Termine -> Bedienelemente; Änderungen -> speichern und neu zeichnen.
- * Nebenwirkungen: Nur private Widget-Einstellungen; Hinzufügen fragt den Startbildschirm (Systemdialog, Nutzer bestätigt).
+ * Nebenwirkungen: Nur private Widget-Einstellungen und Kurznamen; Hinzufügen fragt den Startbildschirm (Systemdialog,
+ *   Nutzer bestätigt).
  * Nicht zuständig: Zeichnen/Daten der Widgets (widget-Paket), Regeln, Ausgabe oder Kalender.
  */
 package com.tequila.tumcalendarcontrol.ui
@@ -49,10 +50,12 @@ import com.tequila.tumcalendarcontrol.widget.BlockPercentRange
 import com.tequila.tumcalendarcontrol.ui.design.DesignText
 import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
 import com.tequila.tumcalendarcontrol.widget.CountdownWidgetRenderer
+import com.tequila.tumcalendarcontrol.widget.CourseShortNames
 import com.tequila.tumcalendarcontrol.widget.ScheduleWidgetModel
 import com.tequila.tumcalendarcontrol.sync.ManualEventKind
 import com.tequila.tumcalendarcontrol.sync.ManualScheduleItem
 import com.tequila.tumcalendarcontrol.ui.design.DesignChoice
+import com.tequila.tumcalendarcontrol.ui.design.DesignField
 import com.tequila.tumcalendarcontrol.widget.ScheduleWidgetRenderer
 import com.tequila.tumcalendarcontrol.widget.ScheduleWidgets
 import com.tequila.tumcalendarcontrol.widget.SystemWidgetLook
@@ -118,6 +121,9 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
     val manual = state.ruleLedger.manualEvents
     val hasCountdownData = manual.any { it.kind != ManualEventKind.NORMAL }
     val countdownItems = if (hasCountdownData) manual else sampleCountdown(now)
+    // Kurznamen fürs Widget „Woche“ (je Quell-UID, nur lokal); Vorschau folgt sofort.
+    val shortNameStore = remember(context) { CourseShortNames(context) }
+    var shortNames by remember { mutableStateOf(shortNameStore.load()) }
     fun change(next: WidgetSettings) {
         settings = next
         if (current != null) preferences.save(current.id, next) else preferences.save(next)
@@ -152,7 +158,7 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
         }
         val width = current?.widthDp ?: previewWidth(size)
         val height = current?.heightDp ?: previewHeight(size)
-        WidgetPreview(size, WidgetFrame(events, true, settings, now, clock.zone(), width, height, countdownItems))
+        WidgetPreview(size, WidgetFrame(events, true, settings, now, clock.zone(), width, height, countdownItems, shortNames))
         if (if (size == WidgetSize.COUNTDOWN) !hasCountdownData else written.isEmpty()) DesignText(tr(message(836)), 11, TextInset, muted = true)
 
         if (showCourse) {
@@ -167,6 +173,10 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
             DesignText(tr(message(828)), 13, TextInset)
             DesignSegmented(listOf(tr(message(789)), tr(message(830))), if (settings.calendarWeek) 0 else 1, Modifier.testTag("widgets-week")) {
                 change(settings.copy(calendarWeek = it == 0))
+            }
+            CourseShortNameOptions(ScheduleWidgetModel.visible(written, settings), settings.calendarWeek, now, clock.zone(), shortNames) { uid, name ->
+                shortNameStore.set(uid, name)
+                shortNames = shortNameStore.load()
             }
         }
         if (showCountdown) CountdownOptions(settings, manual, now, clock.zone(), ::change)
@@ -204,6 +214,28 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
             pinFeedback?.let { DesignText(tr(it), 12, TextInset.testTag("widgets-pin-feedback"), muted = true) }
         }
     } }
+}
+
+/**
+ * Kurznamen der Kurse, die das Widget „Woche“ gerade zeigt (nur geschriebene Termine); Eingabe wird sofort gespeichert,
+ * die Widgets folgen beim Verlassen der App. Andere Kurse über die Bearbeitungsseite des Kurses.
+ */
+@Composable
+private fun CourseShortNameOptions(
+    written: List<WidgetEvent>, calendarWeek: Boolean, now: Instant, zone: ZoneId, shortNames: Map<String, String>, onChange: (String, String) -> Unit,
+) {
+    DesignSection(tr(message(909)), TextInset)
+    val courses = ScheduleWidgetModel.week(written, now, zone, calendarWeek).days.flatMap { it.events }.distinctBy { it.courseId }
+    if (courses.isEmpty()) {
+        DesignText(tr(message(911)), 12, TextInset.testTag("widgets-short-empty"), muted = true)
+        return
+    }
+    DesignText(tr(message(910)), 12, TextInset, muted = true)
+    courses.forEach { event ->
+        // Eigener Eingabetext je Feld: gespeichert wird bereinigt, Leerzeichen beim Tippen bleiben sichtbar.
+        var text by remember(event.courseId) { mutableStateOf(shortNames[event.courseId].orEmpty()) }
+        DesignField(tr(event.title), text, { text = it.take(CourseShortNames.MAX_LENGTH); onChange(event.courseId, text) }, Modifier.testTag("widgets-short-${event.courseId}"))
+    }
 }
 
 /** Countdown: Arten und angeheftetes Hauptziel (Rückfall auf das nächste, wenn es abläuft oder gelöscht wird). */
