@@ -18,7 +18,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TumCalendarControl">
-        <!-- Öffentliche Deeplinks tumcal://… (nur Navigation, siehe AppEntryIntents.parseUri). -->
+        <!-- Öffentliche Deeplinks tumcal://… (nur Navigation, siehe AppEntryIntents.parseUri); geteilter Text -> Entwurf eines Campustermins. -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -27,6 +27,11 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="tumcal" />
+            </intent-filter>
+            <intent-filter android:label="@string/msg_0949">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
         <!-- Startsymbole als Aliasse: genau einer ist aktiv (Standard Glasblau); Auswahl unter Einstellungen → Darstellung. -->

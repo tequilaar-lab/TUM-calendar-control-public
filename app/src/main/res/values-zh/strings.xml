@@ -947,4 +947,6 @@
     <string name="msg_0945" formatted="false">"测试通知已提升为实况更新，应显示在状态栏胶囊（荣耀：灵动胶囊）中"</string>
     <string name="msg_0946" formatted="false">"测试通知未被提升（系统版本或设置不支持），显示为普通常驻通知"</string>
     <string name="msg_0947" formatted="false">"测试通知 2 分钟后自动消失，内容为示例"</string>
+    <string name="msg_0948" formatted="false">"已根据分享的内容填好，请核对后添加"</string>
+    <string name="msg_0949" formatted="false">"新建校园事项"</string>
 </resources>

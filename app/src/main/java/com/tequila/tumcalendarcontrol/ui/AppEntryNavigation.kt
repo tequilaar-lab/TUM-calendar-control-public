@@ -24,6 +24,7 @@ fun CalendarControlState.applyEntry(entry: AppEntry): AppScreen {
         AppEntry.WritePreview -> prepareCalendarWrite()
         AppEntry.BackgroundCheck -> openBackgroundCheck()
         AppEntry.ClassLive -> open(AppScreen.CLASS_LIVE)
+        is AppEntry.ManualEventDraftEntry -> { manualEventDraft = entry.draft; manualEventsInitialKind = entry.draft.kind; openManualEvents() }
     }
     // Inhaltsfrei: nur Art des Ziels und Seite (für Geräteprüfungen), keine Kurs-ID.
     runCatching { Log.i(LOG_TAG, "${entry::class.simpleName} -> $screen") }

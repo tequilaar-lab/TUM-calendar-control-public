@@ -12,7 +12,11 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import com.tequila.tumcalendarcontrol.MainActivity
+import com.tequila.tumcalendarcontrol.sync.ManualEventDraft
 import com.tequila.tumcalendarcontrol.sync.ManualEventKind
+import com.tequila.tumcalendarcontrol.sync.ManualEventTextParser
+import java.time.LocalDate
+import java.time.ZoneId
 
 /** Wohin die App beim Öffnen springt; reine Navigation, auch bei Aufruf durch fremde Apps unbedenklich. */
 sealed interface AppEntry {
@@ -32,6 +36,8 @@ sealed interface AppEntry {
     data object BackgroundCheck : AppEntry
     /** Einstellungsseite der Live-Kursbenachrichtigung (Testbenachrichtigung, Deeplink). */
     data object ClassLive : AppEntry
+    /** Geteilter Text als Entwurf eines Campustermins; gespeichert wird erst durch den Nutzer im Formular. */
+    data class ManualEventDraftEntry(val draft: ManualEventDraft) : AppEntry
 }
 
 object AppEntryIntents {
@@ -60,6 +66,8 @@ object AppEntryIntents {
                 AppEntry.WritePreview -> putExtra(EXTRA_TARGET, TARGET_WRITE)
                 AppEntry.BackgroundCheck -> putExtra(EXTRA_TARGET, TARGET_CHECK)
                 AppEntry.ClassLive -> putExtra(EXTRA_TARGET, TARGET_LIVE)
+                // Entwürfe entstehen nur aus geteiltem Text, nie als eigener Einstieg.
+                is AppEntry.ManualEventDraftEntry -> putExtra(EXTRA_TARGET, TARGET_EVENTS)
                 null -> Unit
             }
         }
@@ -102,7 +110,14 @@ object AppEntryIntents {
         }
     }
 
-    fun parse(intent: Intent?): AppEntry? = parseExtras(intent) ?: intent?.takeIf { it.action == Intent.ACTION_VIEW }?.data?.let(::parseUri)
+    fun parse(intent: Intent?): AppEntry? = parseExtras(intent) ?: parseShare(intent) ?: intent?.takeIf { it.action == Intent.ACTION_VIEW }?.data?.let(::parseUri)
+
+    /** Geteilter Text (ACTION_SEND, text/plain) -> Entwurf; nur der übergebene Text wird gelesen, nichts gespeichert. */
+    internal fun parseShare(intent: Intent?, today: LocalDate = LocalDate.now(ZoneId.of("Europe/Berlin"))): AppEntry? {
+        if (intent?.action != Intent.ACTION_SEND || intent.type?.startsWith("text/") != true) return null
+        val text = intent.getStringExtra(Intent.EXTRA_TEXT)?.takeIf(String::isNotBlank) ?: return null
+        return AppEntry.ManualEventDraftEntry(ManualEventTextParser.parse(text, intent.getStringExtra(Intent.EXTRA_SUBJECT), today))
+    }
 
     private fun parseExtras(intent: Intent?): AppEntry? = when (intent?.getStringExtra(EXTRA_TARGET)) {
         TARGET_OVERVIEW -> AppEntry.Overview

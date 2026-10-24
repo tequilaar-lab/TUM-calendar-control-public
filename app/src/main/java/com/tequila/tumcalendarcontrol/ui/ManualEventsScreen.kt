@@ -1,6 +1,6 @@
 /*
  * Aufgabe: Eigene Campustermine für nächste bestätigte Ausgabe erfassen oder entfernen (neues Erscheinungsbild);
- *   Art Termin/Prüfung/Frist (Frist mit nur einer Fälligkeitszeit).
+ *   Art Termin/Prüfung/Frist (Frist mit nur einer Fälligkeitszeit); übernimmt einen Entwurf aus geteiltem Text.
  * Ein-/Ausgabe: Art, Titel, Datum, Uhrzeit und Status -> lokale Regelbestands-Änderungsabsicht.
  * Nebenwirkungen: Keine externen Aktionen; Speichern/Löschen über bestehende Zustandsaufrufe.
  * Nicht zuständig: Quellenkursbearbeitung, echte Datumsdialoge, OAuth oder Synchronisierungsausführung.
@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -57,6 +58,22 @@ fun ManualEventsScreen(state: CalendarControlState) {
     var endHour by rememberSaveable { mutableStateOf("10") }
     var endMinute by rememberSaveable { mutableStateOf("0") }
     var attendance by rememberSaveable { mutableStateOf(AttendanceState.CHOOSE_TO_ATTEND) }
+    var fromShare by rememberSaveable { mutableStateOf(false) }
+    // Entwurf aus geteiltem Text übernehmen (nur gefundene Teile; Frist: Uhrzeit ist die Fälligkeit), dann leeren.
+    LaunchedEffect(state.manualEventDraft) {
+        val draft = state.manualEventDraft ?: return@LaunchedEffect
+        kind = draft.kind
+        title = draft.title
+        draft.date?.let { date = it.toString() }
+        val due = draft.end ?: draft.start
+        if (draft.kind == ManualEventKind.DEADLINE) due?.let { endHour = it.hour.toString(); endMinute = it.minute.toString() }
+        else draft.start?.let { start ->
+            val end = draft.end ?: start.plusHours(1)
+            startHour = start.hour.toString(); startMinute = start.minute.toString(); endHour = end.hour.toString(); endMinute = end.minute.toString()
+        }
+        fromShare = true
+        state.manualEventDraft = null
+    }
     DesignActionPage(
         tr(message(437)),
         onAction = {
@@ -65,6 +82,7 @@ fun ManualEventsScreen(state: CalendarControlState) {
         actionTag = "events-save", contentTag = "events-content",
     ) {
         DesignNote(tr(message(430)), tr(message(431)))
+        if (fromShare) DesignText(tr(message(948)), 12, TextInset.testTag("events-from-share"), color = colors.accent)
         DesignSection(tr(message(840)), TextInset)
         DesignSegmented(ManualEventKind.entries.map { tr(it.label()) }, kind.ordinal, Modifier.testTag("events-kind")) { kind = ManualEventKind.entries[it] }
         DesignField(tr(message(432)), title, { title = it }, Modifier.testTag("events-title"), singleLine = true)

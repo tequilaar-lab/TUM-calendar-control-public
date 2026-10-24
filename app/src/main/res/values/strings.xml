@@ -947,4 +947,6 @@
     <string name="msg_0945" formatted="false">"The test notification was promoted to a Live Update and should appear as a status bar chip (HONOR: Dynamic Capsule)"</string>
     <string name="msg_0946" formatted="false">"The test notification was not promoted (system version or settings); it shows as a regular ongoing notification"</string>
     <string name="msg_0947" formatted="false">"The test notification disappears after 2 minutes and shows sample content"</string>
+    <string name="msg_0948" formatted="false">"Filled in from the shared text; please check and add"</string>
+    <string name="msg_0949" formatted="false">"New campus event"</string>
 </resources>

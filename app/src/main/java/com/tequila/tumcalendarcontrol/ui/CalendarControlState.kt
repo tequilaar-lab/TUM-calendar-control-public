@@ -564,6 +564,8 @@ class CalendarControlState(
     var manualEventsInitialKind by mutableStateOf(ManualEventKind.NORMAL)
     /** Widget, das die Widget-Seite beim Öffnen bearbeitet (aus der Einrichtung); null = erstes platziertes. */
     var editingWidgetId by mutableStateOf<Int?>(null)
+    /** Entwurf aus geteiltem Text für das Formular der Campustermine; das Formular übernimmt und leert ihn. */
+    var manualEventDraft by mutableStateOf<com.tequila.tumcalendarcontrol.sync.ManualEventDraft?>(null)
 
     /** Hierarchische Rückkehr innerhalb der App; nur Hauptseite übergibt Beenden an das System. */
     fun handleBack(): Boolean = navigation.handleBack()
