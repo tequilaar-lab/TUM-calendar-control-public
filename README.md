@@ -2,7 +2,7 @@
 
 Eine Android-App, die TUM-Kurstermine aus einem iCal-Abonnement entsprechend der eigenen Teilnahmeauswahl in einen app-eigenen lokalen Kalender und/oder einen Google-Zweitkalender überträgt. Systemkalender wie HONOR Kalender dienen als Anzeige.
 
-Version: **1.4.1**, Build **62**. Die Oberfläche unterstützt **Deutsch, Englisch und Chinesisch**. Unter **Einstellungen → Sprache** lässt sich die Sprache sofort wechseln; die Auswahl bleibt auf dem Gerät gespeichert. Beim ersten Start gilt die Systemsprache, für andere Sprachen Englisch.
+Version: **1.4.2**, Build **63**. Die Oberfläche unterstützt **Deutsch, Englisch und Chinesisch**. Unter **Einstellungen → Sprache** lässt sich die Sprache sofort wechseln; die Auswahl bleibt auf dem Gerät gespeichert. Beim ersten Start gilt die Systemsprache, für andere Sprachen Englisch.
 
 ## Bedienung
 
@@ -18,6 +18,8 @@ Seit 1.2.0 hat die App ein ruhiges, akademisches Erscheinungsbild: große Seiten
 Seit 1.3.0 gibt es drei **Startbildschirm-Widgets** mit eigenem Schwerpunkt: klein „Nächster Termin“ (laufender oder nächster Termin mit Raum), mittel „Heute“ (Zeitleiste) und groß „Diese Woche“. Sie zeigen nur Termine, die bereits in den Kalender geschrieben wurden, lassen sich in Höhe und Breite frei ziehen und unter **Einstellungen → Startbildschirm-Widgets** anpassen: Grau oder Blau ausblenden, Raum anzeigen, deckend oder durchscheinend, fünf Eckenstufen. Nach einer neuen Lesung zeigt die Kursauswahl, was sich gegenüber der vorherigen Lesung geändert hat (neu, entfallen, abgesagt, Zeit, Ort); die Seite **Änderungsdetails** listet alles auf. Der Hinweis der Hintergrundprüfung nennt nur die Zahlen und öffnet „Kurse lesen“. Orte in Kursdetails und Übersicht öffnen auf Antippen den TUM-Raumfinder (nav.tum.de). Beim Schreiben zeigt die Hauptaktion den Fortschritt je Kalender; **Anhalten** wirkt zwischen zwei Terminen, und erneutes Schreiben setzt dort fort.
 
 Seit 1.4.0 haben eigene Campustermine eine **Art**: Termin, Prüfung oder Frist. Eine Frist braucht nur die Fälligkeit und erscheint im Kalender als die 30 Minuten davor; sonst bleibt der geschriebene Kalendertermin unverändert. Die Startseite zeigt unter **Demnächst** bis zu drei Prüfungen oder Fristen der nächsten 30 Tage mit Restzeit. Das vierte Widget **Countdown** zählt groß bis zur nächsten oder einer angehefteten Prüfung/Frist und zeigt breit oder hoch weitere Einträge. Langes Drücken auf das App-Symbol bietet Verknüpfungen (Neu lesen, Prüfung hinzufügen, Ausgabe prüfen, Widget-Einstellungen). Das fünfte Widget **Auf Änderungen prüfen** (1×1 bis 2×2) zeigt den letzten Stand und startet bei aktivierter Hintergrundprüfung auf Antippen sofort eine lesende Prüfung.
+
+Seit 1.4.2 kann jedes Widget dem **Systemaussehen folgen**: Die Ecken kommen aus dem Systemwert für Widgets (Android 12+, sonst die manuelle Ecke), und der Block hält dieselben Ränder wie die Systemkarten (auf einem HONOR-Startbildschirm gemessen). Antippen öffnet immer ein festes Ziel: einen Termin in seinen Kursdetails, sonst bei Kurs-Widgets die Startseite.
 
 Jedes platzierte Widget hat eigene Einstellungen; aus der Widget-Einrichtung öffnet die App direkt das betreffende Widget mit einer Vorschau in seiner echten Größe. Innerhalb der belegten Zellen lässt sich der Block in Breite und Höhe (60–100 %) oder quadratisch einstellen.
 
