@@ -91,6 +91,21 @@ object ScheduleWidgetModel {
     }
 
     /**
+     * Tage für ein zu niedriges Wochen-Widget (Gerätefund: 7 Zeilen in 2 Zellen Höhe überlappten): höchstens capacity
+     * Tage, gewählt nach Vorrang – heute und später mit Terminen, dann frühere mit Terminen (jüngste zuerst), dann leere
+     * Tage (heute zuerst) – und wieder chronologisch geordnet. Passen alle, unverändert.
+     */
+    fun compactDays(week: WidgetWeek, capacity: Int): List<WidgetDay> {
+        if (capacity >= week.days.size) return week.days
+        if (capacity <= 0) return emptyList()
+        val (withEvents, empty) = week.days.partition { it.events.isNotEmpty() }
+        val upcoming = withEvents.filter { it.date >= week.today }
+        val earlier = withEvents.filter { it.date < week.today }.sortedByDescending(WidgetDay::date)
+        val idle = empty.sortedWith(compareBy<WidgetDay> { it.date < week.today }.thenBy { it.date })
+        return (upcoming + earlier + idle).take(capacity).sortedBy(WidgetDay::date)
+    }
+
+    /**
      * Nächster sinnvoller Aktualisierungszeitpunkt (ohne Genauigkeitszusage): Beginn/Ende des nächsten Termins,
      * innerhalb der letzten Stunde vor Beginn alle 5 Minuten (Countdown), sonst spätestens nach 30 Minuten; Tageswechsel zählt.
      */

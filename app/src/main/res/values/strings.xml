@@ -911,4 +911,5 @@
     <string name="msg_0909" formatted="false">"Course short names"</string>
     <string name="msg_0910" formatted="false">"Courses in the Week widget; changes are saved as you type, empty shows the full name. Other courses can be set on the course edit page."</string>
     <string name="msg_0911" formatted="false">"Once courses are written to the calendar, the courses of the Week widget are listed here."</string>
+    <string name="msg_0912" formatted="false">"+{0} more days"</string>
 </resources>

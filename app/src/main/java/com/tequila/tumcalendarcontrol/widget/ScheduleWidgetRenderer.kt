@@ -50,6 +50,8 @@ data class WidgetFrame(
 
 object ScheduleWidgetRenderer {
     private val Time = DateTimeFormatter.ofPattern("HH:mm")
+    /** Mindesthöhe einer Tageszeile im Wochen-Widget (= minHeight in widget_day.xml). */
+    private const val MIN_DAY_DP = 22
     private const val PAST_ALPHA = .45f
 
     /**
@@ -217,7 +219,10 @@ object ScheduleWidgetRenderer {
         footer?.let { views.setTextViewText(R.id.widget_footer, it) }
     }
 
-    /** Groß: sieben Tageszeilen mit Terminblöcken (Kurzname, falls gesetzt); ab 44 dp je Tag mit Raumzeile; unter 120 dp nur Kopf und Zähler. */
+    /**
+     * Groß: sieben Tageszeilen mit Terminblöcken (Kurzname, falls gesetzt); zu niedrig für sieben: nur die wichtigsten Tage
+     * (compactDays) mit „+N Tage“ im Kopf; ab 44 dp je Tag mit Raumzeile; unter 120 dp nur Kopf und Zähler.
+     */
     private fun large(context: Context, views: RemoteViews, text: WidgetTexts, events: List<WidgetEvent>, frame: WidgetFrame) {
         val week = ScheduleWidgetModel.week(events, frame.now, frame.zone, frame.settings.calendarWeek)
         views.setTextViewText(R.id.widget_header, text(if (frame.settings.calendarWeek) message(805, text.shortDate(week.days.first().date), text.shortDate(week.days.last().date)) else message(806)))
@@ -225,12 +230,17 @@ object ScheduleWidgetRenderer {
         views.setViewVisibility(R.id.widget_footer, View.VISIBLE)
         views.setTextViewText(R.id.widget_footer, text(message(807, week.mustCount, week.chooseCount)))
         if (frame.heightDp < 120) { views.setViewVisibility(R.id.widget_rows, View.GONE); return }
-        val perDay = (frame.heightDp - 28 - 22 - 6 - 20) / 7
+        // Zu niedrig für sieben Zeilen (je mindestens MIN_DAY_DP): nur die wichtigsten Tage, Rest im Kopf gezählt.
+        val available = frame.heightDp - 28 - 22 - 6 - 20
+        val days = ScheduleWidgetModel.compactDays(week, available / MIN_DAY_DP)
+        val hidden = week.days.count { it.events.isNotEmpty() } - days.count { it.events.isNotEmpty() }
+        if (hidden > 0) views.setTextViewText(R.id.widget_header_side, text(message(912, hidden)))
+        val perDay = available / days.size.coerceAtLeast(1)
         val tall = perDay >= 44
         // Unter 34 dp je Tag passt die zweizeilige Beschriftung nicht: einzeilig „Mo 19“ (verhindert Überlappung).
         val singleLineLabel = perDay < 34
         val maxChips = ((frame.widthDp - 28 - 48) / (if (tall) 84 else 64)).coerceAtLeast(1)
-        week.days.forEach { day ->
+        days.forEach { day ->
             val row = RemoteViews(context.packageName, R.layout.widget_day)
             row.setTextViewText(R.id.day_label, if (singleLineLabel) "${text.weekday(day.date)} ${day.date.dayOfMonth}" else text.dayLabel(day.date))
             row.setInt(R.id.day_label, "setMaxLines", if (singleLineLabel) 1 else 2)

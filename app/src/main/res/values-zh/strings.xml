@@ -911,4 +911,5 @@
     <string name="msg_0909" formatted="false">"课程简写"</string>
     <string name="msg_0910" formatted="false">"本周组件里的课程，输入即保存；留空显示全名。其他课程可在课程编辑页设置。"</string>
     <string name="msg_0911" formatted="false">"写入日历后，这里会列出本周组件里的课程。"</string>
+    <string name="msg_0912" formatted="false">"另有 {0} 天"</string>
 </resources>

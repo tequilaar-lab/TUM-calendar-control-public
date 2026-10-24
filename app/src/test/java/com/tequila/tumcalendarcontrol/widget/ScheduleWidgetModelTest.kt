@@ -29,6 +29,21 @@ class ScheduleWidgetModelTest {
     private fun ev(key: String, day: Int, hour: Int, state: AttendanceState = AttendanceState.MUST_ATTEND, minutes: Long = 90, minute: Int = 0) =
         WidgetEvent(key, "uid-$key", "Synthetik $key", at(day, hour, minute), at(day, hour, minute).plusSeconds(minutes * 60), state, "Raum $key")
 
+    /** Zu niedriges Wochen-Widget: heute/später mit Terminen zuerst, dann jüngste frühere, dann leere; chronologisch. */
+    @Test fun `kompakte Woche wählt die wichtigsten Tage`() {
+        val events = listOf(ev("1", 19, 10), ev("2", 20, 12), ev("3", 21, 8), ev("4", 22, 9), ev("5", 23, 14))
+        val week = ScheduleWidgetModel.week(events, now, zone, calendarWeek = true)
+        fun days(capacity: Int) = ScheduleWidgetModel.compactDays(week, capacity).map { it.date.dayOfMonth }
+        assertEquals(listOf(21, 22, 23), days(3))
+        assertEquals(listOf(20, 21, 22, 23), days(4))
+        assertEquals(listOf(19, 20, 21, 22, 23, 24), days(6))
+        assertEquals("passt: unverändert", (19..25).toList(), days(7))
+        assertEquals(emptyList<Int>(), days(0))
+        // Am Samstag ohne weitere Termine: jüngste frühere Tage statt leerer Wochenendzeilen.
+        val saturday = ScheduleWidgetModel.week(events, Instant.parse("2026-10-24T08:00:00Z"), zone, calendarWeek = true)
+        assertEquals(listOf(21, 22, 23), ScheduleWidgetModel.compactDays(saturday, 3).map { it.date.dayOfMonth })
+    }
+
     @Test fun `Zuordnungen je Identität einmal und nur mit Inhalt`() {
         val identity = ManagedEventIdentity("uid-a", "i1")
         val written = DesiredCalendarEvent(identity, "Synthetik", at(21, 10), at(21, 11), AttendanceState.MUST_ATTEND, "Raum")

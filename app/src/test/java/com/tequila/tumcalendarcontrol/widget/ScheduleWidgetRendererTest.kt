@@ -69,6 +69,17 @@ class ScheduleWidgetRendererTest {
     private fun View.visible(id: Int): Boolean = findViewById<View>(id).visibility == View.VISIBLE
     private fun View.rowCount(): Int = findViewById<ViewGroup>(R.id.widget_rows).childCount
 
+    /** 5×2 mit Systemrändern (≈143 dp hoch): nur so viele Tageszeilen, wie mit 22 dp passen; Rest im Kopf gezählt. */
+    @Test fun `niedrige Woche ohne überlappende Zeilen`() {
+        val low = render(WidgetSize.LARGE, 320, 143)
+        assertEquals(3, low.rowCount())
+        assertEquals("另有 2 天", low.text(R.id.widget_header_side))
+        val rows = low.findViewById<ViewGroup>(R.id.widget_rows)
+        val density = low.resources.displayMetrics.density
+        (0 until rows.childCount).map { rows.getChildAt(it) }.forEach { assertTrue("Zeile mindestens 22 dp", it.height >= (22 * density).toInt() - 1) }
+        assertEquals("hoch genug: sieben Tage", 7, render(WidgetSize.LARGE, 320, 340).rowCount())
+    }
+
     @Test fun `klein laufender Termin mit Raum, flach ohne Zeit`() {
         val tall = render(WidgetSize.SMALL, 170, 170)
         assertEquals("进行中 · 还剩 60 分钟", tall.text(R.id.widget_status))

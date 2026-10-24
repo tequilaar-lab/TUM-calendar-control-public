@@ -911,4 +911,5 @@
     <string name="msg_0909" formatted="false">"Kurznamen der Kurse"</string>
     <string name="msg_0910" formatted="false">"Kurse im Widget „Woche“; wird beim Tippen gespeichert, leer zeigt den vollen Namen. Andere Kurse auf der Bearbeitungsseite des Kurses."</string>
     <string name="msg_0911" formatted="false">"Nach dem Schreiben in den Kalender erscheinen hier die Kurse des Widgets „Woche“."</string>
+    <string name="msg_0912" formatted="false">"+{0} weitere Tage"</string>
 </resources>
