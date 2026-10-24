@@ -37,6 +37,8 @@ import java.time.format.DateTimeFormatter
 object ClassLiveNotifier {
     private const val CHANNEL_ID = "tum_class_live"
     private const val NOTIFICATION_ID = 4103
+    /** Eigene ID der Testbenachrichtigung: Neuplanung beim Verlassen der App entfernt sie nicht (Gerätefund). */
+    private const val TEST_NOTIFICATION_ID = 4104
     private val Time = DateTimeFormatter.ofPattern("HH:mm")
 
     /** Sichtbare Texte (testbar ohne Benachrichtigungsdienst): Titel, Text, kurzer Chiptext. */
@@ -74,7 +76,10 @@ object ClassLiveNotifier {
         promotionAvailable() && context.getSystemService(NotificationManager::class.java)?.canPostPromotedNotifications() == true
 
     /** entry = Ziel beim Antippen (Standard: Kursdetails; Testbenachrichtigung: Einstellungsseite). */
-    fun show(context: Context, state: LiveState, name: String, now: Instant, zone: ZoneId, entry: AppEntry = AppEntry.Course(state.event.courseId)) {
+    fun show(
+        context: Context, state: LiveState, name: String, now: Instant, zone: ZoneId,
+        entry: AppEntry = AppEntry.Course(state.event.courseId), id: Int = NOTIFICATION_ID,
+    ) {
         if (!canPost(context)) return
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         val localized = localizedAppContext(context, AppLanguagePreferences(context).load())
@@ -101,7 +106,7 @@ object ClassLiveNotifier {
             builder.addAction(Notification.Action.Builder(null, translate(message(935)), open(context, Intent(Intent.ACTION_VIEW, Uri.parse(url)), 1)).build())
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) promote(builder, state, content, now)
-        manager.notify(NOTIFICATION_ID, builder.build())
+        manager.notify(id, builder.build())
     }
 
     /** Android 16: kurzer Chiptext (Uhrzeit), laufend mit Fortschrittsbalken; ab 36.1 zusätzlich Live-Update anfragen. */
@@ -121,12 +126,12 @@ object ClassLiveNotifier {
     fun showTest(context: Context, now: Instant = Instant.now(), zone: ZoneId = ZoneId.systemDefault()) {
         val sample = WidgetEvent("sample", "sample", message(943), now.minus(Duration.ofMinutes(1)), now.plus(Duration.ofMinutes(2)), AttendanceState.MUST_ATTEND, "Hörsaal (0000.00.000)")
         val localized = localizedAppContext(context, AppLanguagePreferences(context).load())
-        show(context, LiveState(sample, LivePhase.IN_PROGRESS), localizedMessage(localized, message(943)), now, zone, AppEntry.ClassLive)
+        show(context, LiveState(sample, LivePhase.IN_PROGRESS), localizedMessage(localized, message(943)), now, zone, AppEntry.ClassLive, TEST_NOTIFICATION_ID)
     }
 
-    /** Ob die gezeigte Benachrichtigung vom System als Live-Update hochgestuft wurde (ab API 36); null = keine aktiv. */
+    /** Ob die Testbenachrichtigung vom System als Live-Update hochgestuft wurde (ab API 36); null = keine aktiv. */
     fun isPromoted(context: Context): Boolean? {
-        val active = context.getSystemService(NotificationManager::class.java)?.activeNotifications?.firstOrNull { it.id == NOTIFICATION_ID } ?: return null
+        val active = context.getSystemService(NotificationManager::class.java)?.activeNotifications?.firstOrNull { it.id == TEST_NOTIFICATION_ID } ?: return null
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA && active.notification.flags and Notification.FLAG_PROMOTED_ONGOING != 0
     }
 

@@ -51,6 +51,18 @@ class CourseShortNamesTest {
         assertEquals(setOf("uid-2"), store.load().keys)
     }
 
+    /** Gerätefund: TUM vergibt je Woche eigene UIDs -> Kurzname gilt über gleichen Titel weiter; eigener Eintrag hat Vorrang. */
+    @Test fun `Kurzname über Wochen gleichen Titels`() {
+        val week1 = event(1, "Synthetik Kommunikationsnetze")
+        val week2 = event(2, "Synthetik Kommunikationsnetze ")
+        val other = event(3, "Synthetik Anderes")
+        val resolved = CourseShortNames.resolve(mapOf("uid-1" to "KomNet"), listOf(week1, week2, other))
+        assertEquals("KomNet", resolved["uid-2"])
+        assertEquals(null, resolved["uid-3"])
+        assertEquals("eigener Eintrag", "KN2", CourseShortNames.resolve(mapOf("uid-1" to "KomNet", "uid-2" to "KN2"), listOf(week1, week2))["uid-2"])
+        assertEquals(emptyMap<String, String>(), CourseShortNames.resolve(emptyMap(), listOf(week1)))
+    }
+
     /** Woche: Kurzname statt langem Titel; ohne Kurzname bleibt der volle Titel. */
     @Test fun `Wochenblöcke zeigen den Kurznamen`() {
         val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()

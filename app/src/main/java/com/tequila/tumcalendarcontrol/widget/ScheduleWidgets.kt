@@ -89,7 +89,7 @@ object ScheduleWidgets {
         val manual = ledger?.manualEvents.orEmpty()
         val preferences = WidgetPreferences(app)
         val settings = preferences.load()
-        val shortNames = CourseShortNames(app).load()
+        val shortNames = CourseShortNames.resolve(CourseShortNames(app).load(), events)
         placed.forEach { (size, ids) ->
             ids.forEach { id ->
                 // Jedes platzierte Widget mit eigenen Einstellungen (neue: Standard, klein/Countdown quadratisch).

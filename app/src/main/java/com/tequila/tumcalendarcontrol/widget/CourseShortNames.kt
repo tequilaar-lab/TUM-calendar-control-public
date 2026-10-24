@@ -26,6 +26,20 @@ class CourseShortNames(context: Context) {
     }
 
     companion object {
+        /**
+         * Kurznamen für alle Termine auflösen (Quell-UID -> Kurzname). Gerätefund: TUM vergibt je Woche eigene UIDs, ein
+         * Kurzname galt daher nur für eine Woche. Ohne eigenen Eintrag gilt deshalb der Kurzname eines Termins mit gleichem
+         * Titel. Nur Anzeige; Synchronisierungsidentität bleibt UID plus Originalinstanz.
+         */
+        fun resolve(stored: Map<String, String>, events: List<WidgetEvent>): Map<String, String> {
+            if (stored.isEmpty()) return emptyMap()
+            val byTitle = events.mapNotNull { event -> stored[event.courseId]?.let { titleKey(event.title) to it } }.toMap()
+            return events.associate { it.courseId to (stored[it.courseId] ?: byTitle[titleKey(it.title)]) }
+                .filterValues { it != null }.mapValues { it.value!! } + stored
+        }
+
+        private fun titleKey(title: String) = title.trim().lowercase()
+
         /** Höchstlänge eines Kurznamens (Zeichen); mehr passt in schmale Wochenblöcke ohnehin nicht. */
         const val MAX_LENGTH = 16
         private const val FILE_NAME = "widget_short_names"

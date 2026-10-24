@@ -27,7 +27,9 @@ object GridWidgetRenderer {
     private const val DAY_LABEL_DP = 16
     private const val AXIS_DP = 16
     private const val MIN_BLOCK_DP = 12f
-    private const val PAST_ALPHA = .45f
+    /** Vergangene Tage nur leicht dämpfen (auf durchscheinendem Hintergrund sonst kaum lesbar). */
+    private const val PAST_ALPHA = .65f
+    private const val HEIGHT_RESERVE = .92f
 
     fun render(context: Context, frame: WidgetFrame): RemoteViews {
         val text = ScheduleWidgetRenderer.WidgetTexts(context)
@@ -36,13 +38,14 @@ object GridWidgetRenderer {
         views.setInt(R.id.widget_root, "setBackgroundResource", ScheduleWidgetRenderer.background(context, frame.settings))
         ScheduleWidgetRenderer.setDefaultClick(views, ScheduleWidgetRenderer.openApp(context, AppEntry.Overview))
         if (!frame.hasData) return ScheduleWidgetRenderer.empty(views, text(message(797)) + "\n" + text(message(798)))
-        val week = ScheduleWidgetModel.week(ScheduleWidgetModel.visible(frame.events, frame.settings), frame.now, frame.zone, calendarWeek = true)
+        val week = GridWidgetModel.displayWeek(ScheduleWidgetModel.visible(frame.events, frame.settings), frame.now, frame.zone)
         val grid = GridWidgetModel.layout(week, frame.zone)
         views.setTextViewText(R.id.widget_header, text(message(915, text.shortDate(week.days.first().date), text.shortDate(week.days.last().date))))
         views.setTextViewText(R.id.widget_header_side, if (grid.hidden > 0) text(message(917, grid.hidden)) else "")
         if (!grid.hasEvents) return ScheduleWidgetRenderer.empty(views, text(message(916)))
         // Höhe je Minute aus der verfügbaren Rasterhöhe; ab Android 12 Höhen in dp (Startbildschirm rechnet um).
-        val gridHeight = (frame.heightDp - PADDING_DP - HEADER_DP - DAY_LABEL_DP).coerceAtLeast(40).toFloat()
+        // Reserve: gemeldete Höhen liegen auf HONOR einige Prozent über der echten (Gerätefund: unterste Zeile abgeschnitten).
+        val gridHeight = ((frame.heightDp - PADDING_DP - HEADER_DP - DAY_LABEL_DP) * HEIGHT_RESERVE).coerceAtLeast(40f)
         val perMinute = gridHeight / (grid.endMinute - grid.startMinute)
         val proportional = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
         if (proportional && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) axis(context, views, grid, perMinute) else views.setViewVisibility(R.id.grid_axis, View.GONE)

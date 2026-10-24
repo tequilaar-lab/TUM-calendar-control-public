@@ -67,6 +67,19 @@ class GridWidgetTest {
         assertEquals(6, model(events + ev("7", 24, 9)).days.size)
     }
 
+    /** Sonntag ohne ausstehende Termine: nächste Woche (nichts vergangen); Samstag mit späterem Termin: diese Woche. */
+    @Test fun `Wochenende zeigt die nächste Woche`() {
+        val sunday = Instant.parse("2026-10-25T10:00:00Z")
+        val next = listOf(ev("n", 26, 9).copy(startsAt = Instant.parse("2026-10-26T08:00:00Z"), endsAt = Instant.parse("2026-10-26T09:30:00Z")))
+        val week = GridWidgetModel.displayWeek(events + next, sunday, zone)
+        assertEquals(26, week.days.first().date.dayOfMonth)
+        assertEquals(LocalDate.of(2026, 10, 25), week.today)
+        assertTrue(GridWidgetModel.layout(week, zone).days.none { it.past })
+        val saturdayWithLater = GridWidgetModel.displayWeek(events + ev("s", 25, 12), Instant.parse("2026-10-24T08:00:00Z"), zone)
+        assertEquals(19, saturdayWithLater.days.first().date.dayOfMonth)
+        assertEquals("unter der Woche unverändert", 19, GridWidgetModel.displayWeek(events, now, zone).days.first().date.dayOfMonth)
+    }
+
     @Test fun `höchstens drei Spuren, Rest gezählt`() {
         val crowded = (1..5).map { ev("c$it", 21, 10, it) }
         val day = model(crowded).days.first { it.date.dayOfMonth == 21 }

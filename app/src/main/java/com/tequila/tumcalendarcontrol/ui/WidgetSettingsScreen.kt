@@ -51,6 +51,7 @@ import com.tequila.tumcalendarcontrol.ui.design.DesignText
 import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
 import com.tequila.tumcalendarcontrol.widget.CountdownWidgetRenderer
 import com.tequila.tumcalendarcontrol.widget.CourseShortNames
+import com.tequila.tumcalendarcontrol.widget.GridWidgetModel
 import com.tequila.tumcalendarcontrol.widget.ScheduleWidgetModel
 import com.tequila.tumcalendarcontrol.sync.ManualEventKind
 import com.tequila.tumcalendarcontrol.sync.ManualScheduleItem
@@ -163,7 +164,9 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
         }
         val width = current?.widthDp ?: previewWidth(size)
         val height = current?.heightDp ?: previewHeight(size)
-        WidgetPreview(size, WidgetFrame(events, true, settings, now, clock.zone(), width, height, countdownItems, shortNames))
+        // Kurznamen auch über Wochen gleichen Titels (TUM vergibt je Woche eigene UIDs).
+        val resolvedShortNames = CourseShortNames.resolve(shortNames, written.ifEmpty { events })
+        WidgetPreview(size, WidgetFrame(events, true, settings, now, clock.zone(), width, height, countdownItems, resolvedShortNames))
         if (if (size == WidgetSize.COUNTDOWN) !hasCountdownData else written.isEmpty()) DesignText(tr(message(836)), 11, TextInset, muted = true)
 
         if (showCourse) {
@@ -183,7 +186,7 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
         }
         if (showShortNames) {
             // Stundenplan zeigt immer die Kalenderwoche.
-            CourseShortNameOptions(ScheduleWidgetModel.visible(written, settings), settings.calendarWeek || size == WidgetSize.GRID, now, clock.zone(), shortNames) { uid, name ->
+            CourseShortNameOptions(ScheduleWidgetModel.visible(written, settings), settings.calendarWeek || size == WidgetSize.GRID, size == WidgetSize.GRID, now, clock.zone(), resolvedShortNames) { uid, name ->
                 shortNameStore.set(uid, name)
                 shortNames = shortNameStore.load()
             }
@@ -231,10 +234,12 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
  */
 @Composable
 private fun CourseShortNameOptions(
-    written: List<WidgetEvent>, calendarWeek: Boolean, now: Instant, zone: ZoneId, shortNames: Map<String, String>, onChange: (String, String) -> Unit,
+    written: List<WidgetEvent>, calendarWeek: Boolean, grid: Boolean, now: Instant, zone: ZoneId, shortNames: Map<String, String>, onChange: (String, String) -> Unit,
 ) {
     DesignSection(tr(message(909)), TextInset)
-    val courses = ScheduleWidgetModel.week(written, now, zone, calendarWeek).days.flatMap { it.events }.distinctBy { it.courseId }
+    // Gleiche Woche wie das Widget (Stundenplan am Wochenende ggf. die nächste); je Titel ein Feld.
+    val week = if (grid) GridWidgetModel.displayWeek(written, now, zone) else ScheduleWidgetModel.week(written, now, zone, calendarWeek)
+    val courses = week.days.flatMap { it.events }.distinctBy { it.title.trim().lowercase() }
     if (courses.isEmpty()) {
         DesignText(tr(message(911)), 12, TextInset.testTag("widgets-short-empty"), muted = true)
         return

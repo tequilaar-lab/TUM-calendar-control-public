@@ -103,7 +103,11 @@ internal fun CourseEditScreen(state: CalendarControlState) {
     // Kurzname fürs Widget „Woche“: eigener Speicher je Quell-UID, getrennt von den lokalen Anzeigeänderungen.
     val context = LocalContext.current
     val shortNames = remember(context) { CourseShortNames(context) }
-    var shortName by rememberSaveable(course.id) { mutableStateOf(shortNames.get(course.id)) }
+    // Eigener Kurzname, sonst der eines geschriebenen Termins gleichen Titels (TUM: je Woche eigene UIDs).
+    var shortName by rememberSaveable(course.id) {
+        val written = runCatching { com.tequila.tumcalendarcontrol.widget.ScheduleWidgetModel.eventsFrom(state.ruleLedger.mappings) }.getOrDefault(emptyList())
+        mutableStateOf(CourseShortNames.resolve(shortNames.load(), written)[course.id] ?: shortNames.get(course.id))
+    }
     val sourceStart = course.startsAt?.atZone(java.time.ZoneId.of("Europe/Berlin"))
     val sourceEnd = course.endsAt?.atZone(java.time.ZoneId.of("Europe/Berlin"))
     val seedWeekday = course.localOverride.meetingTime?.weekday ?: sourceStart?.let { CourseWeekday.entries[it.dayOfWeek.value - 1] } ?: CourseWeekday.MONDAY

@@ -135,6 +135,9 @@ class ClassLiveTest {
         val posted = shadowOf(app.getSystemService(NotificationManager::class.java)).allNotifications.single()
         assertEquals("进行中：示例课程", posted.extras.getString(Notification.EXTRA_TITLE))
         assertEquals(false, ClassLiveNotifier.isPromoted(app))
+        // Gerätefund: Neuplanung beim Verlassen der App (Schalter aus) darf die Testbenachrichtigung nicht entfernen.
+        ClassLiveScheduler.refresh(app, now, zone)
+        assertEquals(1, shadowOf(app.getSystemService(NotificationManager::class.java)).allNotifications.size)
     }
 
     @Test fun `ohne Benachrichtigungsberechtigung nichts gezeigt`() {

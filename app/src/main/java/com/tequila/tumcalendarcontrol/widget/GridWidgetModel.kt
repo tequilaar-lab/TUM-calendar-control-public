@@ -30,6 +30,18 @@ object GridWidgetModel {
     private const val DEFAULT_END_HOUR = 18
     private const val MIN_SPAN_HOURS = 4
 
+    /**
+     * Angezeigte Woche: die aktuelle Kalenderwoche; am Wochenende ohne noch ausstehende Termine dieser Woche die nächste
+     * (Gerätefund: sonntags war alles vergangen und gedämpft). „Heute“ bleibt das echte Datum.
+     */
+    fun displayWeek(events: List<WidgetEvent>, now: java.time.Instant, zone: ZoneId): WidgetWeek {
+        val current = ScheduleWidgetModel.week(events, now, zone, calendarWeek = true)
+        val weekend = current.today.dayOfWeek == java.time.DayOfWeek.SATURDAY || current.today.dayOfWeek == java.time.DayOfWeek.SUNDAY
+        if (!weekend || current.days.any { day -> day.events.any { it.endsAt > now } }) return current
+        val nextMonday = current.days.first().date.plusWeeks(1).atStartOfDay(zone).toInstant()
+        return ScheduleWidgetModel.week(events, nextMonday, zone, calendarWeek = true).copy(today = current.today)
+    }
+
     fun layout(week: WidgetWeek, zone: ZoneId): GridWeek {
         val shown = week.days.filterIndexed { index, day -> index < 5 || day.events.isNotEmpty() }
         val blocksByDay = shown.associate { day -> day.date to day.events.map { block(it, day.date, zone) } }

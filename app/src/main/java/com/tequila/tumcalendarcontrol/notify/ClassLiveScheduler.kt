@@ -29,7 +29,7 @@ object ClassLiveScheduler {
         val plan = ClassLivePlanner.plan(events, settings, now)
         val current = plan.current
         if (current == null) ClassLiveNotifier.cancel(app)
-        else ClassLiveNotifier.show(app, current, CourseShortNames(app).get(current.event.courseId).ifBlank { current.event.title }, now, zone)
+        else ClassLiveNotifier.show(app, current, CourseShortNames.resolve(CourseShortNames(app).load(), events)[current.event.courseId] ?: current.event.title, now, zone)
         schedule(app, plan)
     }
 
