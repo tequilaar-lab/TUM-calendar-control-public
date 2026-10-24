@@ -847,4 +847,9 @@
     <string name="msg_0842" formatted="false">"截止分"</string>
     <string name="msg_0843" formatted="false">"截止于 {0}（欧洲/柏林）"</string>
     <string name="msg_0844" formatted="false">"截止事项在日历中写为截止前 30 分钟的一段日程。"</string>
+    <string name="msg_0845" formatted="false">"还有 {0} 天"</string>
+    <string name="msg_0846" formatted="false">"还有 {0} 小时"</string>
+    <string name="msg_0847" formatted="false">"还有 {0} 分钟"</string>
+    <string name="msg_0848" formatted="false">"进行中"</string>
+    <string name="msg_0849" formatted="false">"即将到来"</string>
 </resources>

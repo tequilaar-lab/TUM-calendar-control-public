@@ -847,4 +847,9 @@
     <string name="msg_0842" formatted="false">"Due minute"</string>
     <string name="msg_0843" formatted="false">"Due {0} (Europe/Berlin)"</string>
     <string name="msg_0844" formatted="false">"Deadlines are written to the calendar as the 30 minutes before they are due."</string>
+    <string name="msg_0845" formatted="false">"{0} days left"</string>
+    <string name="msg_0846" formatted="false">"{0} h left"</string>
+    <string name="msg_0847" formatted="false">"{0} min left"</string>
+    <string name="msg_0848" formatted="false">"In progress"</string>
+    <string name="msg_0849" formatted="false">"Coming up"</string>
 </resources>

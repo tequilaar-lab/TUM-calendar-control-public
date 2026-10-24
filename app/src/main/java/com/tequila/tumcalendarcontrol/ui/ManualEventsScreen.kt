@@ -93,9 +93,15 @@ fun ManualEventsScreen(state: CalendarControlState) {
             ) { attendance = option }
         }
         state.feedback?.let { DesignText(tr(it), 12, TextInset.testTag("events-feedback"), muted = true) }
+        val clock = LocalCountdownClock.current
+        val countdown = com.tequila.tumcalendarcontrol.sync.DeadlineCountdown.upcoming(state.ruleLedger.manualEvents, clock.now(), clock.zone())
         state.ruleLedger.manualEvents.forEach { item ->
             DesignFrostCard(Modifier.testTag("events-item")) {
-                if (item.kind != ManualEventKind.NORMAL) DesignText(tr(item.kind.label()), 11, color = colors.accent)
+                if (item.kind != ManualEventKind.NORMAL) {
+                    // Art und Restzeit (laufend/kommend); vergangene Prüfungen/Fristen nur mit Art.
+                    val remaining = countdown.firstOrNull { it.item.id == item.id }?.remaining?.text()
+                    DesignText(tr(listOfNotNull(item.kind.label(), remaining).let { com.tequila.tumcalendarcontrol.i18n.joinMessages(it, " · ") }), 11, color = colors.accent)
+                }
                 DesignText(tr(message(147, item.title, item.attendanceState.label)), 15)
                 DesignText(tr(item.berlinTimeSummary()), 12, muted = true)
                 DesignPillButton(tr(message(438)), primary = false) { state.removeManualEvent(item.id) }

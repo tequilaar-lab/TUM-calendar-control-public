@@ -847,4 +847,9 @@
     <string name="msg_0842" formatted="false">"Fällig Min."</string>
     <string name="msg_0843" formatted="false">"Fällig {0} (Europe/Berlin)"</string>
     <string name="msg_0844" formatted="false">"Fristen erscheinen im Kalender als die 30 Minuten vor der Fälligkeit."</string>
+    <string name="msg_0845" formatted="false">"noch {0} Tage"</string>
+    <string name="msg_0846" formatted="false">"noch {0} Std."</string>
+    <string name="msg_0847" formatted="false">"noch {0} Min."</string>
+    <string name="msg_0848" formatted="false">"Läuft"</string>
+    <string name="msg_0849" formatted="false">"Demnächst"</string>
 </resources>
