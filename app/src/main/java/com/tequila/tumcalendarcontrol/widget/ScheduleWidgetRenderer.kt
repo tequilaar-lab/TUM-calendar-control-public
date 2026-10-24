@@ -49,8 +49,34 @@ object ScheduleWidgetRenderer {
     private val Time = DateTimeFormatter.ofPattern("HH:mm")
     private const val PAST_ALPHA = .45f
 
+    /**
+     * Zeichnet ein Widget: Zuerst wird der Block innerhalb der belegten Zellen bestimmt (Prozent bzw. Quadrat, mittig),
+     * der äußere transparente Rahmen erhält den Rand, und der Inhalt richtet sich nach der Blockgröße.
+     */
     fun render(context: Context, size: WidgetSize, frame: WidgetFrame): RemoteViews {
-        if (size == WidgetSize.COUNTDOWN) return CountdownWidgetRenderer.render(context, frame)
+        val geometry = block(frame.settings, frame.widthDp, frame.heightDp)
+        val inner = frame.copy(widthDp = geometry.widthDp, heightDp = geometry.heightDp)
+        val views = if (size == WidgetSize.COUNTDOWN) CountdownWidgetRenderer.render(context, inner) else renderCourse(context, size, inner)
+        val density = context.resources.displayMetrics.density
+        val x = (geometry.insetXDp * density).toInt()
+        val y = (geometry.insetYDp * density).toInt()
+        views.setViewPadding(R.id.widget_frame, x, y, x, y)
+        // Freie Randfläche öffnet ebenfalls die App (statt toter Tippfläche).
+        views.setOnClickPendingIntent(R.id.widget_frame, openApp(context, null))
+        return views
+    }
+
+    /** Blockgröße in dp innerhalb der Zellen und Rand je Seite; Quadrat nimmt die kürzere Seite. */
+    data class BlockGeometry(val widthDp: Int, val heightDp: Int, val insetXDp: Int, val insetYDp: Int)
+
+    fun block(settings: WidgetSettings, widthDp: Int, heightDp: Int): BlockGeometry {
+        var width = widthDp * settings.blockWidthPercent.coerceIn(BlockPercentRange) / 100
+        var height = heightDp * settings.blockHeightPercent.coerceIn(BlockPercentRange) / 100
+        if (settings.square) { val side = minOf(width, height); width = side; height = side }
+        return BlockGeometry(width, height, (widthDp - width) / 2, (heightDp - height) / 2)
+    }
+
+    private fun renderCourse(context: Context, size: WidgetSize, frame: WidgetFrame): RemoteViews {
         val text = WidgetTexts(context)
         val layout = when (size) { WidgetSize.SMALL -> R.layout.widget_small; WidgetSize.MEDIUM -> R.layout.widget_list; else -> R.layout.widget_week }
         val views = RemoteViews(context.packageName, layout)

@@ -12,8 +12,7 @@
     android:widgetCategory="home_screen"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_countdown"
-    android:previewLayout="@layout/widget_countdown"
-    android:previewImage="@mipmap/ic_launcher"
+    android:previewImage="@drawable/widget_preview_countdown"
     android:description="@string/msg_0858"
     android:configure="com.tequila.tumcalendarcontrol.widget.WidgetConfigureActivity"
     android:widgetFeatures="reconfigurable|configuration_optional" />

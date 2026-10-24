@@ -105,7 +105,7 @@ object CountdownWidgetRenderer {
         CountdownRemaining.InProgress -> text(remaining.text()) to ""
     }
 
-    /** Zeitpunkt: „Heute 09:00“, „Morgen 09:00“ oder Datum mit Uhrzeit. */
+    /** Zeitpunkt: „Heute 09:00“, „Morgen 09:00“, „Mo 09:00“ oder kurzes Datum mit Uhrzeit. */
     private fun whenText(entry: CountdownEntry, zone: ZoneId, frame: WidgetFrame, text: ScheduleWidgetRenderer.WidgetTexts): String {
         val target = entry.target.atZone(zone)
         val today = frame.now.atZone(zone).toLocalDate()
@@ -114,7 +114,9 @@ object CountdownWidgetRenderer {
             when (target.toLocalDate()) {
                 today -> message(793, time)
                 today.plusDays(1) -> message(794, time)
-                else -> message(765, text.date(target.toLocalDate()), time)
+                // Kurz, damit es in schmale/quadratische 2×2-Blöcke passt: Wochentag in der nächsten Woche, sonst kurzes Datum.
+                in today.plusDays(2)..today.plusDays(6) -> message(765, text.weekday(target.toLocalDate()), time)
+                else -> message(765, text.shortDate(target.toLocalDate()), time)
             },
         )
     }

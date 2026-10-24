@@ -877,4 +877,14 @@
     <string name="msg_0874" formatted="false">"Prüfung gestartet"</string>
     <string name="msg_0875" formatted="false">"Zuletzt {0}"</string>
     <string name="msg_0876" formatted="false">"Aus"</string>
+    <string name="msg_0877" formatted="false">"„{0}“ zum Startbildschirm hinzufügen"</string>
+    <string name="msg_0878" formatted="false">"Zu bearbeitendes Widget"</string>
+    <string name="msg_0879" formatted="false">"Standard für neue Widgets"</string>
+    <string name="msg_0881" formatted="false">"etwa {0}×{1} dp"</string>
+    <string name="msg_0882" formatted="false">"Blockgröße"</string>
+    <string name="msg_0883" formatted="false">"Quadratisch (kürzere Seite)"</string>
+    <string name="msg_0884" formatted="false">"Breite {0} %"</string>
+    <string name="msg_0885" formatted="false">"Höhe {0} %"</string>
+    <string name="msg_0886" formatted="false">"Legt die Blockgröße innerhalb der Zellen fest (mittig); die Zellenzahl ändert man auf dem Startbildschirm durch langes Drücken und Ziehen."</string>
+    <string name="msg_0887" formatted="false">"Noch keine Widgets dieser App auf dem Startbildschirm."</string>
 </resources>

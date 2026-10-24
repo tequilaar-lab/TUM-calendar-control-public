@@ -38,7 +38,7 @@ object AppShortcuts {
             shortcut("read", 865, 866, R.drawable.ic_shortcut_refresh, AppEntry.SourceRange, 0),
             shortcut("exam", 867, 868, R.drawable.ic_shortcut_exam, AppEntry.ManualEvents(ManualEventKind.EXAM), 1),
             shortcut("write", 869, 870, R.drawable.ic_shortcut_write, AppEntry.WritePreview, 2),
-            shortcut("widgets", 871, 872, R.drawable.ic_shortcut_widgets, AppEntry.WidgetSettings, 3),
+            shortcut("widgets", 871, 872, R.drawable.ic_shortcut_widgets, AppEntry.WidgetSettings(), 3),
         )
     }
 

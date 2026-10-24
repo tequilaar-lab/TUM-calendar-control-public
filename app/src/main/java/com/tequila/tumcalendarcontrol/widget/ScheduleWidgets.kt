@@ -34,6 +34,12 @@ abstract class ScheduleWidgetProvider : AppWidgetProvider() {
     override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) =
         ScheduleWidgets.refreshAll(context)
 
+    /** Entfernte Widgets: ihre eigenen Einstellungen löschen. */
+    override fun onDeleted(context: Context, ids: IntArray) {
+        val preferences = WidgetPreferences(context)
+        ids.forEach(preferences::remove)
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED, Intent.ACTION_LOCALE_CHANGED, ScheduleWidgets.ACTION_REFRESH -> ScheduleWidgets.refreshAll(context)
@@ -70,10 +76,13 @@ object ScheduleWidgets {
         val ledger = runCatching { RuleLedgerPreferences(app).load() }.getOrNull()
         val events = ledger?.let { ScheduleWidgetModel.eventsFrom(it.mappings) }.orEmpty()
         val manual = ledger?.manualEvents.orEmpty()
-        val settings = WidgetPreferences(app).load()
+        val preferences = WidgetPreferences(app)
+        val settings = preferences.load()
         placed.forEach { (size, ids) ->
             ids.forEach { id ->
-                fun frame(width: Int, height: Int) = WidgetFrame(events, events.isNotEmpty(), settings, now, zone, width, height, manual)
+                // Jedes platzierte Widget mit eigenen Einstellungen (neue: Standard, klein/Countdown quadratisch).
+                val own = preferences.load(id, size)
+                fun frame(width: Int, height: Int) = WidgetFrame(events, events.isNotEmpty(), own, now, zone, width, height, manual)
                 manager.updateAppWidget(id, viewsFor(app, size, manager.getAppWidgetOptions(id), ::frame))
             }
         }
@@ -93,10 +102,34 @@ object ScheduleWidgets {
         if (sizes.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             return RemoteViews(sizes.associateWith { ScheduleWidgetRenderer.render(context, size, frame(it.width.toInt(), it.height.toInt())) })
         }
-        // Hochformat: Breite = kleinste, Höhe = größte gemeldete Abmessung.
+        val (width, height) = portraitSize(options, size)
+        return ScheduleWidgetRenderer.render(context, size, frame(width, height))
+    }
+
+    /** Platziertes Widget mit Art und (Hochformat-)Größe in dp für Einstellungsliste und Vorschau. */
+    data class PlacedWidget(val id: Int, val size: WidgetSize, val widthDp: Int, val heightDp: Int)
+
+    /** Alle platzierten Widgets dieser App, nach Art und ID geordnet. */
+    fun placed(context: Context): List<PlacedWidget> {
+        val app = context.applicationContext
+        val manager = AppWidgetManager.getInstance(app) ?: return emptyList()
+        return providers.flatMap { (type, size) ->
+            manager.getAppWidgetIds(ComponentName(app, type)).sorted().map { id ->
+                val (width, height) = portraitSize(manager.getAppWidgetOptions(id), size)
+                PlacedWidget(id, size, width, height)
+            }
+        }
+    }
+
+    /** Hochformatgröße: ab Android 12 die erste gemeldete Größe, sonst minWidth × maxHeight, sonst Standard. */
+    internal fun portraitSize(options: Bundle, size: WidgetSize): Pair<Int, Int> {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            @Suppress("DEPRECATION")
+            options.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)?.firstOrNull()?.let { return it.width.toInt() to it.height.toInt() }
+        }
         val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).takeIf { it > 0 } ?: defaultWidth(size)
         val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).takeIf { it > 0 } ?: defaultHeight(size)
-        return ScheduleWidgetRenderer.render(context, size, frame(width, height))
+        return width to height
     }
 
     /** RemoteViews erlaubt höchstens 16 Größen in einer Zuordnung. */

@@ -12,8 +12,7 @@
     android:widgetCategory="home_screen"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_week"
-    android:previewLayout="@layout/widget_week"
-    android:previewImage="@mipmap/ic_launcher"
+    android:previewImage="@drawable/widget_preview_large"
     android:description="@string/msg_0790"
     android:configure="com.tequila.tumcalendarcontrol.widget.WidgetConfigureActivity"
     android:widgetFeatures="reconfigurable|configuration_optional" />

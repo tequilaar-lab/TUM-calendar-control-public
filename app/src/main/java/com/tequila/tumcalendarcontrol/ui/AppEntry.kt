@@ -17,8 +17,8 @@ sealed interface AppEntry {
     data object SourceRange : AppEntry
     /** Kursdetails anhand der Quell-UID; unbekannte Kurse lassen die aktuelle Seite unverändert. */
     data class Course(val courseId: String) : AppEntry
-    /** Einstellungsseite der Startbildschirm-Widgets (aus der Widget-Einrichtung). */
-    data object WidgetSettings : AppEntry
+    /** Einstellungsseite der Widgets; widgetId = gleich dieses platzierte Widget bearbeiten (aus der Einrichtung), null = Liste. */
+    data class WidgetSettings(val widgetId: Int? = null) : AppEntry
     /** Campustermine; kind gibt die vorgewählte Art vor (z. B. Prüfung), null = unverändert. */
     data class ManualEvents(val kind: ManualEventKind? = null) : AppEntry
     /** Schreibvorschau berechnen und zeigen; geschrieben wird erst nach „Bestätigen und schreiben“. */
@@ -37,6 +37,7 @@ object AppEntryIntents {
     private const val TARGET_WRITE = "write-preview"
     private const val TARGET_CHECK = "background-check"
     private const val EXTRA_KIND = "com.tequila.tumcalendarcontrol.entry.kind"
+    private const val EXTRA_WIDGET_ID = "com.tequila.tumcalendarcontrol.entry.widget"
 
     fun intent(context: Context, entry: AppEntry?): Intent =
         Intent(context, MainActivity::class.java).apply {
@@ -44,7 +45,7 @@ object AppEntryIntents {
             when (entry) {
                 AppEntry.SourceRange -> putExtra(EXTRA_TARGET, TARGET_SOURCE_RANGE)
                 is AppEntry.Course -> { putExtra(EXTRA_TARGET, TARGET_COURSE); putExtra(EXTRA_COURSE, entry.courseId) }
-                AppEntry.WidgetSettings -> putExtra(EXTRA_TARGET, TARGET_WIDGETS)
+                is AppEntry.WidgetSettings -> { putExtra(EXTRA_TARGET, TARGET_WIDGETS); entry.widgetId?.let { putExtra(EXTRA_WIDGET_ID, it) } }
                 is AppEntry.ManualEvents -> { putExtra(EXTRA_TARGET, TARGET_EVENTS); entry.kind?.let { putExtra(EXTRA_KIND, it.name) } }
                 AppEntry.WritePreview -> putExtra(EXTRA_TARGET, TARGET_WRITE)
                 AppEntry.BackgroundCheck -> putExtra(EXTRA_TARGET, TARGET_CHECK)
@@ -55,7 +56,7 @@ object AppEntryIntents {
     fun parse(intent: Intent?): AppEntry? = when (intent?.getStringExtra(EXTRA_TARGET)) {
         TARGET_SOURCE_RANGE -> AppEntry.SourceRange
         TARGET_COURSE -> intent.getStringExtra(EXTRA_COURSE)?.takeIf(String::isNotBlank)?.let(AppEntry::Course)
-        TARGET_WIDGETS -> AppEntry.WidgetSettings
+        TARGET_WIDGETS -> AppEntry.WidgetSettings(intent.getIntExtra(EXTRA_WIDGET_ID, -1).takeIf { it >= 0 })
         TARGET_WRITE -> AppEntry.WritePreview
         TARGET_CHECK -> AppEntry.BackgroundCheck
         TARGET_EVENTS -> AppEntry.ManualEvents(intent.getStringExtra(EXTRA_KIND)?.let { name -> ManualEventKind.entries.firstOrNull { it.name == name } })

@@ -24,6 +24,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.tequila.tumcalendarcontrol.widget.WidgetCorner
 import com.tequila.tumcalendarcontrol.widget.WidgetPreferences
+import androidx.compose.ui.test.onAllNodesWithTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -72,7 +73,7 @@ class WidgetSettingsPagesTest {
         val state = CalendarControlState().also { it.themeMode = ThemeMode.LIGHT; it.open(AppScreen.WIDGETS) }
         composeRule.setContent { CompositionLocalProvider(LocalWidgetPreviewClock provides fixedClock) { CalendarControlSurface(state) } }
         composeRule.waitForIdle()
-        composeRule.onNode(hasText("大") and hasAnyAncestor(hasTestTag("widgets-preview-size"))).performClick()
+        composeRule.onNode(hasText("本周") and hasAnyAncestor(hasTestTag("widgets-preview-size"))).performClick()
         composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage("src/test/screenshots/widgets_settings_large_412x892.png")
     }
@@ -93,9 +94,29 @@ class WidgetSettingsPagesTest {
         composeRule.onRoot().captureRoboImage("src/test/screenshots/widgets_settings_countdown_412x892.png")
     }
 
+    /** Platziertes Widget (Robolectric): Seite bearbeitet genau dieses; Quadrat und Breite landen unter seiner ID. */
+    @Test fun `编辑桌面上的单个组件与方块大小`() {
+        val manager = android.appwidget.AppWidgetManager.getInstance(context)
+        val id = org.robolectric.Shadows.shadowOf(manager).createWidget(com.tequila.tumcalendarcontrol.widget.ScheduleWidgetCountdown::class.java, com.tequila.tumcalendarcontrol.R.layout.widget_countdown)
+        val state = CalendarControlState().also { it.themeMode = ThemeMode.LIGHT; it.editingWidgetId = id; it.open(AppScreen.WIDGETS) }
+        composeRule.setContent { CompositionLocalProvider(LocalWidgetPreviewClock provides fixedClock) { CalendarControlSurface(state) } }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("widgets-target-$id").assertExists()
+        // Für ein Countdown-Widget keine Kursoptionen und kein „Hinzufügen“.
+        assertEquals(0, composeRule.onAllNodes(hasTestTag("widgets-hide-blue")).fetchSemanticsNodes().size)
+        assertEquals(0, composeRule.onAllNodes(hasTestTag("widgets-pin")).fetchSemanticsNodes().size)
+        composeRule.onRoot().captureRoboImage("src/test/screenshots/widgets_edit_placed_412x892.png")
+        composeRule.onNodeWithTag("widgets-content").performScrollToNode(hasTestTag("widgets-square"))
+        composeRule.onNodeWithTag("widgets-square").performClick()
+        composeRule.waitForIdle()
+        val preferences = WidgetPreferences(context)
+        assertEquals("Countdown startet quadratisch, Klick schaltet aus", false, preferences.load(id, com.tequila.tumcalendarcontrol.widget.WidgetSize.COUNTDOWN).square)
+        assertEquals("Standard unverändert", false, preferences.load().square)
+    }
+
     @Test fun `小组件入口打开设置页`() {
-        val intent = AppEntryIntents.intent(context, AppEntry.WidgetSettings)
-        assertEquals(AppEntry.WidgetSettings, AppEntryIntents.parse(intent))
+        val intent = AppEntryIntents.intent(context, AppEntry.WidgetSettings())
+        assertEquals(AppEntry.WidgetSettings(), AppEntryIntents.parse(intent))
         val exam = AppEntry.ManualEvents(com.tequila.tumcalendarcontrol.sync.ManualEventKind.EXAM)
         assertEquals(exam, AppEntryIntents.parse(AppEntryIntents.intent(context, exam)))
         assertEquals(AppEntry.ManualEvents(null), AppEntryIntents.parse(AppEntryIntents.intent(context, AppEntry.ManualEvents())))

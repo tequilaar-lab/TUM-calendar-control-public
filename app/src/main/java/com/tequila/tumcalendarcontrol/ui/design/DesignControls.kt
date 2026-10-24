@@ -36,6 +36,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import top.yukonga.miuix.kmp.basic.Slider
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.testTag
@@ -209,6 +213,26 @@ fun DesignField(
             )
             Box(Modifier.matchParentSize().squircleBorder(1.dp, colors.ink.copy(alpha = .14f), DesignRadii.Field))
         }
+    }
+}
+
+/**
+ * Schieberegler (Miuix Slider) mit Beschriftung: zeigt den Wert während des Ziehens, meldet ihn erst beim Loslassen
+ * (vermeidet Speichern/Neuzeichnen bei jedem Bildschirmbild). Werte in festen Schritten innerhalb des Bereichs.
+ */
+@Composable
+fun DesignSlider(label: @Composable (Int) -> String, value: Int, range: IntRange, step: Int, modifier: Modifier = Modifier, enabled: Boolean = true, onChange: (Int) -> Unit) {
+    var shown by remember(value) { mutableStateOf(value) }
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        DesignText(label(shown), 13, Modifier.padding(horizontal = 4.dp), muted = !enabled)
+        Slider(
+            value = shown.toFloat(),
+            onValueChange = { raw -> shown = (range.first + Math.round((raw - range.first) / step) * step).coerceIn(range) },
+            enabled = enabled,
+            valueRange = range.first.toFloat()..range.last.toFloat(),
+            steps = (range.last - range.first) / step - 1,
+            onValueChangeFinished = { onChange(shown) },
+        )
     }
 }
 

@@ -877,4 +877,14 @@
     <string name="msg_0874" formatted="false">"Check started"</string>
     <string name="msg_0875" formatted="false">"Last {0}"</string>
     <string name="msg_0876" formatted="false">"Off"</string>
+    <string name="msg_0877" formatted="false">"Add “{0}” to home screen"</string>
+    <string name="msg_0878" formatted="false">"Widget to edit"</string>
+    <string name="msg_0879" formatted="false">"Default for new widgets"</string>
+    <string name="msg_0881" formatted="false">"about {0}×{1} dp"</string>
+    <string name="msg_0882" formatted="false">"Block size"</string>
+    <string name="msg_0883" formatted="false">"Square (shorter side)"</string>
+    <string name="msg_0884" formatted="false">"Width {0}%"</string>
+    <string name="msg_0885" formatted="false">"Height {0}%"</string>
+    <string name="msg_0886" formatted="false">"Sets the block size within the widget\'s cells, centred; the number of cells is changed on the home screen by long-pressing and dragging."</string>
+    <string name="msg_0887" formatted="false">"No widgets of this app on the home screen yet."</string>
 </resources>

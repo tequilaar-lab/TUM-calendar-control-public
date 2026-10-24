@@ -128,7 +128,7 @@ fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {})
         when (entry) {
             AppEntry.SourceRange -> state.openSourceRange()
             is AppEntry.Course -> state.openCourse(entry.courseId)
-            AppEntry.WidgetSettings -> state.open(AppScreen.WIDGETS)
+            is AppEntry.WidgetSettings -> { state.editingWidgetId = entry.widgetId; state.open(AppScreen.WIDGETS) }
             is AppEntry.ManualEvents -> { entry.kind?.let { state.manualEventsInitialKind = it }; state.openManualEvents() }
             AppEntry.WritePreview -> state.prepareCalendarWrite()
             AppEntry.BackgroundCheck -> state.openBackgroundCheck()

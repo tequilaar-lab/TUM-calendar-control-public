@@ -981,6 +981,8 @@ class CalendarControlState(
     fun openManualEvents() = navigation.openManualEvents()
     /** Vorgewählte Art beim nächsten Öffnen der Campustermine (Einstiege wie „Prüfung hinzufügen“). */
     var manualEventsInitialKind by mutableStateOf(ManualEventKind.NORMAL)
+    /** Widget, das die Widget-Seite beim Öffnen bearbeitet (aus der Einrichtung); null = erstes platziertes. */
+    var editingWidgetId by mutableStateOf<Int?>(null)
 
     /**
      * Eigene generierte Termin-ID; Europe/Berlin-Zeiten. Eingabefehler verändern keinen Bestand; true = gespeichert.

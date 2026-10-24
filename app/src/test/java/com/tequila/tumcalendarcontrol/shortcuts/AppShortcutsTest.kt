@@ -37,7 +37,7 @@ class AppShortcutsTest {
         assertEquals(listOf("读取更新", "添加考试", "写入内容", "小组件"), shortcuts.map { it.shortLabel.toString() })
         assertTrue(shortcuts.all { it.intent.action == Intent.ACTION_VIEW })
         assertEquals(
-            listOf(AppEntry.SourceRange, AppEntry.ManualEvents(ManualEventKind.EXAM), AppEntry.WritePreview, AppEntry.WidgetSettings),
+            listOf(AppEntry.SourceRange, AppEntry.ManualEvents(ManualEventKind.EXAM), AppEntry.WritePreview, AppEntry.WidgetSettings()),
             shortcuts.map { AppEntryIntents.parse(it.intent) },
         )
     }

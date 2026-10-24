@@ -877,4 +877,14 @@
     <string name="msg_0874" formatted="false">"已开始检查"</string>
     <string name="msg_0875" formatted="false">"上次 {0}"</string>
     <string name="msg_0876" formatted="false">"未开启"</string>
+    <string name="msg_0877" formatted="false">"添加「{0}」到桌面"</string>
+    <string name="msg_0878" formatted="false">"要调整的组件"</string>
+    <string name="msg_0879" formatted="false">"新组件的默认样式"</string>
+    <string name="msg_0881" formatted="false">"约 {0}×{1} dp"</string>
+    <string name="msg_0882" formatted="false">"方块大小"</string>
+    <string name="msg_0883" formatted="false">"正方形（取较短的一边）"</string>
+    <string name="msg_0884" formatted="false">"宽度 {0}%"</string>
+    <string name="msg_0885" formatted="false">"高度 {0}%"</string>
+    <string name="msg_0886" formatted="false">"在组件所占的格子里调整方块大小，方块居中；格子数在桌面上长按拖动边框调整。"</string>
+    <string name="msg_0887" formatted="false">"桌面上还没有本应用的小组件。"</string>
 </resources>

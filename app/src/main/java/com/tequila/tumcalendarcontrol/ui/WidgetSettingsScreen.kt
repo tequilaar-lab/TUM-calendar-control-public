@@ -1,8 +1,8 @@
 /*
- * Aufgabe: Einstellungsseite der Startbildschirm-Widgets: Live-Vorschau der drei Kursgrößen und des Countdowns (echte
- *   RemoteViews), Inhalt (Grau/Blau ausblenden, Raum), Aussehen (Deckkraft, Eckenstufe, Wochenbereich), Countdown
- *   (Prüfungen/Fristen, Anheftung) und „Zum Startbildschirm“.
- * Ein-/Ausgabe: WidgetPreferences und geschriebene Termine -> Bedienelemente; Änderungen -> speichern und Widgets neu zeichnen.
+ * Aufgabe: Einstellungsseite der Startbildschirm-Widgets: Auswahl des platzierten Widgets (oder Standard für neue),
+ *   Live-Vorschau in seiner echten Größe (echte RemoteViews), Inhalt je Art, Aussehen, Blockgröße innerhalb der Zellen
+ *   und „Zum Startbildschirm“ (nur beim Standard).
+ * Ein-/Ausgabe: WidgetPreferences je Widget-ID und geschriebene Termine -> Bedienelemente; Änderungen -> speichern und neu zeichnen.
  * Nebenwirkungen: Nur private Widget-Einstellungen; Hinzufügen fragt den Startbildschirm (Systemdialog, Nutzer bestätigt).
  * Nicht zuständig: Zeichnen/Daten der Widgets (widget-Paket), Regeln, Ausgabe oder Kalender.
  */
@@ -42,6 +42,8 @@ import com.tequila.tumcalendarcontrol.ui.design.DesignPage
 import com.tequila.tumcalendarcontrol.ui.design.DesignPillButton
 import com.tequila.tumcalendarcontrol.ui.design.DesignSection
 import com.tequila.tumcalendarcontrol.ui.design.DesignSegmented
+import com.tequila.tumcalendarcontrol.ui.design.DesignSlider
+import com.tequila.tumcalendarcontrol.widget.BlockPercentRange
 import com.tequila.tumcalendarcontrol.ui.design.DesignText
 import com.tequila.tumcalendarcontrol.ui.design.LocalDesignColors
 import com.tequila.tumcalendarcontrol.widget.CountdownWidgetRenderer
@@ -67,15 +69,35 @@ private val TextInset = Modifier.padding(horizontal = 4.dp)
 internal data class WidgetPreviewClock(val now: () -> Instant = Instant::now, val zone: () -> ZoneId = ZoneId::systemDefault)
 internal val LocalWidgetPreviewClock = staticCompositionLocalOf { WidgetPreviewClock() }
 private val CornerLabels = listOf(823, 824, 825, 826, 827)
-private val SizeLabels = listOf(824, 825, 826, 857)
+/** Arten in der Vorschau des Standards (Reihenfolge = Segmente). */
+private val PreviewTypes = listOf(WidgetSize.SMALL, WidgetSize.MEDIUM, WidgetSize.LARGE, WidgetSize.COUNTDOWN)
 
+/** Bearbeitungsziel „Standard für neue Widgets“ (kein platziertes Widget). */
+private const val DefaultTarget = -1
+
+/** Anzeigename einer Widget-Art (wie in der Widget-Liste des Startbildschirms). */
+internal fun WidgetSize.label(): String = when (this) {
+    WidgetSize.SMALL -> message(785)
+    WidgetSize.MEDIUM -> message(787)
+    WidgetSize.LARGE -> message(789)
+    WidgetSize.COUNTDOWN -> message(857)
+}
+
+/**
+ * Oben die platzierten Widgets (Art · Nummer, Größe) und „Standard für neue Widgets“; darunter Vorschau in der echten
+ * Größe des gewählten Widgets und nur die Optionen, die für seine Art gelten. Änderungen gelten nur für das gewählte Ziel.
+ */
 @Composable
 fun WidgetSettingsScreen(state: CalendarControlState) {
     val context = LocalContext.current
     val preferences = remember(context) { WidgetPreferences(context) }
-    var settings by remember { mutableStateOf(preferences.load()) }
-    var previewSize by rememberSaveable { mutableStateOf(WidgetSize.MEDIUM.name) }
+    val placed = remember(context) { ScheduleWidgets.placed(context) }
+    var target by rememberSaveable { mutableStateOf(state.editingWidgetId?.takeIf { id -> placed.any { it.id == id } } ?: placed.firstOrNull()?.id ?: DefaultTarget) }
+    val current = placed.firstOrNull { it.id == target }
+    var settings by remember(target) { mutableStateOf(current?.let { preferences.load(it.id, it.size) } ?: preferences.load()) }
+    var defaultPreview by rememberSaveable { mutableStateOf(WidgetSize.SMALL.name) }
     var pinFeedback by remember { mutableStateOf<String?>(null) }
+    val size = current?.size ?: WidgetSize.valueOf(defaultPreview)
     // Eigene geschriebene Termine, sonst synthetische Beispiele (dann mit Hinweis); beides nur zur Vorschau.
     val written = remember(context) { runCatching { ScheduleWidgetModel.eventsFrom(RuleLedgerPreferences(context).load().mappings) }.getOrDefault(emptyList()) }
     val clock = LocalWidgetPreviewClock.current
@@ -87,25 +109,54 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
     val countdownItems = if (hasCountdownData) manual else sampleCountdown(now)
     fun change(next: WidgetSettings) {
         settings = next
-        preferences.save(next)
+        if (current != null) preferences.save(current.id, next) else preferences.save(next)
         ScheduleWidgets.refreshAll(context)
     }
+    // Für platzierte Widgets nur passende Optionen; beim Standard alle (gilt für jede Art).
+    val showCourse = current == null || size != WidgetSize.COUNTDOWN
+    val showWeek = current == null || size == WidgetSize.LARGE
+    val showCountdown = current == null || size == WidgetSize.COUNTDOWN
     DesignPage(contentTag = "widgets-content") {
         DesignText(tr(message(812)), 13, TextInset)
         DesignText(tr(message(813)), 12, TextInset, muted = true)
 
+        DesignSection(tr(message(878)), TextInset)
+        if (placed.isEmpty()) DesignText(tr(message(887)), 12, TextInset, muted = true)
+        Column {
+            placed.forEach { widget ->
+                val number = placed.filter { it.size == widget.size }.indexOf(widget) + 1
+                DesignChoice(
+                    tr(message(147, widget.size.label(), number)), target == widget.id, Modifier.testTag("widgets-target-${widget.id}"),
+                    detail = tr(message(881, widget.widthDp, widget.heightDp)),
+                ) { target = widget.id }
+            }
+            DesignChoice(tr(message(879)), target == DefaultTarget, Modifier.testTag("widgets-target-default")) { target = DefaultTarget }
+        }
+
         DesignSection(tr(message(831)), TextInset)
-        val size = WidgetSize.valueOf(previewSize)
-        DesignSegmented(SizeLabels.map { tr(message(it)) }, size.ordinal, Modifier.testTag("widgets-preview-size")) { previewSize = WidgetSize.entries[it].name }
-        WidgetPreview(size, WidgetFrame(events, true, settings, now, clock.zone(), previewWidth(size), previewHeight(size), countdownItems))
+        if (current == null) {
+            DesignSegmented(PreviewTypes.map { tr(it.label()) }, PreviewTypes.indexOf(size), Modifier.testTag("widgets-preview-size")) { defaultPreview = PreviewTypes[it].name }
+        }
+        val width = current?.widthDp ?: previewWidth(size)
+        val height = current?.heightDp ?: previewHeight(size)
+        WidgetPreview(size, WidgetFrame(events, true, settings, now, clock.zone(), width, height, countdownItems))
         if (if (size == WidgetSize.COUNTDOWN) !hasCountdownData else written.isEmpty()) DesignText(tr(message(836)), 11, TextInset, muted = true)
 
-        DesignSection(tr(message(814)), TextInset)
-        Column {
-            DesignCheck(tr(message(815)), settings.hideStopAttending, TextInset.testTag("widgets-hide-gray")) { change(settings.copy(hideStopAttending = it)) }
-            DesignCheck(tr(message(816)), settings.hideChooseToAttend, TextInset.testTag("widgets-hide-blue")) { change(settings.copy(hideChooseToAttend = it)) }
-            DesignCheck(tr(message(817)), settings.showLocation, TextInset.testTag("widgets-location")) { change(settings.copy(showLocation = it)) }
+        if (showCourse) {
+            DesignSection(tr(message(814)), TextInset)
+            Column {
+                DesignCheck(tr(message(815)), settings.hideStopAttending, TextInset.testTag("widgets-hide-gray")) { change(settings.copy(hideStopAttending = it)) }
+                DesignCheck(tr(message(816)), settings.hideChooseToAttend, TextInset.testTag("widgets-hide-blue")) { change(settings.copy(hideChooseToAttend = it)) }
+                DesignCheck(tr(message(817)), settings.showLocation, TextInset.testTag("widgets-location")) { change(settings.copy(showLocation = it)) }
+            }
         }
+        if (showWeek) {
+            DesignText(tr(message(828)), 13, TextInset)
+            DesignSegmented(listOf(tr(message(789)), tr(message(830))), if (settings.calendarWeek) 0 else 1, Modifier.testTag("widgets-week")) {
+                change(settings.copy(calendarWeek = it == 0))
+            }
+        }
+        if (showCountdown) CountdownOptions(settings, manual, now, clock.zone(), ::change)
 
         DesignSection(tr(message(818)), TextInset)
         DesignText(tr(message(819)), 13, TextInset)
@@ -114,38 +165,46 @@ fun WidgetSettingsScreen(state: CalendarControlState) {
         }
         DesignText(tr(message(822)), 13, TextInset)
         DesignChips(CornerLabels.map { tr(message(it)) }, settings.corner.ordinal, Modifier.testTag("widgets-corner")) { change(settings.copy(corner = WidgetCorner.entries[it])) }
-        DesignText(tr(message(828)), 13, TextInset)
-        DesignSegmented(listOf(tr(message(789)), tr(message(830))), if (settings.calendarWeek) 0 else 1, Modifier.testTag("widgets-week")) {
-            change(settings.copy(calendarWeek = it == 0))
-        }
-        DesignText(tr(message(833)), 12, TextInset, muted = true)
 
-        // Countdown: Arten und angeheftetes Hauptziel; Hintergrund/Ecken gelten wie oben.
-        DesignSection(tr(message(857)), TextInset)
-        Column {
-            DesignCheck(tr(message(860)), settings.countdownExams, TextInset.testTag("widgets-countdown-exams")) { change(settings.copy(countdownExams = it)) }
-            DesignCheck(tr(message(861)), settings.countdownDeadlines, TextInset.testTag("widgets-countdown-deadlines")) { change(settings.copy(countdownDeadlines = it)) }
-        }
-        DesignText(tr(message(862)), 13, TextInset)
-        val pinnable = CountdownWidgetRenderer.entries(WidgetFrame(emptyList(), true, settings, now, clock.zone(), 0, 0, manual))
-        Column {
-            DesignChoice(tr(message(863)), pinnable.none { it.item.id == settings.countdownPinnedId }, Modifier.testTag("widgets-pin-auto")) {
-                change(settings.copy(countdownPinnedId = null))
-            }
-            pinnable.forEach { entry ->
-                DesignChoice(
-                    tr(entry.item.title), entry.item.id == settings.countdownPinnedId, Modifier.testTag("widgets-pin-${entry.item.id}"),
-                    detail = tr(message(147, entry.item.kind.label(), entry.remaining.text())),
-                ) { change(settings.copy(countdownPinnedId = entry.item.id)) }
-            }
-        }
-        DesignText(tr(message(864)), 12, TextInset, muted = true)
+        // Block innerhalb der Zellen: Quadrat oder Breite/Höhe in Prozent (Wunsch: auch im festen 2×2 anpassbar).
+        DesignSection(tr(message(882)), TextInset)
+        DesignCheck(tr(message(883)), settings.square, TextInset.testTag("widgets-square")) { change(settings.copy(square = it)) }
+        DesignSlider({ tr(message(884, it)) }, settings.blockWidthPercent, BlockPercentRange, 5, Modifier.testTag("widgets-block-width")) { change(settings.copy(blockWidthPercent = it)) }
+        DesignSlider({ tr(message(885, it)) }, settings.blockHeightPercent, BlockPercentRange, 5, Modifier.testTag("widgets-block-height")) { change(settings.copy(blockHeightPercent = it)) }
+        DesignText(tr(message(886)), 12, TextInset, muted = true)
 
-        DesignPillButton(tr(message(832)), Modifier.testTag("widgets-pin"), primary = false) {
-            pinFeedback = if (ScheduleWidgets.canRequestPin(context) && ScheduleWidgets.requestPin(context, size)) null else message(834)
+        // Hinzufügen nur beim Standard; die Schaltfläche nennt die Art (Startbildschirm-Dialog zeigt nur das App-Symbol).
+        if (current == null) {
+            DesignPillButton(tr(message(877, size.label())), Modifier.testTag("widgets-pin"), primary = false) {
+                pinFeedback = if (ScheduleWidgets.canRequestPin(context) && ScheduleWidgets.requestPin(context, size)) null else message(834)
+            }
+            pinFeedback?.let { DesignText(tr(it), 12, TextInset.testTag("widgets-pin-feedback"), muted = true) }
         }
-        pinFeedback?.let { DesignText(tr(it), 12, TextInset.testTag("widgets-pin-feedback"), muted = true) }
     }
+}
+
+/** Countdown: Arten und angeheftetes Hauptziel (Rückfall auf das nächste, wenn es abläuft oder gelöscht wird). */
+@Composable
+private fun CountdownOptions(settings: WidgetSettings, manual: List<ManualScheduleItem>, now: Instant, zone: ZoneId, change: (WidgetSettings) -> Unit) {
+    DesignSection(tr(message(857)), TextInset)
+    Column {
+        DesignCheck(tr(message(860)), settings.countdownExams, TextInset.testTag("widgets-countdown-exams")) { change(settings.copy(countdownExams = it)) }
+        DesignCheck(tr(message(861)), settings.countdownDeadlines, TextInset.testTag("widgets-countdown-deadlines")) { change(settings.copy(countdownDeadlines = it)) }
+    }
+    DesignText(tr(message(862)), 13, TextInset)
+    val pinnable = CountdownWidgetRenderer.entries(WidgetFrame(emptyList(), true, settings, now, zone, 0, 0, manual))
+    Column {
+        DesignChoice(tr(message(863)), pinnable.none { it.item.id == settings.countdownPinnedId }, Modifier.testTag("widgets-pin-auto")) {
+            change(settings.copy(countdownPinnedId = null))
+        }
+        pinnable.forEach { entry ->
+            DesignChoice(
+                tr(entry.item.title), entry.item.id == settings.countdownPinnedId, Modifier.testTag("widgets-pin-${entry.item.id}"),
+                detail = tr(message(147, entry.item.kind.label(), entry.remaining.text())),
+            ) { change(settings.copy(countdownPinnedId = entry.item.id)) }
+        }
+    }
+    DesignText(tr(message(864)), 12, TextInset, muted = true)
 }
 
 /**
