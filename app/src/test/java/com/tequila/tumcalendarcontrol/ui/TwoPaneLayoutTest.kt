@@ -1,6 +1,6 @@
 /*
- * Aufgabe: Zweispaltige Darstellung prüfen: Regel (Breite, Listenseiten, Herkunft der Details), breites Fenster mit
- *   Liste und Details, Wechsel zu anderem Kurs ohne Verlust der Liste, schmales Fenster unverändert; Bild als Referenz.
+ * Aufgabe: Zweispaltige Darstellung prüfen: Regel (Breite, Suche/Favoriten, Übersicht ausgenommen, Herkunft der
+ *   Details), breites Fenster mit Suche und Details, Wechsel zu anderem Kurs ohne Verlust der Liste, schmales Fenster unverändert; Bild als Referenz.
  * Ein-/Ausgabe: Beispielkurse (synthetisch) und Fenstergrößen -> sichtbare Bereiche, PNG.
  * Nebenwirkungen: Nur Robolectric-Umgebung und lokales Testbild.
  * Nicht zuständig: Inhalte der Seiten selbst.
@@ -28,16 +28,18 @@ class TwoPaneLayoutTest {
     @get:Rule val composeRule = createComposeRule()
 
     @Test fun `Regel`() {
-        assertEquals(AppScreen.OVERVIEW, twoPaneListScreen(AppScreen.OVERVIEW, 900, AppScreen.OVERVIEW))
-        assertEquals("Details aus der Suche", AppScreen.SEARCH, twoPaneListScreen(AppScreen.DETAIL, 900, AppScreen.SEARCH))
-        assertNull("zu schmal", twoPaneListScreen(AppScreen.OVERVIEW, 839, AppScreen.OVERVIEW))
+        assertEquals(AppScreen.SEARCH, twoPaneListScreen(AppScreen.SEARCH, 820, AppScreen.OVERVIEW))
+        assertEquals("Details aus der Suche", AppScreen.SEARCH, twoPaneListScreen(AppScreen.DETAIL, 820, AppScreen.SEARCH))
+        assertNull("Übersicht hat eigene breite Darstellung", twoPaneListScreen(AppScreen.OVERVIEW, 1200, AppScreen.OVERVIEW))
+        assertNull("Details aus der Übersicht", twoPaneListScreen(AppScreen.DETAIL, 1200, AppScreen.OVERVIEW))
+        assertNull("zu schmal", twoPaneListScreen(AppScreen.SEARCH, 699, AppScreen.OVERVIEW))
         assertNull("andere Seite", twoPaneListScreen(AppScreen.SETTINGS, 1200, AppScreen.OVERVIEW))
         assertNull("Details nicht aus einer Liste", twoPaneListScreen(AppScreen.DETAIL, 1200, AppScreen.SOURCE_PREVIEW))
     }
 
     @Config(qualifiers = "w1000dp-h760dp-xhdpi")
     @Test fun `breit Liste und Details`() {
-        val state = CalendarControlState().also { it.themeMode = ThemeMode.LIGHT; it.lightPaletteStyle = LightPaletteStyle.WARM_WHITE }
+        val state = CalendarControlState().also { it.themeMode = ThemeMode.LIGHT; it.lightPaletteStyle = LightPaletteStyle.WARM_WHITE; it.open(AppScreen.SEARCH) }
         composeRule.setContent { CalendarControlSurface(state) }
         composeRule.waitForIdle()
         composeRule.onNodeWithTag("two-pane").assertExists()

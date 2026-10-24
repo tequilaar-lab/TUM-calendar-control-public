@@ -1,6 +1,6 @@
 /*
- * Aufgabe: Zweispaltige Darstellung auf breiten Fenstern (aufgeklapptes Faltgerät, Tablet): links die Kursliste
- *   (Übersicht, Suche, Favoriten), rechts die Details des gewählten Kurses; schmale Fenster unverändert.
+ * Aufgabe: Zweispaltige Darstellung auf breiten Fenstern (aufgeklapptes Faltgerät, Tablet): links Suche bzw. Favoriten,
+ *   rechts die Details des gewählten Kurses (die Übersicht hat ihre eigene breite Darstellung); schmale Fenster unverändert.
  * Ein-/Ausgabe: aktuelle Seite, Fensterbreite, Herkunft der Detailseite -> Listenseite für die linke Spalte (oder null);
  *   Zustand -> zweispaltiger Inhalt.
  * Nebenwirkungen: Keine; nur Darstellung über bestehende Seiten.
@@ -23,10 +23,14 @@ import androidx.compose.ui.unit.dp
 import com.tequila.tumcalendarcontrol.i18n.message
 import com.tequila.tumcalendarcontrol.ui.design.DesignText
 
-/** Ab dieser Breite (Material „expanded“) zwei Spalten. */
-internal const val TWO_PANE_MIN_WIDTH_DP = 840
+/** Ab dieser Inhaltsbreite zwei Spalten – gleiche Grenze wie die breite Übersicht (CourseIndexPage). */
+internal const val TWO_PANE_MIN_WIDTH_DP = 700
 
-private val ListScreens = setOf(AppScreen.OVERVIEW, AppScreen.SEARCH, AppScreen.FAVORITES)
+/**
+ * Suche und Favoriten; die Übersicht hat bereits ihre eigene breite Darstellung (Liste und Gruppendetails, Gerätefund:
+ * doppelte Zweispaltigkeit vermeiden) und bleibt daher außen vor.
+ */
+private val ListScreens = setOf(AppScreen.SEARCH, AppScreen.FAVORITES)
 
 /**
  * Listenseite der linken Spalte: Liste selbst, oder bei Kursdetails die Liste, aus der sie geöffnet wurden; null = eine

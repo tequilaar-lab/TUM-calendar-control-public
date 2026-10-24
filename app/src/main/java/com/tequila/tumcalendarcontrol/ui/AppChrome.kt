@@ -147,6 +147,7 @@ private fun CalendarControlScaffold(state: CalendarControlState) {
                         ),
                 ) {
                     // Breites Fenster: Liste und Details nebeneinander; Liste -> Details wechselt dann ohne Seitenübergang.
+                    // Inhaltsbreite wie bei der breiten Übersicht (CourseIndexPage, 700 dp); innen auf HONOR rund 820 dp.
                     BoxWithConstraints {
                         val widthDp = maxWidth.value.toInt()
                         val paneKey = twoPaneListScreen(contentScreen, widthDp, state.detailOrigin) ?: contentScreen
