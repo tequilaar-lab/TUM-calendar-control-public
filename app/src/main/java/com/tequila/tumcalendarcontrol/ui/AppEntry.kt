@@ -1,5 +1,6 @@
 /*
- * Aufgabe: Einstiegsziele von außen (Hinweis der Quellenprüfung, Startbildschirm-Widgets) als Intent kodieren und lesen.
+ * Aufgabe: Einstiegsziele von außen (Hinweis der Quellenprüfung, Startbildschirm-Widgets, öffentliche Deeplinks tumcal://)
+ *   als Intent kodieren und lesen.
  * Ein-/Ausgabe: Ziel -> expliziter Intent auf MainActivity; Intent (und gesicherter Zustand) -> Ziel oder null.
  * Nebenwirkungen: Keine; nur Intent-Aufbau und -Auswertung. Ziele navigieren ausschließlich, sie lösen keine Aktion aus.
  * Nicht zuständig: Navigation selbst (CalendarControlState), PendingIntent-Flags der Aufrufer oder Widget-Darstellung.
@@ -8,6 +9,7 @@ package com.tequila.tumcalendarcontrol.ui
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import com.tequila.tumcalendarcontrol.MainActivity
 import com.tequila.tumcalendarcontrol.sync.ManualEventKind
@@ -75,7 +77,34 @@ object AppEntryIntents {
 
     private const val STATE_PENDING = "com.tequila.tumcalendarcontrol.entry.pending"
 
-    fun parse(intent: Intent?): AppEntry? = when (intent?.getStringExtra(EXTRA_TARGET)) {
+    /** Schema der öffentlichen Deeplinks. */
+    const val SCHEME = "tumcal"
+
+    /**
+     * Öffentliche Deeplinks (fremde Apps, NFC, Verknüpfungen, HONOR-Dienste): ausschließlich Navigation zu harmlosen Seiten.
+     * tumcal://overview | events[?kind=exam|deadline] | check | widgets | live | course/<Quell-UID>; alles andere null.
+     * Bewusst nicht: Schreibvorschau, Quelle lesen, Kalenderausgabe.
+     */
+    fun parseUri(uri: Uri?): AppEntry? {
+        if (uri == null || !uri.scheme.equals(SCHEME, ignoreCase = true)) return null
+        return when (uri.host?.lowercase()) {
+            "overview" -> AppEntry.Overview
+            "events" -> AppEntry.ManualEvents(when (uri.getQueryParameter("kind")?.lowercase()) {
+                "exam" -> ManualEventKind.EXAM
+                "deadline" -> ManualEventKind.DEADLINE
+                else -> null
+            })
+            "check" -> AppEntry.BackgroundCheck
+            "widgets" -> AppEntry.WidgetSettings()
+            "live" -> AppEntry.ClassLive
+            "course" -> uri.pathSegments.firstOrNull()?.takeIf(String::isNotBlank)?.let(AppEntry::Course)
+            else -> null
+        }
+    }
+
+    fun parse(intent: Intent?): AppEntry? = parseExtras(intent) ?: intent?.takeIf { it.action == Intent.ACTION_VIEW }?.data?.let(::parseUri)
+
+    private fun parseExtras(intent: Intent?): AppEntry? = when (intent?.getStringExtra(EXTRA_TARGET)) {
         TARGET_OVERVIEW -> AppEntry.Overview
         TARGET_SOURCE_RANGE -> AppEntry.SourceRange
         TARGET_COURSE -> intent.getStringExtra(EXTRA_COURSE)?.takeIf(String::isNotBlank)?.let(AppEntry::Course)

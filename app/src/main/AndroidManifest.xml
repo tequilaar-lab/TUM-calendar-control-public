@@ -18,9 +18,17 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TumCalendarControl">
+        <!-- Öffentliche Deeplinks tumcal://… (nur Navigation, siehe AppEntryIntents.parseUri). -->
         <activity
             android:name=".MainActivity"
-            android:exported="true" />
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tumcal" />
+            </intent-filter>
+        </activity>
         <!-- Startsymbole als Aliasse: genau einer ist aktiv (Standard Glasblau); Auswahl unter Einstellungen → Darstellung. -->
         <activity-alias
             android:name=".LauncherGlass"
