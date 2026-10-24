@@ -74,6 +74,8 @@ data class TargetSyncResult(
     val cleanupSummary: ManagedCleanupSummary? = null,
     val restoredMissingCount: Int = 0,
     val failedCount: Int = 0,
+    /** Wegen Anhaltens nicht bearbeitete Termine; eine erneute Ausgabe setzt dort fort. */
+    val skippedCount: Int = 0,
 )
 
 /** Bereinigungsbereich separat wählen; normale Ausgabe erzeugt ihn niemals. */
@@ -94,6 +96,7 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
         desired: List<DesiredCalendarEvent>,
         storedMappings: List<StoredEventMapping>,
         gateway: OwnedCalendarGateway,
+        control: WriteControl = WriteControl(),
         onCheckpoint: (List<StoredEventMapping>) -> Unit = {},
     ): TargetSyncResult {
         if (!gateway.verifyOwnership(calendar)) return TargetSyncResult(calendar.target, storedMappings, emptyList(), message(98), failedCount = desired.size)
@@ -106,7 +109,11 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
         // Jede Bestätigung prüft echte App-Identität im Ziel; alte Zuordnung beweist kein Vorhandensein.
         // Schnellweg: einmal den ganzen Zielbestand lesen (zu Beginn dieser Ausgabe) statt je Termin suchen und lesen.
         val snapshot = runCatching { gateway.snapshotManagedEvents(calendar) }.getOrNull()
-        desired.distinctBy { it.identity }.forEach { event ->
+        val unique = desired.distinctBy { it.identity }
+        var skipped = 0
+        for ((index, event) in unique.withIndex()) {
+            // Anhalten nur zwischen zwei Terminen: Begonnenes wird fertig und als Prüfpunkt gesichert; Rest gilt als nicht bearbeitet.
+            if (control.stopRequested) { skipped = unique.size - index; break }
             try {
                 val found = snapshot?.let { it[event.identity.opaqueKey()].orEmpty() }
                 val ids = found?.map(ManagedEventSnapshot::eventId) ?: gateway.findEventIdsByIdentity(calendar, event.identity)
@@ -131,6 +138,7 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
             } catch (error: Exception) {
                 failures += error
             }
+            control.report(calendar.target, index + 1, unique.size)
         }
         return TargetSyncResult(
             calendar.target, otherMappings + next.values, completed,
@@ -138,6 +146,7 @@ class OwnedCalendarSyncExecutor(private val planner: SyncDiffPlanner = SyncDiffP
             failures.firstNotNullOfOrNull { it.targetFailureCode() },
             restoredMissingCount = restored,
             failedCount = failures.size,
+            skippedCount = skipped,
         )
     }
 

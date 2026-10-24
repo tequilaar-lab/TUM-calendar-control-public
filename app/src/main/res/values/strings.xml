@@ -783,4 +783,9 @@
     <string name="msg_0777" formatted="false">"Show room on map"</string>
     <string name="msg_0778" formatted="false">"{0} · opens nav.tum.de"</string>
     <string name="msg_0779" formatted="false">"Open room map"</string>
+    <string name="msg_0780" formatted="false">"; stopped, {0} sessions not processed; writing again continues where it stopped"</string>
+    <string name="msg_0781" formatted="false">"Writing {0}/{1} · {2}"</string>
+    <string name="msg_0782" formatted="false">"Stop"</string>
+    <string name="msg_0783" formatted="false">"Stopping…"</string>
+    <string name="msg_0784" formatted="false">"Sessions already written stay in the calendar. After stopping, writing again skips unchanged sessions and continues where it stopped."</string>
 </resources>

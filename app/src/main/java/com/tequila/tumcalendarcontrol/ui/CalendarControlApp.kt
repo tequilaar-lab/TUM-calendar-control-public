@@ -226,10 +226,13 @@ fun CalendarControlApp(entry: AppEntry? = null, onEntryHandled: () -> Unit = {})
         val desired = state.currentDesiredEvents()
         val mappings = state.ruleLedger.mappings
         val googleToken = state.currentGoogleAccessToken()
+        // Nur Schreiben meldet Fortschritt und lässt sich anhalten; Rückmeldungen gedrosselt in den UI-Faden.
+        val mainHandler = Handler(Looper.getMainLooper())
+        val control = if (rollback) null else state.writeProgress.begin { update -> mainHandler.post(update) }
         Thread {
             val outcome = runCatching {
                 if (rollback) platformManagedSyncRunner.rollback(mappings, targets, configuration, googleToken, state.currentManagedCleanupScope())
-                else platformManagedSyncRunner.execute(desired, mappings, targets, configuration, googleToken)
+                else platformManagedSyncRunner.execute(desired, mappings, targets, configuration, googleToken, control!!)
             }
             Handler(Looper.getMainLooper()).post {
                 outcome.onSuccess {

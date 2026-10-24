@@ -783,4 +783,9 @@
     <string name="msg_0777" formatted="false">"在地图中查看教室"</string>
     <string name="msg_0778" formatted="false">"{0} · 在 nav.tum.de 打开"</string>
     <string name="msg_0779" formatted="false">"打开教室地图"</string>
+    <string name="msg_0780" formatted="false">"；已停止，{0} 个课次未处理；再次写入会从中断处继续"</string>
+    <string name="msg_0781" formatted="false">"正在写入 {0}/{1} · {2}"</string>
+    <string name="msg_0782" formatted="false">"停止"</string>
+    <string name="msg_0783" formatted="false">"正在停止…"</string>
+    <string name="msg_0784" formatted="false">"已写入的课次会保留在日历中；停止后再次写入，会跳过没有变化的课次，从中断处继续。"</string>
 </resources>

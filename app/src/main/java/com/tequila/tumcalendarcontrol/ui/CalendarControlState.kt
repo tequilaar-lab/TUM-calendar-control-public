@@ -317,6 +317,8 @@ class CalendarControlState(
     val managedSyncRequested: Boolean get() = outputWorkflow.syncRequested
     val managedRollbackRequested: Boolean get() = outputWorkflow.rollbackRequested
     val managedSyncInProgress: Boolean get() = outputWorkflow.inProgress
+    /** Fortschritt/Anhalten der laufenden Ausgabe (nur Schreiben, nicht Bereinigung). */
+    internal val writeProgress = WriteProgressState()
     val googleAuthorizationRequested: Boolean get() = outputWorkflow.googleAuthorizationRequested
     val hasGoogleAuthorization: Boolean get() = outputWorkflow.hasGoogleAuthorization
     val googleAuthorizationStatus: GoogleAuthorizationStatus get() = outputWorkflow.googleAuthorizationStatus
@@ -946,6 +948,7 @@ class CalendarControlState(
     /** Nur zurückgegebene Zuordnungen und bereinigte Zahlen übernehmen; keine Token/Quellinhalte im Bestand. */
     fun resolveManagedOperation(token: Long, result: ManagedSyncResult, configuration: PrivateSyncConfiguration) {
         if (!outputWorkflow.finishOperation(token)) return
+        writeProgress.finish()
         ruleLedger = ruleLedger.copy(
             mappings = result.mappings,
             lastSummary = SyncRunSummary(
@@ -968,6 +971,7 @@ class CalendarControlState(
 
     fun failManagedOperation(token: Long, summary: String) {
         if (outputWorkflow.finishOperation(token)) {
+            writeProgress.finish()
             if (previewChangedDuringWrite) invalidateWritePreview()
             feedback = summary
         }

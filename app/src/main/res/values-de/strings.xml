@@ -783,4 +783,9 @@
     <string name="msg_0777" formatted="false">"Raum auf der Karte zeigen"</string>
     <string name="msg_0778" formatted="false">"{0} · öffnet nav.tum.de"</string>
     <string name="msg_0779" formatted="false">"Raumkarte öffnen"</string>
+    <string name="msg_0780" formatted="false">"; angehalten, {0} Termine nicht bearbeitet; erneutes Schreiben setzt dort fort"</string>
+    <string name="msg_0781" formatted="false">"Schreibe {0}/{1} · {2}"</string>
+    <string name="msg_0782" formatted="false">"Anhalten"</string>
+    <string name="msg_0783" formatted="false">"Wird angehalten…"</string>
+    <string name="msg_0784" formatted="false">"Bereits geschriebene Termine bleiben im Kalender. Nach dem Anhalten überspringt erneutes Schreiben unveränderte Termine und setzt dort fort."</string>
 </resources>
